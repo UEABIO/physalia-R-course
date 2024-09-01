@@ -1,42 +1,45 @@
 library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
-library(agridat)    # The source of your data
-
-# Loading data ----
-Barley <- as.data.frame(beaven.barley)
+library(lterdatasampler)  # The source of your data
+library(DT)  # For creating DataTables
 
 # ui.R ----
+# ui.R ----
 ui <- fluidPage(
-  titlePanel("Barley Yield"),
   sidebarLayout(
     sidebarPanel(
-      demo_gen <- selectInput(inputId = "gen",  # Give the input a name "genotype"
-                  label = "1. Select genotype",  # Give the input a label to be displayed in the app
-                  choices = c("A" = "a","B" = "b","C" = "c","D" = "d","E" = "e","F" = "f","G" = "g","H" = "h"), selected = "a"),  # Create the choices that can be selected. e.g. Display "A" and link to value "a"
-      demo_colour <- selectInput(inputId = "colour", 
-                  label = "2. Select histogram colour", 
-                  choices = c("blue","green","red","purple","grey"), selected = "grey"),
-      demo_bin <- sliderInput(inputId = "bin", 
-                  label = "3. Select number of histogram bins", 
-                  min=1, max=25, value= c(10)),
-      demo_text <- textAreaInput(inputId = "text", 
-                label = "4. Enter some text to be displayed",
-                rows = 5,
-                placeholder = "Enter some information here"),
-      demo_date <- dateRangeInput(inputId = "date_range", 
-                                  label = "Select Date Range", 
-                                  start = "2022-01-01", 
-                                  end = "2022-12-31",
-                                  format = "yyyy-mm-dd")  # New dateInput widget
+      selectInput(
+        inputId = "Dataset",
+        label = "Select dataset",
+        choices = c("and_vertebrates", "arc_weather", "hbr_maples", "luq_streamchem", 
+                    "ntl_icecover", "ntl_airtemp", "nwt_pikas", "pie_crab")
+      ),
+      downloadButton("downloadData", "Download")
     ),
-    mainPanel()
+    mainPanel(
+      DTOutput("demo_table", width = "50%")
+    )
   )
 )
 
 # server.R ----
 server <- function(input, output) {
+  # Your server logic will be defined here
+  output$demo_table <- DT::renderDataTable({
+    data <- get(input$Dataset)  # Retrieve the selected data frame
+    data
+  })
   
- 
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      # Use the selected dataset as the suggested file name
+      paste0(input$Dataset, ".csv")
+    },
+    content = function(file) {
+      # Write the dataset to the `file` that will be downloaded
+      write_csv(get(input$Dataset), file)
+    }
+  )
+  
 }
 
 # Run the app ----
