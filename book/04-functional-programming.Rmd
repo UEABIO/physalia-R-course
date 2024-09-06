@@ -291,17 +291,59 @@ my_mean(c(1, 2, NA, 4), na.rm = FALSE)  # NA values are not removed
 
 This modification makes the na.rm argument in the my_mean function flexible and allows users to override the default behavior when needed.
 
-### Using "..."
+### Ellipses
 
 You can allow the user to access the original arguments of mean() by using the `...` (ellipsis) argument in your wrapper function.
 
-In R the ellipse, ..., is used by functions for one of two things.
+In R the ellipse, `...`, is used by functions for one of two things.
 
-- to capture an unknown number of arguments
+- to capture an unknown number of arguments e.g `print(...)` or `c(...)`
 
-- or to pass arguments through to some underlying function, as in ?print().
+- or to pass arguments through to some underlying function.
 
-The `...` argument allows you to pass additional arguments directly to the underlying function. Here's how you can modify the `my_mean` function to maintain the flexibility of the mean() function's arguments:
+
+#### Capture arguments
+
+Here we can use the ellipsis to pass an undefined number of input vectors, they will be converted into a list 
+
+```{r}
+# Define the function
+apply_to_list <- function(..., fun) {
+  # Capture all arguments passed via ellipsis and combine them into a list
+  arg_list <- list(...)
+  
+  # Apply the specified function to each element in the list using sapply
+  result <- sapply(arg_list, fun)
+  
+  # Return the results
+  return(result)
+}
+
+# Example usage:
+
+# Create some sample numeric vectors
+vec1 <- c(1, 2, 3, 4)
+vec2 <- c(5, 6, 7, 8)
+vec3 <- c(9, 10, NA, 12)
+
+# Apply the `sum` function to each vector in the list, ignoring NA values
+apply_to_list(vec1, vec2, vec3, fun = function(x) sum(x, na.rm = TRUE))
+# Output: vector(10, 26, 31)
+
+# Apply the `mean` function to each vector in the list, ignoring NA values
+apply_to_list(vec1, vec2, vec3, fun = function(x) mean(x, na.rm = TRUE))
+# Output: vector(2.5, 6.5, 10.33333)
+
+# Apply a custom function to calculate the length of each vector in the list
+apply_to_list(vec1, vec2, vec3, fun = length)
+# Output: vector(4, 4, 4)
+
+
+```
+
+#### Passing arguments
+
+Here's how you can modify the `my_mean` function to maintain the flexibility of the mean() function's arguments:
 
 ```{r}
 
@@ -311,9 +353,10 @@ my_mean <- function(..., na.rm = TRUE) {
 
 ```
 
-Now we can pass arguments directly to mean, and we have a version that by default removes `NA` from our dataframe (but can be overidden if necessary)
+Now we can pass arguments directly to `mean`, and we have a version that by default removes `NA` from our dataframe (but can be overidden if necessary)
 
 ```{r}
+
 my_mean(c(1, 2, NA, 4))
 
 ```
@@ -331,6 +374,52 @@ my_mean(c(1, 2, NA, 4), trim = 1)
 Not all functions are designed to accept arbitrary or unspecified additional arguments via .... In the case of the lm() function for example, it does not have a formal ... argument that allows arbitrary additional arguments to be passed.
 
 If a function doesn't support ..., attempting to pass extra arguments using ... will result in an error, such as the "used in an incorrect context, no ... to look in" error that you encountered.
+
+```
+
+
+```{task}
+
+Here is a custom script to automate plotting a regression model - can you implement it and run it on our penguins data? Then try altering the arguments you send to the function through ellipsis
+
+```
+
+```{r}
+# a function that draws the regression line and confidence interval
+# notice it doesn't return anything... all it does is draw a plot
+show.lm <- function(.data, x = .x, y = .y, ...){
+
+  aesthetics <- enquos(...)
+  
+    P <- ggplot(.data, aes(x={{x}}, y = {{y}})) +
+    geom_smooth(aes(), ..., method = "lm") +
+    geom_point(aes(), ...) +
+    labs(...)
+  print(P)
+} 
+```
+
+
+```{solution}
+
+``{r}
+
+show.lm(penguins, 
+        bill_length_mm, 
+        bill_depth_mm, 
+        fill = "blue", 
+        colour = "red", 
+        shape = 21)
+
+
+show.lm(penguins, 
+        bill_length_mm, 
+        bill_depth_mm, 
+        title = "Relationship between penguin bill length and depth")
+
+``
+
+Ellipsis encounters issues when we have to use tidy evaluation
 
 ```
 
@@ -2192,6 +2281,8 @@ plots_df$scatterplots[[1]]
 
 ```
 
+### walk
+
 If we wish to see all of the plots at once we can use `purrr::walk` - this is another iteration function, where the primary output is "silent" - we do not wish to see outputs printed in the console. This is useful for functions like plot making or writing outputs to file. 
 
 ```{r, eval = FALSE}
@@ -2239,20 +2330,131 @@ plots_df <- nested_heavy_penguins |>
     mutate(scatterplots = map2(.x = new_data, .y = pal, ~ 
             ggplot(data = .x, aes(x = body_mass_g, y = flipper_length_mm, colour = .y)) +
             geom_point() +
-            scale_colour_identity()
-        ))
+            scale_colour_identity()+
+            ggtitle(names(.y))
+        )
+    )
 
 
 plots_df$scatterplots |> 
-    wrap_plots(... = _, guides = "collect")
-
+    wrap_plots()
 
 
 ```
 
+
+##pmap
+
+While `map` works with a single vector, and `map2` works with two vectors, `pmap` is a generalised version that works on any number of vectors. `pmap` also has all of the variants that we have seen before.
+
+- Parallel Mapping: pmap stands for "parallel map." It applies a function to the corresponding elements of multiple input lists (or data frames).
+
+- Flexibility: You can provide any number of lists or vectors to pmap.
+
+- Named Arguments: If you pass a data frame to pmap, it treats each column as a separate list.
+
+Here's the basic syntax for pmap:
+
+```
+
+pmap(.l, .f, ...)
+
+# .l is a list of vectors or a data frame.
+# .f is the function you want to apply.
+# ... are any additional arguments to the function .f.
+
+```
+
+Example
+
+```{r}
+
+# Vectors representing dimensions of three different boxes
+
+lengths <- c(2, 3, 5)
+widths  <- c(4, 2, 6)
+heights <- c(3, 5, 2)
+
+# Define a function to compute volume
+compute_volume <- function(length, width, height) {
+  length * width * height
+}
+
+# Use pmap to apply compute_volume to each combination
+volumes <- pmap(list(lengths, widths, heights), compute_volume)
+
+# Print the result
+print(volumes)
+
+```
+
+Remember though R is designed to work with vectors, dataframes and vectorised functions. Allowing us to apply operations over dataframes in a way that may be faster and more concise than using explicit iteration:
+
+
+```{r}
+
+# Create a data frame with dimensions
+boxes <- data.frame(
+  length = c(2, 3, 5),
+  width  = c(4, 2, 6),
+  height = c(3, 5, 2)
+)
+
+# Define a function that takes a list (representing a row)
+compute_volume_df <- function(df) {
+  df$length * df$width * df$height
+}
+
+compute_volume_df(boxes)
+
+
+```
+
+**YOUR TURN:**  
+
+Use the `pmap` function to make three separate plots for the  `nested penguins` data - add a title to each plot and put different geom shapes in for each plot: 
+
+```{solution}
+
+``{r, eval = F}
+
+# Define the color palette
+pal <- c(
+  "Adelie" = "#FF8C00", 
+  "Chinstrap" = "#A034F0", 
+  "Gentoo" = "#159090"
+)
+
+# Define different shapes for the plots
+shapes <- c(16, 17, 18)  # Shapes for geom_point()
+
+# Get titles
+title <-  names(pal)
+
+
+# Create plots using pmap
+plots_df <- nested_heavy_penguins |> 
+  mutate(plot = pmap(list(new_data, title, pal, shapes), ~ {
+    ggplot(data = ..1, aes(x = body_mass_g, y = flipper_length_mm, colour = ..3)) +
+      geom_point(shape = ..4) +
+      scale_colour_identity() +
+      ggtitle(..2)
+  }))
+
+
+
+plots_df$plot |> 
+    wrap_plots()
+
+
+``
+
+```
+
+
 ### Running different summary functions on each nested dataframe
 
-When working with nested data frames, `map2` provides the capability to apply distinct functions to each nested data frame, making it a versatile tool for performing customized and specialized operations on grouped data. This flexibility is distinct from simple operations with `group_by()`, as it allows you to tailor your computations to the unique characteristics of each subgroup within your nested data structure.
+When working with nested data frames, `purrr` provides the capability to apply distinct functions to each nested data frame, making it a versatile tool for performing customized and specialized operations on grouped data. This flexibility is distinct from simple operations with `group_by()`, as it allows you to tailor your computations to the unique characteristics of each subgroup within your nested data structure.
 
 ```{r, eval = F}
 
@@ -2319,6 +2521,288 @@ Below are some links you may find useful
 * [RStudio education cheat sheet for purr](https://www.rstudio.com/resources/cheatsheets/)
 
 * [R4DS - intro to programming](https://r4ds.had.co.nz/program-intro.html)
+
+
+# Parallel programming
+
+Parallel computing is a method used to speed up processing by running multiple tasks simultaneously. This technique is common across many programming languages and is supported by modern multi-core processors. Think of parallel computing as having several computers working side-by-side on the same task—each one handles a piece of the work at the same time.
+
+In the context of R, parallel computing can be broadly divided into two types:
+
+User-Specified Parallel Actions: Here, you manually set up the parallel processing. You decide which processors to use, how to split the task, and how to manage the work. Examples of this approach include functions like foreach, ddply, and parLapply.
+
+Library-Specified Parallel Execution: With this method, you use a package that handles the details of parallel processing for you. You simply specify the number of cores you want to use, and the package manages the rest. A common example is pdredge.
+
+Before diving into how to code for parallel processing, it’s important to understand some basic terminology. Different systems and programming languages use varied terms, but here’s a simplified overview based on R and Compute Canada’s definitions:
+
+| Term             | Definition                                                            |
+|------------------|-----------------------------------------------------------------------|
+| **Node**         | A physical computer with its own cores and memory.                    |
+| **Cluster**      | A group of interconnected nodes.                                      |
+| **Core**         | A single processing unit within a node, with its own memory.          |
+| **Thread**       | A virtual component used to manage tasks.                             |
+| **Task**         | A process assigned to a core.                                         |
+| **Memory per CPU** | The amount of RAM available to a core.                                |
+| **Memory per Node** | The total amount of RAM available on a node.                          |
+| **Job**          | A request for computational resources and tasks in supercomputing.     |
+| **Cluster (in R)** | A virtual grouping of multiple cores.                                 |
+| **FORK**         | A type of parallel environment with shared memory, available on Unix-based systems. |
+| **PSOCK**        | A parallel environment that communicates across cores, suitable for both Windows and Unix systems. |
+
+## Parallel processing with `foreach`
+
+Let’s look at a basic example of parallel computing in R using the foreach package. This approach involves specifying and registering the cores you want to use for your computations.
+
+Here’s a simple guide:
+
+- **Check Your Cores**: First, find out how many cores your computer has. Most computers have either 4 or 8 cores.
+
+- **Use foreach**: This method allows you to run tasks in parallel by dividing the work among the cores.
+
+- **Best Practices**: It’s a good idea not to use all available cores. Typically, you should use one less than the total number of cores (i.e., n-1). Using all cores might slow down your computer because it will have fewer resources left for other tasks like running your operating system or applications such as Chrome and Word. This could cause your computer to freeze or crash.
+
+By following these guidelines, you can efficiently use parallel computing in R without overloading your system.
+
+
+```{r, eval = TRUE}
+
+library(doParallel)
+library(foreach)
+
+## Check the number of cores
+detectCores()
+
+```
+
+
+```{r}
+
+## Set up cluster and the number of cores to be used 
+cl <- makeCluster(4, type="PSOCK") ## specify number of cores, and type of cluster (PSOCK or FORK)
+registerDoParallel(cl) ## register the backend into a virtual node
+
+## Execute parallel operation
+outLoop <- foreach(i = 1:5, .combine=c) %dopar% {
+  print(i)
+}
+outLoop
+
+
+```
+
+- `makeCluster(4, type="PSOCK")`: This function creates a cluster with 4 cores for parallel processing.
+
+- 4: The number of cores to use for parallel computation.
+
+- type="PSOCK": Specifies the type of parallel environment. PSOCK is a parallel socket cluster, suitable for both Windows and Unix systems. (Alternatively, FORK could be used for Unix-based systems, but PSOCK is more commonly used.)
+
+- registerDoParallel(cl): Registers the cluster as the backend for parallel operations. This sets up the environment so that foreach can utilize the cluster for parallel execution.
+
+- foreach(i = 1:5, .combine=c): This function iterates over a sequence from 1 to 5.
+
+- i = 1:5: Specifies the range of values for the loop.
+.combine=c: Specifies how to combine the results from each iteration. In this case, the c function combines the results into a single vector.
+
+- %dopar%: Indicates that the loop should be executed in parallel using the registered cluster.
+
+- print(i): The code inside the loop, executed in parallel. It prints the value of i in each iteration.
+
+### Differences Between foreach and for Loops in R
+
+The `foreach` function in R shares some similarities with traditional `for` loops but introduces several key differences. Understanding these can help you effectively use foreach for parallel computing.
+
+```
+# uses in as the keyword to specify iterations
+# Parallel execution
+foreach(i = 1:5) %dopar% {
+  print(i)
+}
+
+
+# foreach uses = for iteration specification
+# Sequential execution
+foreach(i = 1:5) %do% {
+  print(i)
+}
+
+
+```
+
+### Compare Run Times
+
+
+```{r}
+
+library(foreach)
+library(doParallel)
+
+
+# Example task: calculate the square of numbers from 1 to 1000
+
+# Define a function to calculate the square of a number
+square <- function(x) {
+  return(x * x)
+}
+
+start_time <- Sys.time()
+
+
+simple_loop <- for(num in 1:1000)  {
+   result <- square(num)
+  
+}
+
+end_time <- Sys.time()
+print(end_time - start_time)
+
+
+
+
+# Set up parallel computing
+cl <- makeCluster(4)  # Create a cluster with 4 cores
+registerDoParallel(cl)  # Register the cluster
+
+# Example task: calculate the square of numbers from 1 to 1000
+start_time <- Sys.time()
+
+parallel_loop <- foreach(num = 1:1000, .combine=c) %dopar% {
+  result <- square(num)
+}
+
+end_time <- Sys.time()
+print(end_time - start_time)
+
+# Stop the cluster
+stopCluster(cl)
+
+
+```
+
+```{task}
+
+What is the difference in speed between these two loops?
+
+```
+
+```{solution}
+
+Amdahls Law states that the potential speedup of a parallel computation is limited by the portion of the code that cannot be parallelized. If a large portion of the task is sequential, adding more processors will yield diminishing returns.
+
+There are also overheads to setting up parallel processing and if these are not equal to the time saved in running the processes separately you may actually find the code is slower. 
+
+```
+
+
+### Example
+
+Let's look at a more complicated example. Here we are performing a parallelized bootstrap resampling procedure on the penguins dataset. Here's a more detailed breakdown of the process and its objectives:It is good practice to export the environment and dataframes to each of the respective cores.
+
+First we will ensure that results are reproducible by initializing the random number generator with a specific seed.
+
+- clusterExport(cl, varlist = "penguins"): Ensures that the penguins dataset is available to each parallel worker. This step is crucial because each worker operates in its own environment and needs access to the necessary data.
+
+- foreach(i = 1:1000, .combine=c, .packages="dplyr"):
+
+- i = 1:1000: Defines the loop to iterate 1000 times in parallel.
+
+- .combine=c: Specifies that the results from each iteration should be combined into a single vector using the c() function.
+
+- .packages="dplyr": Ensures that the dplyr package is loaded in each parallel worker so that its functions (e.g., slice_sample, summarize) are available.
+
+- stopCluster(cl): Terminates the parallel cluster to free up resources once the computation is complete.
+
+```{r}
+set.seed(342)
+
+
+# Set up parallel computing
+cl <- makeCluster(4)  # Create a cluster with 4 cores
+registerDoParallel(cl)  # Register the cluster
+
+# register data to each processor
+clusterExport(cl, varlist = "penguins")
+
+# Parallel computation using foreach
+bootstrap_results <- foreach(i = 1:1000, .combine=c, .packages="dplyr") %dopar% {
+  
+  bootstrap_mean <- penguins |> 
+    slice_sample(prop = 0.1, replace = TRUE) |> 
+    summarize(mean_mass = mean(body_mass_g, na.rm = TRUE)) |> 
+    pull(mean_mass)
+  
+  bootstrap_mean
+ 
+}
+
+# Stop the cluster
+stopCluster(cl)
+
+tibble(bootstrap_results) |> 
+ggplot(aes(x = bootstrap_results)) +
+geom_histogram(fill = "grey80", color = "black")+
+  geom_vline(data = penguins,
+             aes(xintercept = mean(body_mass_g, na.rm = T)),
+             linewidth = 2, colour = "red", linetype  ="dashed")
+
+
+
+```
+
+
+## Parallel processing with `furrr`
+
+The goal of `furrr` is to combine `purrr`’s family of mapping functions with future’s parallel processing capabilities. Each variant of the `purrr` family has been implemented in `furrr`
+
+### Example
+
+```{r}
+library(furrr)
+library(purrr)
+
+map(c("hello", "world"), ~.x)
+
+future_map(c("hello", "world"), ~.x)
+```
+
+The default backend for future (and through it, furrr) is a sequential one. This means that the above code will run out of the box, but it will not be in parallel. The design of future makes it incredibly easy to change this so that your code will run in parallel.
+
+```{r}
+# Set a "plan" for how the code should run.
+plan(multisession, workers = 4)
+```
+
+
+```{task}
+
+Can you turn our parallel processed for loop into a furrr function? 
+
+```
+
+
+```{solution}
+library(furrr)
+plan(multisession, workers = 4)
+
+set.seed(342)
+
+bootstrap_results2 <- future_map_dbl(1:1000, 
+                  ~ penguins |> 
+    slice_sample(prop = 0.1, replace = TRUE) |> 
+    summarize(mean_mass = mean(body_mass_g, na.rm = TRUE)) |> 
+    pull(mean_mass), 
+    
+    seed = TRUE  # Ensure proper, parallel-safe random number generation
+)
+
+
+tibble(bootstrap_results2) |> 
+ggplot(aes(x = bootstrap_results)) +
+geom_histogram(fill = "grey80", color = "black")+
+  geom_vline(data = penguins,
+             aes(xintercept = mean(body_mass_g, na.rm = T)),
+             linewidth = 2, colour = "red", linetype  ="dashed")
+
+```
 
 
 # Bonus: Simulation
@@ -2565,7 +3049,7 @@ ggplot(sim, aes(x = value)) +
 
 two_group_fun_opt <- function(sample_size = 30, effect_size = .8){
    group1 <- rnorm(sample_size, mean = 0, sd = 1)
-    group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
+   group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
 
     # Fit a linear model to estimate the difference in means avoid making a dataframe
     lm_model <- lm(c(group1, group2) ~ rep(c("Group1", "Group2"), each = sample_size))
