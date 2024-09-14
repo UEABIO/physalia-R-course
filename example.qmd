@@ -1,0 +1,56 @@
+---
+title: "Penguin Analysis Report"
+format: html
+params:
+  species: "Adelie Penguin (Pygoscelis adeliae)"
+  island: "Biscoe"
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(gghighlight)
+# Load the dataset
+penguins_raw <- read_csv("https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/penguins_raw.csv")
+
+# Filter data based on parameters
+filtered_data <- penguins_raw |> 
+  filter(Island == params$island)
+
+```
+
+```{r}
+# Display the first few rows of the filtered data
+head(filtered_data)
+```
+
+
+## Now let's generate some summary statistics
+
+```{r}
+summary_stats <- filtered_data %>%
+  summarise(
+    mean_flipper_length = mean(`Culmen Length (mm)`, na.rm = TRUE),
+    mean_body_mass = mean(`Body Mass (g)`, na.rm = TRUE)
+  )
+
+summary_stats
+
+```
+
+## Visualisations
+
+
+```{r}
+penguin_colours <- c("darkolivegreen4", "darkorchid3", "goldenrod1")
+
+penguins_raw |> 
+  ggplot(aes(x=`Flipper Length (mm)`, 
+             y = `Body Mass (g)`))+
+  geom_point(aes(colour=`Species`))+
+  scale_color_manual(values=penguin_colours,
+                      labels = c("Adelie", "Chinstrap", "Gentoo"))+
+  theme_minimal(base_size = 20)+
+  theme(legend.position = "bottom")+
+  gghighlight(`Species` == params$species)
+```
