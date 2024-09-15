@@ -155,7 +155,7 @@ want them printed next to each other (pair with out-width = c(“33%”,
 </div>
 
 
-**Question.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value=''>echo = FALSE, eval = TRUE</option><option value=''>echo = TRUE, eval = TRUE</option><option value=''>echo = FALSE, eval = FALSE</option><option value='answer'>echo = TRUE, eval = FALSE</option></select>
+**Question.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value=''>echo = TRUE, eval = TRUE</option><option value=''>echo = FALSE, eval = FALSE</option><option value='answer'>echo = TRUE, eval = FALSE</option><option value=''>echo = FALSE, eval = TRUE</option></select>
 
 Default options for showing code, charts, and other elements in the rendered versions of the document. In Quarto, these options are set in the execute field of the YAML. For example, the following would provide the outputs of code, but hide the code itself, as well as all warnings and messages, from the rendered document:
 
@@ -176,10 +176,10 @@ In cases where you’re using Quarto to generate a report for a non-R user, you 
 
 ````md
 
-"\u0060\u0060\u0060{r}"
-"#| echo = TRUE"
+```{r}
+#| echo = TRUE
 hist(cars$speed)
-"\u0060\u0060\u0060"
+```
 
 ````
 
@@ -300,17 +300,17 @@ execute:
   message: false
 ---
 
-"\u0060\u0060\u0060{r}"
+```{r}
 
 library(tidyverse)
 
-"\u0060\u0060\u0060"
+```
 
-"\u0060\u0060\u0060{r}"
+```{r}
 
 penguins_raw <- read_csv("https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/penguins_raw.csv")
 
-"\u0060\u0060\u0060"
+```
 
 # Introduction
 
@@ -324,21 +324,21 @@ We are writing a report about the **Palmer Penguins**. These penguins are *reall
 
 We can make a histogram to see the distribution of bill lengths.
 
-"\u0060\u0060\u0060{r}"
+```{r}
 penguins_raw |> 
   ggplot(aes(x = `Culmen Length (mm)`)) +
   geom_histogram() +
   theme_minimal()
-"\u0060\u0060\u0060"
+```
 
-"\u0060\u0060\u0060{r}"
+```{r}
 average_bill_length <- penguins_raw |> 
   summarize(avg_bill_length = mean(`Culmen Length (mm)`,
                                    na.rm = TRUE)) |> 
   pull(average_bill_length)
-"\u0060\u0060\u0060"
+```
 
-The chart shows the distribution of bill lengths. The average bill length is "\u0060r average_bill_length\u0060".
+The chart shows the distribution of bill lengths. The average bill length is `` `r average_bill_length` ``.
 
 ````
 
@@ -988,7 +988,7 @@ then you can call objects made externally - in this case a penguin plot
 
 ````md
 ```{r read-data}
-<p>#&#124;</p> include: false
+#|include: false
 # READ DATA ----
 
 source("scripts/penguins.R")
@@ -1050,8 +1050,8 @@ library(here)
 
 ````md
 ```{r}
-<p>#&#124;</p> include: false
-<p>#<p> READ DATA ----
+#| include: false
+# READ DATA ----
 
 penguins <- read_csv(here("data", "penguins_raw.csv"))
 
@@ -1207,7 +1207,7 @@ We are writing a report about the **Palmer Penguins**. These penguins are *reall
 
 :::{.columns}
 ::: {.column width="70%"}
-"\u0060\u0060\u0060{r}"
+```{r}
 #| fig-height: 9
 #| out.width: "120%"
 penguin_colours <- c("darkolivegreen4", "darkorchid3", "goldenrod1")
@@ -1220,18 +1220,18 @@ penguins_raw |>
                       labels = c("Adelie", "Chinstrap", "Gentoo"))+
   theme_minimal(base_size = 20)+
   theme(legend.position = "bottom")
-"\u0060\u0060\u0060"
+```
 
 :::
 
 ::: {.column width="30%"}
-"\u0060\u0060\u0060{r}"
+```{r}
 penguins_raw |>  
     group_by(`Species`) |>  
     summarise(`Body Mass (g)`= mean(`Body Mass (g)`, na.rm = T),
               `Flipper Length (mm)`= mean(`Flipper Length (mm)`, na.rm = T)) |>  
   gt::gt()
-"\u0060\u0060\u0060"
+```
 :::
 :::
 
@@ -1309,28 +1309,28 @@ This report provides an analysis of the Palmer Penguins dataset. The current rep
 
 First, let's load the Palmer Penguins dataset and filter it based on the selected parameters.
 
-"\u0060\u0060\u0060{r}"
-<p>#&#124;</p> include: false
+```{r}
+#| include: false
 library(tidyverse)
 library(gghighlight)
-<p>#</p> Load the dataset
+# Load the dataset
 penguins_raw <- read_csv("https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/penguins_raw.csv")
 
-<p>#</p> Filter data based on parameters
+# Filter data based on parameters
 filtered_data <- penguins_raw |> 
   filter(Island == params$island)
 
-"\u0060\u0060\u0060"
+```
 
-"\u0060\u0060\u0060{r}"
+```{r}
 # Display the first few rows of the filtered data
 head(filtered_data)
-"\u0060\u0060\u0060"
+```
 
 
 ## Now let's generate some summary statistics
 
-"\u0060\u0060\u0060{r}"
+```{r}
 summary_stats <- filtered_data %>%
   summarise(
     mean_flipper_length = mean(`Culmen Length (mm)`, na.rm = TRUE),
@@ -1339,12 +1339,12 @@ summary_stats <- filtered_data %>%
 
 summary_stats
 
-"\u0060\u0060\u0060"
+```
 
 ## Visualisations
 
 
-"\u0060\u0060\u0060"
+```{r}
 penguin_colours <- c("darkolivegreen4", "darkorchid3", "goldenrod1")
 
 penguins_raw |> 
@@ -1356,7 +1356,7 @@ penguins_raw |>
   theme_minimal(base_size = 20)+
   theme(legend.position = "bottom")+
   gghighlight(`Species` == params$species)
-"\u0060\u0060\u0060"
+```
 
 ````
 
