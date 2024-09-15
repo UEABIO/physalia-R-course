@@ -1,3 +1,5 @@
+# (PART\*) Data Wrangling {.unnumbered}
+
 # Penguin project
 
 
@@ -564,12 +566,12 @@ We can do this with the equivalence operator `==`
 <div class="tab"><button class="tablinksunnamed-chunk-33 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-33', 'unnamed-chunk-33');">Base R</button><button class="tablinksunnamed-chunk-33" onclick="javascript:openCode(event, 'option2unnamed-chunk-33', 'unnamed-chunk-33');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-33" class="tabcontentunnamed-chunk-33">
 
 ```r
-filtered_penguins <- new_penguins[new_penguins$species == "Adelie Penguin (Pygoscelis adeliae"), ]
+filtered_penguins <- new_penguins[new_penguins$species == "Adelie", ]
 ```
 </div><div id="option2unnamed-chunk-33" class="tabcontentunnamed-chunk-33">
 
 ```r
-filter(.data = new_penguins, species == "Adelie Penguin (Pygoscelis adeliae)")
+filter(.data = new_penguins, species == "Adelie")
 ```
 </div><script> javascript:hide('option2unnamed-chunk-33') </script>
 
@@ -1360,7 +1362,7 @@ Depending on how we interpret the date ordering in a file, we can use `ymd()`, `
 * **Question** What is the appropriate function from the above to use on the `date_egg` variable?
 
 
-<div class='webex-radiogroup' id='radio_CSDZSVSJMJ'><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value=""></input> <span>ymd()</span></label><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value=""></input> <span>ydm()</span></label><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value=""></input> <span>mdy()</span></label><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value="answer"></input> <span>dmy()</span></label></div>
+<div class='webex-radiogroup' id='radio_ZOVGVIKKSJ'><label><input type="radio" autocomplete="off" name="radio_ZOVGVIKKSJ" value=""></input> <span>ymd()</span></label><label><input type="radio" autocomplete="off" name="radio_ZOVGVIKKSJ" value=""></input> <span>ydm()</span></label><label><input type="radio" autocomplete="off" name="radio_ZOVGVIKKSJ" value=""></input> <span>mdy()</span></label><label><input type="radio" autocomplete="off" name="radio_ZOVGVIKKSJ" value="answer"></input> <span>dmy()</span></label></div>
 
 
 

@@ -1318,6 +1318,11 @@ install.packages(c("devtools", "usethis", "roxygen2"))
 
 ```
 
+
+```{r, eval=TRUE, echo=FALSE, out.width="100%"}
+knitr::include_graphics("images/packages.png")
+```
+
 ## Step 1: Create a New Package Structure
 
 Choose a Directory: Decide where you want to create your package on your computer.
@@ -3029,18 +3034,20 @@ Can you turn our parallel processed for loop into a furrr function?
 
 
 ```{solution}
+
+``{r, eval = FALSE}
+
 library(furrr)
 plan(multisession, workers = 4)
 
-set.seed(342)
+options <- furrr_options(seed = 123)
 
 bootstrap_results2 <- future_map_dbl(1:1000, 
                   ~ penguins |> 
     slice_sample(prop = 0.1, replace = TRUE) |> 
     summarize(mean_mass = mean(body_mass_g, na.rm = TRUE)) |> 
     pull(mean_mass), 
-    
-    seed = TRUE  # Ensure proper, parallel-safe random number generation
+     .options = furrr_options(seed=342)  # Ensure proper, parallel-safe random number generation
 )
 
 
@@ -3050,356 +3057,8 @@ geom_histogram(fill = "grey80", color = "black")+
   geom_vline(data = penguins,
              aes(xintercept = mean(body_mass_g, na.rm = T)),
              linewidth = 2, colour = "red", linetype  ="dashed")
-
-```
-
-
-# Bonus: Simulation
-
-A computer simulation (or “sim”) is an attempt to model a real-life or hypothetical situation on a computer so that it can be studied to see how the system works. By changing variables in the simulation, predictions may be made about the behavior of the system. It is a tool to virtually investigate the behavior of the system under study - *Wikipedia*
-
-
-You can use computer simulations to: 
-
-* **Test your statistical intuition or demonstrate mathematical properties you cannot easily anticipate**  
-  * *e.g. test whether when supposedly random data are generated, there is no more than 5% of significant effects for a variable in a model*  
-
-
-* **Understand sampling theory, probability distributions or test whether you understand the underlying processes of your system**  
-  * *e.g. see whether simulated data drawn from specific distribution are comparable to real data*  
-
-
-* **Perform power analyses**
-  * *e.g. assess whether the sample size (within a replicate) is high enough to detect an effect simulated, in more than 80% of the cases*  
-
-
-* **Perform bootstrapping to get a confidence interval around a parameter estimate** 
-  * *i.e. bootstrapping means to sample with replacement (i.e. all the original options to draw from are available at each draw) in an observed dataset. Doing this generates new 'simulated' datasets. With each of them, one can run the statistical analysis made on the observed dataset, saving each time the parameter estimate of interest. After doing this multiple time, you will obtain a confidence interval for the parameter of interest*   
-  
-## Random number generators
-
-R contains several functions to generate random numbers.  
-Type *`?function`* in your console to get information on the function's arguments (i.e. the values that must be provided to obtain the function's result).  
-
-The function  
-
- `sample(x, n, replace=FALSE)` draws `n` values from a given vector `x` without replacement (by default).
-
-Sampling without replacement means that when you repeatedly draw e.g. 1 item from a pool of items, any item selected during the first draw is not available for selection during the second draw, and the first and second selected items are not in the pool to select from during the third draw, etc. Sampling with replacement means that all the original options are available at each draw.  
-
-
-**YOUR TURN:**  
-Sample 100 values between 3 and 103 with replacement.    
-
-```{solution}
-
-``{r, eval = F}
-x <- 3:103
-sample(x, 100, replace = TRUE)
-
 ``
 
 ```
 
-
-The following functions draw `n` values from distributions with the specified parameters:
-
-* `runif(n, min, max)` draws `n` values from a *uniform* distribution with the specified `min` and `max`  
-* `rpois(n, lambda)` draws `n` values from a *poisson* distribution with the specified `lambda`  
-* `rnorm(n, mean, sd)` draws `n` values from a *normal* distribution with the specified `mean` and `standard deviation`  
-* `rbinom(n, prob)`	draws `n` values from a	*binomial* distribution with the specified `probability`  
-
-
-**YOUR TURN:**   
-
-Draw 100 values from a normal distribution with a mean of 0 and a sd of 1.  
-Draw 50 values from a normal distribution with a mean of 10 and sd of 5.  
-Draw 1000 values from a poisson distribution with a lambda of 50.  
-Draw 30 values from a uniform distribution between 0 and 10.  
-
-```{solution}
-
-``{r, eval = F}
-
-rnorm(n = 100, mean = 0, sd = 1)
-rnorm(100) # if you sample from a normal distribution with a mean of 0 and a sd of 1, you do not need to provide them, they are the defaults
-
-rnorm(sd = 5, mean = 10, n = 50)
-
-rpois(n = 1000, lambda = 50)
-
-runif(n = 30, min = 0, max = 10)
-
-``
-
-```
-
-## Replication
-
-`replicate(10, mean(rnorm(100)))`
-
-reads: 'draw 100 values from a normal distribution with a mean 0 and sd 1 (the default values), caclulate the mean of these 100 values, and do all that 10 times.
-
-**YOUR TURN:**   
-
-Replicate 1000 times the mean of 10 values drawn from a unifrom distribution between 0 and 10.
-
-Make a histogram of your results. 
-
-```{solution, multCode = T}
-
-``{r}
-set.seed(42) 
-
-# replicate(1000, mean(runif(10, max = 10)))
-hist(replicate(1000, mean(runif(10, max = 10))))
-
-``
-
-####
-
-``{r}
-set.seed(42) 
-
-means <- replicate(1000, mean(runif(10, max = 10)))
-
-means |> 
-  as_tibble() |> 
-ggplot(aes(x = means)) +
-  geom_histogram(binwidth = 0.2, fill = "lightblue", color = "black") +
-  labs(title = "Histogram of Means", x = "Mean Value", y = "Frequency")
-
-``
-
-
-```
-
-## Set seed
-
-`set.seed()`
-
-Computers in general, and R specifically, can, in fact, only provide pseudo random number generators.
-A pseudorandom number generator's number sequence is completely determined by its seed, i.e. a number used to initialize that sequence.
-
-Thus, if a pseudorandom number generator is reinitialized with the same seed, it will produce the same sequence of numbers. You can set the seed (with any arbitrary number) at the beginning of a script, and, if commands drawing random numbers are ran in the exact same order, they will provide the same output in subsequent runs.
-
-This is useful for sharing code and reproduce simulations, as well as for debugging code.
-
-
-## Sample size
-
-In this example we are going to simulate some data for two groups - group 1 has a mean of 0 and an sd of 1, group 2 has a mean of whatever value we supply to `effect_size` and a sd of 1. 
-
-By default this simulation is set to repeat an experiment where 30 samples are taken from each population and compared for a true difference. The experiment is repeated 100 times. 
-
-The purpose of this simulation is to understand how the estimated difference in means varies across different random samples of data when the true effect size is known. It helps to assess the sampling variability and provides insights into the precision of the estimated difference. Additionally, it can be used to create a confidence interval to assess the uncertainty around the estimated effect. And determine the power of our experiments.
-
-With this example we **know** the true difference, see what happens to our confidence intervals as we change the sample size, effect size and iterations:
-
-```{r}
-library(ggplot2)
-
-# Define a function to run the simulation for a given sample size and effect size
-simulate_difference <- function(sample_size, effect_size) {
-    set.seed(123)
-    
-    # Initialize a data frame to store the estimated differences
-    results <- data.frame(Simulated_Difference = numeric(100))
-    
-    for (i in 1:100) {  # Perform 100 simulations for the fixed sample size
-        # Generate data for two groups with a specified effect size
-        group1 <- rnorm(sample_size, mean = 0, sd = 1)
-        group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-        
-        # Create a data frame for the two groups
-        data_df <- data.frame(Group = rep(c("Group1", "Group2"), each = sample_size),
-                              Value = c(group1, group2))
-        
-        # Fit a linear model to estimate the difference in means
-        lm_model <- lm(Value ~ Group, data = data_df)
-        
-        # Extract the estimated difference from the model
-        estimated_difference <- coef(lm_model)[2]
-        
-        results$Simulated_Difference[i] <- estimated_difference
-    }
-    
-    # Return the data frame of estimated differences
-    return(results)
-}
-
-# Fixed sample size of 20
-sample_size <- 30
-
-# Set the effect size
-effect_size <- .8  # Adjust as needed
-
-# Run the simulation for the fixed sample size
-simulation_results <- simulate_difference(sample_size, effect_size)
-
-# Calculate the mean and 2.5th and 97.5th percentiles for the confidence interval
-mean_difference <- mean(simulation_results$Simulated_Difference)
-lower_percentile <- quantile(simulation_results$Simulated_Difference, 0.025)
-upper_percentile <- quantile(simulation_results$Simulated_Difference, 0.975)
-
-# Create a density histogram of the estimated differences with lines for percentiles
-ggplot(simulation_results, aes(x = Simulated_Difference)) +
-    geom_histogram(binwidth = 0.05, fill = "lightblue", color = "black") +
-    geom_vline(aes(xintercept = mean_difference), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = lower_percentile), color = "blue") +
-    geom_vline(aes(xintercept = upper_percentile), color = "blue") +
-    labs(x = "Estimated Difference", y = "Density") +
-    ggtitle(paste("Density Histogram of Estimated Differences (Sample Size = 20)")) +
-    scale_x_continuous(limits = c(0, 2), breaks = c(0,0.5,1,1.5,2))+
-    theme_minimal()
-
-```
-
-
-## Exercise
-
-Testing your R might, can you simplify or speed up the simulation above?
-
-`r hide ("Solutions")`
-
-```{r, eval = F}
- set.seed(123)
-two_group_fun <- function(sample_size = 30, effect_size = .8){
-        group1 <- rnorm(sample_size, mean = 0, sd = 1)
-        group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-        
-        # Create a data frame for the two groups
-        data_df <- data.frame(Group = rep(c("Group1", "Group2"), each = sample_size),
-                              Value = c(group1, group2))
-        
-        # Fit a linear model to estimate the difference in means
-        lm_model <- lm(Value ~ Group, data = data_df) 
-        estimated_difference <- coef(lm_model)[2]
-}
-
-sim <- replicate(100, two_group_fun()) |> 
-  as_tibble()
-
-ggplot(sim, aes(x = value)) +
-    geom_histogram(binwidth = 0.05, fill = "lightblue", color = "black") +
-    geom_vline(aes(xintercept = mean_difference), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = lower_percentile), color = "blue") +
-    geom_vline(aes(xintercept = upper_percentile), color = "blue") +
-    labs(x = "Estimated Difference", y = "Density") +
-    ggtitle(paste("Density Histogram of Estimated Differences (Sample Size = 20)")) +
-    scale_x_continuous(limits = c(0, 2), breaks = c(0,0.5,1,1.5,2))+
-    theme_minimal()
-
-```
-
-
-```{r, eval = F}
- set.seed(123)
-
-two_group_fun_opt <- function(sample_size = 30, effect_size = .8){
-   group1 <- rnorm(sample_size, mean = 0, sd = 1)
-   group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-
-    # Fit a linear model to estimate the difference in means avoid making a dataframe
-    lm_model <- lm(c(group1, group2) ~ rep(c("Group1", "Group2"), each = sample_size))
-    estimated_difference <- coef(lm_model)[2]
-}
-
-sim <- replicate(100, two_group_fun_opt()) |> 
-  as_tibble()
-
-```
-
-```{r, eval=TRUE, echo=FALSE, out.width="100%"}
-knitr::include_graphics("images/benchmark_sim.png")
-```
-
-
-`r unhide()`
-
-
-
-
-
-## Power
-
-A useful application of simulations is to work out the power of a statistical test. Here we can flip the simulation to more specifically focus on calculating our statistical power of detection on a simulated dataset with a known effect-size: 
-
-```{r}
-
-# Define a function to run the simulation for a given sample size and effect size
-simulate_power <- function(sample_size, effect_size) {
-  set.seed(123)
-  
-  # Initialize a counter for the number of significant t-tests
-  num_significant <- 0
-  
-  for (i in 1:100) {  # Perform 100 simulations for each sample size
-
-          # Generate data for two groups with a specified effect size
-    group1 <- rnorm(sample_size, mean = 0, sd = 1)
-    group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-
-     # Create a data frame for the two groups
-        data_df <- data.frame(Group = rep(c("Group1", "Group2"), each = sample_size),
-                              Value = c(group1, group2))
-        
-        # Fit a linear model to estimate the difference in means
-        lm_model <- lm(Value ~ Group, data = data_df)
-        
-        # Extract the p value from the model
-       
-      
-        
-    # Check if the null hypothesis is rejected (p-value < 0.05)
-    if ( broom::tidy(lm_model)[[2,5]] < 0.05) {
-      num_significant <- num_significant + 1
-    }
-  }
-  
-  # Return the proportion of significant t-tests (power)
-  return(num_significant / 100)
-}
-
-# Specify a range of sample sizes to test
-sample_sizes <- c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
-
-# Set the effect size
-effect_size <- 1  # Adjust as needed
-
-# Run the simulation for each sample size
-simulation_results <- map_dbl(sample_sizes, simulate_power, effect_size)
-
-# Plot the power as a function of sample size
-plot(sample_sizes, simulation_results, type = "b", xlab = "Sample Size", ylab = "Power", main = "Power vs. Sample Size")
-
-```
-
-## Exercise
-
-Can you optimise the iterations to get stable predictions of power?
-
-Alter the parameters of effect, size sample size and iterations.
-
-
-
-## Further Reading:
-
-https://bookdown.org/ndphillips/YaRrr/generating-random-data.html
-
-
-Simulations: https://rstudio-education.github.io/hopr/
-
-https://aosmith.rbind.io/2018/01/09/simulate-simulate-part1/#simulate-simulate-dance-to-the-music
-
-https://aosmith.rbind.io/2019/07/22/automate-model-fitting-with-loops/
-
-https://aosmith.rbind.io/2017/12/31/many-datasets/#list-all-files-to-read-in
-
-
-```{r}
-
-sessionInfo()
-
-```
 

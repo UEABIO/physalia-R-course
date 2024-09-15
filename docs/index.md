@@ -31,7 +31,7 @@ favicon: images/logos/favicon.ico
 
 
 
-<div class="small_right"><img src="images/logos/logo.png" 
+<div class="small_right"><img src="images/logos/physalia.jpg" 
      alt="Data skills Logo" /></div>
 
 

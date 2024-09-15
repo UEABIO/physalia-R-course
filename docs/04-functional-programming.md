@@ -1331,6 +1331,9 @@ if (!str_detect(dna_sequence, "^[ATCG]+$")) stop("Invalid DNA sequence. Only A, 
 install.packages(c("devtools", "usethis", "roxygen2"))
 ```
 
+
+<img src="images/packages.png" width="100%" style="display: block; margin: auto;" />
+
 ## Step 1: Create a New Package Structure
 
 Choose a Directory: Decide where you want to create your package on your computer.
@@ -1619,9 +1622,9 @@ What do you think will happen if you set both times to 3 and each to 2?
 rep(c("Adelie", "Gentoo", "Chinstrap"), times = 2, each = 3)
 ```
 
-<button id="displayTextunnamed-chunk-93" onclick="javascript:toggle('unnamed-chunk-93');">Show Solution</button>
+<button id="displayTextunnamed-chunk-94" onclick="javascript:toggle('unnamed-chunk-94');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-93" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-94" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```
 ##  [1] "Adelie"    "Adelie"    "Adelie"    "Gentoo"    "Gentoo"    "Gentoo"   
@@ -2025,7 +2028,7 @@ Unit: milliseconds
 autoplot(mbm)
 ```
 
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-114-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04-functional-programming_files/figure-html/unnamed-chunk-115-1.png" width="100%" style="display: block; margin: auto;" />
 
 
 
@@ -2063,9 +2066,9 @@ The data can be collected here:
 1. Can you make four plots using lists and for loops? For this exercise can you make a list of four
 species based on the column `Common.Name`, House sparrow, Great tit, Corn bunting and Meadow pipit then loop down this to make four plots? 
 
-<button id="displayTextunnamed-chunk-116" onclick="javascript:toggle('unnamed-chunk-116');">Show Solution</button>
+<button id="displayTextunnamed-chunk-117" onclick="javascript:toggle('unnamed-chunk-117');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-116" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-117" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Method 1
@@ -2344,9 +2347,9 @@ Make a function that converts values with a normal distribution into their z sco
 <img src="images/z-score.png" width="50%" style="display: block; margin: auto;" />
 
 
-<button id="displayTextunnamed-chunk-126" onclick="javascript:toggle('unnamed-chunk-126');">Show Solution</button>
+<button id="displayTextunnamed-chunk-127" onclick="javascript:toggle('unnamed-chunk-127');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-126" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-127" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 z_score <- function(x) {
@@ -2359,9 +2362,9 @@ z_score <- function(x) {
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 Choose the appropriate apply function to calculate a matrix of z-scores for the dataframe `df` </div></div>
 
-<button id="displayTextunnamed-chunk-128" onclick="javascript:toggle('unnamed-chunk-128');">Show Solution</button>
+<button id="displayTextunnamed-chunk-129" onclick="javascript:toggle('unnamed-chunk-129');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-128" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-129" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 apply(df, MARGIN = 2,  z_score)
 </div></div></div>
@@ -2393,19 +2396,19 @@ Basic `map()` will *always* return a `list`, other variants return different dat
 
 ## Example
 
-<div class="tab"><button class="tablinksunnamed-chunk-130 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-130', 'unnamed-chunk-130');">Base R</button><button class="tablinksunnamed-chunk-130" onclick="javascript:openCode(event, 'option2unnamed-chunk-130', 'unnamed-chunk-130');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-130" class="tabcontentunnamed-chunk-130">
+<div class="tab"><button class="tablinksunnamed-chunk-131 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-131', 'unnamed-chunk-131');">Base R</button><button class="tablinksunnamed-chunk-131" onclick="javascript:openCode(event, 'option2unnamed-chunk-131', 'unnamed-chunk-131');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-131" class="tabcontentunnamed-chunk-131">
 
 ```r
 lapply(df_list, mean)
 ```
-</div><div id="option2unnamed-chunk-130" class="tabcontentunnamed-chunk-130">
+</div><div id="option2unnamed-chunk-131" class="tabcontentunnamed-chunk-131">
 
 ```r
 map(.x = df_list, .f = mean)
 
 map(df_list, mean)
 ```
-</div><script> javascript:hide('option2unnamed-chunk-130') </script>
+</div><script> javascript:hide('option2unnamed-chunk-131') </script>
 
 
 
@@ -2610,7 +2613,7 @@ plots_df[[1,4]]
 plots_df$scatterplots[[1]]
 ```
 
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-144-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04-functional-programming_files/figure-html/unnamed-chunk-145-1.png" width="100%" style="display: block; margin: auto;" />
 
 ### walk
 
@@ -2639,7 +2642,7 @@ library(patchwork)
 plots_df$scatterplots |> wrap_plots()
 ```
 
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-147-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04-functional-programming_files/figure-html/unnamed-chunk-148-1.png" width="100%" style="display: block; margin: auto;" />
 
 ## map2
 
@@ -2671,7 +2674,7 @@ plots_df$scatterplots |>
     wrap_plots()
 ```
 
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-149-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04-functional-programming_files/figure-html/unnamed-chunk-150-1.png" width="100%" style="display: block; margin: auto;" />
 
 
 ##pmap
@@ -2757,9 +2760,9 @@ compute_volume_df(boxes)
 
 Use the `pmap` function to make three separate plots for the  `nested penguins` data - add a title to each plot and put different geom shapes in for each plot: 
 
-<button id="displayTextunnamed-chunk-152" onclick="javascript:toggle('unnamed-chunk-152');">Show Solution</button>
+<button id="displayTextunnamed-chunk-153" onclick="javascript:toggle('unnamed-chunk-153');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-152" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-153" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Define the color palette
@@ -2832,9 +2835,9 @@ result$summaries
 In the previous chapter with apply we wrote the `z_score()` function, can you apply this using map to our `df` tibble? </div></div>
 
 
-<button id="displayTextunnamed-chunk-155" onclick="javascript:toggle('unnamed-chunk-155');">Show Solution</button>
+<button id="displayTextunnamed-chunk-156" onclick="javascript:toggle('unnamed-chunk-156');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-155" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-156" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 map_df(.x = df, 
@@ -3020,8 +3023,8 @@ stopCluster(cl)
 ```
 
 ```
-## Time difference of 0.005086422 secs
-## Time difference of 0.4626634 secs
+## Time difference of 0.01018214 secs
+## Time difference of 0.2526085 secs
 ```
 
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
@@ -3029,9 +3032,9 @@ stopCluster(cl)
 What is the difference in speed between these two loops?
  </div></div>
 
-<button id="displayTextunnamed-chunk-160" onclick="javascript:toggle('unnamed-chunk-160');">Show Solution</button>
+<button id="displayTextunnamed-chunk-161" onclick="javascript:toggle('unnamed-chunk-161');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-160" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-161" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 Amdahls Law states that the potential speedup of a parallel computation is limited by the portion of the code that cannot be parallelized. If a large portion of the task is sequential, adding more processors will yield diminishing returns.
 
@@ -3092,7 +3095,7 @@ geom_histogram(fill = "grey80", color = "black")+
              linewidth = 2, colour = "red", linetype  ="dashed")
 ```
 
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-161-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04-functional-programming_files/figure-html/unnamed-chunk-162-1.png" width="100%" style="display: block; margin: auto;" />
 
 
 ## Parallel processing with `furrr`
@@ -3140,21 +3143,22 @@ Can you turn our parallel processed for loop into a furrr function?
  </div></div>
 
 
-<button id="displayTextunnamed-chunk-165" onclick="javascript:toggle('unnamed-chunk-165');">Show Solution</button>
+<button id="displayTextunnamed-chunk-166" onclick="javascript:toggle('unnamed-chunk-166');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-165" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-166" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+
+```r
 library(furrr)
 plan(multisession, workers = 4)
 
-set.seed(342)
+options <- furrr_options(seed = 123)
 
 bootstrap_results2 <- future_map_dbl(1:1000, 
                   ~ penguins |> 
     slice_sample(prop = 0.1, replace = TRUE) |> 
     summarize(mean_mass = mean(body_mass_g, na.rm = TRUE)) |> 
     pull(mean_mass), 
-    
-    seed = TRUE  # Ensure proper, parallel-safe random number generation
+     .options = furrr_options(seed=342)  # Ensure proper, parallel-safe random number generation
 )
 
 
@@ -3164,408 +3168,7 @@ geom_histogram(fill = "grey80", color = "black")+
   geom_vline(data = penguins,
              aes(xintercept = mean(body_mass_g, na.rm = T)),
              linewidth = 2, colour = "red", linetype  ="dashed")
-</div></div></div>
-
-
-# Bonus: Simulation
-
-A computer simulation (or “sim”) is an attempt to model a real-life or hypothetical situation on a computer so that it can be studied to see how the system works. By changing variables in the simulation, predictions may be made about the behavior of the system. It is a tool to virtually investigate the behavior of the system under study - *Wikipedia*
-
-
-You can use computer simulations to: 
-
-* **Test your statistical intuition or demonstrate mathematical properties you cannot easily anticipate**  
-  * *e.g. test whether when supposedly random data are generated, there is no more than 5% of significant effects for a variable in a model*  
-
-
-* **Understand sampling theory, probability distributions or test whether you understand the underlying processes of your system**  
-  * *e.g. see whether simulated data drawn from specific distribution are comparable to real data*  
-
-
-* **Perform power analyses**
-  * *e.g. assess whether the sample size (within a replicate) is high enough to detect an effect simulated, in more than 80% of the cases*  
-
-
-* **Perform bootstrapping to get a confidence interval around a parameter estimate** 
-  * *i.e. bootstrapping means to sample with replacement (i.e. all the original options to draw from are available at each draw) in an observed dataset. Doing this generates new 'simulated' datasets. With each of them, one can run the statistical analysis made on the observed dataset, saving each time the parameter estimate of interest. After doing this multiple time, you will obtain a confidence interval for the parameter of interest*   
-  
-## Random number generators
-
-R contains several functions to generate random numbers.  
-Type *`?function`* in your console to get information on the function's arguments (i.e. the values that must be provided to obtain the function's result).  
-
-The function  
-
- `sample(x, n, replace=FALSE)` draws `n` values from a given vector `x` without replacement (by default).
-
-Sampling without replacement means that when you repeatedly draw e.g. 1 item from a pool of items, any item selected during the first draw is not available for selection during the second draw, and the first and second selected items are not in the pool to select from during the third draw, etc. Sampling with replacement means that all the original options are available at each draw.  
-
-
-**YOUR TURN:**  
-Sample 100 values between 3 and 103 with replacement.    
-
-<button id="displayTextunnamed-chunk-166" onclick="javascript:toggle('unnamed-chunk-166');">Show Solution</button>
-
-<div id="toggleTextunnamed-chunk-166" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
-
-```r
-x <- 3:103
-sample(x, 100, replace = TRUE)
 ```
 </div></div></div>
 
-
-The following functions draw `n` values from distributions with the specified parameters:
-
-* `runif(n, min, max)` draws `n` values from a *uniform* distribution with the specified `min` and `max`  
-* `rpois(n, lambda)` draws `n` values from a *poisson* distribution with the specified `lambda`  
-* `rnorm(n, mean, sd)` draws `n` values from a *normal* distribution with the specified `mean` and `standard deviation`  
-* `rbinom(n, prob)`	draws `n` values from a	*binomial* distribution with the specified `probability`  
-
-
-**YOUR TURN:**   
-
-Draw 100 values from a normal distribution with a mean of 0 and a sd of 1.  
-Draw 50 values from a normal distribution with a mean of 10 and sd of 5.  
-Draw 1000 values from a poisson distribution with a lambda of 50.  
-Draw 30 values from a uniform distribution between 0 and 10.  
-
-<button id="displayTextunnamed-chunk-167" onclick="javascript:toggle('unnamed-chunk-167');">Show Solution</button>
-
-<div id="toggleTextunnamed-chunk-167" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
-
-```r
-rnorm(n = 100, mean = 0, sd = 1)
-rnorm(100) # if you sample from a normal distribution with a mean of 0 and a sd of 1, you do not need to provide them, they are the defaults
-
-rnorm(sd = 5, mean = 10, n = 50)
-
-rpois(n = 1000, lambda = 50)
-
-runif(n = 30, min = 0, max = 10)
-```
-</div></div></div>
-
-## Replication
-
-`replicate(10, mean(rnorm(100)))`
-
-reads: 'draw 100 values from a normal distribution with a mean 0 and sd 1 (the default values), caclulate the mean of these 100 values, and do all that 10 times.
-
-**YOUR TURN:**   
-
-Replicate 1000 times the mean of 10 values drawn from a unifrom distribution between 0 and 10.
-
-Make a histogram of your results. 
-
-<button id="displayTextunnamed-chunk-168" onclick="javascript:toggle('unnamed-chunk-168');">Show Solution</button>
-
-<div id="toggleTextunnamed-chunk-168" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body"><div class="tab"><button class="tablinksunnamed-chunk-168 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-168', 'unnamed-chunk-168');">Base R</button><button class="tablinksunnamed-chunk-168" onclick="javascript:openCode(event, 'option2unnamed-chunk-168', 'unnamed-chunk-168');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-168" class="tabcontentunnamed-chunk-168">
-
-```r
-set.seed(42) 
-
-# replicate(1000, mean(runif(10, max = 10)))
-hist(replicate(1000, mean(runif(10, max = 10))))
-```
-
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-185-1.png" width="100%" style="display: block; margin: auto;" />
-</div><div id="option2unnamed-chunk-168" class="tabcontentunnamed-chunk-168">
-
-```r
-set.seed(42) 
-
-means <- replicate(1000, mean(runif(10, max = 10)))
-
-means |> 
-  as_tibble() |> 
-ggplot(aes(x = means)) +
-  geom_histogram(binwidth = 0.2, fill = "lightblue", color = "black") +
-  labs(title = "Histogram of Means", x = "Mean Value", y = "Frequency")
-```
-
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-186-1.png" width="100%" style="display: block; margin: auto;" />
-
-</div><script> javascript:hide('option2unnamed-chunk-168') </script></div></div></div>
-
-## Set seed
-
-`set.seed()`
-
-Computers in general, and R specifically, can, in fact, only provide pseudo random number generators.
-A pseudorandom number generator's number sequence is completely determined by its seed, i.e. a number used to initialize that sequence.
-
-Thus, if a pseudorandom number generator is reinitialized with the same seed, it will produce the same sequence of numbers. You can set the seed (with any arbitrary number) at the beginning of a script, and, if commands drawing random numbers are ran in the exact same order, they will provide the same output in subsequent runs.
-
-This is useful for sharing code and reproduce simulations, as well as for debugging code.
-
-
-## Sample size
-
-In this example we are going to simulate some data for two groups - group 1 has a mean of 0 and an sd of 1, group 2 has a mean of whatever value we supply to `effect_size` and a sd of 1. 
-
-By default this simulation is set to repeat an experiment where 30 samples are taken from each population and compared for a true difference. The experiment is repeated 100 times. 
-
-The purpose of this simulation is to understand how the estimated difference in means varies across different random samples of data when the true effect size is known. It helps to assess the sampling variability and provides insights into the precision of the estimated difference. Additionally, it can be used to create a confidence interval to assess the uncertainty around the estimated effect. And determine the power of our experiments.
-
-With this example we **know** the true difference, see what happens to our confidence intervals as we change the sample size, effect size and iterations:
-
-
-```r
-library(ggplot2)
-
-# Define a function to run the simulation for a given sample size and effect size
-simulate_difference <- function(sample_size, effect_size) {
-    set.seed(123)
-    
-    # Initialize a data frame to store the estimated differences
-    results <- data.frame(Simulated_Difference = numeric(100))
-    
-    for (i in 1:100) {  # Perform 100 simulations for the fixed sample size
-        # Generate data for two groups with a specified effect size
-        group1 <- rnorm(sample_size, mean = 0, sd = 1)
-        group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-        
-        # Create a data frame for the two groups
-        data_df <- data.frame(Group = rep(c("Group1", "Group2"), each = sample_size),
-                              Value = c(group1, group2))
-        
-        # Fit a linear model to estimate the difference in means
-        lm_model <- lm(Value ~ Group, data = data_df)
-        
-        # Extract the estimated difference from the model
-        estimated_difference <- coef(lm_model)[2]
-        
-        results$Simulated_Difference[i] <- estimated_difference
-    }
-    
-    # Return the data frame of estimated differences
-    return(results)
-}
-
-# Fixed sample size of 20
-sample_size <- 30
-
-# Set the effect size
-effect_size <- .8  # Adjust as needed
-
-# Run the simulation for the fixed sample size
-simulation_results <- simulate_difference(sample_size, effect_size)
-
-# Calculate the mean and 2.5th and 97.5th percentiles for the confidence interval
-mean_difference <- mean(simulation_results$Simulated_Difference)
-lower_percentile <- quantile(simulation_results$Simulated_Difference, 0.025)
-upper_percentile <- quantile(simulation_results$Simulated_Difference, 0.975)
-
-# Create a density histogram of the estimated differences with lines for percentiles
-ggplot(simulation_results, aes(x = Simulated_Difference)) +
-    geom_histogram(binwidth = 0.05, fill = "lightblue", color = "black") +
-    geom_vline(aes(xintercept = mean_difference), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = lower_percentile), color = "blue") +
-    geom_vline(aes(xintercept = upper_percentile), color = "blue") +
-    labs(x = "Estimated Difference", y = "Density") +
-    ggtitle(paste("Density Histogram of Estimated Differences (Sample Size = 20)")) +
-    scale_x_continuous(limits = c(0, 2), breaks = c(0,0.5,1,1.5,2))+
-    theme_minimal()
-```
-
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-169-1.png" width="100%" style="display: block; margin: auto;" />
-
-
-## Exercise
-
-Testing your R might, can you simplify or speed up the simulation above?
-
-
-<div class='webex-solution'><button>Solutions</button>
-
-
-
-```r
- set.seed(123)
-two_group_fun <- function(sample_size = 30, effect_size = .8){
-        group1 <- rnorm(sample_size, mean = 0, sd = 1)
-        group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-        
-        # Create a data frame for the two groups
-        data_df <- data.frame(Group = rep(c("Group1", "Group2"), each = sample_size),
-                              Value = c(group1, group2))
-        
-        # Fit a linear model to estimate the difference in means
-        lm_model <- lm(Value ~ Group, data = data_df) 
-        estimated_difference <- coef(lm_model)[2]
-}
-
-sim <- replicate(100, two_group_fun()) |> 
-  as_tibble()
-
-ggplot(sim, aes(x = value)) +
-    geom_histogram(binwidth = 0.05, fill = "lightblue", color = "black") +
-    geom_vline(aes(xintercept = mean_difference), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = lower_percentile), color = "blue") +
-    geom_vline(aes(xintercept = upper_percentile), color = "blue") +
-    labs(x = "Estimated Difference", y = "Density") +
-    ggtitle(paste("Density Histogram of Estimated Differences (Sample Size = 20)")) +
-    scale_x_continuous(limits = c(0, 2), breaks = c(0,0.5,1,1.5,2))+
-    theme_minimal()
-```
-
-
-
-```r
- set.seed(123)
-
-two_group_fun_opt <- function(sample_size = 30, effect_size = .8){
-   group1 <- rnorm(sample_size, mean = 0, sd = 1)
-   group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-
-    # Fit a linear model to estimate the difference in means avoid making a dataframe
-    lm_model <- lm(c(group1, group2) ~ rep(c("Group1", "Group2"), each = sample_size))
-    estimated_difference <- coef(lm_model)[2]
-}
-
-sim <- replicate(100, two_group_fun_opt()) |> 
-  as_tibble()
-```
-
-<img src="images/benchmark_sim.png" width="100%" style="display: block; margin: auto;" />
-
-
-
-</div>
-
-
-
-
-
-
-## Power
-
-A useful application of simulations is to work out the power of a statistical test. Here we can flip the simulation to more specifically focus on calculating our statistical power of detection on a simulated dataset with a known effect-size: 
-
-
-```r
-# Define a function to run the simulation for a given sample size and effect size
-simulate_power <- function(sample_size, effect_size) {
-  set.seed(123)
-  
-  # Initialize a counter for the number of significant t-tests
-  num_significant <- 0
-  
-  for (i in 1:100) {  # Perform 100 simulations for each sample size
-
-          # Generate data for two groups with a specified effect size
-    group1 <- rnorm(sample_size, mean = 0, sd = 1)
-    group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
-
-     # Create a data frame for the two groups
-        data_df <- data.frame(Group = rep(c("Group1", "Group2"), each = sample_size),
-                              Value = c(group1, group2))
-        
-        # Fit a linear model to estimate the difference in means
-        lm_model <- lm(Value ~ Group, data = data_df)
-        
-        # Extract the p value from the model
-       
-      
-        
-    # Check if the null hypothesis is rejected (p-value < 0.05)
-    if ( broom::tidy(lm_model)[[2,5]] < 0.05) {
-      num_significant <- num_significant + 1
-    }
-  }
-  
-  # Return the proportion of significant t-tests (power)
-  return(num_significant / 100)
-}
-
-# Specify a range of sample sizes to test
-sample_sizes <- c(10, 20, 30, 40, 50, 60, 70, 80, 90, 100)
-
-# Set the effect size
-effect_size <- 1  # Adjust as needed
-
-# Run the simulation for each sample size
-simulation_results <- map_dbl(sample_sizes, simulate_power, effect_size)
-
-# Plot the power as a function of sample size
-plot(sample_sizes, simulation_results, type = "b", xlab = "Sample Size", ylab = "Power", main = "Power vs. Sample Size")
-```
-
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-173-1.png" width="100%" style="display: block; margin: auto;" />
-
-## Exercise
-
-Can you optimise the iterations to get stable predictions of power?
-
-Alter the parameters of effect, size sample size and iterations.
-
-
-
-## Further Reading:
-
-https://bookdown.org/ndphillips/YaRrr/generating-random-data.html
-
-
-Simulations: https://rstudio-education.github.io/hopr/
-
-https://aosmith.rbind.io/2018/01/09/simulate-simulate-part1/#simulate-simulate-dance-to-the-music
-
-https://aosmith.rbind.io/2019/07/22/automate-model-fitting-with-loops/
-
-https://aosmith.rbind.io/2017/12/31/many-datasets/#list-all-files-to-read-in
-
-
-
-```r
-sessionInfo()
-```
-
-```
-## R version 4.3.3 (2024-02-29)
-## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 20.04.6 LTS
-## 
-## Matrix products: default
-## BLAS/LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.8.so;  LAPACK version 3.9.0
-## 
-## locale:
-##  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
-##  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
-##  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-## [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-## 
-## time zone: UTC
-## tzcode source: system (glibc)
-## 
-## attached base packages:
-## [1] parallel  stats     graphics  grDevices utils     datasets  methods  
-## [8] base     
-## 
-## other attached packages:
-##  [1] furrr_0.3.1           future_1.33.0         doParallel_1.0.17    
-##  [4] iterators_1.0.14      foreach_1.5.2         patchwork_1.1.2      
-##  [7] testthat_3.1.10       palmerpenguins_0.1.1  microbenchmark_1.4.10
-## [10] knitr_1.43            webexercises_1.1.0    glossary_1.0.0       
-## [13] lubridate_1.9.2       forcats_1.0.0         stringr_1.5.0        
-## [16] dplyr_1.1.2           purrr_1.0.1           readr_2.1.4          
-## [19] tidyr_1.3.0           tibble_3.2.1          ggplot2_3.4.2        
-## [22] tidyverse_2.0.0      
-## 
-## loaded via a namespace (and not attached):
-##  [1] gtable_0.3.3       xfun_0.39          bslib_0.5.0        tzdb_0.4.0        
-##  [5] vctrs_0.6.3        tools_4.3.3        generics_0.1.3     fansi_1.0.4       
-##  [9] highr_0.10         pkgconfig_2.0.3    lifecycle_1.0.3    compiler_4.3.3    
-## [13] farver_2.1.1       brio_1.1.3         munsell_0.5.0      codetools_0.2-19  
-## [17] htmltools_0.5.5    sass_0.4.6         yaml_2.3.7         pillar_1.9.0      
-## [21] jquerylib_0.1.4    cachem_1.0.8       parallelly_1.36.0  tidyselect_1.2.0  
-## [25] digest_0.6.33      stringi_1.7.12     listenv_0.9.0      bookdown_0.34     
-## [29] labeling_0.4.2     fastmap_1.1.1      grid_4.3.3         colorspace_2.1-0  
-## [33] cli_3.6.1          magrittr_2.0.3     bsplus_0.1.4       utf8_1.2.3        
-## [37] broom_1.0.5        withr_2.5.0        backports_1.4.1    scales_1.2.1      
-## [41] timechange_0.2.0   rmarkdown_2.23     globals_0.16.2     hms_1.1.3         
-## [45] memoise_2.0.1      evaluate_0.21      rlang_1.1.1        downlit_0.4.3     
-## [49] glue_1.6.2         xml2_1.3.5         downloadthis_0.3.2 rstudioapi_0.15.0 
-## [53] jsonlite_1.8.7     R6_2.5.1           fs_1.6.2
-```
 
