@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Chapter 11 Dealing with Missing Data | Advancing in R</title>
+<meta name="author" content="Philip T. Leftwich">
+<meta name="description" content="The palmerpenguins dataset contains data on penguins from the Palmer Archipelago in Antarctica. This dataset includes several measurements such as species, island, bill length, bill depth, flipper...">
+<meta name="generator" content="bookdown 0.34 with bs4_book()">
+<meta property="og:title" content="Chapter 11 Dealing with Missing Data | Advancing in R">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://ueabio.github.io/physalia-R-course-2023/dealing-with-missing-data.html">
+<meta property="og:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<meta property="og:description" content="The palmerpenguins dataset contains data on penguins from the Palmer Archipelago in Antarctica. This dataset includes several measurements such as species, island, bill length, bill depth, flipper...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chapter 11 Dealing with Missing Data | Advancing in R">
+<meta name="twitter:description" content="The palmerpenguins dataset contains data on penguins from the Palmer Archipelago in Antarctica. This dataset includes several measurements such as species, island, bill length, bill depth, flipper...">
+<meta name="twitter:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.6.0/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.5.0/transition.js"></script><script src="libs/bs3compat-0.5.0/tabs.js"></script><script src="libs/bs3compat-0.5.0/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="libs/font-awesome-5.13.0/js/script.js"></script><script src="libs/kePrint-0.0.1/kePrint.js"></script><link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-6NP3MF25W3"></script><script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-6NP3MF25W3');
+    </script><script language="javascript"> 
+        function toggle(id) {
+            var ele = document.getElementById("toggleText" + id);
+            var text = document.getElementById("displayText" + id);
+            var buttonText = text.innerHTML.replace("Show ", "");
+            buttonText = buttonText.replace("Hide ", "");
+            if(ele.style.display == "block") {
+                ele.style.display = "none";
+                text.innerHTML = "Show " + buttonText;
+            } else {
+                ele.style.display = "block";
+                text.innerHTML = "Hide " + buttonText;
+            }
+        } 
+    </script><script language="javascript">
+        function openCode(evt, codeName, id) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent" + id);
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks" + id);
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(codeName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script><script language="javascript">
+        function hide(id){
+            document.getElementById(id).style.display = "none";
+        }
+    </script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- CSS --><style type="text/css">
+    
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  </style>
+<style type="text/css">
+    /* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+        }
+    .hanging div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }
+  </style>
+<link rel="stylesheet" href="include/psyteachr.css">
+<link rel="stylesheet" href="include/webex.css">
+<link rel="stylesheet" href="include/style.css">
+</head>
+<body data-spy="scroll" data-target="#toc">
+
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="A guide for Biologists and Ecologists">Advancing in R</a>:
+        <small class="text-muted">A guide for Biologists and Ecologists</small>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Overview</a></li>
+<li class="book-part">Get Started in R</li>
+<li><a class="" href="introduction-to-r-and-rstudio.html"><span class="header-section-number">1</span> Introduction to R and RStudio</a></li>
+<li><a class="" href="r-basics.html"><span class="header-section-number">2</span> R basics</a></li>
+<li class="book-part">Organising workflows</li>
+<li><a class="" href="project-oriented-workflows.html"><span class="header-section-number">3</span> Project-oriented workflows</a></li>
+<li><a class="" href="renv.html"><span class="header-section-number">4</span> renv</a></li>
+<li><a class="" href="basic-importexport.html"><span class="header-section-number">5</span> Basic Import/Export</a></li>
+<li><a class="" href="scripts.html"><span class="header-section-number">6</span> Scripts</a></li>
+<li><a class="" href="naming-things.html"><span class="header-section-number">7</span> Naming things</a></li>
+<li><a class="" href="penguin-project.html"><span class="header-section-number">8</span> Penguin project</a></li>
+<li><a class="" href="data-wrangling-with-dplyr.html"><span class="header-section-number">9</span> Data wrangling with dplyr</a></li>
+<li><a class="" href="data-reshaping.html"><span class="header-section-number">10</span> Data reshaping</a></li>
+<li><a class="active" href="dealing-with-missing-data.html"><span class="header-section-number">11</span> Dealing with Missing Data</a></li>
+<li><a class="" href="mastering-text-data.html"><span class="header-section-number">12</span> Mastering Text Data</a></li>
+<li><a class="" href="basic-ggplot.html"><span class="header-section-number">13</span> Basic ggplot</a></li>
+<li class="book-part">Data Insights</li>
+<li><a class="" href="data-insights-part-one.html"><span class="header-section-number">14</span> Data Insights part one</a></li>
+<li><a class="" href="data-insights-part-two.html"><span class="header-section-number">15</span> Data insights part two</a></li>
+<li class="book-part">Functional Programming</li>
+<li><a class="" href="writing-functions.html"><span class="header-section-number">16</span> Writing Functions</a></li>
+<li><a class="" href="flow-control.html"><span class="header-section-number">17</span> Flow control</a></li>
+<li><a class="" href="writing-packages.html"><span class="header-section-number">18</span> Writing Packages</a></li>
+<li><a class="" href="simple-iteration.html"><span class="header-section-number">19</span> Simple iteration</a></li>
+<li><a class="" href="loops.html"><span class="header-section-number">20</span> Loops</a></li>
+<li><a class="" href="apply.html"><span class="header-section-number">21</span> Apply</a></li>
+<li><a class="" href="purrr.html"><span class="header-section-number">22</span> Purrr</a></li>
+<li><a class="" href="parallel-programming.html"><span class="header-section-number">23</span> Parallel programming</a></li>
+<li><a class="" href="bonus-simulation.html"><span class="header-section-number">24</span> Bonus: Simulation</a></li>
+<li class="book-part">Getting the most out of tidyverse</li>
+<li><a class="" href="reading-files-with-readr.html"><span class="header-section-number">25</span> Reading files with readr</a></li>
+<li><a class="" href="working-across-columns.html"><span class="header-section-number">26</span> Working across columns</a></li>
+<li><a class="" href="modifying-variables.html"><span class="header-section-number">27</span> Modifying variables</a></li>
+<li><a class="" href="factors-1.html"><span class="header-section-number">28</span> Factors</a></li>
+<li><a class="" href="applying-functions-across-columns.html"><span class="header-section-number">29</span> Applying functions across columns</a></li>
+<li><a class="" href="working-with-rows.html"><span class="header-section-number">30</span> Working with rows</a></li>
+<li><a class="" href="group-work.html"><span class="header-section-number">31</span> Group work</a></li>
+<li><a class="" href="pivot.html"><span class="header-section-number">32</span> Pivot</a></li>
+<li><a class="" href="writing-functions-in-tidyverse.html"><span class="header-section-number">33</span> Writing Functions in Tidyverse</a></li>
+<li class="book-part">Data Presentation</li>
+<li><a class="" href="customisation-with-ggplot2.html"><span class="header-section-number">34</span> Customisation with ggplot2</a></li>
+<li><a class="" href="extensions-for-ggplot2.html"><span class="header-section-number">35</span> Extensions for ggplot2</a></li>
+<li><a class="" href="custom-ggplot-themes.html"><span class="header-section-number">36</span> Custom ggplot themes</a></li>
+<li><a class="" href="making-tables-with-gt.html"><span class="header-section-number">37</span> Making tables with gt</a></li>
+<li class="book-part">Introduction to Shiny</li>
+<li><a class="" href="getting-to-work-with-shiny.html"><span class="header-section-number">38</span> Getting to work with Shiny</a></li>
+<li><a class="" href="make-our-own-app.html"><span class="header-section-number">39</span> Make our own App</a></li>
+<li><a class="" href="inputs.html"><span class="header-section-number">40</span> Inputs</a></li>
+<li><a class="" href="outputs.html"><span class="header-section-number">41</span> Outputs</a></li>
+<li><a class="" href="reactive.html"><span class="header-section-number">42</span> Reactive</a></li>
+<li><a class="" href="shiny-dashboards.html"><span class="header-section-number">43</span> Shiny Dashboards</a></li>
+<li><a class="" href="sharing.html"><span class="header-section-number">44</span> Sharing</a></li>
+<li class="book-part">Literate Programming and Reproducibility</li>
+<li><a class="" href="quarto.html"><span class="header-section-number">45</span> Quarto</a></li>
+<li><a class="" href="github-1.html"><span class="header-section-number">46</span> Github</a></li>
+<li class="book-part">Efficient Programming</li>
+<li><a class="" href="reading-5.html"><span class="header-section-number">47</span> Reading</a></li>
+<li><a class="" href="efficient-programming.html"><span class="header-section-number">48</span> Efficient Programming</a></li>
+<li class="book-part">Working with big data</li>
+<li><a class="" href="data-structures-in-r.html"><span class="header-section-number">49</span> Data structures in R</a></li>
+<li><a class="" href="read-io.html"><span class="header-section-number">50</span> Read I/O</a></li>
+<li><a class="" href="working-with-sql.html"><span class="header-section-number">51</span> Working with sql</a></li>
+<li class="book-part">BONUS: Automated Exploratory Analysis</li>
+<li><a class="" href="packages-for-automated-exploratory-data-analysis.html"><span class="header-section-number">52</span> Packages for Automated Exploratory Data Analysis</a></li>
+<li class="book-part">BONUS: Installations</li>
+<li><a class="" href="installing-r.html"><span class="header-section-number">53</span> Installing R</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/UEABIO/physalia-intro-stats-2023">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="dealing-with-missing-data" class="section level1" number="11">
+<h1>
+<span class="header-section-number">11</span> Dealing with Missing Data<a class="anchor" aria-label="anchor" href="#dealing-with-missing-data"><i class="fas fa-link"></i></a>
+</h1>
+<p>The <code>palmerpenguins</code> dataset contains data on penguins from the Palmer Archipelago in Antarctica. This dataset includes several measurements such as species, island, bill length, bill depth, flipper length, body mass, and sex. However, it contains missing values, particularly in the sex column. In this chapter, we will:</p>
+<ul>
+<li><p>Use the <code>naniar</code> package to visualize and understand the patterns of missing data.</p></li>
+<li><p>Use the <code>mice</code> package to perform multiple imputation to handle missing values.</p></li>
+<li><p>Discuss how to choose an appropriate imputation algorithm.</p></li>
+<li><p>Check the quality of imputation using diagnostic plots and statistical checks.</p></li>
+</ul>
+<div id="visualise-missing-data-with-naniar" class="section level2" number="11.1">
+<h2>
+<span class="header-section-number">11.1</span> Visualise missing data with <code>naniar</code><a class="anchor" aria-label="anchor" href="#visualise-missing-data-with-naniar"><i class="fas fa-link"></i></a>
+</h2>
+<p>The naniar package provides functions to visualize and explore missing data. Start by visualizing the missing values:</p>
+<div class="sourceCode" id="cb207"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Visualise missing data</span></span>
+<span><span class="fu">naniar</span><span class="fu">::</span><span class="fu"><a href="https://docs.ropensci.org/visdat/reference/vis_miss.html">vis_miss</a></span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="02a-penguin_files/figure-html/unnamed-chunk-114-1.png" width="100%" style="display: block; margin: auto;"></div>
+<p>The <code>vis_miss()</code> function creates a heatmap-like plot where missing values are shown in a different color, allowing you to quickly see where missing data occurs.</p>
+<p>You can also use a <code>gg_miss_var</code> plot to see the proportion of missing values by variable</p>
+<div class="sourceCode" id="cb208"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Visualize missing data by variable</span></span>
+<span><span class="fu">gg_miss_var</span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="02a-penguin_files/figure-html/unnamed-chunk-115-1.png" width="100%" style="display: block; margin: auto;"></div>
+</div>
+<div id="explore-the-patterns-of-missingness" class="section level2" number="11.2">
+<h2>
+<span class="header-section-number">11.2</span> Explore the Patterns of Missingness<a class="anchor" aria-label="anchor" href="#explore-the-patterns-of-missingness"><i class="fas fa-link"></i></a>
+</h2>
+<p>Understanding the patterns of missingness can help you decide on an appropriate imputation method:</p>
+<div class="sourceCode" id="cb209"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Explore missing data patterns</span></span>
+<span><span class="fu">miss_var_summary</span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span></code></pre></div>
+<div class="kable-table">
+<div class="inline-table"><table class="table table-sm">
+<thead><tr>
+<th style="text-align:left;">
+variable
+</th>
+<th style="text-align:right;">
+n_miss
+</th>
+<th style="text-align:right;">
+pct_miss
+</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+comments
+</td>
+<td style="text-align:right;">
+290
+</td>
+<td style="text-align:right;">
+84.3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+delta_15n
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+4.07
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+delta_13c
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+3.78
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sex
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+3.20
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+culmen_length_mm
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.581
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+culmen_depth_mm
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.581
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+flipper_length_mm
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.581
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+body_mass_g
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.581
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+flipper_range
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.581
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+study_name
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sample_number
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+species
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+region
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+island
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+stage
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+individual_id
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+clutch_completion
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+date_egg
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+date_egg_proper
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+year
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p>We can combine this with <code><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by()</a></code> to get insights into the patterns surrounding our missing data</p>
+<div class="sourceCode" id="cb210"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">penguins</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="va">species</span>, <span class="va">island</span>, <span class="va">sex</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">species</span>, <span class="va">island</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu">miss_var_summary</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="kable-table">
+<div class="inline-table"><table class="table table-sm">
+<thead><tr>
+<th style="text-align:left;">
+species
+</th>
+<th style="text-align:left;">
+island
+</th>
+<th style="text-align:left;">
+variable
+</th>
+<th style="text-align:right;">
+n_miss
+</th>
+<th style="text-align:right;">
+pct_miss
+</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Adelie
+</td>
+<td style="text-align:left;">
+Torgersen
+</td>
+<td style="text-align:left;">
+sex
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+9.62
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Adelie
+</td>
+<td style="text-align:left;">
+Biscoe
+</td>
+<td style="text-align:left;">
+sex
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Adelie
+</td>
+<td style="text-align:left;">
+Dream
+</td>
+<td style="text-align:left;">
+sex
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+1.79
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Gentoo
+</td>
+<td style="text-align:left;">
+Biscoe
+</td>
+<td style="text-align:left;">
+sex
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+4.03
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Chinstrap
+</td>
+<td style="text-align:left;">
+Dream
+</td>
+<td style="text-align:left;">
+sex
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p>An upset plot can be used to visualise the patterns of missingness, or rather the combinations of missingness across cases.</p>
+<div class="sourceCode" id="cb211"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">gg_miss_upset</span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="02a-penguin_files/figure-html/unnamed-chunk-118-1.png" width="100%" style="display: block; margin: auto;"></div>
+<p><code>gg_miss_fct()</code>: This function allows you to explore missing data by levels of a factor. It is useful for checking if missingness is related to a categorical variable.</p>
+<div class="sourceCode" id="cb212"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Explore missing data by species</span></span>
+<span><span class="fu">gg_miss_fct</span><span class="op">(</span><span class="va">penguins</span>, fct <span class="op">=</span> <span class="va">island</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="02a-penguin_files/figure-html/unnamed-chunk-119-1.png" width="100%" style="display: block; margin: auto;"></div>
+</div>
+<div id="handling-missing-data" class="section level2" number="11.3">
+<h2>
+<span class="header-section-number">11.3</span> Handling missing data<a class="anchor" aria-label="anchor" href="#handling-missing-data"><i class="fas fa-link"></i></a>
+</h2>
+<div id="deleting-missing-rows" class="section level3" number="11.3.1">
+<h3>
+<span class="header-section-number">11.3.1</span> Deleting Missing Rows<a class="anchor" aria-label="anchor" href="#deleting-missing-rows"><i class="fas fa-link"></i></a>
+</h3>
+<p>One of the simplest approaches to address missing data in a dataset is to delete observations (rows) that contain any missing values. This method, often referred to as "listwise deletion" or "complete case analysis," involves removing entire records from the analysis if they are missing any data point in one or more variables</p>
+<ul>
+<li>When to Consider Deleting Missing Rows:</li>
+</ul>
+<p>Minimal Missing Data: If the missing data is slight and seemingly random, eliminating those incomplete entries is unlikely to significantly affect the dataset's overall quality.</p>
+<p>MCAR Data: Deletion is most appropriate when the missing data is Missing Completely At Random (MCAR), meaning there's no systematic difference between the missing and observed values.</p>
+</div>
+<div id="impute-missing-data" class="section level3" number="11.3.2">
+<h3>
+<span class="header-section-number">11.3.2</span> Impute missing data<a class="anchor" aria-label="anchor" href="#impute-missing-data"><i class="fas fa-link"></i></a>
+</h3>
+<p>Before performing imputation, it’s important to choose the right algorithm based on the data type and the nature of the missingness. The mice package supports various imputation methods for different types of data:</p>
+</div>
+<div id="types-of-missingness" class="section level3" number="11.3.3">
+<h3>
+<span class="header-section-number">11.3.3</span> Types of Missingness:<a class="anchor" aria-label="anchor" href="#types-of-missingness"><i class="fas fa-link"></i></a>
+</h3>
+<ul>
+<li><p>Missing Completely at Random (MCAR): The missing data has no relationship with any other variable. Any imputation method can be used, but simpler methods like mean/mode imputation might suffice.</p></li>
+<li><p>Missing at Random (MAR): The missingness is related to other observed variables. Imputation methods that take into account other variables, such as predictive mean matching or multiple regression, are appropriate.</p></li>
+<li><p>Missing Not at Random (MNAR): The missingness is related to the missing values themselves. In such cases, data augmentation, sensitivity analysis, or using domain knowledge for imputation might be necessary.</p></li>
+</ul>
+</div>
+<div id="choosing-the-imputation-method" class="section level3" number="11.3.4">
+<h3>
+<span class="header-section-number">11.3.4</span> Choosing the Imputation Method:<a class="anchor" aria-label="anchor" href="#choosing-the-imputation-method"><i class="fas fa-link"></i></a>
+</h3>
+<p>Here are some common imputation methods provided by mice and when they are most appropriate:</p>
+<ul>
+<li><p>Mean/Mode Imputation (mean, mode): Fills in missing values with the mean (numeric data) or mode (categorical data) of observed values. Simple but can distort the distribution and underestimate variability.</p></li>
+<li><p>Predictive Mean Matching (pmm): Matches the missing value with observed values that have a similar predicted value based on a regression model. It’s useful for numerical data and preserves the original distribution.</p></li>
+<li><p>Logistic Regression (logreg): Suitable for binary categorical data, like sex in the penguins dataset, and uses logistic regression to predict the missing values.</p></li>
+<li><p>Polytomous Regression (polyreg): Suitable for multinomial categorical data with more than two levels (e.g., species with Adelie, Gentoo, and Chinstrap). Uses polytomous regression to impute missing values.</p></li>
+</ul>
+</div>
+<div id="impute-missing-values-using-the-mice-package" class="section level3" number="11.3.5">
+<h3>
+<span class="header-section-number">11.3.5</span> Impute Missing Values Using the mice Package<a class="anchor" aria-label="anchor" href="#impute-missing-values-using-the-mice-package"><i class="fas fa-link"></i></a>
+</h3>
+<p>Given that the sex column is a binary categorical variable, we can use logreg or polyreg for imputation. For this example, we will use logreg.</p>
+<p>Prepare the data by the selecting relevant columns we want to use as predictors to impute our missing values:</p>
+<div class="sourceCode" id="cb213"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Run the mice function with maxit=0</span></span>
+<span><span class="co"># This allows us to extract the default predictor matrix and methods without performing actual imputation</span></span>
+<span><span class="va">imp</span> <span class="op">&lt;-</span> <span class="fu">mice</span><span class="op">(</span><span class="va">penguins</span>, maxit<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Extract the predictor matrix from the imputation object</span></span>
+<span><span class="va">predM</span> <span class="op">&lt;-</span> <span class="va">imp</span><span class="op">$</span><span class="va">predictorMatrix</span></span></code></pre></div>
+<blockquote>
+<p>Note sex will not be included for imputation unless it is coded as a factor</p>
+</blockquote>
+<div class="sourceCode" id="cb214"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">penguins</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span><span class="op">(</span><span class="va">sex</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb215"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Extract the methods of imputation used for each variable</span></span>
+<span><span class="va">meth</span> <span class="op">&lt;-</span> <span class="va">imp</span><span class="op">$</span><span class="va">method</span></span>
+<span></span>
+<span><span class="co"># Set the imputation method for certain columns to an empty string "" to exclude them from imputation</span></span>
+<span><span class="co"># For these columns, missing values will be left as is and not imputed</span></span>
+<span><span class="va">meth</span><span class="op">[</span><span class="st">"sex"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="st">"logreg"</span></span>
+<span></span>
+<span><span class="co"># Print the updated methods matrix to review the imputation methods assigned to each variable</span></span>
+<span><span class="va">meth</span></span></code></pre></div>
+<pre><code>##        study_name     sample_number           species            region 
+##                ""                ""                ""                "" 
+##            island             stage     individual_id clutch_completion 
+##                ""                ""                ""                "" 
+##          date_egg  culmen_length_mm   culmen_depth_mm flipper_length_mm 
+##                ""             "pmm"             "pmm"             "pmm" 
+##       body_mass_g               sex         delta_15n         delta_13c 
+##             "pmm"          "logreg"             "pmm"             "pmm" 
+##          comments   date_egg_proper              year     flipper_range 
+##                ""                ""                ""                ""</code></pre>
+<div class="sourceCode" id="cb217"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># if necessary we can determine the variables that will be used for imputation</span></span>
+<span><span class="va">predM</span><span class="op">[</span><span class="st">"sex"</span>, <span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb218"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># With this command, we tell mice to impute the anesimp2 data, create 5</span></span>
+<span><span class="co"># datasets, use predM as the predictor matrix and don't print the imputation</span></span>
+<span><span class="co"># process. If you would like to see the process, set print as TRUE</span></span>
+<span></span>
+<span><span class="va">imputed_data</span> <span class="op">&lt;-</span> <span class="fu">mice</span><span class="op">(</span><span class="va">penguins</span>, maxit <span class="op">=</span> <span class="fl">5</span>, </span>
+<span>             predictorMatrix <span class="op">=</span> <span class="va">predM</span>, </span>
+<span>             method <span class="op">=</span> <span class="va">meth</span>, print <span class="op">=</span>  <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div id="check-for-convergence" class="section level3" number="11.3.6">
+<h3>
+<span class="header-section-number">11.3.6</span> Check for convergence<a class="anchor" aria-label="anchor" href="#check-for-convergence"><i class="fas fa-link"></i></a>
+</h3>
+<p>In order to obtain correct results, the MICE algorithm needs to have converged. This can be checked visually by plotting summaries of the imputed values accross the iterations.</p>
+<p>The mean and variance of the imputed values per iteration and variable are stored in the elements chainMean and chainVar of the mids object.</p>
+<div class="sourceCode" id="cb219"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html">plot</a></span><span class="op">(</span><span class="va">imputed_data</span>, layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">4</span>,<span class="fl">4</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="02a-penguin_files/figure-html/unnamed-chunk-125-1.png" width="100%" style="display: block; margin: auto;"></div>
+<p>Now that we know that imputation has converged, we can compare the distribution of the imputed values against the distribution of the observed values. When our imputation models fit the data well, they should have similar distributions (conditional on the covariates used in the imputation model).</p>
+<div class="sourceCode" id="cb220"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create a complete dataset with imputed values for 'sex'</span></span>
+<span><span class="va">penguins_imputed</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tidyr.tidyverse.org/reference/complete.html">complete</a></span><span class="op">(</span><span class="va">imputed_data</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Explore missing data patterns</span></span>
+<span><span class="fu">miss_var_summary</span><span class="op">(</span><span class="va">penguins_imputed</span><span class="op">)</span></span></code></pre></div>
+<div class="kable-table">
+<div class="inline-table"><table class="table table-sm">
+<thead><tr>
+<th style="text-align:left;">
+variable
+</th>
+<th style="text-align:right;">
+n_miss
+</th>
+<th style="text-align:right;">
+pct_miss
+</th>
+</tr></thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+comments
+</td>
+<td style="text-align:right;">
+290
+</td>
+<td style="text-align:right;">
+84.3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+flipper_range
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.581
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+study_name
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sample_number
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+species
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+region
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+island
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+stage
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+individual_id
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+clutch_completion
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+date_egg
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+culmen_length_mm
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+culmen_depth_mm
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+flipper_length_mm
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+body_mass_g
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sex
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+delta_15n
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+delta_13c
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+date_egg_proper
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+year
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+<div id="check-against-original-data" class="section level3" number="11.3.7">
+<h3>
+<span class="header-section-number">11.3.7</span> Check against original data<a class="anchor" aria-label="anchor" href="#check-against-original-data"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb221"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">test_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html">bind_rows</a></span><span class="op">(</span><span class="st">"original"</span> <span class="op">=</span> <span class="va">penguins</span>, <span class="st">"imputed"</span> <span class="op">=</span> <span class="va">penguins_imputed</span>, .id <span class="op">=</span> <span class="st">"groups"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">test_data</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/drop_na.html">drop_na</a></span><span class="op">(</span><span class="va">sex</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">sex</span>, fill <span class="op">=</span> <span class="va">groups</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html">geom_bar</a></span><span class="op">(</span>position <span class="op">=</span> <span class="st">"dodge"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Comparison of Categorical Distribution: Original vs Imputed"</span>,</span>
+<span>       x <span class="op">=</span> <span class="st">"Category"</span>,</span>
+<span>       y <span class="op">=</span> <span class="st">"Count"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html">facet_wrap</a></span><span class="op">(</span><span class="op">~</span> <span class="va">species</span> <span class="op">+</span> <span class="va">island</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="02a-penguin_files/figure-html/unnamed-chunk-127-1.png" width="100%" style="display: block; margin: auto;"></div>
+<div class="sourceCode" id="cb222"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Density plots </span></span>
+<span></span>
+<span><span class="va">test_data</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/drop_na.html">drop_na</a></span><span class="op">(</span><span class="va">sex</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">delta_15n</span>, fill <span class="op">=</span> <span class="va">groups</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_density.html">geom_density</a></span><span class="op">(</span>alpha<span class="op">=</span><span class="fl">0.5</span><span class="op">)</span> </span></code></pre></div>
+<div class="inline-figure"><img src="02a-penguin_files/figure-html/unnamed-chunk-128-1.png" width="100%" style="display: block; margin: auto;"></div>
+</div>
+</div>
+</div>
+<script>
+
+/* update total correct if #webex-total_correct exists */
+update_total_correct = function() {
+  console.log("webex: update total_correct");
+
+  if (t = document.getElementById("webex-total_correct")) {
+    var correct = document.getElementsByClassName("webex-correct").length;
+    var solvemes = document.getElementsByClassName("webex-solveme").length;
+    var radiogroups = document.getElementsByClassName("webex-radiogroup").length;
+    var selects = document.getElementsByClassName("webex-select").length;
+    
+    t.innerHTML = correct + " of " + (solvemes + radiogroups + selects) + " correct";
+  }
+}
+
+/* webex-solution button toggling function */
+b_func = function() {
+  console.log("webex: toggle hide");
+  
+  var cl = this.parentElement.classList;
+  if (cl.contains('open')) {
+    cl.remove("open");
+  } else {
+    cl.add("open");
+  }
+}
+
+/* function for checking solveme answers */
+solveme_func = function(e) {
+  console.log("webex: check solveme");
+
+  var real_answers = JSON.parse(this.dataset.answer);
+  var my_answer = this.value;
+  var cl = this.classList;
+  if (cl.contains("ignorecase")) {
+    my_answer = my_answer.toLowerCase();
+  }
+  if (cl.contains("nospaces")) {
+    my_answer = my_answer.replace(/ /g, "")
+  }
+
+  if (my_answer == "") {
+    cl.remove("webex-correct");
+    cl.remove("webex-incorrect");
+  } else if (real_answers.includes(my_answer)) {
+    cl.add("webex-correct");
+    cl.remove("webex-incorrect");
+  } else {
+    cl.add("webex-incorrect");
+    cl.remove("webex-correct");
+  }
+
+  // match numeric answers within a specified tolerance
+  if(this.dataset.tol > 0){
+    var tol = JSON.parse(this.dataset.tol);
+    var matches = real_answers.map(x => Math.abs(x - my_answer) < tol)
+    if (matches.reduce((a, b) => a + b, 0) > 0) {
+      cl.add("webex-correct");
+    } else {
+      cl.remove("webex-correct");
+    }
+  }
+
+  // added regex bit
+  if (cl.contains("regex")){
+    answer_regex = RegExp(real_answers.join("|"))
+    if (answer_regex.test(my_answer)) {
+      cl.add("webex-correct");
+    }
+  }
+
+  update_total_correct();
+}
+
+/* function for checking select answers */
+select_func = function(e) {
+  console.log("webex: check select");
+  
+  var cl = this.classList
+  
+  /* add style */
+  cl.remove("webex-incorrect");
+  cl.remove("webex-correct");
+  if (this.value == "answer") {
+    cl.add("webex-correct");
+  } else if (this.value != "blank") {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+/* function for checking radiogroups answers */
+radiogroups_func = function(e) {
+  console.log("webex: check radiogroups");
+
+  var checked_button = document.querySelector('input[name=' + this.id + ']:checked');
+  var cl = checked_button.parentElement.classList;
+  var labels = checked_button.parentElement.parentElement.children;
+  
+  /* get rid of styles */
+  for (i = 0; i < labels.length; i++) {
+    labels[i].classList.remove("webex-incorrect");
+    labels[i].classList.remove("webex-correct");
+  }
+  
+  /* add style */
+  if (checked_button.value == "answer") {
+    cl.add("webex-correct");
+  } else {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+window.onload = function() {
+  console.log("onload");
+  /* set up solution buttons */
+  var buttons = document.getElementsByTagName("button");
+
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].parentElement.classList.contains('webex-solution')) {
+      buttons[i].onclick = b_func;
+    }
+  }
+
+  /* set up webex-solveme inputs */
+  var solveme = document.getElementsByClassName("webex-solveme");
+
+  for (var i = 0; i < solveme.length; i++) {
+    /* make sure input boxes don't auto-anything */
+    solveme[i].setAttribute("autocomplete","off");
+    solveme[i].setAttribute("autocorrect", "off");
+    solveme[i].setAttribute("autocapitalize", "off");
+    solveme[i].setAttribute("spellcheck", "false");
+    solveme[i].value = "";
+
+    /* adjust answer for ignorecase or nospaces */
+    var cl = solveme[i].classList;
+    var real_answer = solveme[i].dataset.answer;
+    if (cl.contains("ignorecase")) {
+      real_answer = real_answer.toLowerCase();
+    }
+    if (cl.contains("nospaces")) {
+      real_answer = real_answer.replace(/ /g, "");
+    }
+    solveme[i].dataset.answer = real_answer;
+
+    /* attach checking function */
+    solveme[i].onkeyup = solveme_func;
+    solveme[i].onchange = solveme_func;
+  }
+  
+  /* set up radiogroups */
+  var radiogroups = document.getElementsByClassName("webex-radiogroup");
+  for (var i = 0; i < radiogroups.length; i++) {
+    radiogroups[i].onchange = radiogroups_func;
+  }
+  
+  /* set up selects */
+  var selects = document.getElementsByClassName("webex-select");
+  for (var i = 0; i < selects.length; i++) {
+    selects[i].onchange = select_func;
+  }
+
+  update_total_correct();
+}
+
+</script><script>
+$( document ).ready(function() {
+  var cite = ' ';
+  var license = ' <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"></a>';
+
+  $("footer div.row div:eq(1) p").html(
+    license
+  );
+});
+</script><div class="chapter-nav">
+<div class="prev"><a href="data-reshaping.html"><span class="header-section-number">10</span> Data reshaping</a></div>
+<div class="next"><a href="mastering-text-data.html"><span class="header-section-number">12</span> Mastering Text Data</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#dealing-with-missing-data"><span class="header-section-number">11</span> Dealing with Missing Data</a></li>
+<li><a class="nav-link" href="#visualise-missing-data-with-naniar"><span class="header-section-number">11.1</span> Visualise missing data with naniar</a></li>
+<li><a class="nav-link" href="#explore-the-patterns-of-missingness"><span class="header-section-number">11.2</span> Explore the Patterns of Missingness</a></li>
+<li>
+<a class="nav-link" href="#handling-missing-data"><span class="header-section-number">11.3</span> Handling missing data</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#deleting-missing-rows"><span class="header-section-number">11.3.1</span> Deleting Missing Rows</a></li>
+<li><a class="nav-link" href="#impute-missing-data"><span class="header-section-number">11.3.2</span> Impute missing data</a></li>
+<li><a class="nav-link" href="#types-of-missingness"><span class="header-section-number">11.3.3</span> Types of Missingness:</a></li>
+<li><a class="nav-link" href="#choosing-the-imputation-method"><span class="header-section-number">11.3.4</span> Choosing the Imputation Method:</a></li>
+<li><a class="nav-link" href="#impute-missing-values-using-the-mice-package"><span class="header-section-number">11.3.5</span> Impute Missing Values Using the mice Package</a></li>
+<li><a class="nav-link" href="#check-for-convergence"><span class="header-section-number">11.3.6</span> Check for convergence</a></li>
+<li><a class="nav-link" href="#check-against-original-data"><span class="header-section-number">11.3.7</span> Check against original data</a></li>
+</ul>
+</li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/UEABIO/physalia-intro-stats-2023/blob/main/book/02a-penguin.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/UEABIO/physalia-intro-stats-2023/edit/main/book/02a-penguin.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-15.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer><!-- dynamically load mathjax for compatibility with self-contained --><script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script><script type="text/x-mathjax-config">const popovers = document.querySelectorAll('a.footnote-ref[data-toggle="popover"]');
+for (let popover of popovers) {
+  const div = document.createElement('div');
+  div.setAttribute('style', 'position: absolute; top: 0, left:0; width:0, height:0, overflow: hidden; visibility: hidden;');
+  div.innerHTML = popover.getAttribute('data-content');
+
+  var has_math = div.querySelector("span.math");
+  if (has_math) {
+    document.body.appendChild(div);
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, div]);
+    MathJax.Hub.Queue(function() {
+      popover.setAttribute('data-content', div.innerHTML);
+      document.body.removeChild(div);
+    })
+  }
+}
+</script>
+</body>
+</html>

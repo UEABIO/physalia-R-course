@@ -1360,7 +1360,7 @@ Depending on how we interpret the date ordering in a file, we can use `ymd()`, `
 * **Question** What is the appropriate function from the above to use on the `date_egg` variable?
 
 
-<div class='webex-radiogroup' id='radio_CJNBZQXZHZ'><label><input type="radio" autocomplete="off" name="radio_CJNBZQXZHZ" value=""></input> <span>ymd()</span></label><label><input type="radio" autocomplete="off" name="radio_CJNBZQXZHZ" value=""></input> <span>ydm()</span></label><label><input type="radio" autocomplete="off" name="radio_CJNBZQXZHZ" value=""></input> <span>mdy()</span></label><label><input type="radio" autocomplete="off" name="radio_CJNBZQXZHZ" value="answer"></input> <span>dmy()</span></label></div>
+<div class='webex-radiogroup' id='radio_CSDZSVSJMJ'><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value=""></input> <span>ymd()</span></label><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value=""></input> <span>ydm()</span></label><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value=""></input> <span>mdy()</span></label><label><input type="radio" autocomplete="off" name="radio_CSDZSVSJMJ" value="answer"></input> <span>dmy()</span></label></div>
 
 
 
@@ -1967,6 +1967,5961 @@ full_join(df_primary, df_secondary, by = 'ID')
    <td style="text-align:left;"> E </td>
    <td style="text-align:right;"> NA </td>
    <td style="text-align:right;"> 29 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+# Dealing with Missing Data
+
+The `palmerpenguins` dataset contains data on penguins from the Palmer Archipelago in Antarctica. This dataset includes several measurements such as species, island, bill length, bill depth, flipper length, body mass, and sex. However, it contains missing values, particularly in the sex column. In this chapter, we will:
+
+- Use the `naniar` package to visualize and understand the patterns of missing data.
+
+- Use the `mice` package to perform multiple imputation to handle missing values.
+
+- Discuss how to choose an appropriate imputation algorithm.
+
+- Check the quality of imputation using diagnostic plots and statistical checks.
+
+
+
+## Visualise missing data with `naniar`
+
+The naniar package provides functions to visualize and explore missing data. Start by visualizing the missing values:
+
+
+```r
+# Visualise missing data
+naniar::vis_miss(penguins)
+```
+
+<img src="02a-penguin_files/figure-html/unnamed-chunk-114-1.png" width="100%" style="display: block; margin: auto;" />
+
+The `vis_miss()` function creates a heatmap-like plot where missing values are shown in a different color, allowing you to quickly see where missing data occurs.
+
+You can also use a `gg_miss_var` plot to see the proportion of missing values by variable
+
+
+```r
+# Visualize missing data by variable
+gg_miss_var(penguins)
+```
+
+<img src="02a-penguin_files/figure-html/unnamed-chunk-115-1.png" width="100%" style="display: block; margin: auto;" />
+
+## Explore the Patterns of Missingness
+Understanding the patterns of missingness can help you decide on an appropriate imputation method:
+
+
+```r
+# Explore missing data patterns
+miss_var_summary(penguins)
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> variable </th>
+   <th style="text-align:right;"> n_miss </th>
+   <th style="text-align:right;"> pct_miss </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> comments </td>
+   <td style="text-align:right;"> 290 </td>
+   <td style="text-align:right;"> 84.3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> delta_15n </td>
+   <td style="text-align:right;"> 14 </td>
+   <td style="text-align:right;"> 4.07 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> delta_13c </td>
+   <td style="text-align:right;"> 13 </td>
+   <td style="text-align:right;"> 3.78 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> sex </td>
+   <td style="text-align:right;"> 11 </td>
+   <td style="text-align:right;"> 3.20 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> culmen_length_mm </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.581 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> culmen_depth_mm </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.581 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> flipper_length_mm </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.581 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> body_mass_g </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.581 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> flipper_range </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.581 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> study_name </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> sample_number </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> species </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> region </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> island </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> stage </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> individual_id </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> clutch_completion </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> date_egg </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> date_egg_proper </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> year </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+We can combine this with `group_by()` to get insights into the patterns surrounding our missing data
+
+
+```r
+penguins |> 
+  select(species, island, sex) |> 
+  group_by(species, island) |> 
+  miss_var_summary()
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> species </th>
+   <th style="text-align:left;"> island </th>
+   <th style="text-align:left;"> variable </th>
+   <th style="text-align:right;"> n_miss </th>
+   <th style="text-align:right;"> pct_miss </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Torgersen </td>
+   <td style="text-align:left;"> sex </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 9.62 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Biscoe </td>
+   <td style="text-align:left;"> sex </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Dream </td>
+   <td style="text-align:left;"> sex </td>
+   <td style="text-align:right;"> 1 </td>
+   <td style="text-align:right;"> 1.79 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Biscoe </td>
+   <td style="text-align:left;"> sex </td>
+   <td style="text-align:right;"> 5 </td>
+   <td style="text-align:right;"> 4.03 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Dream </td>
+   <td style="text-align:left;"> sex </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+An upset plot can be used to visualise the patterns of missingness, or rather the combinations of missingness across cases. 
+
+
+```r
+gg_miss_upset(penguins)
+```
+
+<img src="02a-penguin_files/figure-html/unnamed-chunk-118-1.png" width="100%" style="display: block; margin: auto;" />
+
+`gg_miss_fct()`: This function allows you to explore missing data by levels of a factor. It is useful for checking if missingness is related to a categorical variable.
+
+
+```r
+# Explore missing data by species
+gg_miss_fct(penguins, fct = island)
+```
+
+<img src="02a-penguin_files/figure-html/unnamed-chunk-119-1.png" width="100%" style="display: block; margin: auto;" />
+
+
+## Handling missing data
+
+### Deleting Missing Rows
+
+One of the simplest approaches to address missing data in a dataset is to delete observations (rows) that contain any missing values. This method, often referred to as "listwise deletion" or "complete case analysis," involves removing entire records from the analysis if they are missing any data point in one or more variables
+
+- When to Consider Deleting Missing Rows:
+
+Minimal Missing Data: If the missing data is slight and seemingly random, eliminating those incomplete entries is unlikely to significantly affect the dataset's overall quality.
+
+MCAR Data: Deletion is most appropriate when the missing data is Missing Completely At Random (MCAR), meaning there's no systematic difference between the missing and observed values.
+
+### Impute missing data
+
+Before performing imputation, it’s important to choose the right algorithm based on the data type and the nature of the missingness. The mice package supports various imputation methods for different types of data:
+
+### Types of Missingness:
+
+- Missing Completely at Random (MCAR): The missing data has no relationship with any other variable. Any imputation method can be used, but simpler methods like mean/mode imputation might suffice.
+
+- Missing at Random (MAR): The missingness is related to other observed variables. Imputation methods that take into account other variables, such as predictive mean matching or multiple regression, are appropriate.
+
+- Missing Not at Random (MNAR): The missingness is related to the missing values themselves. In such cases, data augmentation, sensitivity analysis, or using domain knowledge for imputation might be necessary.
+
+### Choosing the Imputation Method:
+Here are some common imputation methods provided by mice and when they are most appropriate:
+
+- Mean/Mode Imputation (mean, mode): Fills in missing values with the mean (numeric data) or mode (categorical data) of observed values. Simple but can distort the distribution and underestimate variability.
+
+- Predictive Mean Matching (pmm): Matches the missing value with observed values that have a similar predicted value based on a regression model. It’s useful for numerical data and preserves the original distribution.
+
+- Logistic Regression (logreg): Suitable for binary categorical data, like sex in the penguins dataset, and uses logistic regression to predict the missing values.
+
+- Polytomous Regression (polyreg): Suitable for multinomial categorical data with more than two levels (e.g., species with Adelie, Gentoo, and Chinstrap). Uses polytomous regression to impute missing values.
+
+### Impute Missing Values Using the mice Package
+
+Given that the sex column is a binary categorical variable, we can use logreg or polyreg for imputation. For this example, we will use logreg.
+
+Prepare the data by the selecting relevant columns we want to use as predictors to impute our missing values:
+
+
+```r
+# Run the mice function with maxit=0
+# This allows us to extract the default predictor matrix and methods without performing actual imputation
+imp <- mice(penguins, maxit=0)
+
+# Extract the predictor matrix from the imputation object
+predM <- imp$predictorMatrix
+```
+
+> Note sex will not be included for imputation unless it is coded as a factor
+
+
+```r
+penguins <- penguins |> 
+  mutate(sex = factor(sex))
+```
+
+
+```r
+# Extract the methods of imputation used for each variable
+meth <- imp$method
+
+# Set the imputation method for certain columns to an empty string "" to exclude them from imputation
+# For these columns, missing values will be left as is and not imputed
+meth["sex"] <- "logreg"
+
+# Print the updated methods matrix to review the imputation methods assigned to each variable
+meth
+```
+
+```
+##        study_name     sample_number           species            region 
+##                ""                ""                ""                "" 
+##            island             stage     individual_id clutch_completion 
+##                ""                ""                ""                "" 
+##          date_egg  culmen_length_mm   culmen_depth_mm flipper_length_mm 
+##                ""             "pmm"             "pmm"             "pmm" 
+##       body_mass_g               sex         delta_15n         delta_13c 
+##             "pmm"          "logreg"             "pmm"             "pmm" 
+##          comments   date_egg_proper              year     flipper_range 
+##                ""                ""                ""                ""
+```
+
+
+
+```r
+# if necessary we can determine the variables that will be used for imputation
+predM["sex", ] <- c(0,0,1,1,1,1,1,1,1,0,0,0,1,0,0,0,0,0,1,0)
+```
+
+
+
+```r
+# With this command, we tell mice to impute the anesimp2 data, create 5
+# datasets, use predM as the predictor matrix and don't print the imputation
+# process. If you would like to see the process, set print as TRUE
+
+imputed_data <- mice(penguins, maxit = 5, 
+             predictorMatrix = predM, 
+             method = meth, print =  FALSE)
+```
+
+### Check for convergence
+
+In order to obtain correct results, the MICE algorithm needs to have converged. This can be checked visually by plotting summaries of the imputed values accross the iterations.
+
+The mean and variance of the imputed values per iteration and variable are stored in the elements chainMean and chainVar of the mids object.
+
+
+```r
+plot(imputed_data, layout = c(4,4))
+```
+
+<img src="02a-penguin_files/figure-html/unnamed-chunk-125-1.png" width="100%" style="display: block; margin: auto;" />
+
+
+Now that we know that imputation has converged, we can compare the distribution of the imputed values against the distribution of the observed values. When our imputation models fit the data well, they should have similar distributions (conditional on the covariates used in the imputation model).
+
+
+```r
+# Create a complete dataset with imputed values for 'sex'
+penguins_imputed <- complete(imputed_data)
+
+# Explore missing data patterns
+miss_var_summary(penguins_imputed)
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> variable </th>
+   <th style="text-align:right;"> n_miss </th>
+   <th style="text-align:right;"> pct_miss </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> comments </td>
+   <td style="text-align:right;"> 290 </td>
+   <td style="text-align:right;"> 84.3 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> flipper_range </td>
+   <td style="text-align:right;"> 2 </td>
+   <td style="text-align:right;"> 0.581 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> study_name </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> sample_number </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> species </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> region </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> island </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> stage </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> individual_id </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> clutch_completion </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> date_egg </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> culmen_length_mm </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> culmen_depth_mm </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> flipper_length_mm </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> body_mass_g </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> sex </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> delta_15n </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> delta_13c </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> date_egg_proper </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> year </td>
+   <td style="text-align:right;"> 0 </td>
+   <td style="text-align:right;"> 0 </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+### Check against original data
+
+
+
+```r
+test_data <- bind_rows("original" = penguins, "imputed" = penguins_imputed, .id = "groups")
+
+test_data |> 
+  drop_na(sex) |> 
+ggplot(aes(x = sex, fill = groups)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Comparison of Categorical Distribution: Original vs Imputed",
+       x = "Category",
+       y = "Count") +
+  facet_wrap(~ species + island)
+```
+
+<img src="02a-penguin_files/figure-html/unnamed-chunk-127-1.png" width="100%" style="display: block; margin: auto;" />
+
+
+```r
+# Density plots 
+
+test_data |> 
+  drop_na(sex) |> 
+ggplot(aes(x = delta_15n, fill = groups)) +
+    geom_density(alpha=0.5) 
+```
+
+<img src="02a-penguin_files/figure-html/unnamed-chunk-128-1.png" width="100%" style="display: block; margin: auto;" />
+
+# Mastering Text Data
+
+Welcome to the hands-on tutorial on string manipulation and regular expressions (regex) in R, tailored for biologists looking to advance their data-cleaning skills. In this session, we'll explore how to harness the power of R to efficiently handle and process textual data—a crucial step in preparing datasets for analysis. By mastering string manipulation functions and regex patterns, you'll learn to clean, transform, and extract valuable information from complex biological datasets. Whether you're dealing with gene sequences, sample labels, or experimental annotations, these tools will help you streamline your data workflows and enhance your research efficiency. Let's dive into the practical techniques that will elevate your data-cleaning prowess!
+
+When working with character strings in R, the `stringr` package offers a variety of functions for evaluating and manipulating text data. Below is an overview of key functions in `stringr`, organized by their primary use cases.
+
+If you want to use these functions, you can call them directly from `stringr` using code like this:
+
+
+```r
+stringr::str_c() 
+stringr::str_detect() 
+```
+
+<div class="info">
+<p>What is stringr?</p>
+<p>stringr is a package within the tidyverse that provides a consistent
+set of functions designed to make string manipulation in R easier. It
+builds on the base R functions but with more straightforward syntax and
+additional features for handling text data.</p>
+</div>
+
+
+## String Manipulation Functions
+A large part of data cleaning and preparation involves manipulating character strings. Below are some common tasks and the associated stringr functions:
+
+### Combine, Order, and Split Strings
+Use these functions to join strings, sort them, or divide them into smaller components:
+
+- `str_c()`: Concatenate strings.
+- `str_glue()`: Combine strings using glue syntax.
+- `str_order()`: Order or sort strings.
+- `str_split()`: Split strings into substrings.
+
+### Clean and Standardize Text
+
+Functions to adjust text length, wrap text, or change letter case:
+
+- `str_pad()`: Pad strings to a specified width.
+- `str_trunc()`: Truncate strings to a specified length.
+- `str_wrap()`: Wrap strings into a fixed width.
+- `str_to_upper()`, `str_to_title()`, `str_to_lower()`, `str_to_sentence()`: Change the case of text.
+
+### Evaluate and Extract by Position
+
+Functions to determine string length, extract parts of a string, or specific words:
+
+- `str_length()`: Get the length of a string.
+- `str_sub()`: Extract or replace substrings by position.
+- `word()`: Extract words from a string.
+
+### Detect Patterns and Modify Text
+
+Functions to search for patterns and modify text:
+
+- `str_detect()`, `str_subset()`, `str_match()`, `str_extract()`: Detect, subset, match, or extract patterns.
+
+- `str_sub()`, `str_replace_all()`: Replace substrings.
+
+### Use Regular Expressions ("regex")
+
+Regular expressions ("regex") provide a powerful way to define search patterns, allowing for advanced text manipulation and pattern matching.
+
+
+## Unite, split, arrange
+
+This section covers the use of various functions in R for combining, ordering, and splitting strings. 
+
+Combine Strings
+To combine or concatenate multiple strings into a single string, you can use str_c() from the stringr package. This function allows you to merge distinct character values by providing them as separate arguments, separated by commas:
+
+
+```r
+str_c("String1", "String2", "String3")
+```
+
+```
+## [1] "String1String2String3"
+```
+
+To insert a character value between each of the arguments, use the sep = argument (e.g., to insert a comma, space, or newline "\n"):
+
+
+```r
+str_c("String1", "String2", "String3", sep = ", ")
+```
+
+```
+## [1] "String1, String2, String3"
+```
+
+The `collapse =` argument is used when combining multiple vectors into a single character element. It specifies a separator that appears between each element of the output.
+
+
+In the example below, we combine two vectors into one long string:
+
+The `sep =` value appears between each genus and species name.
+
+The `collapse =` value appears between each complete binomial name.
+
+Here’s how you can apply this to the Latin binomial names of penguins from the Palmer Penguins dataset:
+
+
+```r
+genus <- c("Pygoscelis", "Aptenodytes", "Eudyptes") 
+
+species <- c("adeliae", "forsteri", "chrysolophus")
+```
+
+<div class="note">
+<p>Depending on your desired display context, when printing such a
+combined string with newlines, you may need to wrap the whole phrase in
+cat() for the newlines to print properly:</p>
+</div>
+
+
+```r
+cat(str_c(genus, species, sep = " ", collapse = ";\n"))
+```
+
+```
+## Pygoscelis adeliae;
+## Aptenodytes forsteri;
+## Eudyptes chrysolophus
+```
+
+### Dynamic Strings with str_glue()
+The `str_glue()` function allows you to insert dynamic R code into strings, which is particularly useful for creating dynamic plot captions or reports. Here’s how to use `str_glue()` effectively:
+
+All content goes between double quotation marks: `str_glue("")`.
+Any dynamic code or references to pre-defined values are placed within curly brackets {} inside the double quotation marks.
+You can include multiple curly brackets in the same `str_glue()` command.
+To display single quotes within double quotes (e.g., for formatting dates), use single quotes inside the double quotes.
+Use \n to insert a new line within the string.
+You can use `format()` to adjust date display and `Sys.Date()` to get the current date.
+
+Here’s a simple example of a dynamic plot caption using the Latin binomial names of penguins:
+
+
+```r
+ str_glue("The dataset includes ",
+          {nrow(penguins)},
+          " observations of penguins, with species listed as ",
+          {paste(unique(penguins$species), collapse = ', ')},
+          ". Data current as of ",
+          {format(Sys.Date(), '%d %b %Y')},
+          ".")
+```
+
+```
+## The dataset includes 344 observations of penguins, with species listed as Adelie, Gentoo, Chinstrap. Data current as of 14 Sep 2024.
+```
+
+### Summarising from a dataframe
+
+Sometimes, it is useful to pull data from a data frame and have it pasted together in sequence. Below is an example data frame. We will use it to to make a summary statement about the penguins
+
+
+
+```r
+penguins |> 
+  group_by(island, species) |> 
+  summarise(n = n()) |> 
+  str_glue_data("{island} Island: {species} ({n} total penguins)")
+```
+
+```
+## Biscoe Island: Adelie (44 total penguins)
+## Biscoe Island: Gentoo (124 total penguins)
+## Dream Island: Adelie (56 total penguins)
+## Dream Island: Chinstrap (68 total penguins)
+## Torgersen Island: Adelie (52 total penguins)
+```
+
+### Unite
+
+To combine character values from multiple columns into a single column within a data frame, use the `unite()` function from the `tidyr` package. This function is the opposite of the `separate()` function.
+
+Here’s how to use `unite()`:
+
+- Provide the name of the new united column.
+
+- List the names of the columns you want to unite.
+
+- By default, the separator used in the united column is an underscore _, but you can change this with the `sep =` argument.
+
+- Use `remove = TRUE` to remove the original columns after uniting (this is the default).
+
+- Use `na.rm = TRUE` to remove missing values while uniting (default is FALSE).
+
+
+```r
+penguins |>  
+  unite(
+    col = "reproduction_status",         # name of the new united column
+    c("sex", "clutch_completion", "date_egg_proper"), # columns to unite
+    sep = ", ",                   # separator to use in united column
+    remove = TRUE,                # if TRUE, removes input cols from the data frame
+    na.rm = TRUE                  # if TRUE, missing values are removed before uniting
+  ) |> 
+  select(reproduction_status,species, region, island)
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> reproduction_status </th>
+   <th style="text-align:left;"> species </th>
+   <th style="text-align:left;"> region </th>
+   <th style="text-align:left;"> island </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-11 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-11 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-19 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-19 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2007-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2008-11-11 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2008-11-11 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-11 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-11 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-02 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-02 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-07 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-07 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-05 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-05 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-08 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-09 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-20 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-20 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-12 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2009-11-23 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2009-11-23 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Torgersen </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-10 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-14 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-14 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-16 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-13 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Adelie </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-12-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-12-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-29 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-12-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-12-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-02 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-02 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-02 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-02 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-04 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-13 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-03 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-06 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-15 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-20 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-20 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-25 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-25 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-25 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-25 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-18 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-10 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-10 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-09 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-20 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-20 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-25 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-25 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Yes, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> No, 2009-12-01 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-22 </td>
+   <td style="text-align:left;"> Gentoo </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Biscoe </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-19 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-19 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-26 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-26 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-26 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-26 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-22 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-22 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-30 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-30 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-11-30 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-11-30 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2007-12-03 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2007-12-03 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2007-11-28 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2008-11-25 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2008-11-25 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-25 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-25 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-24 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2008-11-14 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-17 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-23 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-23 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-23 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-23 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-27 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-19 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-19 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, No, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, No, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> MALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> FEMALE, Yes, 2009-11-21 </td>
+   <td style="text-align:left;"> Chinstrap </td>
+   <td style="text-align:left;"> Anvers </td>
+   <td style="text-align:left;"> Dream </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+### Split columns
+
+If you are trying to split a data frame column, it is best to use the `separate()` function from dplyr. It is used to split one character column into other columns.
+
+Here’s how to use separate():
+
+- Specify the column to split.
+
+- Use into = c(...) to list the names for the new columns.
+
+- Set sep = to define the separator (a character or a position).
+
+- remove = TRUE (default) will remove the original column after splitting.
+
+- Set convert = TRUE to convert "NA" strings to actual NA values (default is FALSE).
+
+- Control handling of extra values with extra:
+
+- extra = "warn" (default): Shows a warning and drops extra values.
+
+- extra = "drop": Drops extra values without a warning.
+
+- extra = "merge": Merges extra values into the last column, preserving all data.
+
+Example with extra = "merge":
+
+
+```r
+penguins |> 
+  select(stage) |> 
+  separate(stage,
+           into = c("age", "number_of_eggs", "reproductive_stage"),
+           extra = "merge")
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> age </th>
+   <th style="text-align:left;"> number_of_eggs </th>
+   <th style="text-align:left;"> reproductive_stage </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Adult </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Egg Stage </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+### Arrange alphabetically
+
+Several strings can be sorted by alphabetical order. `str_order()` returns the order, while `str_sort()` returns the strings in that order.
+
+
+```r
+penguins |> 
+  distinct(species)
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> species </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Adelie </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Gentoo </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Chinstrap </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+
+```r
+# Return the alphabetical order
+str_order(unique(penguins$species))
+```
+
+```
+## [1] 1 3 2
+```
+
+```r
+# return the strings in alphabetical order
+str_sort(unique(penguins$species))
+```
+
+```
+## [1] "Adelie"    "Chinstrap" "Gentoo"
+```
+
+To use a different alphabet, add the argument locale =. See the full list of locales by entering `stringi::stri_locale_list()` in the R console.
+
+## Clean and standardise
+
+Change Case
+
+To change the case of strings, such as names of penguin species or islands, use `str_to_upper()`, `str_to_lower()`, and `str_to_title()` from the stringr package:
+
+
+```r
+# Convert to uppercase
+str_to_upper("Adelie penguin")
+
+# Convert to lowercase
+str_to_lower("Adelie penguin")
+
+# Convert to title case (capitalize each word)
+str_to_title("the adelie penguin")
+```
+
+```
+## [1] "ADELIE PENGUIN"
+## [1] "adelie penguin"
+## [1] "The Adelie Penguin"
+```
+
+Alternatively, you can use base R functions toupper() and tolower().
+
+For title case with more control (e.g., not capitalizing small words), use toTitleCase() from the tools package:
+
+
+```r
+# Title case with controlled capitalization
+tools::toTitleCase("the adelie penguin")
+```
+
+```
+## [1] "The Adelie Penguin"
+```
+
+To capitalize only the first letter of a string, use str_to_sentence():
+
+
+```r
+# Capitalize the first letter of the string
+str_to_sentence("the adelie penguin is small")
+```
+
+```
+## [1] "The adelie penguin is small"
+```
+
+
+Pad Length
+
+Use str_pad() to add characters to a string to meet a minimum length. By default, it adds spaces, but you can specify other characters with the pad argument:
+
+
+
+```r
+# Example penguin IDs of varying lengths
+penguin_ids <- c("A1", "B12", "C123")
+
+# Pad IDs to a length of 5 characters, adding spaces on the right
+str_pad(penguin_ids, 5, "right")
+
+# Pad IDs with zeros on the right
+str_pad(penguin_ids, 5, "right", pad = "0")
+```
+
+```
+## [1] "A1   " "B12  " "C123 "
+## [1] "A1000" "B1200" "C1230"
+```
+To add leading zeros (e.g., for day or month values), use:
+
+
+```r
+# Add leading zeros to a single digit
+str_pad("3", 2, pad = "0")
+```
+
+```
+## [1] "03"
+```
+
+### Truncate
+
+Use str_trunc() to limit the length of a string. If a string is too long, it will be shortened with an ellipsis (...). The ellipsis can be customized and positioned:
+
+
+```r
+# Truncate a string with a maximum length of 10 characters, centered
+description <- "Adelie penguin found in Antarctica"
+str_trunc(description, 10, "center")
+```
+
+```
+## [1] "Adel...ica"
+```
+
+### Standardize Length
+First, truncate strings to a maximum length, then pad short strings to ensure uniform length:
+
+
+```r
+# Example penguin IDs
+penguin_ids <- c("A1", "B123456", "C789")
+
+# Truncate to a maximum length of 3 characters
+truncated_ids <- str_trunc(penguin_ids, 6)
+truncated_ids
+
+# Pad to a minimum length of 6 characters
+standardized_ids <- str_pad(penguin_ids, 6, "right")
+standardized_ids 
+```
+
+```
+## [1] "A1"     "B12..." "C789"  
+## [1] "A1    "  "B123456" "C789  "
+```
+### Remove Leading/Trailing Whitespace
+Use str_trim() to remove extra spaces, newlines (\n), or tabs (\t) from the sides of a string. Specify which side to trim:
+
+
+```r
+# Example penguin IDs with extra spaces
+penguin_ids <- c("A1  ", "B123", "C789 ")
+
+# Remove extra spaces from both sides
+str_trim(penguin_ids)
+```
+
+```
+## [1] "A1"   "B123" "C789"
+```
+### Remove Repeated Whitespace Within Strings
+Use str_squish() to replace multiple spaces within a string with a single space and also trim spaces from the edges:
+
+
+```r
+# Example text with extra spaces
+text <- "  Adelie   penguin   found  in  Antarctica \n"
+
+# Remove repeated spaces and trim edges
+str_squish(text)
+```
+
+```
+## [1] "Adelie penguin found in Antarctica"
+```
+### Wrap Into Paragraphs
+
+Use str_wrap() to format long text into structured paragraphs with a fixed line length:
+
+
+```r
+# Long text about penguins
+text <- "The Adelie penguin is found in Antarctica. It is known for its distinctive white ring around the eyes and its black back. The penguin is well adapted to the harsh climate."
+
+# Wrap text to a line length of 40 characters
+wrapped_text <- str_wrap(text, 40)
+
+# Print the wrapped text with line breaks
+cat(wrapped_text)
+```
+
+```
+## The Adelie penguin is found in
+## Antarctica. It is known for its
+## distinctive white ring around the eyes
+## and its black back. The penguin is well
+## adapted to the harsh climate.
+```
+
+## Position
+
+### Extract by Character Position
+
+To extract specific parts of a string, use str_sub(). 
+
+This function requires:
+
+- The character vector(s)
+- The start position
+- The end position
+
+Position Notes:
+
+- Positive numbers count from the left.
+
+- Negative numbers count from the right.
+
+- Positions are inclusive.
+
+- If positions exceed the string length, they will be truncated.
+
+
+```r
+# Extracting characters from a string
+species <- "AdeliePenguin"
+
+# 3rd character from the left
+str_sub(species, 3, 3)
+
+# No character at position 0 (invalid)
+str_sub(species, 0, 0)
+
+# 6th character from the left to the 1st character from the right
+str_sub(species, 6, -1)
+
+# 5th character from the right to the 2nd character from the right
+str_sub(species, -5, -2)
+
+# 4th character to a position beyond the string length
+str_sub(species, 4, 15)
+```
+
+```
+## [1] "e"
+## [1] ""
+## [1] "ePenguin"
+## [1] "ngui"
+## [1] "liePenguin"
+```
+### Extract by Word Position
+To extract specific words from a string, use word(). This function requires:
+
+- The string(s)
+
+- The starting word position
+
+- The ending word position
+
+By default, words are separated by spaces. Use `sep =` to specify a different separator if needed.
+
+Example:
+
+
+```r
+# Example descriptions of penguin species
+descriptions <- c("Adelie penguin found in Antarctica",
+                   "Chinstrap penguin from South Shetland Islands",
+                   "Gentoo penguin known for its bright orange beak")
+
+# Extract the 1st to 3rd words of each description
+word(descriptions, start = 1, end = 3, sep = " ")
+```
+
+```
+## [1] "Adelie penguin found"   "Chinstrap penguin from" "Gentoo penguin known"
+```
+
+### Replace by Character Position
+
+You can modify part of a string using `str_sub()` with the assignment operator (<-):
+
+Example:
+
+
+```r
+# Modify a string
+species <- "AdeliePenguin"
+
+# Replace the 3rd and 4th characters with "XX"
+str_sub(species, 3, 4) <- "XX"
+
+# Print the modified string
+species
+```
+
+```
+## [1] "AdXXiePenguin"
+```
+
+
+### Multiple strings
+
+
+```r
+# Multiple species names
+species_list <- c("AdeliePenguin", "ChinstrapPenguin", "GentooPenguin")
+
+# Replace the 3rd and 4th characters with "XX" in each string
+str_sub(species_list, 3, 4) <- "XX"
+
+# Print the modified list
+species_list
+```
+
+```
+## [1] "AdXXiePenguin"    "ChXXstrapPenguin" "GeXXooPenguin"
+```
+
+### Evaluate Length
+
+To get the length of a string, use str_length():
+
+
+```r
+# Get the length of a string
+str_length("AdeliePenguin")
+
+
+### Alternatively, use nchar() from base R
+```
+
+```
+## [1] 13
+```
+## Patterns
+
+Many stringr functions help to detect, locate, extract, match, replace, and split based on a specified pattern.
+
+### Detect a Pattern
+
+Use str_detect() to check if a pattern exists within a string. Provide the string or vector to search in (string =), and the pattern to look for (pattern =). By default, the search is case-sensitive.
+
+
+```r
+# Check if "penguin" is present in the string
+str_detect(string = "Adelie penguin observed", pattern = "penguin")
+```
+
+```
+## [1] TRUE
+```
+
+To find if the pattern is NOT present, use negate = TRUE:
+
+
+```r
+# Check if "penguin" is not present in the string
+str_detect(string = "Adelie penguin observed", pattern = "penguin", negate = TRUE)
+```
+
+```
+## [1] FALSE
+```
+
+To ignore case, use regex() with ignore_case = TRUE:
+
+
+```r
+# Case-insensitive search for "penguin"
+str_detect(string = "ADELIE PENGUIN OBSERVED", pattern = regex("penguin", ignore_case = TRUE))
+```
+
+```
+## [1] TRUE
+```
+
+When applied to a character vector or data frame column, `str_detect()` returns TRUE or FALSE for each value:
+
+
+```r
+# Vector of penguin observations
+observations <- c("Adelie penguin in the area",
+                   "Chinstrap penguin spotted",
+                   "Gentoo penguin identified",
+                   "No penguin sighted today",
+                   "Egg clutch data collected")
+
+# Detect presence of "penguin" in each observation
+str_detect(observations, "penguin")
+```
+
+```
+## [1]  TRUE  TRUE  TRUE  TRUE FALSE
+```
+To count the number of TRUE values, use sum():
+
+
+```r
+# Count the number of observations containing "penguin"
+sum(str_detect(observations, "penguin"))
+```
+
+```
+## [1] 4
+```
+
+For multiple search terms, use `|` within `pattern =`:
+
+
+```r
+# Count occurrences of "penguin" or "spotted"
+sum(str_detect(string = observations, pattern = "spotted|identified"))
+```
+
+```
+## [1] 2
+```
+To build a list of search terms, combine them with str_c() and sep = "|", then use this vector:
+
+
+```r
+# Search terms for different penguin species
+penguin_species <- str_c("Adelie", "Chinstrap", "Gentoo", sep = "|")
+
+# Count observations containing any species
+sum(str_detect(string = observations, pattern = penguin_species))
+```
+
+```
+## [1] 3
+```
+
+### Base R String Search Functions
+In base R, `grepl()` functions similarly to `str_detect()`, returning a logical vector indicating matches to a pattern. Use ignore.case = TRUE for case-insensitive searches:
+
+
+```r
+# Case-insensitive search for "penguin" using base R
+grepl(pattern = "penguin", x = "ADELIE PENGUIN OBSERVED", ignore.case = TRUE)
+```
+
+```
+## [1] TRUE
+```
+
+Base functions sub() and gsub() work similarly to str_replace(). sub() replaces the first instance, while gsub() replaces all instances:
+
+
+```r
+# Replace the first instance of "penguin" with "bird"
+sub(pattern = "penguin", replacement = "bird", x = "Adelie penguin spotted")
+
+# Replace all instances of "penguin" with "bird"
+gsub(pattern = "penguin", replacement = "bird", x = "Adelie penguin and Chinstrap penguin observed")
+```
+
+```
+## [1] "Adelie bird spotted"
+## [1] "Adelie bird and Chinstrap bird observed"
+```
+### Replace All
+
+Use str_replace_all() to replace all instances of a pattern in a string. Provide the strings to be evaluated with string =, the pattern to replace with pattern =, and the replacement value with replacement =. 
+
+> Note that this operation is case-sensitive.
+
+
+
+```r
+# Example vector with penguin observations
+observations <- c("Adelie penguin observed", 
+                   "Chinstrap penguin seen", 
+                  "No Adelie penguins observed today",
+                   "No penguin spotted")
+
+# Replace all instances of "penguin" with "bird"
+str_replace_all(string = observations, pattern = "penguin", replacement = "bird")
+```
+
+```
+## [1] "Adelie bird observed"           "Chinstrap bird seen"           
+## [3] "No Adelie birds observed today" "No bird spotted"
+```
+
+Notes:
+
+- To replace a pattern with NA, use str_replace_na().
+
+- The function str_replace() only replaces the first occurrence of the pattern within each string.
+
+### Detect Within Logic
+
+Using case_when()
+
+You can use str_detect() within case_when() from dplyr to create new columns based on pattern matching. For instance, if observations is a column in a data frame, you can create a new column indicating whether each observation is related to penguins.
+
+
+```r
+as_tibble(observations) |> 
+  mutate(penguin_related = case_when(
+    # Check if observation mentions any penguin species
+    str_detect(value,
+               regex("Adelie|Chinstrap|Gentoo", 
+                     ignore_case = TRUE)) ~ "Penguin-related",
+    # All other observations
+    TRUE ~ "Not penguin-related"))
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> value </th>
+   <th style="text-align:left;"> penguin_related </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Adelie penguin observed </td>
+   <td style="text-align:left;"> Penguin-related </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Chinstrap penguin seen </td>
+   <td style="text-align:left;"> Penguin-related </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> No Adelie penguins observed today </td>
+   <td style="text-align:left;"> Penguin-related </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> No penguin spotted </td>
+   <td style="text-align:left;"> Not penguin-related </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+### Adding Exclusion Criteria
+
+To refine the search and exclude certain terms, add additional conditions. For example, if you want to include only observations related to penguins but exclude specific terms like "fake":
+
+
+```r
+as_tibble(observations) |> 
+  mutate(penguin_related = case_when(
+    # Must mention a penguin species
+    str_detect(observations,
+               regex("Adelie|Chinstrap|Gentoo", ignore_case = TRUE)) &  
+    
+    # AND must NOT mention "fake"
+    str_detect(observations,
+               regex("No", ignore_case = TRUE),
+               negate = TRUE) ~ "Penguin-sighting",
+    
+    # All others
+    TRUE ~ "Not a sighting"))
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> value </th>
+   <th style="text-align:left;"> penguin_related </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Adelie penguin observed </td>
+   <td style="text-align:left;"> Penguin-sighting </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Chinstrap penguin seen </td>
+   <td style="text-align:left;"> Penguin-sighting </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> No Adelie penguins observed today </td>
+   <td style="text-align:left;"> Not a sighting </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> No penguin spotted </td>
+   <td style="text-align:left;"> Not a sighting </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+### Extract a Match
+
+Use str_extract_all() to find all instances of a pattern within a string. This is useful when you're searching for multiple patterns using "OR" conditions. For example, to search for the patterns "Adelie", "Chinstrap", or "Gentoo" in a vector of penguin observations:
+
+
+```r
+# Example vector with penguin observations
+observations <- c("Adelie penguin seen",
+                   "Chinstrap penguin observed",
+                   "Gentoo and Adelie penguins spotted",
+                   "No penguin mentioned")
+
+# Extract all matches for penguin species
+str_extract_all(observations, "Adelie|Chinstrap|Gentoo")
+```
+
+```
+## [[1]]
+## [1] "Adelie"
+## 
+## [[2]]
+## [1] "Chinstrap"
+## 
+## [[3]]
+## [1] "Gentoo" "Adelie"
+## 
+## [[4]]
+## character(0)
+```
+str_extract_all() returns a list where each element contains all matches found in the corresponding string. For example, in the third observation, both "Gentoo" and "Adelie" are found.
+
+### Extracting the First Match
+
+Use str_extract() to retrieve only the first match for each string. This function produces a character vector where each element contains the first match found or NA if no match is present. To remove NA values, you can wrap the result with na.exclude().
+
+
+```r
+# Extract only the first match for penguin species
+str_extract(observations, "Adelie|Chinstrap|Gentoo")
+```
+
+```
+## [1] "Adelie"    "Chinstrap" "Gentoo"    NA
+```
+In this example, only the first match for each string is returned, so in the third observation, only "Gentoo" is shown, and "Adelie" is not included.
+
+
+### Subset and Count
+
+Subset Values
+
+Use str_subset() to get the actual strings that contain a specific pattern. For instance, to find which observations mention the penguin species "Adelie", "Chinstrap", or "Gentoo":
+
+
+```r
+# Example vector with penguin observations
+observations <- c("Adelie penguin seen",
+                   "Chinstrap penguin observed",
+                   "Gentoo and Adelie penguins spotted",
+                   "No penguin mentioned")
+
+# Get observations that mention any of the specified penguin species
+str_subset(observations, "Adelie|Chinstrap|Gentoo")
+```
+
+```
+## [1] "Adelie penguin seen"                "Chinstrap penguin observed"        
+## [3] "Gentoo and Adelie penguins spotted"
+```
+
+str_subset() returns a vector of strings where the pattern is found.
+
+
+### Count Matches
+
+Use str_count() to count how many times a specific pattern appears in each string. For example, to count occurrences of "Adelie", "Chinstrap", or "Gentoo" in each observation:
+
+
+```r
+# Count the number of times each pattern appears in the observations
+str_count(observations, regex("Adelie|Chinstrap|Gentoo", ignore_case = TRUE))
+```
+
+```
+## [1] 1 1 2 0
+```
+
+str_count() provides a vector with the count of each pattern found in the corresponding string.
+
+
+## Regex
+
+Regular expressions (regex) are a powerful tool for pattern matching within strings. They allow you to define search patterns using a combination of literal characters and special symbols. Here's a brief overview of how regex works and how it can be applied in string manipulation tasks.
+
+Key Concepts:
+
+- Literal Characters: These are the basic characters you search for, such as letters or digits. For example, the regex "penguin" searches for the exact word "penguin".
+
+- Special Characters: Regex uses special characters to denote patterns. Some commonly used ones include:
+
+- . (dot): Matches any single character except a newline.
+
+- * (asterisk): Matches zero or more of the preceding element.
+
+- + (plus): Matches one or more of the preceding element.
+
+- ? (question mark): Matches zero or one of the preceding element.
+
+- | (pipe): Acts as a logical OR to match any one of several patterns.
+
+- [] (square brackets): Defines a character class, e.g., [aeiou] matches any vowel.
+
+- () (parentheses): Groups patterns together.
+
+
+Here’s an example string with a number of observations made. We can use it to demonstrate the basic usage of the regex functions:
+
+
+```r
+basic_string <- "Today Observer A spotted  3 Adelie adults and 4 Chinstraps, Observe B has spotted 12 Adelie and 6 Gentoo penguins"
+```
+
+
+- Match a group of characters: We can find all of the vowels in our string by putting every vowel in brackets, for example,[aeiou]
+
+
+```r
+str_extract_all(basic_string, "[aeiou]")
+```
+
+```
+## [[1]]
+##  [1] "o" "a" "e" "e" "o" "e" "e" "i" "e" "a" "u" "a" "i" "a" "e" "e" "a" "o" "e"
+## [20] "e" "i" "e" "a" "e" "o" "o" "e" "u" "i"
+```
+- Match a range of characters: We can find any capital letter from “A” to “F,” by using a hyphen, [A-F]. Character sets are case sensitive, so [A-F] is not the same as [a-f]
+
+
+```r
+str_extract_all(basic_string, "[A-Z]")
+```
+
+```
+## [[1]]
+## [1] "T" "O" "A" "A" "C" "O" "B" "A" "G"
+```
+
+Match a range of numbers: We can find numbers between a range by adding numbers to our character set, [0-9] to find any number. Notice that the numbers are extracted as strings, not converted to numbers
+
+
+```r
+str_extract_all(basic_string, "[0-9]")
+```
+
+```
+## [[1]]
+## [1] "3" "4" "1" "2" "6"
+```
+
+### Meta characters
+
+Meta characters represent a type of character. They will typically begin with a backslash \. Since the backslash \ is a special character in R, it needs to be escaped each time it is used with another backslash. In other words, R requires 2 backslashes when using meta characters. Each meta character will match to a single character. Here are some of the most important ones in action:
+
+- \\s: This meta character represents spaces. This will match to each space, tab, and newline character. You may also specify \\t and \\n for tab and newline characters respectively. 
+
+> Side note: our example string does not have any tabs, but be cautious when looking for them. Many integrated development environments, or IDE’s, have a setting that will replace all tabs with spaces while you are typing. In the example string, \\s returns a list of a vector of 17 spaces, the exact number of spaces in our example string!
+
+\\w: This meta character represents alphanumeric characters. This includes all the letters a-z, capital and lowercase, and the numbers 0–9. This would be the equivalent of the bracket group [A-Za-z0-9], just much quicker to write. Take caution in remembering that the \\w meta character on its own only captures a single character, not entire words or numbers. 
+
+\\d: This metacharacter matches any digits (numbers). 
+
+## Anchors away
+
+A text anchor says to look for matches either at the beginning or end of a string. In R, there are 2 types of anchors:
+
+- ^: Matches the following regex at the beginning of a string
+
+- $: Matches the preceding regex at the end of a string
+
+### Raising the anchor
+
+When working with text data, you may need to match a regex pattern, but only if it appears as the first thing in the string. To do that, we use the ^ anchor.
+
+To demonstrate, our goal is to find the word “the,” but only if it appears at the beginning of a string. Here are a few example strings for use to try it out with.
+
+
+```r
+anchor <- "The ship sets sail on the ocean"
+anchor_n <- "Ships set sail on the ocean to go places"
+```
+
+
+```r
+str_extract_all(c(anchor, anchor_n), "^[Tt]")
+```
+
+```
+## [[1]]
+## [1] "T"
+## 
+## [[2]]
+## character(0)
+```
+
+### Dropping the anchor
+
+Sometimes you need to match a regex pattern only if it appears at the end of a string. This is accomplished with the $ anchor.
+Let’s take another look at the anchor string, this time looking for “ocean” at the end of the string. We will have one result, “ocean.”
+
+
+
+```r
+str_extract_all(c(anchor, anchor_n), "ocean$")
+```
+
+```
+## [[1]]
+## [1] "ocean"
+## 
+## [[2]]
+## character(0)
+```
+
+## Negation
+
+In strings, you may want to specify certain patterns to avoid. To do this, use negations. These will match anything EXCEPT what you specify. There are two main ways to handle them in R:
+
+- Capitalized meta characters: meta characters match a specific set of characters. A capitalized meta character will generally match everything but that set of characters
+
+- ^ and character sets: Using a ^ in conjunction with a character set will match everything except what is specified in the character set
+
+### Capitalised meta characters
+
+
+```r
+str_extract_all(anchor, "\\S")
+
+str_extract_all(anchor, "\\s")
+```
+
+```
+## [[1]]
+##  [1] "T" "h" "e" "s" "h" "i" "p" "s" "e" "t" "s" "s" "a" "i" "l" "o" "n" "t" "h"
+## [20] "e" "o" "c" "e" "a" "n"
+## 
+## [[1]]
+## [1] " " " " " " " " " " " "
+```
+
+### Character sets
+
+
+```r
+str_extract_all(anchor, "[ocean]")
+
+str_extract_all(anchor, "[^ocean]")
+```
+
+```
+## [[1]]
+##  [1] "e" "e" "a" "o" "n" "e" "o" "c" "e" "a" "n"
+## 
+## [[1]]
+##  [1] "T" "h" " " "s" "h" "i" "p" " " "s" "t" "s" " " "s" "i" "l" " " " " "t" "h"
+## [20] " "
+```
+
+
+
+### Look behind
+
+The general formula for a look ahead is "(?<=if preceded by this)match_this"
+
+Example: Match "penguin" only if it is preceded by "Palmer".
+
+
+```r
+# Example string
+text <- c("The Palmer penguin is adorable.", "I love all types of penguins.", "The Emperor penguin is larger.")
+
+# Match "penguin" only if it is followed by "Palmer"
+str_extract_all(text, "(?<= Palmer)\\spenguin")
+```
+
+```
+## [[1]]
+## [1] " penguin"
+## 
+## [[2]]
+## character(0)
+## 
+## [[3]]
+## character(0)
+```
+
+
+### Look ahead
+
+
+
+```r
+# Match "Palmer" only if it is followed by "penguin"
+str_extract_all(text, "Palmer\\s(?=penguin )")
+```
+
+```
+## [[1]]
+## [1] "Palmer "
+## 
+## [[2]]
+## character(0)
+## 
+## [[3]]
+## character(0)
+```
+
+
+## Exercises
+
+
+`rvest` helps you scrape (or harvest) data from web pages: 
+
+
+```r
+library(rvest)
+
+wiki <- "https://en.wikipedia.org/wiki/Model_organism"
+
+all_tables <- read_html(wiki) |> 
+  html_table()
+```
+
+
+This will give you a list of all the tables that are on the website. Here, we will just consider the first one that was found on the website. 
+
+
+
+```r
+all_tables[[1]]
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;">  </th>
+   <th style="text-align:left;"> Model Organism </th>
+   <th style="text-align:left;"> Common name </th>
+   <th style="text-align:left;"> Informal classification </th>
+   <th style="text-align:left;"> Usage (examples) </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Virus </td>
+   <td style="text-align:left;"> Phi X 174 </td>
+   <td style="text-align:left;"> ΦX174 </td>
+   <td style="text-align:left;"> Virus </td>
+   <td style="text-align:left;"> evolution[100] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Prokaryotes </td>
+   <td style="text-align:left;"> Escherichia coli </td>
+   <td style="text-align:left;"> E. coli </td>
+   <td style="text-align:left;"> Bacteria </td>
+   <td style="text-align:left;"> bacterial genetics, metabolism </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Prokaryotes </td>
+   <td style="text-align:left;"> Pseudomonas fluorescens </td>
+   <td style="text-align:left;"> P. fluorescens </td>
+   <td style="text-align:left;"> Bacteria </td>
+   <td style="text-align:left;"> evolution, adaptive radiation[101] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Dictyostelium discoideum </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Amoeba </td>
+   <td style="text-align:left;"> immunology, host–pathogen interactions[102] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Saccharomyces cerevisiae </td>
+   <td style="text-align:left;"> Brewer's yeastBaker's yeast </td>
+   <td style="text-align:left;"> Yeast </td>
+   <td style="text-align:left;"> cell division, organelles, etc. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Schizosaccharomyces pombe </td>
+   <td style="text-align:left;"> Fission yeast </td>
+   <td style="text-align:left;"> Yeast </td>
+   <td style="text-align:left;"> cell cycle, cytokinesis, chromosome biology, telomeres, DNA metabolism, cytoskeleton organization, industrial applications[103][104] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Chlamydomonas reinhardtii </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Algae </td>
+   <td style="text-align:left;"> hydrogen production[105] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Tetrahymena thermophila, T. pyriformis </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Ciliate </td>
+   <td style="text-align:left;"> education,[106] biomedical research[107] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Emiliania huxleyi </td>
+   <td style="text-align:left;">  </td>
+   <td style="text-align:left;"> Plankton </td>
+   <td style="text-align:left;"> surface sea temperature[108] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Plants </td>
+   <td style="text-align:left;"> Arabidopsis thaliana </td>
+   <td style="text-align:left;"> Thale cress </td>
+   <td style="text-align:left;"> Flowering plant </td>
+   <td style="text-align:left;"> population genetics[109] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Plants </td>
+   <td style="text-align:left;"> Physcomitrella patens </td>
+   <td style="text-align:left;"> Spreading earthmoss </td>
+   <td style="text-align:left;"> Moss </td>
+   <td style="text-align:left;"> molecular farming[110] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Plants </td>
+   <td style="text-align:left;"> Populus trichocarpa </td>
+   <td style="text-align:left;"> Balsam poplar </td>
+   <td style="text-align:left;"> Tree </td>
+   <td style="text-align:left;"> drought tolerance, lignin biosynthesis, wood formation, plant biology, morphology, genetics, and ecology[111] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, nonvertebrate </td>
+   <td style="text-align:left;"> Caenorhabditis elegans </td>
+   <td style="text-align:left;"> Nematode, Roundworm </td>
+   <td style="text-align:left;"> Worm </td>
+   <td style="text-align:left;"> differentiation, development </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, nonvertebrate </td>
+   <td style="text-align:left;"> Drosophila melanogaster </td>
+   <td style="text-align:left;"> Fruit fly </td>
+   <td style="text-align:left;"> Insect </td>
+   <td style="text-align:left;"> developmental biology, human brain degenerative disease[112][113] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, nonvertebrate </td>
+   <td style="text-align:left;"> Callosobruchus maculatus </td>
+   <td style="text-align:left;"> Cowpea Weevil </td>
+   <td style="text-align:left;"> Insect </td>
+   <td style="text-align:left;"> developmental biology </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Danio rerio </td>
+   <td style="text-align:left;"> Zebrafish </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> embryonic development </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Fundulus heteroclitus </td>
+   <td style="text-align:left;"> Mummichog </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> effect of hormones on behavior[114] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Nothobranchius furzeri </td>
+   <td style="text-align:left;"> Turquoise killifish </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> aging, disease, evolution </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Oryzias latipes </td>
+   <td style="text-align:left;"> Japanese rice fish </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> fish biology, sex determination[115] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Anolis carolinensis </td>
+   <td style="text-align:left;"> Carolina anole </td>
+   <td style="text-align:left;"> Reptile </td>
+   <td style="text-align:left;"> reptile biology, evolution </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Mus musculus </td>
+   <td style="text-align:left;"> House mouse </td>
+   <td style="text-align:left;"> Mammal </td>
+   <td style="text-align:left;"> disease model for humans </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Gallus gallus </td>
+   <td style="text-align:left;"> Red junglefowl </td>
+   <td style="text-align:left;"> Bird </td>
+   <td style="text-align:left;"> embryological development and organogenesis </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Taeniopygia castanotis </td>
+   <td style="text-align:left;"> Australian zebra finch </td>
+   <td style="text-align:left;"> Bird </td>
+   <td style="text-align:left;"> vocal learning, neurobiology[116] </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Xenopus laevisXenopus tropicalis[117] </td>
+   <td style="text-align:left;"> African clawed frogWestern clawed frog </td>
+   <td style="text-align:left;"> Amphibian </td>
+   <td style="text-align:left;"> embryonic development </td>
+  </tr>
+</tbody>
+</table>
+
+</div>
+
+
+### Clean
+
+
+```r
+selected_table <- all_tables[[1]] |> 
+  janitor::clean_names() |> 
+  rename("informal_phylum" = x)
+```
+
+
+- Clean and standardise common names
+- Separate model organisms into multiple columns if they contain multiple names
+- Clean up extraneous characters
+- Use regular expressions to remove numeric references
+- pivot if applicable
+
+
+```r
+selected_table |> 
+  mutate(common_name = if_else(common_name == "", "Unknown", common_name)) |> 
+  mutate(across(.cols = everything(), .fns = ~ str_remove_all(.x, "\\[([0-9]*)\\]"))) |> 
+  mutate(model_organism = str_replace(model_organism, "(Xenopus [a-z]+)(Xenopus [a-z]+)", "\\1,\\2")) |> 
+  mutate(model_organism = str_split(model_organism, ",")) |> 
+  unnest(model_organism) |> 
+  mutate(model_organism = str_trim(model_organism)) |> 
+  mutate(model_organism = str_replace(model_organism, "^T\\.", "Tetrahymena"))
+```
+
+<div class="kable-table">
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> informal_phylum </th>
+   <th style="text-align:left;"> model_organism </th>
+   <th style="text-align:left;"> common_name </th>
+   <th style="text-align:left;"> informal_classification </th>
+   <th style="text-align:left;"> usage_examples </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+   <td style="text-align:left;"> Virus </td>
+   <td style="text-align:left;"> Phi X 174 </td>
+   <td style="text-align:left;"> ΦX174 </td>
+   <td style="text-align:left;"> Virus </td>
+   <td style="text-align:left;"> evolution </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Prokaryotes </td>
+   <td style="text-align:left;"> Escherichia coli </td>
+   <td style="text-align:left;"> E. coli </td>
+   <td style="text-align:left;"> Bacteria </td>
+   <td style="text-align:left;"> bacterial genetics, metabolism </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Prokaryotes </td>
+   <td style="text-align:left;"> Pseudomonas fluorescens </td>
+   <td style="text-align:left;"> P. fluorescens </td>
+   <td style="text-align:left;"> Bacteria </td>
+   <td style="text-align:left;"> evolution, adaptive radiation </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Dictyostelium discoideum </td>
+   <td style="text-align:left;"> Unknown </td>
+   <td style="text-align:left;"> Amoeba </td>
+   <td style="text-align:left;"> immunology, host–pathogen interactions </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Saccharomyces cerevisiae </td>
+   <td style="text-align:left;"> Brewer's yeastBaker's yeast </td>
+   <td style="text-align:left;"> Yeast </td>
+   <td style="text-align:left;"> cell division, organelles, etc. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Schizosaccharomyces pombe </td>
+   <td style="text-align:left;"> Fission yeast </td>
+   <td style="text-align:left;"> Yeast </td>
+   <td style="text-align:left;"> cell cycle, cytokinesis, chromosome biology, telomeres, DNA metabolism, cytoskeleton organization, industrial applications </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Chlamydomonas reinhardtii </td>
+   <td style="text-align:left;"> Unknown </td>
+   <td style="text-align:left;"> Algae </td>
+   <td style="text-align:left;"> hydrogen production </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Tetrahymena thermophila </td>
+   <td style="text-align:left;"> Unknown </td>
+   <td style="text-align:left;"> Ciliate </td>
+   <td style="text-align:left;"> education, biomedical research </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Tetrahymena pyriformis </td>
+   <td style="text-align:left;"> Unknown </td>
+   <td style="text-align:left;"> Ciliate </td>
+   <td style="text-align:left;"> education, biomedical research </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Eukaryotes, unicellular </td>
+   <td style="text-align:left;"> Emiliania huxleyi </td>
+   <td style="text-align:left;"> Unknown </td>
+   <td style="text-align:left;"> Plankton </td>
+   <td style="text-align:left;"> surface sea temperature </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Plants </td>
+   <td style="text-align:left;"> Arabidopsis thaliana </td>
+   <td style="text-align:left;"> Thale cress </td>
+   <td style="text-align:left;"> Flowering plant </td>
+   <td style="text-align:left;"> population genetics </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Plants </td>
+   <td style="text-align:left;"> Physcomitrella patens </td>
+   <td style="text-align:left;"> Spreading earthmoss </td>
+   <td style="text-align:left;"> Moss </td>
+   <td style="text-align:left;"> molecular farming </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Plants </td>
+   <td style="text-align:left;"> Populus trichocarpa </td>
+   <td style="text-align:left;"> Balsam poplar </td>
+   <td style="text-align:left;"> Tree </td>
+   <td style="text-align:left;"> drought tolerance, lignin biosynthesis, wood formation, plant biology, morphology, genetics, and ecology </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, nonvertebrate </td>
+   <td style="text-align:left;"> Caenorhabditis elegans </td>
+   <td style="text-align:left;"> Nematode, Roundworm </td>
+   <td style="text-align:left;"> Worm </td>
+   <td style="text-align:left;"> differentiation, development </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, nonvertebrate </td>
+   <td style="text-align:left;"> Drosophila melanogaster </td>
+   <td style="text-align:left;"> Fruit fly </td>
+   <td style="text-align:left;"> Insect </td>
+   <td style="text-align:left;"> developmental biology, human brain degenerative disease </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, nonvertebrate </td>
+   <td style="text-align:left;"> Callosobruchus maculatus </td>
+   <td style="text-align:left;"> Cowpea Weevil </td>
+   <td style="text-align:left;"> Insect </td>
+   <td style="text-align:left;"> developmental biology </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Danio rerio </td>
+   <td style="text-align:left;"> Zebrafish </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> embryonic development </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Fundulus heteroclitus </td>
+   <td style="text-align:left;"> Mummichog </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> effect of hormones on behavior </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Nothobranchius furzeri </td>
+   <td style="text-align:left;"> Turquoise killifish </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> aging, disease, evolution </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Oryzias latipes </td>
+   <td style="text-align:left;"> Japanese rice fish </td>
+   <td style="text-align:left;"> Fish </td>
+   <td style="text-align:left;"> fish biology, sex determination </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Anolis carolinensis </td>
+   <td style="text-align:left;"> Carolina anole </td>
+   <td style="text-align:left;"> Reptile </td>
+   <td style="text-align:left;"> reptile biology, evolution </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Mus musculus </td>
+   <td style="text-align:left;"> House mouse </td>
+   <td style="text-align:left;"> Mammal </td>
+   <td style="text-align:left;"> disease model for humans </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Gallus gallus </td>
+   <td style="text-align:left;"> Red junglefowl </td>
+   <td style="text-align:left;"> Bird </td>
+   <td style="text-align:left;"> embryological development and organogenesis </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Taeniopygia castanotis </td>
+   <td style="text-align:left;"> Australian zebra finch </td>
+   <td style="text-align:left;"> Bird </td>
+   <td style="text-align:left;"> vocal learning, neurobiology </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Xenopus laevis </td>
+   <td style="text-align:left;"> African clawed frogWestern clawed frog </td>
+   <td style="text-align:left;"> Amphibian </td>
+   <td style="text-align:left;"> embryonic development </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> Animals, vertebrate </td>
+   <td style="text-align:left;"> Xenopus tropicalis </td>
+   <td style="text-align:left;"> African clawed frogWestern clawed frog </td>
+   <td style="text-align:left;"> Amphibian </td>
+   <td style="text-align:left;"> embryonic development </td>
   </tr>
 </tbody>
 </table>

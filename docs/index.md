@@ -1,7 +1,7 @@
 --- 
 title: "Advancing in R"
 author: "Philip T. Leftwich"
-date: "2023-11-10"
+date: "2024-09-15"
 subtitle: A guide for Biologists and Ecologists
 site: bookdown::bookdown_site
 documentclass: book
@@ -59,15 +59,33 @@ This course is designed for anyone with basic knowledge of R who is looking to e
 - here
 - janitor
 - skimr
+- dbplyr
 
 ## Data Exploration:
 - GGally
 - skimr
 - dataxray
+- naniar
+- mice
 
 ## Optimizing Functions:
 - microbenchmark
 - testthat
+- profviz
+- memoise
+- digest
+
+## Parallel Processing
+
+- doParallel
+- foreach
+- furrr
+
+## Data import
+
+- rvest
+- data.table
+- sqldf
 
 ## Reproducible Reports:
 - rmarkdown
@@ -101,4 +119,18 @@ This course is designed for anyone with basic knowledge of R who is looking to e
 - gitcreds
 - usethis
 
+## Requires devtools for github installation: 
+
+- tidychatmodels
+
 ```
+
+## Other software
+
+- R version 4.0.0 or later
+
+- Rstudio
+
+- Rtools (compatible with your computer)
+
+- Git (compatible with your computer)

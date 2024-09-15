@@ -1,6 +1,6 @@
 # (PART\*) Literate Programming and Reproducibility {.unnumbered}
 
-# RMarkdown
+# Quarto
 
 
 
@@ -9,114 +9,49 @@
 
 <img src="images/rmarkdownoutputformats.png" width="100%" style="display: block; margin: auto;" />
 
-R Markdown is a widely-used tool for creating automated, reproducible, and share-worthy outputs, such as reports. It can generate static or interactive outputs, in Word, pdf, html, Powerpoint slides, and many other formats.
 
-An R Markdown script combines R code and text such that the script actually becomes your output document. You can create an entire formatted document, including narrative text (can be dynamic to change based on your data), tables, figures, bullets/numbers, bibliographies, etc.
+Quarto is a new and improved version of RMarkdown that makes working with different formats and programming languages easier. If you have ever used RMarkdown, the transition is easy.
 
-Documents produced with Rmarkdown, allow analyses to be included easily - and make the link between raw data, analysis & and a published report *completely reproducible*.
+One of the main benefits of Quarto is that it uses a consistent set of rules across all types of output. In R Markdown, the way you format documents can change depending on what you are creating. For example, when making slides in R Markdown, the "xaringan" package uses three dashes to create new slides, but in other formats, three dashes create a horizontal line instead. Similarly, the "distill" package has its own unique layout options that don’t work with "xaringan." Quarto simplifies this by providing one standard way to format all types of documents.
 
-With Rmarkdown we can make reproducible html, word, pdf, powerpoints or websites and dashboards^[(https://rmarkdown.rstudio.com/gallery.html)]
+Quarto also supports more programming languages than R Markdown and works with different code editors. While R Markdown is mainly designed to be used in the RStudio program, Quarto can be used not only in RStudio but also in other popular code editors, like Visual Studio (VS) Code and JupyterLab. This makes it easier for people to use Quarto with different languages and tools.
+
+This chapter will show you the benefits of using Quarto if you are an R user. It will guide you on how to set up Quarto, explain the key differences between Quarto and R Markdown, and teach you how to use Quarto to create reports, presentations, and websites.
+
+## Background
+
+Quarto is a widely-used tool for creating automated, reproducible, and share-worthy outputs, such as reports. It can generate static or interactive outputs, in Word, pdf, html, Powerpoint slides, and many other formats.
+
+A Quarto file combines R code (or other programming code) and text such that the script actually becomes your output document. You can create an entire formatted document, including narrative text (can be dynamic to change based on your data), tables, figures, bullets/numbers, bibliographies, etc.
+
+Documents produced with Quarto, allow analyses to be included easily - and make the link between raw data, analysis & and a published report *completely reproducible*.
+
+With Quarto we can make reproducible html, word, pdf, powerpoints or websites and dashboards^[(https://quarto.org/docs/gallery/)]
 
 
 
 ## How it works {-}
 
-To create an R Markdown document in RStudio, go to **File > New File > R Markdown**. Choose a title, author, and date, as well as your default output format (HTML, PDF, or Word). These values can be changed later. Click OK, and RStudio will create an R Markdown document with some placeholder content. 
 
-<img src="images/templatermd.png" width="80%" style="display: block; margin: auto;" />
+Starting from version 2022.07.1, RStudio comes with Quarto already installed.
 
+To check which version of RStudio you have, go to the top menu and click on RStudio > About RStudio. If your version is older than 2022.07.1, you should update it by reinstalling RStudio. Instructions for updating RStudio can be found in Chapter 1. After updating, Quarto should be automatically installed.
 
-Delete this content and replace it with your own. As an example, let’s create a report about penguins using data from the `palmerpenguins` package. I’ve separated the data by year, and we’ll use just the 2007 data. Add the following content to add to your R Markdown document:
+Once Quarto is installed, you can create a new document by clicking **File > New File > Quarto Document**. This will bring up a menu similar to the one used to create an R Markdown document
 
+Choose a title, author, as well as your default output format (HTML, PDF, or Word). These values can be changed later. Click OK, and RStudio will create a Quarto document with some placeholder content. 
 
+<img src="images/quarto.png" width="80%" style="display: block; margin: auto;" />
 
-```markdown
----
-title: "Penguins Report"
-author: "Phil"
-date: "2024-01-12"
-output: word_document
----
-  
-``{r setup, include = FALSE}
-knitr::opts_chunk$set(include = TRUE, 
-                      echo = FALSE,
-                      message = FALSE,
-                      warning = FALSE)
-``
+This document contains several sections, each of which we will discuss below. First, though, let’s skip to the finish line by doing what’s called *rendering* our document. The **Render** button at the top of RStudio converts the Quarto document into whatever format we selected.
 
-``{r}
-library(tidyverse)
-``
-
-``{r}
-penguins_raw <- read_csv("https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/penguins_raw.csv")
-``
-
-# Introduction
-
-We are writing a report about the **Palmer Penguins**. These penguins are *really* amazing. There are three species:
-
-- Adelie
-- Gentoo
-- Chinstrap
-
-## Bill Length
-
-We can make a histogram to see the distribution of bill lengths.
-
-``{r}
-penguins_raw |> 
-  ggplot(aes(x = bill_length_mm)) +
-  geom_histogram() +
-  theme_minimal()
-``
-
-``{r}
-average_bill_length <- penguins_raw |> 
-  summarize(avg_bill_length = mean(bill_length_mm,
-                                   na.rm = TRUE)) |> 
-  pull(avg_bill_length)
-``
-
-The chart shows the distribution of bill lengths. The average bill length is `r average_bill_length` millimeters.
-```
+**To make your document publish - hit the render button at the top of the doc**
 
 
-This document contains several sections, each of which we will discuss below. First, though, let’s skip to the finish line by doing what’s called *knitting* our document. The **Knit** button at the top of RStudio converts the R Markdown document into whatever format we selected.
 
+## Quarto parts {-}
 
-**To make your Rmd publish - hit the knit button at the top of the doc**
-
-<img src="images/knit.png" width="80%" style="display: block; margin: auto;" />
-
-We’ve set the output format to be HTML (see the output_format: html). Some features are not immediately visible in R Markdown that do appear in the rendered document, including the histogram. This is because the R Markdown document doesn’t directly include this plot. Rather, it includes the code needed to produce the plot when knitted.
-
-It may seem convoluted to constantly knit R Markdown documents to Word, but this workflow allows us to update our reports at any point with new code or data. This ability is known as reproducibility, and it is central to the value of R Markdown.
-
-
-## Background to Rmarkdown {-}
-
-* Markdown is a “language” that allows you to write a document using plain text, that can be converted to html and other formats. It is not specific to R. Files written in Markdown have a ‘.md’ extension.
-
-* R Markdown: is a variation on markdown that is specific to R - it allows you to write a document using markdown to produce text and to embed R code and display their outputs. R Markdown files have ‘.Rmd’ extension.
-
-* rmarkdown - the package: This is used by R to render the .Rmd file into the desired output. It’s focus is converting the markdown (text) syntax, so we also need…
-
-* knitr: This R package @R-knitr will read the code chunks, execute it, and ‘knit’ it back into the document. This is how tables and graphs are included alongside the text.
-
-* Pandoc: Finally, pandoc actually convert the output into word/pdf/powerpoint etc. It is a software separate from R but is installed automatically with RStudio.
-
-Most of this process happens in the background (you do not need to know all these steps!) and it involves feeding the `.Rmd` file to `knitr`, which executes the R code chunks and creates a new `.md` (Markdown) file which includes the R code **and its rendered output**. 
-
-The .md file is then processed by pandoc to create the finished product: a Microsoft Word document, HTML file, Powerpoint document, pdf, etc. 
-
-
-<img src="images/0_rmd.png" width="80%" style="display: block; margin: auto;" />
-
-## Rmarkdown parts {-}
-
-As you can see, there are three basic components to any Rmd file: 
+As you can see, there are three basic components to any Quarto file: 
 
 * YAML
 
@@ -124,39 +59,36 @@ As you can see, there are three basic components to any Rmd file:
 
 * R code chunks.
 
-<img src="images/rmarkdown_translation.png" width="100%" style="display: block; margin: auto;" />
 
 ### YAML Metadata {-}
 
 The YAML section is the very beginning of an R Markdown document. The name YAML comes from the recursive acronym YAML ain’t markup language, whose meaning isn’t important for our purposes. Three dashes indicate its beginning and end, and the text inside of it contains metadata about the R Markdown document. Here is my YAML:
 
-
-````md
+````
 
 ---
-title: "Penguins Report"
-author: "Philip Leftwich"
-date: "2024-01-12"
+title: "My Report"
 output: html_document
 ---
 
+
 ````
 
-As you can see, it provides the title, author, date, and output format. All elements of the YAML are given in `key: value` syntax, where each key is a label for a piece of metadata (for example, the title) followed by a value in quotes.
+As you can see, it provides the title, author, and output format. All elements of the YAML are given in `key: value` syntax, where each key is a label for a piece of metadata (for example, the title) followed by a value in quotes.
 
-In the example above, because we clicked that our default output would be an html file, we can see that the YAML says output: `html_document`. However we can also change this to say `powerpoint_presentation` or `word_document` or even `pdf_document`.
+In the example above, because we clicked that our default output would be an html file, we can see that the YAML says output: `html`. However we can also change this to say `pptx` or `docx` or even `pdf_document`. (https://quarto.org/docs/output-formats/all-formats.html)
 
 <div class="try">
 <p>Can you edit the YAML in the Rmarkdown file in the markdown folder to
-have your name as author, today’s date and the title of the file should
-be called “Penguins of the Palmer Archipelago, Antarctica”.</p>
+have your name as author? Try changing the output to a different file
+type.</p>
 </div>
 
 ### Code chunks {-}
 
-R Markdown documents have a different structure from the R script files you might be familiar with (those with the .R extension). R script files treat all content as code unless you comment out a line by putting a pound sign (#) in front of it. In the following code, the first line is a comment while the second line is code.
+Quarto documents have a different structure from the R script files you might be familiar with (those with the .R extension). R script files treat all content as code unless you comment out a line by putting a pound sign (#) in front of it. In the following code, the first line is a comment while the second line is code.
 
-````md
+````
 
 ```{r}
 # Import our data
@@ -165,7 +97,7 @@ data <- read_csv("data.csv")
 
 ````
 
-In R Markdown, the situation is reversed. Everything after the YAML is treated as text unless we specify otherwise by creating what are known as code chunks. Each chunk is opened with a line that starts with three back-ticks, and curly brackets that contain parameters for the chunk \{ \}. The chunk ends with three more back-ticks.
+In Quarto, the situation is reversed. Everything after the YAML is treated as text unless we specify otherwise by creating what are known as code chunks. Each chunk is opened with a line that starts with three back-ticks, and curly brackets that contain parameters for the chunk \{ \}. The chunk ends with three more back-ticks.
 
 ````md
 
@@ -175,19 +107,14 @@ library(tidyverse)
 
 ````
 
-R Markdown treats anything in the code chunk as R code when we knit. For example, this code chunk will produce a histogram in the final Word document.
-
-
+Quarto treats anything in the code chunk as R code when we knit. For example, this code chunk will produce a histogram in the final document.
 
 
 ````md
 
 ```{r}
 
-penguins_raw |>  
-  ggplot(aes(x = bill_length_mm)) +
-  geom_histogram() +
-  theme_minimal()
+hist(cars$speed)
 ```
 
 ````
@@ -207,53 +134,56 @@ your chunks, you should ALWAYS use unique names or else R will
 can include other options too, written as <code>tag=value</code>, such
 as:</p>
 <ul>
-<li><p>eval = FALSE to not run the R code</p></li>
-<li><p>echo = FALSE to not print the chunk’s R source code in the output
+<li><p>eval: false to not run the R code</p></li>
+<li><p>echo: false to not print the chunk’s R source code in the output
 document</p></li>
-<li><p>warning = FALSE to not print warnings produced by the R
+<li><p>warning: false to not print warnings produced by the R
 code</p></li>
-<li><p>message = FALSE to not print any messages produced by the R
+<li><p>message: false to not print any messages produced by the R
 code</p></li>
-<li><p>include = either TRUE/FALSE whether to include chunk outputs
-(e.g. plots) in the document</p></li>
-<li><p>out.width = and out.height = - size of ouput e.g. out.width =
-“75%”</p></li>
-<li><p>fig.align = “center” adjust how a figure is aligned across the
+<li><p>include: true/false whether to include chunk outputs (e.g. plots)
+in the document</p></li>
+<li><p>out-width and out-height = size of output in final document
+e.g. out-width = “75%”</p></li>
+<li><p>fig-width and fig-height: relative size of figure</p></li>
+<li><p>fig-align = “center” adjust how a figure is aligned across the
 page</p></li>
-<li><p>fig.show=‘hold’ if your chunk prints multiple figures and you
-want them printed next to each other (pair with out.width = c(“33%”,
+<li><p>fig-show=‘hold’ if your chunk prints multiple figures and you
+want them printed next to each other (pair with out-width = c(“33%”,
 “67%”).</p></li>
 </ul>
 </div>
 
-A special code chunk at the top of each R Markdown document, known as the setup code chunk, gives instructions for what should happen when knitting a document. 
 
-In cases where you’re using R Markdown to generate a report for a non-R user, you likely want to hide the code, messages, and warnings but show the output (which would include any visualizations you generate). To do this, create a setup code chunk that looks like this:
+**Question.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value='answer'>echo = TRUE, eval = FALSE</option><option value=''>echo = TRUE, eval = TRUE</option><option value=''>echo = FALSE, eval = FALSE</option><option value=''>echo = FALSE, eval = TRUE</option></select>
 
+Default options for showing code, charts, and other elements in the rendered versions of the document. In Quarto, these options are set in the execute field of the YAML. For example, the following would provide the outputs of code, but hide the code itself, as well as all warnings and messages, from the rendered document:
+
+````
+---
+title: "My Report"
+format: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+````
+
+In cases where you’re using Quarto to generate a report for a non-R user, you likely want to follow this setup of hiding the code, messages, and warnings but show the output (which would include any visualizations you generate). 
+
+ **However, you can also override these global code chunk options on individual chunks**. If I wanted my document to show both the plot itself and the code used to make it, I could set `echo = TRUE` for that code chunk only:
 
 ````md
 
 ```{r}
-knitr::opts_chunk$set(include = TRUE, 
-                      echo = FALSE,
-                      message = FALSE,
-                      warning = FALSE)
+<p>#&#124;</p> echo = TRUE
+hist(cars$speed)
 ```
 
 ````
 
-The `include = FALSE` option on the first line applies to the setup code chunk itself. It tells R Markdown to not include the output of the setup code chunk when knitting. The options within `knitr::opts_chunk$set(`) apply to all future code chunks. **However, you can also override these global code chunk options on individual chunks**. If I wanted my document to show both the plot itself and the code used to make it, I could set `echo = TRUE` for that code chunk only:
-
-````md
-
-```{r}
-penguins %>% 
-  ggplot(aes(x = bill_length_mm)) +
-  geom_histogram() +
-  theme_minimal()
-```
-
-````
+The option is set within the code chunk itself. The characters #| (known as a hash pipe) at the start of a line indicate that you are setting options.
 
 ### Text {-}
 
@@ -315,70 +245,19 @@ This book was printed on `` `r Sys.Date()` ``
 
 When typed in-line within a section of what would otherwise be Markdown text, it knows to produce an r output instead: 
 
-This book was printed on 2023-11-10
+This book was printed on 2024-09-15
 
 ### Running code {-}
 
-You can run the code in an R Markdown document in two ways. The first way is by knitting the entire document. The second way is to run code chunks manually (also known as interactively) by hitting the little green play button at the top-right of a code chunk. The down arrow next to the green play button will run all code until that point.
+You can run the code in an R Markdown document in two ways. The first way is by rendering the entire document. The second way is to run code chunks manually (also known as interactively) by hitting the little green play button at the top-right of a code chunk. The down arrow next to the green play button will run all code until that point.
 
-
-<img src="images/green_button.png" width="100%" style="display: block; margin: auto;" />
-
-The one downside to running code interactively is that you can sometimes make mistakes that cause your R Markdown document to fail to knit. That is because, in order to knit, an R Markdown document must contain all the code it uses. If you are working interactively and, say, load data from a separate file, you will be unable to knit your document. When working in R Markdown, always keep all code within a single document.
+The one downside to running code interactively is that you can sometimes make mistakes that cause your Quarto document to fail to knit. That is because, in order to render, a Quarto document must *contain* all the code it uses. If you are working interactively and, say, load data from a separate file, you will be unable to knit your document. When working in R Markdown, always keep all code within a single document.
 
 The code must also always appear in the right order. 
 
 
-## Useful tips {-}
- 
-<div class="info">
-<p>The working directory for .rmd files is a little different to working
-with scripts.</p>
-<p>With a .Rmd file, the <strong>working directory is wherever the Rmd
-file itself is saved</strong>.</p>
-<p>For example if you have your .Rmd file in a subfolder
-~/markdownfiles/markdown.Rmd the code for read_csv(“data/data.csv”)
-within the markdown will look for a <code>.csv</code> file in a
-subfolder called data <em>inside</em> the ‘markdown’ folder and not the
-root project folder where the <code>.RProj</code> file lives.</p>
-<p>So we have two options when using .Rmd files</p>
-<ol style="list-style-type: decimal">
-<li><p>Don’t put the .Rmd file in a subfolder and make sure it lives in
-the same directory as your .RProj file - that way relative filepaths are
-the same between R scripts and Rmarkdown files</p></li>
-<li><p>Use the <code>here</code> package to describe file locations -
-more later</p></li>
-</ol>
-</div>
 
-
-
-## Exercises: Setting code chunks {-}
-
-
-**Question 1.** The global option for this document is set to show the R code used to render chunks <select class='webex-select'><option value='blank'></option><option value='answer'>TRUE</option><option value=''>FALSE</option></select>
-
-
-<div class='webex-solution'><button>Explain This Answer</button>
-
-knitr::opts_chunk$set(echo = TRUE)
-
-</div>
- 
-
-**Question 2.** Options set in individual code chunks override the global options <select class='webex-select'><option value='blank'></option><option value='answer'>TRUE</option><option value=''>FALSE</option></select>
-
-
-<div class='webex-solution'><button>Explain This Answer</button>
-
-In the second chunk we see echo = FALSE and this has prevented the code from being printed, we only see the rendered output
-
-</div>
- 
-<br>
-**Question 3.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value=''>echo = TRUE, eval = TRUE</option><option value='answer'>echo = TRUE, eval = FALSE</option><option value=''>echo = FALSE, eval = FALSE</option><option value=''>echo = FALSE, eval = TRUE</option></select>
-
-
+## Self contained Reports
 
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 
@@ -406,70 +285,58 @@ In this scenario, one logical organization of the R Markdown script might be:
 * Save outputs, *if applicable* (.csv, .png, etc.)
 
 
+## Exercise
 
-### Heuristic file paths with `here()` {-}
-
-The package `here` @R-here and its function `here()` (`here::here()`), make it easy to tell R where to find and to save your files - in essence, it builds file paths. It becomes especially useful for dealing with the alternate filepaths generated by .Rmd files, but can be used for exporting/importing any scripts, functions or data. 
-
-This is how `here()` works within an R project:
-
-- When the `here` package is first loaded within the R project, it places a small file called “.here” in the root folder of your R project as a “benchmark” or “anchor”
-
-- In your scripts, to reference a file in the R project’s sub-folders, you use the function `here()` to build the file path in relation to that anchor
-
-- To build the file path, write the names of folders beyond the root, within quotes, separated by commas, finally ending with the file name and file extension as shown below
-
-- `here()` file paths can be used for both importing and exporting
-
-So when you use `here()` wrapped inside other functions for importing/exporting (like `read_csv()` or `ggsave()`) if you include `here()` you can still use the RProject location as the root directory when 'knitting' Rmarkdown files, even if your markdown is tidied away into a **separate sub-folder**.
-
-This means your previous relative filepaths should be replaced with:
-
+Delete this content and replace it with your own. As an example, let’s create a report about penguins. Add the following content to a Quarto doc:
 
 ````md
-```{r, include=FALSE}
-# GLOBAL KNITR OPTIONS ----
-knitr::opts_chunk$set(echo = TRUE)
-# ____________________----
+---
+title: "Penguins Report"
+author: "Phil"
+output: html
+execute:
+  echo: false
+  warning: false
+  message: false
+---
 
-# PACKAGES ----
+```{r}`r''`
 library(tidyverse)
-library(here)
-
 ```
-````
 
-````md
-```{r, include=FALSE}
-# READ DATA ----
-
-penguins <- read_csv(here("data", "penguins_raw.csv"))
-
-head(penguins)
-
+```{r}`r''`
+penguins_raw <- read_csv("https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/penguins_raw.csv")
 ```
+
+# Introduction
+
+We are writing a report about the **Palmer Penguins**. These penguins are *really* amazing. There are three species:
+
+- Adelie
+- Gentoo
+- Chinstrap
+
+## Bill Length
+
+We can make a histogram to see the distribution of bill lengths.
+
+```{r}`r''`
+penguins_raw |> 
+  ggplot(aes(x = `Culmen Length (mm)`)) +
+  geom_histogram() +
+  theme_minimal()
+```
+
+```{r}`r''`
+average_bill_length <- penguins_raw |> 
+  summarize(avg_bill_length = mean(`Culmen Length (mm)`,
+                                   na.rm = TRUE)) |> 
+  pull(average_bill_length)
+```
+
+The chart shows the distribution of bill lengths. The average bill length is `` `r average_bill_length` ``.
+
 ````
-
-
-
-<div class="try">
-<p>Try replacing your previous code with the examples above then
-re-knitting your .Rmd file.</p>
-</div>
-
-
-<div class="warning">
-<p>You might want start using the <code>here()</code> from now on to
-read in and export data from scripts. Make sure you are consistent in
-whether you use <code>here()</code> heuristic file paths or relative
-file paths across <strong>all .R and .Rmd files in a project</strong> -
-otherwise you might encounter errors.</p>
-</div>
-
-
-## Activity: Can you change the global options of your Rmd file so that it doesn't display any code, warnings or messages? {-}
-
-Once you have made your edits to the [chunk options](#code-chunks) try hitting 'knit' again. 
 
 
 ## ggplot {-}
@@ -492,20 +359,15 @@ Size options of figures produced by R have consequences on relative sizes of ele
 
 
 
-```r
-# snake_case names need to be made
-
-penguins <- janitor::clean_names(penguins)
-```
 
 
 ```r
 penguin_colours <- c("darkolivegreen4", "darkorchid3", "goldenrod1")
 
-plot <- penguins %>% 
-  ggplot(aes(x=flipper_length_mm, 
-             y = body_mass_g))+
-  geom_point(aes(colour=species))+
+plot <- penguins_raw |> 
+  ggplot(aes(x=`Flipper Length (mm)`, 
+             y = `Body Mass (g)`))+
+  geom_point(aes(colour=`Species`))+
   scale_color_manual(values=penguin_colours)+
   theme_minimal(base_size = 11)
 ```
@@ -517,7 +379,7 @@ plot
 # figure elements are too big
 ```
 ````
-<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-22-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-11-1.png" width="100%" style="display: block; margin: auto;" />
 
 ````md
 ```{r fig.asp = 0.8, fig.width = 10}
@@ -526,7 +388,7 @@ plot
 ```
 ````
 
-<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-23-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-12-1.png" width="100%" style="display: block; margin: auto;" />
 
 To find the result you like, you’ll need to combine sizes set in your theme and set in the chunk options. With my customised theme, the default size (`7`) looks good to me.
 
@@ -536,7 +398,7 @@ plot
 ```
 ````
 
-<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-24-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-13-1.png" width="100%" style="display: block; margin: auto;" />
 
 When texts axis are longer or when figures is overloaded, you can choose bigger size (8 or 9) to relatively reduce the figure elements. it’s worth noting that for the text sizes, you can also modify the base size in your theme to obtain similar figures.
 
@@ -547,12 +409,12 @@ plot + theme(base_size = 14)
 ```
 ````
 
-<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-25-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-14-1.png" width="100%" style="display: block; margin: auto;" />
 
 
 ### Size of final figure in document {-}
 
-With the previous examples, you could see the relative size of the elements within th figures was changed - but the area occupied by the figures remained the same. In order to change this I need `out.width` or `out.height`
+With the previous examples, you could see the relative size of the elements within the figures was changed - but the area occupied by the figures remained the same. In order to change this I need `out.width` or `out.height`
 
 Figures made with R in a R Markdown document are exported (by default in png format) and then inserted into the final rendered document. Options `out.width` and `out.height` enable us to choose the size of the figure in the final document.
 
@@ -565,24 +427,7 @@ plot
 ```
 ````
 
-<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-26-1.png" width="50%" style="display: block; margin: auto;" />
-
-### Changing default values of chunk options {-}
-
-You can also change default values of chunk options by writing this at the beginning of your R Markdown document.
-
-````md
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(
- fig.width = 6,
- fig.asp = 0.8,
- out.width = "80%"
-)
-```
-````
-
-These values will be applied for all chunks unless you specify other value in a chunk locally. You can set values often used (which differ from the default one) and avoid repeating them for each chunk.
-
+<img src="08-reproducible-reports_files/figure-html/unnamed-chunk-15-1.png" width="50%" style="display: block; margin: auto;" />
 
 
 ## Static images {-}
@@ -621,31 +466,31 @@ The `gt` @R-gt package is all about making it simple to produce nice-looking dis
 
 
 ```r
-penguins |>  
-    group_by(species) |>  
-    summarise(`Body Mass (g)`= mean(body_mass_g, na.rm = T),
-              `Flipper Length (mm)`= mean(flipper_length_mm, na.rm = T)) |>  
+penguins_raw |>  
+    group_by(`Species`) |>  
+    summarise(`Body Mass (g)`= mean(`Body Mass (g)`, na.rm = T),
+              `Flipper Length (mm)`= mean(`Flipper Length (mm)`, na.rm = T)) |>  
   gt::gt()
 ```
 
 ```{=html}
-<div id="lyyjsjsoxx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#lyyjsjsoxx table {
+<div id="zmzsdfsuvy" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#zmzsdfsuvy table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#lyyjsjsoxx thead, #lyyjsjsoxx tbody, #lyyjsjsoxx tfoot, #lyyjsjsoxx tr, #lyyjsjsoxx td, #lyyjsjsoxx th {
+#zmzsdfsuvy thead, #zmzsdfsuvy tbody, #zmzsdfsuvy tfoot, #zmzsdfsuvy tr, #zmzsdfsuvy td, #zmzsdfsuvy th {
   border-style: none;
 }
 
-#lyyjsjsoxx p {
+#zmzsdfsuvy p {
   margin: 0;
   padding: 0;
 }
 
-#lyyjsjsoxx .gt_table {
+#zmzsdfsuvy .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -671,12 +516,12 @@ penguins |>
   border-left-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_caption {
+#zmzsdfsuvy .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#lyyjsjsoxx .gt_title {
+#zmzsdfsuvy .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -688,7 +533,7 @@ penguins |>
   border-bottom-width: 0;
 }
 
-#lyyjsjsoxx .gt_subtitle {
+#zmzsdfsuvy .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -700,7 +545,7 @@ penguins |>
   border-top-width: 0;
 }
 
-#lyyjsjsoxx .gt_heading {
+#zmzsdfsuvy .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -712,13 +557,13 @@ penguins |>
   border-right-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_bottom_border {
+#zmzsdfsuvy .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_col_headings {
+#zmzsdfsuvy .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -733,7 +578,7 @@ penguins |>
   border-right-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_col_heading {
+#zmzsdfsuvy .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -753,7 +598,7 @@ penguins |>
   overflow-x: hidden;
 }
 
-#lyyjsjsoxx .gt_column_spanner_outer {
+#zmzsdfsuvy .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -765,15 +610,15 @@ penguins |>
   padding-right: 4px;
 }
 
-#lyyjsjsoxx .gt_column_spanner_outer:first-child {
+#zmzsdfsuvy .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#lyyjsjsoxx .gt_column_spanner_outer:last-child {
+#zmzsdfsuvy .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#lyyjsjsoxx .gt_column_spanner {
+#zmzsdfsuvy .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -785,11 +630,11 @@ penguins |>
   width: 100%;
 }
 
-#lyyjsjsoxx .gt_spanner_row {
+#zmzsdfsuvy .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#lyyjsjsoxx .gt_group_heading {
+#zmzsdfsuvy .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -815,7 +660,7 @@ penguins |>
   text-align: left;
 }
 
-#lyyjsjsoxx .gt_empty_group_heading {
+#zmzsdfsuvy .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -830,15 +675,15 @@ penguins |>
   vertical-align: middle;
 }
 
-#lyyjsjsoxx .gt_from_md > :first-child {
+#zmzsdfsuvy .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#lyyjsjsoxx .gt_from_md > :last-child {
+#zmzsdfsuvy .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#lyyjsjsoxx .gt_row {
+#zmzsdfsuvy .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -857,7 +702,7 @@ penguins |>
   overflow-x: hidden;
 }
 
-#lyyjsjsoxx .gt_stub {
+#zmzsdfsuvy .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -870,7 +715,7 @@ penguins |>
   padding-right: 5px;
 }
 
-#lyyjsjsoxx .gt_stub_row_group {
+#zmzsdfsuvy .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -884,15 +729,15 @@ penguins |>
   vertical-align: top;
 }
 
-#lyyjsjsoxx .gt_row_group_first td {
+#zmzsdfsuvy .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#lyyjsjsoxx .gt_row_group_first th {
+#zmzsdfsuvy .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#lyyjsjsoxx .gt_summary_row {
+#zmzsdfsuvy .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -902,16 +747,16 @@ penguins |>
   padding-right: 5px;
 }
 
-#lyyjsjsoxx .gt_first_summary_row {
+#zmzsdfsuvy .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_first_summary_row.thick {
+#zmzsdfsuvy .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#lyyjsjsoxx .gt_last_summary_row {
+#zmzsdfsuvy .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -921,7 +766,7 @@ penguins |>
   border-bottom-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_grand_summary_row {
+#zmzsdfsuvy .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -931,7 +776,7 @@ penguins |>
   padding-right: 5px;
 }
 
-#lyyjsjsoxx .gt_first_grand_summary_row {
+#zmzsdfsuvy .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -941,7 +786,7 @@ penguins |>
   border-top-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_last_grand_summary_row_top {
+#zmzsdfsuvy .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -951,11 +796,11 @@ penguins |>
   border-bottom-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_striped {
+#zmzsdfsuvy .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#lyyjsjsoxx .gt_table_body {
+#zmzsdfsuvy .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -964,7 +809,7 @@ penguins |>
   border-bottom-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_footnotes {
+#zmzsdfsuvy .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -978,7 +823,7 @@ penguins |>
   border-right-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_footnote {
+#zmzsdfsuvy .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -987,7 +832,7 @@ penguins |>
   padding-right: 5px;
 }
 
-#lyyjsjsoxx .gt_sourcenotes {
+#zmzsdfsuvy .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1001,7 +846,7 @@ penguins |>
   border-right-color: #D3D3D3;
 }
 
-#lyyjsjsoxx .gt_sourcenote {
+#zmzsdfsuvy .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1009,63 +854,63 @@ penguins |>
   padding-right: 5px;
 }
 
-#lyyjsjsoxx .gt_left {
+#zmzsdfsuvy .gt_left {
   text-align: left;
 }
 
-#lyyjsjsoxx .gt_center {
+#zmzsdfsuvy .gt_center {
   text-align: center;
 }
 
-#lyyjsjsoxx .gt_right {
+#zmzsdfsuvy .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#lyyjsjsoxx .gt_font_normal {
+#zmzsdfsuvy .gt_font_normal {
   font-weight: normal;
 }
 
-#lyyjsjsoxx .gt_font_bold {
+#zmzsdfsuvy .gt_font_bold {
   font-weight: bold;
 }
 
-#lyyjsjsoxx .gt_font_italic {
+#zmzsdfsuvy .gt_font_italic {
   font-style: italic;
 }
 
-#lyyjsjsoxx .gt_super {
+#zmzsdfsuvy .gt_super {
   font-size: 65%;
 }
 
-#lyyjsjsoxx .gt_footnote_marks {
+#zmzsdfsuvy .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#lyyjsjsoxx .gt_asterisk {
+#zmzsdfsuvy .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#lyyjsjsoxx .gt_indent_1 {
+#zmzsdfsuvy .gt_indent_1 {
   text-indent: 5px;
 }
 
-#lyyjsjsoxx .gt_indent_2 {
+#zmzsdfsuvy .gt_indent_2 {
   text-indent: 10px;
 }
 
-#lyyjsjsoxx .gt_indent_3 {
+#zmzsdfsuvy .gt_indent_3 {
   text-indent: 15px;
 }
 
-#lyyjsjsoxx .gt_indent_4 {
+#zmzsdfsuvy .gt_indent_4 {
   text-indent: 20px;
 }
 
-#lyyjsjsoxx .gt_indent_5 {
+#zmzsdfsuvy .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -1073,19 +918,19 @@ penguins |>
   <thead>
     
     <tr class="gt_col_headings">
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="species">species</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Species">Species</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Body Mass (g)">Body Mass (g)</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Flipper Length (mm)">Flipper Length (mm)</th>
     </tr>
   </thead>
   <tbody class="gt_table_body">
-    <tr><td headers="species" class="gt_row gt_left">Adelie</td>
+    <tr><td headers="Species" class="gt_row gt_left">Adelie Penguin (Pygoscelis adeliae)</td>
 <td headers="Body Mass (g)" class="gt_row gt_right">3700.662</td>
 <td headers="Flipper Length (mm)" class="gt_row gt_right">189.9536</td></tr>
-    <tr><td headers="species" class="gt_row gt_left">Chinstrap</td>
+    <tr><td headers="Species" class="gt_row gt_left">Chinstrap penguin (Pygoscelis antarctica)</td>
 <td headers="Body Mass (g)" class="gt_row gt_right">3733.088</td>
 <td headers="Flipper Length (mm)" class="gt_row gt_right">195.8235</td></tr>
-    <tr><td headers="species" class="gt_row gt_left">Gentoo</td>
+    <tr><td headers="Species" class="gt_row gt_left">Gentoo penguin (Pygoscelis papua)</td>
 <td headers="Body Mass (g)" class="gt_row gt_right">5076.016</td>
 <td headers="Flipper Length (mm)" class="gt_row gt_right">217.1870</td></tr>
   </tbody>
@@ -1096,18 +941,19 @@ penguins |>
 ```
 
 <div class="try">
-<p>You won’t be able to see these tables unless you try re-knitting your
-.Rmd file.</p>
+<p>You won’t be able to see these tables unless you try re-rendering
+your .qmd file.</p>
 </div>
+
 
 
 ## Source files {-}
 
-One variation of the “self-contained” approach is to have R Markdown code chunks “source” (run) other R scripts. 
+One variation of the “self-contained” approach is to have Quarto “source” (run) other R scripts. 
 
-This can make your R Markdown script less cluttered, more simple, and easier to organize. It can also help if you want to display final figures at the beginning of the report. 
+This can make your Quarto file less cluttered, simpler, and easier to organize. It can also help if you want to display final figures at the beginning of the report. 
 
-In this approach, the final R Markdown script simply combines pre-processed outputs into a document. We already used the `source()` function to feed R objects from one script to another, now we can do the same thing to our report. 
+In this approach, the final Quarto doc simply combines pre-processed outputs into a document. We already used the `source()` function to feed R objects from one script to another, now we can do the same thing to our report. 
 
 The advantage is all the data cleaning and organising happens "elsewhere" and we don't need to repeat our code. If you make any changes in your analysis scripts, these will be reflected by changes in your report the next time you compile (knit) it. 
 
@@ -1115,23 +961,14 @@ The advantage is all the data cleaning and organising happens "elsewhere" and we
 source("scripts/your-script.R")
 ```
 
-<div class="warning">
-<p>Don’t try using <code>here()</code> unless ALL of your script
-dependencies ALSO use this. When knitting an Rmd file it treats the
-absolute file path as relative to the .Rmd file (even when running
-scripts written outside of the document).</p>
-<p>This is why it’s usually simpler to save your .Rmd file in the same
-place as your .RProj file</p>
-</div>
-
 ## Activity: Connecting scripts and reports {-}
 
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 
-Create a separate R script for data import and quick cleaning, then source this into a new .Rmd file.
+Create a separate R script for data import and quick cleaning save this and then source this into a new .qmd file.
  </div></div>
 
-* Create a **new** Rmarkdown file.
+* Create a **new** Quarto doc.
 
 * Create a new .R file
 
@@ -1144,23 +981,90 @@ then you can call objects made externally - in this case a penguin plot
 - put the code block in and hit knit.</p>
 </div>
 
-````md
-```{r setup, include=FALSE}
-# GLOBAL KNITR OPTIONS ----
-knitr::opts_chunk$set(echo = TRUE)
-# ____________________----
-
-```
-````
 
 ````md
-```{r read-data, include=FALSE}
+```{r read-data}
+<p>#&#124;</p> include: false
 # READ DATA ----
 
 source("scripts/penguins.R")
 
 ```
 `````
+
+### Useful tips {-}
+ 
+<div class="info">
+<p>The working directory for .qmd files is a little different to working
+with scripts.</p>
+<p>With a .qmd file, the <strong>working directory is wherever the qmd
+file itself is saved</strong>.</p>
+<p>For example if you have your .qmd file in a subfolder
+~/outputfiles/markdown.qmd the code for read_csv(“data/data.csv”) within
+the markdown will look for a <code>.csv</code> file in a subfolder
+called data <em>inside</em> the ‘markdown’ folder and not the root
+project folder where the <code>.RProj</code> file lives.</p>
+<p>So we have two options when using .qmd files</p>
+<ol style="list-style-type: decimal">
+<li><p>Don’t put the .qmd file in a subfolder and make sure it lives in
+the same directory as your .RProj file - that way relative filepaths are
+the same between R scripts and quarto files</p></li>
+<li><p>Use the <code>here</code> package to describe file locations -
+more later</p></li>
+</ol>
+</div>
+
+
+
+### Heuristic file paths with `here()` {-}
+
+The package `here` @R-here and its function `here()` (`here::here()`), make it easy to tell R where to find and to save your files - in essence, it builds file paths. It becomes especially useful for dealing with the alternate filepaths generated by .Rmd files, but can be used for exporting/importing any scripts, functions or data. 
+
+This is how `here()` works within an R project:
+
+- When the `here` package is first loaded within the R project, it places a small file called “.here” in the root folder of your R project as a “benchmark” or “anchor”
+
+- In your scripts, to reference a file in the R project’s sub-folders, you use the function `here()` to build the file path in relation to that anchor
+
+- To build the file path, write the names of folders beyond the root, within quotes, separated by commas, finally ending with the file name and file extension as shown below
+
+- `here()` file paths can be used for both importing and exporting
+
+So when you use `here()` wrapped inside other functions for importing/exporting (like `read_csv()` or `ggsave()`) if you include `here()` you can still use the RProject location as the root directory when rendering Quarto files, even if your markdown is tidied away into a **separate sub-folder**.
+
+This means your previous relative filepaths should be replaced with:
+
+
+````md
+```{r, include=FALSE}
+# PACKAGES ----
+library(tidyverse)
+library(here)
+
+```
+````
+
+````md
+```{r}
+<p>#&#124;</p> include: false
+<p>#<p> READ DATA ----
+
+penguins <- read_csv(here("data", "penguins_raw.csv"))
+
+head(penguins)
+
+```
+````
+
+
+<div class="warning">
+<p>You might want start using the <code>here()</code> from now on to
+read in and export data from scripts. Make sure you are consistent in
+whether you use <code>here()</code> heuristic file paths or relative
+file paths across <strong>all .R and .Rmd files in a project</strong> -
+otherwise you might encounter errors.</p>
+</div>
+
 
 
 ## Activity: Test yourself {-}
@@ -1259,37 +1163,207 @@ RStudio comes with a pretty nifty [Visual Markdown Editor](https://www.rstudio.c
 
 You can switch between modes with a button push, try it out! 
 
-## Quarto {-}
-
-The visual editor was a precursor to a new type of publishing tool - Quarto. this tool takes what R Markdown has done for R and extends it to other languages, including Python, Julia, and Observable JS. As I write this book, Quarto is gaining traction. Luckily, the concepts you’ve learned in this chapter apply to Quarto as well. Quarto documents have a YAML section, code chunks, and Markdown text. You can export Quarto documents to HTML, PDF, and Word. However, R Markdown and Quarto documents have some syntactic differences. 
 
 
-## Extended outputs
+## Presentations
 
-Rmarkdown and Quarto can produce a vast number of different file ouputs including:
+Quarto can also produce slideshow presentations. To make a presentation with Quarto, click File > New File > Quarto Presentation. Choose `Reveal JS` to make your slides and leave the Engine and Editor options untouched.
 
-* Slides - xaringan or reveal.js
+The slides you’ll make use the reveal.js JavaScript library under the hood, a technique. The following code makes a simple presentation:
 
-* Dashboards
+````md
+---
+title: "My First Quarto Presentation"
+format: revealjs
+---
 
-* Websites
+## Slide 1: Introduction
 
-* E-books
+- Welcome to my presentation
+- Made with Quarto and Reveal.js
 
-* Journal papers
+## Slide 2: Incremental Bullet Points
 
-I recommend the reading list below for expanding your abilities with reproducible documents: 
+```{r}
+<p>#&#124;</p>include: false
+library(tidyverse)
+penguins_raw <- read_csv("https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/penguins_raw.csv")
+```
+
+We are writing a report about the **Palmer Penguins**. These penguins are *really* amazing. There are three species:
+
+:::{.incremental}
+
+- Adelie
+- Gentoo
+- Chinstrap
+:::
+
+## Slide 3: Columns
+
+:::{.columns}
+::: {.column width="70%"}
+```{r}
+<p>#&#124;</p> fig-height: 9
+<p>#&#124;</p> out.width: "120%"
+penguin_colours <- c("darkolivegreen4", "darkorchid3", "goldenrod1")
+
+penguins_raw |> 
+  ggplot(aes(x=`Flipper Length (mm)`, 
+             y = `Body Mass (g)`))+
+  geom_point(aes(colour=`Species`))+
+  scale_color_manual(values=penguin_colours,
+                      labels = c("Adelie", "Chinstrap", "Gentoo"))+
+  theme_minimal(base_size = 20)+
+  theme(legend.position = "bottom")
+```
+
+:::
+
+::: {.column width="30%"}
+```{r}
+penguins_raw |>  
+    group_by(`Species`) |>  
+    summarise(`Body Mass (g)`= mean(`Body Mass (g)`, na.rm = T),
+              `Flipper Length (mm)`= mean(`Flipper Length (mm)`, na.rm = T)) |>  
+  gt::gt()
+```
+:::
+:::
+
+````
+
+## Explanation of Key Features
+
+- Basic Structure: The YAML header (--- at the top) defines the presentation title and the format (revealjs for Reveal.js presentations).
+
+- Slides: Each slide starts with a new heading (e.g., ## Slide Title). Everything under that heading will appear on the same slide.
+
+- Incremental Bullet Points: Use {.incremental} to reveal bullet points one by one.
+
+- Columns: Use {.columns} to create multiple columns on a slide. Then, define each column with {.column} and set the width (e.g., "50%" for two equally sized columns).
+
+## Parameters
+
+Parameterized reporting is a technique that allows you to generate multiple reports simultaneously. By using parameterized reporting, you can follow the same process to make 3,000 reports as you would to make one report. The technique also makes your work more accurate, as it avoids copy-and-paste errors. 
+
+Let's create a parameterized report using Quarto and the Palmer Penguins data. Parameterized reporting allows you to create dynamic reports that can change based on input parameters, such as species or island in this example.
+
+We add parameters to the YAML header of your Quarto document. These parameters will control the species or island that the report focuses on:
+
+
+### Defining Parameters
+
+In R Markdown, *parameters* are variables that you set in the YAML to allow you to create multiple reports. Take a look at these two lines in the YAML:
+
+````md
+params:
+  species: "Adelie Penguin (Pygoscelis adeliae)"
+  island: "Biscoe"
+````
+
+This code defines variables called species and island. You can use these variable throughout the rest of the Quarto document with the `params$variable_name` syntax, replacing `variable_name` with species or any other name you set in the YAML. For example, consider this inline R code:
+
+`params$species`
+
+Any instance of the `params$species` parameter will be converted to "Adelie Penguin (Pygoscelis adeliae)" when you knit it. 
+
+
+### Parameterised Report
+
+````md
+---
+title: "Penguin Analysis Report"
+format: html
+params:
+  species: "Adelie Penguin (Pygoscelis adeliae)"
+  island: "Biscoe"
+---
+
+
+````
+
+### Create a Parameterized Report
+Now, let's add R code to use these parameters for filtering and visualizing the data:
+
+
+````md
+---
+title: "Penguin Analysis Report"
+format: html
+params:
+  species: "Adelie Penguin (Pygoscelis adeliae)"
+  island: "Biscoe"
+---
+
+## Introduction
+
+This report provides an analysis of the Palmer Penguins dataset. The current report focuses on the `` r "\u0060params$species\u0060"` `` species from `` `r params$island` `` island.
+
+## Load and Filter Data
+
+First, let's load the Palmer Penguins dataset and filter it based on the selected parameters.
+
+```{r}
+<p>#&#124;</p> include: false
+library(tidyverse)
+library(gghighlight)
+<p>#</p> Load the dataset
+penguins_raw <- read_csv("https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/penguins_raw.csv")
+
+<p>#</p> Filter data based on parameters
+filtered_data <- penguins_raw |> 
+  filter(Island == params$island)
+
+```
+
+```{r}
+# Display the first few rows of the filtered data
+head(filtered_data)
+```
+
+
+## Now let's generate some summary statistics
+
+```{r}
+summary_stats <- filtered_data %>%
+  summarise(
+    mean_flipper_length = mean(`Culmen Length (mm)`, na.rm = TRUE),
+    mean_body_mass = mean(`Body Mass (g)`, na.rm = TRUE)
+  )
+
+summary_stats
+
+```
+
+## Visualisations
+
+
+```{r}
+penguin_colours <- c("darkolivegreen4", "darkorchid3", "goldenrod1")
+
+penguins_raw |> 
+  ggplot(aes(x=`Flipper Length (mm)`, 
+             y = `Body Mass (g)`))+
+  geom_point(aes(colour=`Species`))+
+  scale_color_manual(values=penguin_colours,
+                      labels = c("Adelie", "Chinstrap", "Gentoo"))+
+  theme_minimal(base_size = 20)+
+  theme(legend.position = "bottom")+
+  gghighlight(`Species` == params$species)
+```
+
+````md
+
+### Explanation of Key Elements
+
+1. **YAML Header with Parameters**: The `params` field defines the parameters (`species` and `island`). These can be changed to generate different versions of the report.
+2. **R Code Chunks Using Parameters**: The `params$` notation is used within R code chunks to access the parameter values and filter the dataset accordingly.
+3. **Dynamic Text**: The inline R code (e.g.,`` `r params$species` ``) dynamically updates the text in the report to reflect the chosen parameters.
 
 
 ### Further Reading, Guides and tips {-}
 
-* [R Cheat Sheets](https://www.rstudio.com/resources/cheatsheets/)
-
-* **Rmarkdown: The Definitive Guide** https://bookdown.org/yihui/rmarkdown/
-
-(https://rmarkdown.rstudio.com/articles_intro.html)
-
-(https://rmarkdown.rstudio.com/authoring_quick_tour.html)
 
 * https://www.apreshill.com/blog/2022-04-we-dont-talk-about-quarto/
 

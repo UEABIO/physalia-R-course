@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Chapter 23 Parallel programming | Advancing in R</title>
+<meta name="author" content="Philip T. Leftwich">
+<meta name="description" content="Parallel computing is a method used to speed up processing by running multiple tasks simultaneously. This technique is common across many programming languages and is supported by modern...">
+<meta name="generator" content="bookdown 0.34 with bs4_book()">
+<meta property="og:title" content="Chapter 23 Parallel programming | Advancing in R">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://ueabio.github.io/physalia-R-course-2023/parallel-programming.html">
+<meta property="og:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<meta property="og:description" content="Parallel computing is a method used to speed up processing by running multiple tasks simultaneously. This technique is common across many programming languages and is supported by modern...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chapter 23 Parallel programming | Advancing in R">
+<meta name="twitter:description" content="Parallel computing is a method used to speed up processing by running multiple tasks simultaneously. This technique is common across many programming languages and is supported by modern...">
+<meta name="twitter:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.6.0/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.5.0/transition.js"></script><script src="libs/bs3compat-0.5.0/tabs.js"></script><script src="libs/bs3compat-0.5.0/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="libs/font-awesome-5.13.0/js/script.js"></script><script src="libs/kePrint-0.0.1/kePrint.js"></script><link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-6NP3MF25W3"></script><script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-6NP3MF25W3');
+    </script><script language="javascript"> 
+        function toggle(id) {
+            var ele = document.getElementById("toggleText" + id);
+            var text = document.getElementById("displayText" + id);
+            var buttonText = text.innerHTML.replace("Show ", "");
+            buttonText = buttonText.replace("Hide ", "");
+            if(ele.style.display == "block") {
+                ele.style.display = "none";
+                text.innerHTML = "Show " + buttonText;
+            } else {
+                ele.style.display = "block";
+                text.innerHTML = "Hide " + buttonText;
+            }
+        } 
+    </script><script language="javascript">
+        function openCode(evt, codeName, id) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent" + id);
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks" + id);
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(codeName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script><script language="javascript">
+        function hide(id){
+            document.getElementById(id).style.display = "none";
+        }
+    </script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- CSS --><style type="text/css">
+    
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  </style>
+<style type="text/css">
+    /* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+        }
+    .hanging div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }
+  </style>
+<link rel="stylesheet" href="include/psyteachr.css">
+<link rel="stylesheet" href="include/webex.css">
+<link rel="stylesheet" href="include/style.css">
+</head>
+<body data-spy="scroll" data-target="#toc">
+
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="A guide for Biologists and Ecologists">Advancing in R</a>:
+        <small class="text-muted">A guide for Biologists and Ecologists</small>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Overview</a></li>
+<li class="book-part">Get Started in R</li>
+<li><a class="" href="introduction-to-r-and-rstudio.html"><span class="header-section-number">1</span> Introduction to R and RStudio</a></li>
+<li><a class="" href="r-basics.html"><span class="header-section-number">2</span> R basics</a></li>
+<li class="book-part">Organising workflows</li>
+<li><a class="" href="project-oriented-workflows.html"><span class="header-section-number">3</span> Project-oriented workflows</a></li>
+<li><a class="" href="renv.html"><span class="header-section-number">4</span> renv</a></li>
+<li><a class="" href="basic-importexport.html"><span class="header-section-number">5</span> Basic Import/Export</a></li>
+<li><a class="" href="scripts.html"><span class="header-section-number">6</span> Scripts</a></li>
+<li><a class="" href="naming-things.html"><span class="header-section-number">7</span> Naming things</a></li>
+<li><a class="" href="penguin-project.html"><span class="header-section-number">8</span> Penguin project</a></li>
+<li><a class="" href="data-wrangling-with-dplyr.html"><span class="header-section-number">9</span> Data wrangling with dplyr</a></li>
+<li><a class="" href="data-reshaping.html"><span class="header-section-number">10</span> Data reshaping</a></li>
+<li><a class="" href="dealing-with-missing-data.html"><span class="header-section-number">11</span> Dealing with Missing Data</a></li>
+<li><a class="" href="mastering-text-data.html"><span class="header-section-number">12</span> Mastering Text Data</a></li>
+<li><a class="" href="basic-ggplot.html"><span class="header-section-number">13</span> Basic ggplot</a></li>
+<li class="book-part">Data Insights</li>
+<li><a class="" href="data-insights-part-one.html"><span class="header-section-number">14</span> Data Insights part one</a></li>
+<li><a class="" href="data-insights-part-two.html"><span class="header-section-number">15</span> Data insights part two</a></li>
+<li class="book-part">Functional Programming</li>
+<li><a class="" href="writing-functions.html"><span class="header-section-number">16</span> Writing Functions</a></li>
+<li><a class="" href="flow-control.html"><span class="header-section-number">17</span> Flow control</a></li>
+<li><a class="" href="writing-packages.html"><span class="header-section-number">18</span> Writing Packages</a></li>
+<li><a class="" href="simple-iteration.html"><span class="header-section-number">19</span> Simple iteration</a></li>
+<li><a class="" href="loops.html"><span class="header-section-number">20</span> Loops</a></li>
+<li><a class="" href="apply.html"><span class="header-section-number">21</span> Apply</a></li>
+<li><a class="" href="purrr.html"><span class="header-section-number">22</span> Purrr</a></li>
+<li><a class="active" href="parallel-programming.html"><span class="header-section-number">23</span> Parallel programming</a></li>
+<li><a class="" href="bonus-simulation.html"><span class="header-section-number">24</span> Bonus: Simulation</a></li>
+<li class="book-part">Getting the most out of tidyverse</li>
+<li><a class="" href="reading-files-with-readr.html"><span class="header-section-number">25</span> Reading files with readr</a></li>
+<li><a class="" href="working-across-columns.html"><span class="header-section-number">26</span> Working across columns</a></li>
+<li><a class="" href="modifying-variables.html"><span class="header-section-number">27</span> Modifying variables</a></li>
+<li><a class="" href="factors-1.html"><span class="header-section-number">28</span> Factors</a></li>
+<li><a class="" href="applying-functions-across-columns.html"><span class="header-section-number">29</span> Applying functions across columns</a></li>
+<li><a class="" href="working-with-rows.html"><span class="header-section-number">30</span> Working with rows</a></li>
+<li><a class="" href="group-work.html"><span class="header-section-number">31</span> Group work</a></li>
+<li><a class="" href="pivot.html"><span class="header-section-number">32</span> Pivot</a></li>
+<li><a class="" href="writing-functions-in-tidyverse.html"><span class="header-section-number">33</span> Writing Functions in Tidyverse</a></li>
+<li class="book-part">Data Presentation</li>
+<li><a class="" href="customisation-with-ggplot2.html"><span class="header-section-number">34</span> Customisation with ggplot2</a></li>
+<li><a class="" href="extensions-for-ggplot2.html"><span class="header-section-number">35</span> Extensions for ggplot2</a></li>
+<li><a class="" href="custom-ggplot-themes.html"><span class="header-section-number">36</span> Custom ggplot themes</a></li>
+<li><a class="" href="making-tables-with-gt.html"><span class="header-section-number">37</span> Making tables with gt</a></li>
+<li class="book-part">Introduction to Shiny</li>
+<li><a class="" href="getting-to-work-with-shiny.html"><span class="header-section-number">38</span> Getting to work with Shiny</a></li>
+<li><a class="" href="make-our-own-app.html"><span class="header-section-number">39</span> Make our own App</a></li>
+<li><a class="" href="inputs.html"><span class="header-section-number">40</span> Inputs</a></li>
+<li><a class="" href="outputs.html"><span class="header-section-number">41</span> Outputs</a></li>
+<li><a class="" href="reactive.html"><span class="header-section-number">42</span> Reactive</a></li>
+<li><a class="" href="shiny-dashboards.html"><span class="header-section-number">43</span> Shiny Dashboards</a></li>
+<li><a class="" href="sharing.html"><span class="header-section-number">44</span> Sharing</a></li>
+<li class="book-part">Literate Programming and Reproducibility</li>
+<li><a class="" href="quarto.html"><span class="header-section-number">45</span> Quarto</a></li>
+<li><a class="" href="github-1.html"><span class="header-section-number">46</span> Github</a></li>
+<li class="book-part">Efficient Programming</li>
+<li><a class="" href="reading-5.html"><span class="header-section-number">47</span> Reading</a></li>
+<li><a class="" href="efficient-programming.html"><span class="header-section-number">48</span> Efficient Programming</a></li>
+<li class="book-part">Working with big data</li>
+<li><a class="" href="data-structures-in-r.html"><span class="header-section-number">49</span> Data structures in R</a></li>
+<li><a class="" href="read-io.html"><span class="header-section-number">50</span> Read I/O</a></li>
+<li><a class="" href="working-with-sql.html"><span class="header-section-number">51</span> Working with sql</a></li>
+<li class="book-part">BONUS: Automated Exploratory Analysis</li>
+<li><a class="" href="packages-for-automated-exploratory-data-analysis.html"><span class="header-section-number">52</span> Packages for Automated Exploratory Data Analysis</a></li>
+<li class="book-part">BONUS: Installations</li>
+<li><a class="" href="installing-r.html"><span class="header-section-number">53</span> Installing R</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/UEABIO/physalia-intro-stats-2023">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="parallel-programming" class="section level1" number="23">
+<h1>
+<span class="header-section-number">23</span> Parallel programming<a class="anchor" aria-label="anchor" href="#parallel-programming"><i class="fas fa-link"></i></a>
+</h1>
+<p>Parallel computing is a method used to speed up processing by running multiple tasks simultaneously. This technique is common across many programming languages and is supported by modern multi-core processors. Think of parallel computing as having several computers working side-by-side on the same task—each one handles a piece of the work at the same time.</p>
+<p>In the context of R, parallel computing can be broadly divided into two types:</p>
+<p>User-Specified Parallel Actions: Here, you manually set up the parallel processing. You decide which processors to use, how to split the task, and how to manage the work. Examples of this approach include functions like foreach, ddply, and parLapply.</p>
+<p>Library-Specified Parallel Execution: With this method, you use a package that handles the details of parallel processing for you. You simply specify the number of cores you want to use, and the package manages the rest. A common example is pdredge.</p>
+<p>Before diving into how to code for parallel processing, it’s important to understand some basic terminology. Different systems and programming languages use varied terms, but here’s a simplified overview based on R and Compute Canada’s definitions:</p>
+<div class="inline-table"><table class="table table-sm">
+<colgroup>
+<col width="20%">
+<col width="79%">
+</colgroup>
+<thead><tr class="header">
+<th>Term</th>
+<th>Definition</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><strong>Node</strong></td>
+<td>A physical computer with its own cores and memory.</td>
+</tr>
+<tr class="even">
+<td><strong>Cluster</strong></td>
+<td>A group of interconnected nodes.</td>
+</tr>
+<tr class="odd">
+<td><strong>Core</strong></td>
+<td>A single processing unit within a node, with its own memory.</td>
+</tr>
+<tr class="even">
+<td><strong>Thread</strong></td>
+<td>A virtual component used to manage tasks.</td>
+</tr>
+<tr class="odd">
+<td><strong>Task</strong></td>
+<td>A process assigned to a core.</td>
+</tr>
+<tr class="even">
+<td><strong>Memory per CPU</strong></td>
+<td>The amount of RAM available to a core.</td>
+</tr>
+<tr class="odd">
+<td><strong>Memory per Node</strong></td>
+<td>The total amount of RAM available on a node.</td>
+</tr>
+<tr class="even">
+<td><strong>Job</strong></td>
+<td>A request for computational resources and tasks in supercomputing.</td>
+</tr>
+<tr class="odd">
+<td><strong>Cluster (in R)</strong></td>
+<td>A virtual grouping of multiple cores.</td>
+</tr>
+<tr class="even">
+<td><strong>FORK</strong></td>
+<td>A type of parallel environment with shared memory, available on Unix-based systems.</td>
+</tr>
+<tr class="odd">
+<td><strong>PSOCK</strong></td>
+<td>A parallel environment that communicates across cores, suitable for both Windows and Unix systems.</td>
+</tr>
+</tbody>
+</table></div>
+<div id="parallel-processing-with-foreach" class="section level2" number="23.1">
+<h2>
+<span class="header-section-number">23.1</span> Parallel processing with <code>foreach</code><a class="anchor" aria-label="anchor" href="#parallel-processing-with-foreach"><i class="fas fa-link"></i></a>
+</h2>
+<p>Let’s look at a basic example of parallel computing in R using the foreach package. This approach involves specifying and registering the cores you want to use for your computations.</p>
+<p>Here’s a simple guide:</p>
+<ul>
+<li><p><strong>Check Your Cores</strong>: First, find out how many cores your computer has. Most computers have either 4 or 8 cores.</p></li>
+<li><p><strong>Use foreach</strong>: This method allows you to run tasks in parallel by dividing the work among the cores.</p></li>
+<li><p><strong>Best Practices</strong>: It’s a good idea not to use all available cores. Typically, you should use one less than the total number of cores (i.e., n-1). Using all cores might slow down your computer because it will have fewer resources left for other tasks like running your operating system or applications such as Chrome and Word. This could cause your computer to freeze or crash.</p></li>
+</ul>
+<p>By following these guidelines, you can efficiently use parallel computing in R without overloading your system.</p>
+<div class="sourceCode" id="cb557"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RevolutionAnalytics/doparallel">doParallel</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RevolutionAnalytics/foreach">foreach</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">## Check the number of cores</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html">detectCores</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<pre><code>## [1] 16</code></pre>
+<div class="sourceCode" id="cb559"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## Set up cluster and the number of cores to be used </span></span>
+<span><span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html">makeCluster</a></span><span class="op">(</span><span class="fl">4</span>, type<span class="op">=</span><span class="st">"PSOCK"</span><span class="op">)</span> <span class="co">## specify number of cores, and type of cluster (PSOCK or FORK)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html">registerDoParallel</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span> <span class="co">## register the backend into a virtual node</span></span>
+<span></span>
+<span><span class="co">## Execute parallel operation</span></span>
+<span><span class="va">outLoop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/foreach/man/foreach.html">foreach</a></span><span class="op">(</span>i <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, .combine<span class="op">=</span><span class="va">c</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/foreach/man/foreach.html">%dopar%</a></span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">i</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">outLoop</span></span></code></pre></div>
+<pre><code>## [1] 1 2 3 4 5</code></pre>
+<ul>
+<li><p><code>makeCluster(4, type="PSOCK")</code>: This function creates a cluster with 4 cores for parallel processing.</p></li>
+<li><p>4: The number of cores to use for parallel computation.</p></li>
+<li><p>type="PSOCK": Specifies the type of parallel environment. PSOCK is a parallel socket cluster, suitable for both Windows and Unix systems. (Alternatively, FORK could be used for Unix-based systems, but PSOCK is more commonly used.)</p></li>
+<li><p>registerDoParallel(cl): Registers the cluster as the backend for parallel operations. This sets up the environment so that foreach can utilize the cluster for parallel execution.</p></li>
+<li><p>foreach(i = 1:5, .combine=c): This function iterates over a sequence from 1 to 5.</p></li>
+<li><p>i = 1:5: Specifies the range of values for the loop.
+.combine=c: Specifies how to combine the results from each iteration. In this case, the c function combines the results into a single vector.</p></li>
+<li><p>%dopar%: Indicates that the loop should be executed in parallel using the registered cluster.</p></li>
+<li><p>print(i): The code inside the loop, executed in parallel. It prints the value of i in each iteration.</p></li>
+</ul>
+<div id="differences-between-foreach-and-for-loops-in-r" class="section level3" number="23.1.1">
+<h3>
+<span class="header-section-number">23.1.1</span> Differences Between foreach and for Loops in R<a class="anchor" aria-label="anchor" href="#differences-between-foreach-and-for-loops-in-r"><i class="fas fa-link"></i></a>
+</h3>
+<p>The <code>foreach</code> function in R shares some similarities with traditional <code>for</code> loops but introduces several key differences. Understanding these can help you effectively use foreach for parallel computing.</p>
+<pre><code># uses in as the keyword to specify iterations
+# Parallel execution
+foreach(i = 1:5) %dopar% {
+  print(i)
+}
+
+
+# foreach uses = for iteration specification
+# Sequential execution
+foreach(i = 1:5) %do% {
+  print(i)
+}
+
+</code></pre>
+</div>
+<div id="compare-run-times" class="section level3" number="23.1.2">
+<h3>
+<span class="header-section-number">23.1.2</span> Compare Run Times<a class="anchor" aria-label="anchor" href="#compare-run-times"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb562"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RevolutionAnalytics/foreach">foreach</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/RevolutionAnalytics/doparallel">doParallel</a></span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># Example task: calculate the square of numbers from 1 to 1000</span></span>
+<span></span>
+<span><span class="co"># Define a function to calculate the square of a number</span></span>
+<span><span class="va">square</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html">return</a></span><span class="op">(</span><span class="va">x</span> <span class="op">*</span> <span class="va">x</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">start_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="va">simple_loop</span> <span class="op">&lt;-</span> <span class="kw">for</span><span class="op">(</span><span class="va">num</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">1000</span><span class="op">)</span>  <span class="op">{</span></span>
+<span>   <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">square</span><span class="op">(</span><span class="va">num</span><span class="op">)</span></span>
+<span>  </span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">end_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">end_time</span> <span class="op">-</span> <span class="va">start_time</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span><span class="co"># Set up parallel computing</span></span>
+<span><span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html">makeCluster</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span>  <span class="co"># Create a cluster with 4 cores</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html">registerDoParallel</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span>  <span class="co"># Register the cluster</span></span>
+<span></span>
+<span><span class="co"># Example task: calculate the square of numbers from 1 to 1000</span></span>
+<span><span class="va">start_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">parallel_loop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/foreach/man/foreach.html">foreach</a></span><span class="op">(</span>num <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">1000</span>, .combine<span class="op">=</span><span class="va">c</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/foreach/man/foreach.html">%dopar%</a></span> <span class="op">{</span></span>
+<span>  <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">square</span><span class="op">(</span><span class="va">num</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">end_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">end_time</span> <span class="op">-</span> <span class="va">start_time</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Stop the cluster</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html">stopCluster</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span></span></code></pre></div>
+<pre><code>## Time difference of 0.005086422 secs
+## Time difference of 0.4626634 secs</code></pre>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+What is the difference in speed between these two loops?
+</div>
+</div>
+<button id="displayTextunnamed-chunk-160" onclick="javascript:toggle('unnamed-chunk-160');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-160" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<p>Amdahls Law states that the potential speedup of a parallel computation is limited by the portion of the code that cannot be parallelized. If a large portion of the task is sequential, adding more processors will yield diminishing returns.</p>
+<p>There are also overheads to setting up parallel processing and if these are not equal to the time saved in running the processes separately you may actually find the code is slower.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="example-1" class="section level3" number="23.1.3">
+<h3>
+<span class="header-section-number">23.1.3</span> Example<a class="anchor" aria-label="anchor" href="#example-1"><i class="fas fa-link"></i></a>
+</h3>
+<p>Let's look at a more complicated example. Here we are performing a parallelized bootstrap resampling procedure on the penguins dataset. Here's a more detailed breakdown of the process and its objectives:It is good practice to export the environment and dataframes to each of the respective cores.</p>
+<p>First we will ensure that results are reproducible by initializing the random number generator with a specific seed.</p>
+<ul>
+<li><p>clusterExport(cl, varlist = "penguins"): Ensures that the penguins dataset is available to each parallel worker. This step is crucial because each worker operates in its own environment and needs access to the necessary data.</p></li>
+<li><p>foreach(i = 1:1000, .combine=c, .packages="dplyr"):</p></li>
+<li><p>i = 1:1000: Defines the loop to iterate 1000 times in parallel.</p></li>
+<li><p>.combine=c: Specifies that the results from each iteration should be combined into a single vector using the c() function.</p></li>
+<li><p>.packages="dplyr": Ensures that the dplyr package is loaded in each parallel worker so that its functions (e.g., slice_sample, summarize) are available.</p></li>
+<li><p>stopCluster(cl): Terminates the parallel cluster to free up resources once the computation is complete.</p></li>
+</ul>
+<div class="sourceCode" id="cb564"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html">set.seed</a></span><span class="op">(</span><span class="fl">342</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># Set up parallel computing</span></span>
+<span><span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html">makeCluster</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span>  <span class="co"># Create a cluster with 4 cores</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/doParallel/man/registerDoParallel.html">registerDoParallel</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span>  <span class="co"># Register the cluster</span></span>
+<span></span>
+<span><span class="co"># register data to each processor</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/parallel/clusterApply.html">clusterExport</a></span><span class="op">(</span><span class="va">cl</span>, varlist <span class="op">=</span> <span class="st">"penguins"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Parallel computation using foreach</span></span>
+<span><span class="va">bootstrap_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/foreach/man/foreach.html">foreach</a></span><span class="op">(</span>i <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">1000</span>, .combine<span class="op">=</span><span class="va">c</span>, .packages<span class="op">=</span><span class="st">"dplyr"</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/pkg/foreach/man/foreach.html">%dopar%</a></span> <span class="op">{</span></span>
+<span>  </span>
+<span>  <span class="va">bootstrap_mean</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span> </span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html">slice_sample</a></span><span class="op">(</span>prop <span class="op">=</span> <span class="fl">0.1</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarize</a></span><span class="op">(</span>mean_mass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">body_mass_g</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html">pull</a></span><span class="op">(</span><span class="va">mean_mass</span><span class="op">)</span></span>
+<span>  </span>
+<span>  <span class="va">bootstrap_mean</span></span>
+<span> </span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co"># Stop the cluster</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html">stopCluster</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html">tibble</a></span><span class="op">(</span><span class="va">bootstrap_results</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">bootstrap_results</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"grey80"</span>, color <span class="op">=</span> <span class="st">"black"</span><span class="op">)</span><span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html">geom_vline</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">penguins</span>,</span>
+<span>             <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>xintercept <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">body_mass_g</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>             linewidth <span class="op">=</span> <span class="fl">2</span>, colour <span class="op">=</span> <span class="st">"red"</span>, linetype  <span class="op">=</span><span class="st">"dashed"</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="04-functional-programming_files/figure-html/unnamed-chunk-161-1.png" width="100%" style="display: block; margin: auto;"></div>
+</div>
+</div>
+<div id="parallel-processing-with-furrr" class="section level2" number="23.2">
+<h2>
+<span class="header-section-number">23.2</span> Parallel processing with <code>furrr</code><a class="anchor" aria-label="anchor" href="#parallel-processing-with-furrr"><i class="fas fa-link"></i></a>
+</h2>
+<p>The goal of <code>furrr</code> is to combine <code>purrr</code>’s family of mapping functions with future’s parallel processing capabilities. Each variant of the <code>purrr</code> family has been implemented in <code>furrr</code></p>
+<div id="example-2" class="section level3" number="23.2.1">
+<h3>
+<span class="header-section-number">23.2.1</span> Example<a class="anchor" aria-label="anchor" href="#example-2"><i class="fas fa-link"></i></a>
+</h3>
+<div class="sourceCode" id="cb565"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavisVaughan/furrr">furrr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/">purrr</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"hello"</span>, <span class="st">"world"</span><span class="op">)</span>, <span class="op">~</span><span class="va">.x</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://furrr.futureverse.org/reference/future_map.html">future_map</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"hello"</span>, <span class="st">"world"</span><span class="op">)</span>, <span class="op">~</span><span class="va">.x</span><span class="op">)</span></span></code></pre></div>
+<pre><code>## [[1]]
+## [1] "hello"
+## 
+## [[2]]
+## [1] "world"
+## 
+## [[1]]
+## [1] "hello"
+## 
+## [[2]]
+## [1] "world"</code></pre>
+<p>The default backend for future (and through it, furrr) is a sequential one. This means that the above code will run out of the box, but it will not be in parallel. The design of future makes it incredibly easy to change this so that your code will run in parallel.</p>
+<div class="sourceCode" id="cb567"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Set a "plan" for how the code should run.</span></span>
+<span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html">plan</a></span><span class="op">(</span><span class="va">multisession</span>, workers <span class="op">=</span> <span class="fl">4</span><span class="op">)</span></span></code></pre></div>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+Can you turn our parallel processed for loop into a furrr function?
+</div>
+</div>
+<button id="displayTextunnamed-chunk-165" onclick="javascript:toggle('unnamed-chunk-165');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-165" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<p>library(furrr)
+plan(multisession, workers = 4)</p>
+<p>set.seed(342)</p>
+<p>bootstrap_results2 &lt;- future_map_dbl(1:1000,
+~ penguins |&gt;
+slice_sample(prop = 0.1, replace = TRUE) |&gt;
+summarize(mean_mass = mean(body_mass_g, na.rm = TRUE)) |&gt;
+pull(mean_mass),</p>
+<pre><code>seed = TRUE  # Ensure proper, parallel-safe random number generation</code></pre>
+<p>)</p>
+<p>tibble(bootstrap_results2) |&gt;
+ggplot(aes(x = bootstrap_results)) +
+geom_histogram(fill = "grey80", color = "black")+
+geom_vline(data = penguins,
+aes(xintercept = mean(body_mass_g, na.rm = T)),
+linewidth = 2, colour = "red", linetype ="dashed")</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+
+/* update total correct if #webex-total_correct exists */
+update_total_correct = function() {
+  console.log("webex: update total_correct");
+
+  if (t = document.getElementById("webex-total_correct")) {
+    var correct = document.getElementsByClassName("webex-correct").length;
+    var solvemes = document.getElementsByClassName("webex-solveme").length;
+    var radiogroups = document.getElementsByClassName("webex-radiogroup").length;
+    var selects = document.getElementsByClassName("webex-select").length;
+    
+    t.innerHTML = correct + " of " + (solvemes + radiogroups + selects) + " correct";
+  }
+}
+
+/* webex-solution button toggling function */
+b_func = function() {
+  console.log("webex: toggle hide");
+  
+  var cl = this.parentElement.classList;
+  if (cl.contains('open')) {
+    cl.remove("open");
+  } else {
+    cl.add("open");
+  }
+}
+
+/* function for checking solveme answers */
+solveme_func = function(e) {
+  console.log("webex: check solveme");
+
+  var real_answers = JSON.parse(this.dataset.answer);
+  var my_answer = this.value;
+  var cl = this.classList;
+  if (cl.contains("ignorecase")) {
+    my_answer = my_answer.toLowerCase();
+  }
+  if (cl.contains("nospaces")) {
+    my_answer = my_answer.replace(/ /g, "")
+  }
+
+  if (my_answer == "") {
+    cl.remove("webex-correct");
+    cl.remove("webex-incorrect");
+  } else if (real_answers.includes(my_answer)) {
+    cl.add("webex-correct");
+    cl.remove("webex-incorrect");
+  } else {
+    cl.add("webex-incorrect");
+    cl.remove("webex-correct");
+  }
+
+  // match numeric answers within a specified tolerance
+  if(this.dataset.tol > 0){
+    var tol = JSON.parse(this.dataset.tol);
+    var matches = real_answers.map(x => Math.abs(x - my_answer) < tol)
+    if (matches.reduce((a, b) => a + b, 0) > 0) {
+      cl.add("webex-correct");
+    } else {
+      cl.remove("webex-correct");
+    }
+  }
+
+  // added regex bit
+  if (cl.contains("regex")){
+    answer_regex = RegExp(real_answers.join("|"))
+    if (answer_regex.test(my_answer)) {
+      cl.add("webex-correct");
+    }
+  }
+
+  update_total_correct();
+}
+
+/* function for checking select answers */
+select_func = function(e) {
+  console.log("webex: check select");
+  
+  var cl = this.classList
+  
+  /* add style */
+  cl.remove("webex-incorrect");
+  cl.remove("webex-correct");
+  if (this.value == "answer") {
+    cl.add("webex-correct");
+  } else if (this.value != "blank") {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+/* function for checking radiogroups answers */
+radiogroups_func = function(e) {
+  console.log("webex: check radiogroups");
+
+  var checked_button = document.querySelector('input[name=' + this.id + ']:checked');
+  var cl = checked_button.parentElement.classList;
+  var labels = checked_button.parentElement.parentElement.children;
+  
+  /* get rid of styles */
+  for (i = 0; i < labels.length; i++) {
+    labels[i].classList.remove("webex-incorrect");
+    labels[i].classList.remove("webex-correct");
+  }
+  
+  /* add style */
+  if (checked_button.value == "answer") {
+    cl.add("webex-correct");
+  } else {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+window.onload = function() {
+  console.log("onload");
+  /* set up solution buttons */
+  var buttons = document.getElementsByTagName("button");
+
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].parentElement.classList.contains('webex-solution')) {
+      buttons[i].onclick = b_func;
+    }
+  }
+
+  /* set up webex-solveme inputs */
+  var solveme = document.getElementsByClassName("webex-solveme");
+
+  for (var i = 0; i < solveme.length; i++) {
+    /* make sure input boxes don't auto-anything */
+    solveme[i].setAttribute("autocomplete","off");
+    solveme[i].setAttribute("autocorrect", "off");
+    solveme[i].setAttribute("autocapitalize", "off");
+    solveme[i].setAttribute("spellcheck", "false");
+    solveme[i].value = "";
+
+    /* adjust answer for ignorecase or nospaces */
+    var cl = solveme[i].classList;
+    var real_answer = solveme[i].dataset.answer;
+    if (cl.contains("ignorecase")) {
+      real_answer = real_answer.toLowerCase();
+    }
+    if (cl.contains("nospaces")) {
+      real_answer = real_answer.replace(/ /g, "");
+    }
+    solveme[i].dataset.answer = real_answer;
+
+    /* attach checking function */
+    solveme[i].onkeyup = solveme_func;
+    solveme[i].onchange = solveme_func;
+  }
+  
+  /* set up radiogroups */
+  var radiogroups = document.getElementsByClassName("webex-radiogroup");
+  for (var i = 0; i < radiogroups.length; i++) {
+    radiogroups[i].onchange = radiogroups_func;
+  }
+  
+  /* set up selects */
+  var selects = document.getElementsByClassName("webex-select");
+  for (var i = 0; i < selects.length; i++) {
+    selects[i].onchange = select_func;
+  }
+
+  update_total_correct();
+}
+
+</script><script>
+$( document ).ready(function() {
+  var cite = ' ';
+  var license = ' <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"></a>';
+
+  $("footer div.row div:eq(1) p").html(
+    license
+  );
+});
+</script><div class="chapter-nav">
+<div class="prev"><a href="purrr.html"><span class="header-section-number">22</span> Purrr</a></div>
+<div class="next"><a href="bonus-simulation.html"><span class="header-section-number">24</span> Bonus: Simulation</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#parallel-programming"><span class="header-section-number">23</span> Parallel programming</a></li>
+<li>
+<a class="nav-link" href="#parallel-processing-with-foreach"><span class="header-section-number">23.1</span> Parallel processing with foreach</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#differences-between-foreach-and-for-loops-in-r"><span class="header-section-number">23.1.1</span> Differences Between foreach and for Loops in R</a></li>
+<li><a class="nav-link" href="#compare-run-times"><span class="header-section-number">23.1.2</span> Compare Run Times</a></li>
+<li><a class="nav-link" href="#example-1"><span class="header-section-number">23.1.3</span> Example</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#parallel-processing-with-furrr"><span class="header-section-number">23.2</span> Parallel processing with furrr</a><ul class="nav navbar-nav"><li><a class="nav-link" href="#example-2"><span class="header-section-number">23.2.1</span> Example</a></li></ul>
+</li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/UEABIO/physalia-intro-stats-2023/blob/main/book/04-functional-programming.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/UEABIO/physalia-intro-stats-2023/edit/main/book/04-functional-programming.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-15.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer><!-- dynamically load mathjax for compatibility with self-contained --><script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script><script type="text/x-mathjax-config">const popovers = document.querySelectorAll('a.footnote-ref[data-toggle="popover"]');
+for (let popover of popovers) {
+  const div = document.createElement('div');
+  div.setAttribute('style', 'position: absolute; top: 0, left:0; width:0, height:0, overflow: hidden; visibility: hidden;');
+  div.innerHTML = popover.getAttribute('data-content');
+
+  var has_math = div.querySelector("span.math");
+  if (has_math) {
+    document.body.appendChild(div);
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, div]);
+    MathJax.Hub.Queue(function() {
+      popover.setAttribute('data-content', div.innerHTML);
+      document.body.removeChild(div);
+    })
+  }
+}
+</script>
+</body>
+</html>

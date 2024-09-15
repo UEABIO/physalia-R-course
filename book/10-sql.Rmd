@@ -7,6 +7,12 @@
 
 ```
 
+```{r, include = FALSE}
+
+
+load(here::here("book", "files", "chapter5.RData"))
+```
+
 We did not cover the different approaches to working with really big data in R. Instead I have provided a list of extra reading and exercises that cover this in more depth, as well as introductions to using SQL with dplyr functions:
 
 
@@ -167,12 +173,6 @@ time_preallocated <- stop_time - start_time
 # Compare times
 print(time_growing)
 print(time_preallocated)
-
-
-``
-
-
-``{r}
 
 
 # Benchmark the two methods
@@ -368,12 +368,12 @@ The compiled function is around seven times faster than the uncompiled function.
 
 To profile the code, wrap it in profvis() and run it. Here’s how you can profile `mean_r`:
 
-```{r}
+```{r, eval = FALSE}
 library(profvis)
 profvis(mean_r(rnorm(10000000)))
 ```
 
-After running the profvis() function, a new viewer pane will appear in RStudio (or your default web browser if not using RStudio). Here’s how to interpret the visual output:
+After running the `profvis()` function, a new viewer pane will appear in RStudio (or your default web browser if not using RStudio). Here’s how to interpret the visual output:
 
 - Timeline View: Shows how much time was spent in each function call over time. It visualizes which functions were called and how much time they took.
 
@@ -386,31 +386,150 @@ Use the visualizations to identify bottlenecks. Look for functions with long exe
 
 ### Practice: 
 
-```{r}
+In this example we are going to simulate some data for two groups - group 1 has a mean of 0 and an sd of 1, group 2 has a mean of whatever value we supply to effect_size and a sd of 1.
+
+By default this simulation is set to repeat an experiment where 30 samples are taken from each population and compared for a true difference. The experiment is repeated 100 times.
+
+The purpose of this simulation is to understand how the estimated difference in means varies across different random samples of data when the true effect size is known. It helps to assess the sampling variability and provides insights into the precision of the estimated difference. Additionally, it can be used to create a confidence interval to assess the uncertainty around the estimated effect. And determine the power of our experiments.
+
+With this example we know the true difference, see what happens to our confidence intervals as we change the sample size, effect size and iterations:
+
+```{r, eval = TRUE}
+
+library(ggplot2)
+
+# Define a function to run the simulation for a given sample size and effect size
+simulate_difference <- function(sample_size, effect_size) {
+    set.seed(123)
+    
+    # Initialize a data frame to store the estimated differences
+    results <- data.frame(Simulated_Difference = numeric(100))
+    
+    for (i in 1:100) {  # Perform 100 simulations for the fixed sample size
+        # Generate data for two groups with a specified effect size
+        group1 <- rnorm(sample_size, mean = 0, sd = 1)
+        group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
+        
+        # Create a data frame for the two groups
+        data_df <- data.frame(Group = rep(c("Group1", "Group2"), each = sample_size),
+                              Value = c(group1, group2))
+        
+        # Fit a linear model to estimate the difference in means
+        lm_model <- lm(Value ~ Group, data = data_df)
+        
+        # Extract the estimated difference from the model
+        estimated_difference <- coef(lm_model)[2]
+        
+        results$Simulated_Difference[i] <- estimated_difference
+    }
+    
+    # Return the data frame of estimated differences
+    return(results)
+}
+
+# Fixed sample size of 20
+sample_size <- 30
+
+# Set the effect size
+effect_size <- .8  # Adjust as needed
+
+# Run the simulation for the fixed sample size
+simulation_results <- simulate_difference(sample_size, effect_size)
+
+# Calculate the mean and 2.5th and 97.5th percentiles for the confidence interval
+mean_difference <- mean(simulation_results$Simulated_Difference)
+lower_percentile <- quantile(simulation_results$Simulated_Difference, 0.025)
+upper_percentile <- quantile(simulation_results$Simulated_Difference, 0.975)
+
+# Create a density histogram of the estimated differences with lines for percentiles
+ggplot(simulation_results, aes(x = Simulated_Difference)) +
+    geom_histogram(binwidth = 0.05, fill = "lightblue", color = "black") +
+    geom_vline(aes(xintercept = mean_difference), color = "red", linetype = "dashed") +
+    geom_vline(aes(xintercept = lower_percentile), color = "blue") +
+    geom_vline(aes(xintercept = upper_percentile), color = "blue") +
+    labs(x = "Estimated Difference", y = "Density") +
+    ggtitle(paste("Density Histogram of Estimated Differences (Sample Size = 20)")) +
+    scale_x_continuous(limits = c(0, 2), breaks = c(0,0.5,1,1.5,2))+
+    theme_minimal()
+
+```
+
+```{task}
+
+Can you identify bottlenecks in this code that will allow you to improve the speed of this simulation?
+
+```
+
+```{solution}
+
+
+``{r}
 ## See simulation examples: 
 
 # Profiling shows dataframe is slow and broom::tidy is slow - improvements here: 
 
-microbenchmark( for (i in 1:100) {  # Perform 100 simulations for each sample size
+fast_sim <- function(sample_size = 30, effect_size = 0.8, num_simulations = 100, ...) {
+  
+set.seed(123)
+  # Perform the simulation `num_simulations` times, replicate faster than loops
+  replicate(num_simulations, {
+    # Generate random samples for both groups, allowing extra parameters via `...`
+    group1 <- rnorm(sample_size, mean = 0, ...)
+    group2 <- rnorm(sample_size, mean = effect_size, ...)
     
-    # Generate data for two groups with a specified effect size
+    # Directly calculate the estimated difference in means faster than lm
+    mean(group2) - mean(group1)
+  })
+}
+
+
+``
+
+```
+
+```{solution}
+
+``{r}
+# Try parallel processing
+library(furrr)
+# Define the fast_sim function
+simple_sim <- function(sample_size = 30, effect_size = 0.8) {
+    
+    # Generate random samples for both groups
     group1 <- rnorm(sample_size, mean = 0, sd = 1)
     group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
     
- 
-    # Fit a linear model to estimate the difference in means
-    lm_model <- lm(c(group1, group2) ~ rep(c("group1", "group2"), each = sample_size))
-    
-    # Extract the p value from the model
-    
-    
-    
-    # Check if the null hypothesis is rejected (p-value < 0.05)
-    if ( coef(summary(lm_model))[2,4] < 0.05) {
-        num_significant <- num_significant + 1
-    }
+    # Directly calculate the estimated difference in means
+    mean(group2) - mean(group1)
 }
-)
+
+# Set up parallel processing
+plan(multisession, workers = 4)  # Adjust based on your system, e.g., multisession or multicore
+
+# Use future_map to perform the simulation in parallel
+num_simulations <- 100
+sim_results <- future_map(1:num_simulations, ~ simple_sim(), 
+                          .progress = TRUE,
+                           future.seed = 123)
+
+
+``
+
+```
+
+```{solution}
+
+``{r}
+
+autoplot(microbenchmark(times = 100, unit = "ms", # milliseconds
+          simulate_difference(sample_size, effect_size), 
+          fast_sim(sample_size, effect_size),
+          future_map(1:num_simulations, ~ simple_sim(), 
+                     .progress = TRUE,
+                      future.seed = 123)))
+
+``
+
 
 ```
 
@@ -773,7 +892,7 @@ print(fibonacci_result)
 
 # (PART\*) Working with big data {.unnumbered}
 
-## Use efficient data structures
+# Data structures in R
 
 When working with large datasets in R, choosing the right data structure is crucial for both speed and memory usage. Two data structures that are often more efficient than data frames are matrices and lists. In this tutorial, we'll explore when and why matrices and lists are more efficient than data frames and provide practical examples to illustrate these concepts.
 
@@ -868,13 +987,38 @@ microbenchmark(df_mixed$col1[30],
 
 ```
 
-## Read I/O
+# Read I/O
 
 R is known to have difficulties handling large data files. Here we will explore some tips that make working with such files in R less painful.
 
-```{r}
+There are three common approaches:
+
+- base R's `read.csv()`
+
+- the `data.table` package with `fread()`
+
+- the `readr` package with functions like `read_csv()`
+
+The performance gains of data.table and readr become significant as data size grows, especially for datasets with many rows. For files larger than 100 MB, fread() and read_csv() are about five times faster than read.csv(). However, the choice should consider memory usage, as very large datasets may impact it.
+
+Keep in mind that data.table and readr are separate packages, requiring installation and loading.
+
+
+```{r, eval = FALSE}
 csv_name <- "surveys.csv"
 
+read.table.timing <- system.time(read.table(csv_name, header = TRUE, sep = ","))
+readr.timing <- system.time(read_delim(csv_name, delim = ",", col_names = TRUE))
+data.table.timing <- system.time(allData <- fread(csv_name, showProgress = FALSE))
+data <- data.frame(method = c('read.table', 'readr', 'fread'), 
+                  timing = c(read.table.timing[3], readr.timing[3], data.table.timing[3]))
+data
+```
+
+
+```{r, echo = FALSE}
+csv_name <- here::here("surveys.csv")
+library(data.table)
 read.table.timing <- system.time(read.table(csv_name, header = TRUE, sep = ","))
 readr.timing <- system.time(read_delim(csv_name, delim = ",", col_names = TRUE))
 data.table.timing <- system.time(allData <- fread(csv_name, showProgress = FALSE))
@@ -972,7 +1116,7 @@ read_delim(csv_name,
 
 In combination these processes are very effective when working with large datasets that do not fit into memory or when you only need to analyze or process a specific subset of the data.
 
-## Working with sql
+# Working with sql
 
 The `sqldf` package allows you to run SQL-like queries on a file, resulting in only a selection of the file being read. It allows you to limit both the number of lines and the number of rows at the same time. In the background, this actually creates a sqlite database on the fly to execute the query. Consider using the package when starting from a csv file, but the actual strategy boils down to making a sqlite database file of your data. See this section below to learn how to interact with those and create a SQlite database from a CSV-file.
 
@@ -980,7 +1124,8 @@ The `sqldf` package allows you to run SQL-like queries on a file, resulting in o
 
 First, create a new folder in your home directory called "data_raw". Then, download the SQLite database. Finally, connect with the database and name it "mammals".
 
-```{r}
+```{r, eval = FALSE}
+library(sqldf)
 # create raw data folder
 dir.create("data_raw",
            showWarnings = FALSE)
@@ -1006,15 +1151,38 @@ mammals <- DBI::dbConnect(
 
 First, let's see what our data looks like.
 
-```{r}
+```{r, eval = FALSE}
 DBI::dbListTables(mammals)
+```
+
+```
+[1] "plots"   "species" "surveys"
+
 ```
 
 We see that this database contains three tables: plots, species, and surveys. Let's take a closer look at the surveys table.
 
-```{r}
+```{r, include = FALSE}
+# access the database and name it "mammals"
+mammals <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  here::here("book", "data_raw", "portal_mammals.sqlite"))
+
+```
+
+```{r, eval = FALSE}
 surveys<- tbl(mammals, "surveys")
 print(surveys)
+```
+```
+# Source:   table<surveys> [?? x 9]
+# Database: sqlite 3.41.2 [/cloud/project/book/data_raw/portal_mammals.sqlite]
+   record_id month   day  year plot_id species_id sex   hindfoot_length weight
+       <int> <int> <int> <int>   <int> <chr>      <chr>           <int>  <int>
+ 1         1     7    16  1977       2 NL         M                  32     NA
+ 2         2     7    16  1977       3 NL         M                  33     NA
+ 3         3     7    16  1977       2 DM         F                  37     NA
+ 4         4     7    16  1977       7 DM         M                  36     NA
 ```
 
 The first line of the output imparts an important lesson: **R tries to be as lazy as possible when interfacing with databases.** For instance, this simple command does not tell us the dimensions of the surveys table. The length is unknown ("??") but the width = 9 columns. Unless we ask it for the length specifically, it will not tell us because R did not actually view the entire table when fetching the first 10 rows for us.
@@ -1031,12 +1199,22 @@ Let's start wrangling the data and ask: how many males were observed in 1978 in 
 
 > Challenge: convert this question into a dplyr command. (To see the answer, press the "CODE" button on the right side of the page).
 
-```{r class.source = 'fold-hide'}
+```{r, eval = FALSE}
+library(dbplyr)
 surveys |> 
   filter(sex == "M",
          year == "1978",
          plot_id == "2") |> 
-  count()
+  count() |> 
+  collect()
+
+```
+
+```
+# A tibble: 1 × 1
+      n
+  <int>
+1    52
 
 ```
 
@@ -1051,7 +1229,7 @@ Specifically, we need to add one more line of code to tell our **lazy bones of a
 
 Example: ask R to save a subset of the surveys table that 1) includes data from 1998-2000 and 2) counts up the number of species seen per year.
 
-```{r}
+```{r, eval = FALSE}
 annual_species <- surveys %>%
   filter(year == "1998" |
            year == "1999" |
@@ -1065,7 +1243,7 @@ Specifically, the `collect()` command is essential for telling R that we're done
 
 Notice the change in data structure if we do not include the `collect()` command:
 
-```{r}
+```{r, eval = FALSE}
 annual_species_notcollected <- surveys %>%
   filter(year == "1998" |
            year == "1999" |
@@ -1085,19 +1263,22 @@ class(annual_species)
 
 A simple way to translate your `dbplyr` syntax to SQL syntax is to pipe in the `show_query()` function.
 
-::: {style="display: grid; grid-template-columns: 1fr 1fr; grid-column-gap: 10px; "}
-<div>
 
 **Translated R --\> SQL syntax**
 
-```{r message=FALSE}
+```{r, eval = FALSE}
 annual_species_notcollected %>%
   show_query()
 ```
+```
+<SQL>
+SELECT `year`, `species_id`, COUNT(*) AS `n`
+FROM `surveys`
+WHERE (`year` = '1998' OR `year` = '1999' OR `year` = '2000')
+GROUP BY `year`, `species_id`
 
-</div>
+```
 
-<div>
 
 **Original R syntax**
 
@@ -1108,8 +1289,6 @@ annual_species_notcollected <- surveys %>%
   summarise(n = n())
 ```
 
-</div>
-:::
 
 > Notice: How does the original R code compare to the translated SQL syntax?
 
@@ -1131,7 +1310,6 @@ FROM `surveys`)
 
 WHERE (`hindfoot_length` \> 20.0)
 
-<br>
 
 **R syntax translated:**
 
@@ -1155,8 +1333,6 @@ surveys %>%
 
 ```
 
-::: {style="display: grid; grid-template-columns: 1fr 1fr; grid-column-gap: 10px; "}
-<div>
 
 **SQL syntax**
 
@@ -1172,9 +1348,6 @@ WHERE (`year` \> 1977.0 \_\_\_\_ `year` \< 2000.0))
 
 ORDER BY `species_id` \_\_\_\_
 
-</div>
-
-<div>
 
 > HINT: *For a word bank of possible SQL terms, click the "CODE" button directly below &darr;*
 
@@ -1185,10 +1358,7 @@ DESC
 WHERE
 ```
 
-</div>
-:::
 
-<br>
 
 **SQL syntax translated:**
 
@@ -1212,7 +1382,7 @@ ORDER BY `species_id` __DESC__
 In the case you have a CSV file available and you would like to query the data using SQL queries or with dplyr as shown in the previous sections, you can decide to convert the data to a SQlite database. The conversion will require some time, but once available, it provides the opportunity to query the data using SQL queries or with dplyr as shown in the previous sections. Moreover, you can easily add additional tables with related information to combine the data with, by removing overwrite and replacing with `append = TRUE`
 
 
-```{r}
+```{r, eval = FALSE}
 
 csv_name <- "surveys.csv"
 
@@ -1257,7 +1427,7 @@ Using the nrows and skip functions in fread. Can you write a function using purr
 
 ```{solution}
 
-``{r}
+``{r, eval = FALSE}
 
 # Define a function to read a chunk of the CSV file and insert it into the database
 

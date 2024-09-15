@@ -53,7 +53,7 @@ staging area.”</p>
 
 ## Remote repositories
 
-What we explained before is the local workflow. This is when the repo lives in your computer and that’s it. But you can also connect the local repository with a remote repository. For this workshop we are going to use GitHub to host remote repositories, but there are other options you can explore, such as GitLab.
+What we explained before is the local workflow. This is when the repo lives in your computer and that’s it. But you can also connect the local repository with a remote repository. For this workshop we are going to use [GitHub](https://github.com/) to host remote repositories, but there are other options you can explore, such as [GitLab](https://about.gitlab.com/).
 
 Let’s imagine we have a local repository, we made some commits and we want to send those changes to the remote repository (we’ll how to create the remote repository later). For that we push the commits to the remote repository and the two repos are “up to date”.
 
@@ -63,21 +63,26 @@ If a team-mate changes a file and pushes the changes it to the remote repository
 
 And if you want to try the command line:
 
-<div class="info">
-<p>to upload commits to the remote repository.</p>
-<p>git push</p>
-<p>to download commits from the remote repository to the local repo.</p>
-<p>git pull</p>
-</div>
+```
+
+# to upload commits to the remote repository.
+
+git push 
+
+# to download commits from the remote repository to the local repo.
+
+git pull 
+
+```
 
 
 ## Git introductions
 
 Before you create your first repository you need to make sure that git and RStudio are friends and that git knows you. That means you have:
 
-- Installed Git on your machine (not needed if using Posit Cloud)
+- [Installed Git on your machine](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (not needed if using Posit Cloud)
 
-- Created a Github Account - go to [github.com](https://github.com/)
+- Created a free Github Account - go to [github.com](https://github.com/)
 
 <div class="info">
 <p>You can check that RStudio “sees” git by going to Tools –&gt; Global
@@ -139,6 +144,8 @@ git config --global credential.helper 'cache --timeout=10000000'
 
 Thanks to https://blog.djnavarro.net/posts/2021-08-08_git-credential-helpers/ for this bit of information! 
 
+> If the system ever forgets your username or PAT, you should be able to paste these into prompts when pushing as well. 
+
 
 ## Create a new repository
 
@@ -164,7 +171,7 @@ Then:
 
 Before going back to RStudio, copy the url for the repository. 
 
-### 2. 
+### 2. Clone into RStudio
 
 - File > New Project > Version Control > Git. In the “repository URL” paste the URL of your new GitHub repository 
 
@@ -177,7 +184,7 @@ Before going back to RStudio, copy the url for the repository.
 
 The new folder in your computer will be a git repository, linked to a remote GitHub repository and an RStudio Project at the same time. This workflow also makes sure that all the configuration between the local and remote repos are done correctly.
 
-It also adds a .gitignore file that includes a list of files that we don’t need to track (i.e. .Rhistory).
+It also adds a `.gitignore` file that includes a list of files that we don’t need to track (i.e. .Rhistory).
 
 <div class="note">
 <p>The .gitignore file can be a good place to store your PAT file. Make
@@ -189,7 +196,7 @@ in Rstudio to check it is not being tracked.</p>
 
 ### Local changes
 
-- Create a new .Rmd file
+- Create a new .Rmd/.Qmd file
 
 - Save the file
 
@@ -201,11 +208,36 @@ At this point you should be able to see all the files in the staging area, and b
 
 <img src="images/git_pane.png" width="100%" style="display: block; margin: auto;" />
 
+## See changes
 
-**Now Push** - push your commits to the remote repository. You won't see any changes on Github until you push those commits. 
+The first and most immediate benefit of using GitHub with your RStudio Project is seeing the changes you have made since your last commit.
+
+The RStudio Git pane lists every file that’s been added, modified or deleted. The icon describes the change:
+
+* You've changed a file
+<img src="images/git-modified.png" width="5%" style="display: block; margin: auto auto auto 0;" />
+
+* You've added a new file Git hasn't seen before
+<img src="images/git-unknown.png" width="5%" style="display: block; margin: auto auto auto 0;" />
+
+* You've deleted a file
+<img src="images/git-deleted.png" width="5%" style="display: block; margin: auto auto auto 0;" />
+
+You can get more details on the changes that have been made to each file by right-clicking and selecting diff 
+
+<img src="images/git-diff.png" width="15%" style="display: block; margin: auto auto auto 0;" />
+
+This opens a new window highlighting the **diff**erences between your current file and the previous commit. 
+
+<img src="images/git-diff-window.png" width="100%" style="display: block; margin: auto;" />
+
+The background colours tells you whether the text has been added (green) or removed (red). (If you’re colourblind you can use the line numbers in the two columns at the far left as a guide). 
+
 
 
 ## Remote changes
+
+**Now Push** - push your commits to the remote repository. You won't see any changes on Github until you push those commits. 
 
 Let's head back to GitHub now. If you refresh the page, now you’ll see the files you committed just now. Let’s click on “Commits” to see the history of the repository. From this view, you can explore the repository at the “state” of each commit and look at the file differences.
 
@@ -227,7 +259,67 @@ To avoid this problem (most of the time), you should do a **pull everytime you l
 
 Now we should head to the GitPane in RStudio and select the blue "Pull" button. The README should appear in your files. 
 
+## Working with branches
 
+Using Git branches in RStudio allows you to work on different features, experiments, or manuscript sections independently without affecting the main codebase. This is particularly useful in scientific research for trying out new analysis methods, writing different parts of a paper, or making bug fixes without disrupting ongoing work.
+
+### Create a new branch in Rstudio
+
+Go to the `Terminal` and run the following command:
+
+```
+git checkout -b new-plot
+
+```
+
+###  Create a new branch in Github
+
+- Click on the "main" branch drop-down menu (or the current branch name).
+
+- Type the name of your new branch into the text field and press Enter to create it.
+
+<img src="images/NewBranch.png" width="100%" style="display: block; margin: auto;" />
+
+### Working on a new branch
+
+Make Changes: Edit your files as needed on this branch.
+
+Stage and Commit and Push changes as usual
+
+In the Git pane, click on the Branch drop-down menu and select the branch you wish to use to switch between branches effortlessly
+
+
+```task
+
+Add a new plot to your file - hist(cars$speed)
+
+```
+
+### Merge branches
+
+Pull request and merge changes
+Now go back to your repo on GitHub. You will notice that at the top of all you files there is a new section that says: Your recently pushed branches: The changes you made to your script have been pushed to your online copy of the project and are now in the branch feature. In order to merge them into your master branch we need to create a pull request.
+
+Click on the button that says *Compare and pull request**.
+
+In the Open a pull request page click on Create pull request.
+
+<img src="images/CreatePullReq.png" width="100%" style="display: block; margin: auto;" />
+
+Github will now compare the two versions of your project that are in the two branches, master/main and NewPlot and it is telling us that there are no conflicts between the two versions.
+
+
+<img src="images/Merge.png" width="100%" style="display: block; margin: auto;" />
+
+Now it’s time to bring your changes together – merging your NewPlot branch into the main branch. Click the green Merge pull request button to merge the changes into main. Click Confirm merge. Go ahead and delete the branch, since its changes have been incorporated, with the Delete branch button in the purple box.
+
+<img src="images/DeleteBranch.png" width="100%" style="display: block; margin: auto;" />
+
+### Summary
+
+You can create and manage Git branches either from RStudio or directly on GitHub. In RStudio, use the terminal to create branches and manage them through the Git pane. On GitHub, you can create branches and manage them using the web interface, which also supports pull requests for merging changes. Using branches helps you work on features or fixes independently, keeping your main branch clean and stable.
+
+> Keep Branches short and prune them often, you have to manually fix any conflicts - and this is much simpler when branches are short and focused
 
 ## Collaborating on a repo
 
@@ -273,8 +365,6 @@ A fork is when you generate a *personal* copy of another user's [repository](#gl
 
 **9.** Once you’ve added your updates, knit the Rmd document to update the html
 
-
-
 **10.** Stage, Commit & Push all files [(glossary)](#glossary-github)
 
 Staged - pick those files which you intend to bind to a commit
@@ -297,31 +387,6 @@ Push - "Pushes" your changes from the local repo to the remote repo on GitHub, [
 **4.** We are almost there. Complete the pull request with a title and a message and then finish the pull request.
 
 The owner/s of the repo will receive an email. They can review the pull request, comment on it and eventually accept the contribution. When that happen the changes you made will appear in their repo.
-
-## See changes
-
-The first and most immediate benefit of using GitHub with your RStudio Project is seeing the changes you have made since your last commit.
-
-The RStudio Git pane lists every file that’s been added, modified or deleted. The icon describes the change:
-
-* You've changed a file
-<img src="images/git-modified.png" width="5%" style="display: block; margin: auto auto auto 0;" />
-
-* You've added a new file Git hasn't seen before
-<img src="images/git-unknown.png" width="5%" style="display: block; margin: auto auto auto 0;" />
-
-* You've deleted a file
-<img src="images/git-deleted.png" width="5%" style="display: block; margin: auto auto auto 0;" />
-
-You can get more details on the changes that have been made to each file by right-clicking and selecting diff 
-
-<img src="images/git-diff.png" width="15%" style="display: block; margin: auto auto auto 0;" />
-
-This opens a new window highlighting the **diff**erences between your current file and the previous commit. 
-
-<img src="images/git-diff-window.png" width="100%" style="display: block; margin: auto;" />
-
-The background colours tells you whether the text has been added (green) or removed (red). (If you’re colourblind you can use the line numbers in the two columns at the far left as a guide). 
 
 
 
@@ -364,7 +429,15 @@ https://dev.to/ruppysuppy/beautify-your-github-profile-like-a-pro-5093
 https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme
 
 
-## Get a DOI from your Github project
+## Version releases
+
+Creating tags in Git is a great way to mark specific points in your project's history, such as a version release, manuscript submission, or any significant milestone. Tags are immutable references to a specific commit, unlike branches that can move as you add new commits. This is especially useful in research projects to keep track of the exact state of your analysis or code at key moments
+
+https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository
+
+Individual releases can have a doi assigned to them via Zenodo or Figshare - so that they can accompany your papers and use them to represent different stages of publication (e.g. preprint or peer-reviewed manuscript)
+
+### Get a DOI from your Github project
 
 With a well organised and contained analysis project made into a repository on Github it becomes a one-click button process to generate a permanent DOI through repositories such as [Zenodo](https://zenodo.org/) or [Figshare](https://figshare.com/). A great payoff for having spent the time organising your projects from the beginning! 
 

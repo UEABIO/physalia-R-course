@@ -355,7 +355,11 @@ Now that you've grasped how `selectInput()` works, let's use it to customize you
 
 The above explanation clarifies the purpose and settings of the `selectInput()` function, and you can use this understanding to configure other input elements in your Shiny app. Below is a summary of the different Input functions available for Shiny
 
-### textInput
+### More Input functions: 
+
+Shiny provides several input functions for different types of user input. Here are a few commonly used ones:
+
+#### textInput
 
 `textInput` creates a one-line box for short text input. The first `argument`, `inputId` (the argument name is usually omitted), needs to be a unique string that you cannot use for another input or output in this app.
 
@@ -376,7 +380,7 @@ demo_text <-
 </div>
 
 
-### textAreaInput
+#### textAreaInput
 
 `"textAreaInput"` creates a multi-line box for longer text input.
 
@@ -395,7 +399,7 @@ What is the `arg("inputId")` of the widget above?
 
 <select class='webex-select'><option value='blank'></option><option value=''>textAreaInput</option><option value='answer'>demo_textarea</option><option value=''>Biography</option></select>
 
-### selectInput
+#### selectInput
 
 `selectInput` creates a drop-down menu. Set the first ` arg("choice")` to `""` to default to `NA`. If your choices are a named `"list"` or `"vector"`, the names are what is shown and the values are what is recorded. If the choices aren't named, the displayed and recorded values are the same.
 
@@ -432,7 +436,7 @@ demo_select_multi <-
               size = 5)
 ```
 
-### checkboxGroupInput
+#### checkboxGroupInput
 
 However, this interface almost always looks better with ` checkboxGroupInput`. 
 
@@ -449,7 +453,7 @@ How can you get the checkboxes to display horizontally instead of vertically?
 <select class='webex-select'><option value='blank'></option><option value=''>display = 'horizontal'</option><option value=''>class = 'horiz'</option><option value='answer'>inline = TRUE</option><option value=''>class = 'shiny-input-container-inline'</option></select>
 
 
-### checkboxInput
+#### checkboxInput
 
 You can also make a single checkbox with `checkboxInput`. The `value` is ` dt(TRUE)` when checked and ` dt(FALSE)` when not.
 
@@ -459,6 +463,8 @@ demo_cb <- checkboxInput("demo_cb",
                          label = "I love R",
                          value = TRUE)
 ```
+
+#### slide Input
 
 ` sliderInput` allows you to choose numbers between a `min` and `max` value.
 
@@ -499,28 +505,6 @@ demo_radio <- radioButtons("demo_radio",
 <code>character(0)</code> to start with no selection.</p>
 </div>
 
-### dateInput
-
-I find the date interface a little clunky, but...
-
-
-```r
-demo_date <- dateInput("demo_date",
-                       label = "What is your birth date?",
-                       min = "1900-01-01",
-                       max = Sys.Date(),
-                       format = "yyyy-mm-dd",
-                       startview = "year")
-```
-
-<div class="info">
-<p>IMHO, the default of <code>dt("yyyy-mm-dd")</code> is the best
-because it sorts into chronological order.</p>
-</div>
-
-What would you set ` arg("format")` to in order to display dates like "Sunday July 4, 2021"?  
-<select class='webex-select'><option value='blank'></option><option value=''>D M d, Y</option><option value='answer'>DD MM d, yyyy</option><option value=''>DAY MONTH day, YEAR</option><option value=''>D MM dd, yyyy</option></select>
-
 
 ### fileInput
 
@@ -540,7 +524,9 @@ What would you set ` arg("accept")` to to accept any image file?
 <select class='webex-select'><option value='blank'></option><option value='answer'>image/*</option><option value=''>.jpg</option><option value=''>jpg</option><option value=''>images</option><option value=''>.img</option></select>
 
 
-Next, you'll need to implement the server logic and output elements in the `server.R` section. The server logic will define how these inputs affect the display of your histogram and table, but that would require additional code specific to your application's requirements.
+### Adding Output Elements and Server Logic
+
+After setting up your input elements, the next step is to define the server logic that determines how these inputs interact with your app's outputs in the `server.R` section. For example, you can create reactive expressions to generate plots, tables, or text outputs that dynamically update based on user input.
 
 Remember that Shiny allows you to create reactive expressions and functions that respond to changes in input values. You can use these reactive expressions to generate the histogram and associated table based on user input.
 
@@ -554,23 +540,21 @@ As you proceed, you can add more details to your `server.R` to handle these inpu
 
 # Outputs
 
-Output are ways that the Shiny app can dynamically display information to the user. In the user interface (UI), you create outputs with IDs that you reference in an associated rendering function inside the server function. Check out this outputs demo from the R team at Glasgow, then have a look at the different functions in the text below...
+In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. These IDs are then linked to corresponding rendering functions in the server function that dynamically generate content based on user interactions. Let’s explore the different types of outputs you can create in Shiny and how to implement them.
 
-
-<iframe height="400" width="100%" frameborder="no" src="https://shiny.psy.gla.ac.uk/debruine/output_demo/"> </iframe>
 
 
 ## Text
 
-`textOutput` defaults to text inside a generic `<span>` or `<div>`.
+The textOutput function is used in the UI to create a placeholder for text output. By default, this text is rendered inside a `<span>` or `<div>` element. You can also use the container argument to wrap the text in a specific HTML tag.
 
 
 ```r
 # in the UI function
-textOutput("demo_text", container = tags$h3)
+textOutput("demo_text", container = tags$h3) # Wraps the output in an <h3> tag
 ```
 
-`renderText` replaces the text of the linked element with its returned string.
+In the server function use `renderText` replaces the text of the linked element with its returned string.
 
 
 ```r
@@ -580,7 +564,7 @@ textOutput("demo_text", container = tags$h3)
   })
 ```
 
-If you use `verbatimTextOutput` in the UI (no change to the render function), it will show the output in a fixed-width font. This can be good for code or text you want the user to copy.
+If you use `verbatimTextOutput` in the UI (no change to the render function), it will show the output in a fixed-width font. This can be good for code or text you want the user to copy. The rendering function in the server remains the same (`renderText`).
 
 
 ```r
@@ -604,7 +588,7 @@ verbatimTextOutput("demo_verbatim")
 
 ## Plots
 
-`plotOutput` displays plots made with the `base R` plotting functions (e.g., `"plot"`, `hist`) or `ggplot2` functions.
+`plotOutput` is used in the UI to create a placeholder for a plot. You can specify its size using the width and height arguments.
 
 
 ```r
@@ -612,11 +596,7 @@ verbatimTextOutput("demo_verbatim")
 plotOutput("demo_plot", width = "500px", height="300px")
 ```
 
-What is the default value for `width`?  
-<select class='webex-select'><option value='blank'></option><option value='answer'>100%</option><option value=''>400px</option><option value=''>400</option><option value=''>5in</option><option value=''>7in</option></select>  
-
-What is the default value for `height`?  
-<select class='webex-select'><option value='blank'></option><option value=''>100%</option><option value='answer'>400px</option><option value=''>400</option><option value=''>5in</option><option value=''>7in</option></select>
+In the server, use renderPlot to create the plot. This function should return a plot object created using `base R` or `ggplot2`.
 
 
 
@@ -642,7 +622,7 @@ you need to use <code>y = .data[[input$y]]</code> inside
 
 ## Images
 
-`imageOutput` takes the same arguments as `plotOutput`. You can leave `width` and `height` as their defaults if you are going to set those values in the render function.
+Use `imageOutput` in the UI to create a placeholder for the image.
 
 
 ```r
@@ -650,7 +630,7 @@ you need to use <code>y = .data[[input$y]]</code> inside
 imageOutput("demo_image")
 ```
 
-`renderImage` needs to return a named list with at least an `src` with the image path. You can also set the `width` and `height` (numeric values are in pixels), `class` and `alt` (the alt-text for screen readers).
+Use `renderImage` in the server to generate or reference an image. This function needs to return a named list with at least an `src` with the image path. You can also set the `width` and `height` (numeric values are in pixels), `class` and `alt` (the alt-text for screen readers).
 
 
 ```r
@@ -659,7 +639,7 @@ output$demo_image <- renderImage({
     list(src = "images/penguin.jpg",
          width = 100,
          height = 100,
-         alt = "A flower")
+         alt = "A penguin")
 }, deleteFile = FALSE)
 ```
 
@@ -674,7 +654,7 @@ you’re referencing a file you previously saved.</p>
 
 ## Data Tables
 
-Display a table using `tableOutput`.
+Display a table using `tableOutput` in the UI.
 
 
 ```r
@@ -682,7 +662,7 @@ Display a table using `tableOutput`.
 tableOutput("demo_table")
 ```
 
-This is paired with `DT::renderDataTable`, which makes a table out of any data frame it returns.
+This is paired with `DT::renderDataTable`, which makes a table out of any data frame it returns. The table will automatically update when the user inputs change.
 
 
 ```r
@@ -709,6 +689,52 @@ accidentally using the <code>shiny</code> versions, which don’t have the
 same options.</p>
 </div>
 
+
+## Writing Files
+
+Writing Data to a CSV File
+You can write data to a CSV file using `write.csv()` or similar functions. Typically, this involves creating a download button in the UI and then using `downloadHandler` in the server to handle the file generation.
+
+Add a `downloadButton` to the UI to allow users to download the file.
+
+
+```r
+# In the UI function
+downloadButton("download_csv", label = "Download CSV")
+```
+
+Use `downloadHandler` to define the file to be generated and downloaded.
+
+
+```r
+# In the server function
+output$download_csv <- downloadHandler(
+  filename = function() {
+    paste("penguins_data_", Sys.Date(), ".csv", sep = "")
+  },
+  content = function(file) {
+    write.csv(penguins_filtered, file)  # 'penguins_filtered' is the data to be written
+  }
+)
+```
+
+> Note you could alter this to run the ggsave() function to export images
+
+### Summary
+By using these output functions, you can create dynamic, interactive elements in your Shiny app. Here is a brief overview of the output types covered:
+
+- Text Outputs: Use textOutput and renderText for dynamic text, or verbatimTextOutput for preformatted text.
+
+- Plot Outputs: Use plotOutput and renderPlot to display plots created with base R or ggplot2.
+
+- Image Outputs: Use imageOutput and renderImage to display dynamic or pre-saved images.
+
+- Data Table Outputs: Use tableOutput and DT::renderDataTable for dynamic data tables.
+
+- File outputs: Use downloadButton and downloadHandler for file export
+
+
+Experiment with these functions in your Shiny app to create dynamic, interactive web applications that respond to user inputs in real-time. 
 
 ## Emphasis
 
@@ -837,9 +863,7 @@ shinyApp(ui = ui, server = server)
 
 # Reactive
 
-
-Reactivity is how Shiny determines which code in server() gets to run when. Some types of objects, such as the input object or objects made by `reactiveValues()`, can trigger some types of functions to run whenever they change.
-
+Reactivity is how Shiny determines when code in `server()` gets to run. 
 In the example below if you move the data filtering outside of `renderPlot()`, you'll get an error message like "Can't access reactive value outside of reactive consumer." This means that the input values can only be read inside certain functions, like `reactive()`, `observeEvent()`, or a render function like `renderPlot()`.
 
 
@@ -891,9 +915,9 @@ ui <- fluidPage(
  
 
 server <- function(input, output) {
-  
+  # Error: Cannot access reactive value outside of reactive context
 penguins_filtered <- penguins |>
-      filter(species == input$species) 
+      filter(species == input$species)  # Error: `input$species` is reactive and can only be accessed in reactive contexts
   
   output$demo_sp <- renderText({
     paste("Figure 1.", input$species)
@@ -936,6 +960,8 @@ Caused by error in `input$species`:
 ```
 
 However, we can put the data filtering inside `reactive()`. This means that whenever an input inside that function changes, the code will run and update the value of `data()`. This can be useful if you need to recalculate the data table each time the inputs change, and then use it in more than one function.
+
+### Correct use
 
 
 ```r
@@ -987,7 +1013,7 @@ ui <- fluidPage(
  
 
 server <- function(input, output) {
-  
+ # Correct usage: reactive expression to filter data 
 penguins_filtered <- reactive({
   penguins |>
       filter(species == input$species)
@@ -1025,13 +1051,22 @@ output$demo_text <- renderText({
 shinyApp(ui = ui, server = server)
 ```
 
-My most common error is trying to use data or title as an object instead of as a function. Notice how the first argument to ggplot is no longer data, but `data()` and you set the value of data with `data(newdata)`, not data <- newdata. For now, just remember this as a quirk of shiny.
+
+#### Reactive Expression:
+
+- `penguins_filtered` is defined as reactive(). This means it will automatically update whenever input$species changes.
+
+- Accessing Reactive Values: Use `penguins_filtered()` to access the filtered data.
+
+My most common error is trying to use data or title as an object instead of as a function. Notice how the first argument to ggplot is no longer `penguins_filtered`, but `penguins_filtered()`.
 
 ## Observable
 
 What if you only want to update things when an update button is clicked, and not whenever the user changes an option?
 
 `observeEvent()`. This function runs the code whenever the value of the first argument changes. If there are reactive values inside the function, they won't trigger the code to run when they change.
+
+Unlike `reactive()`, `observeEvent()` does not produce a reactive expression or a return value; it simply runs its code block whenever the event occurs (e.g., when the user clicks a button).
 
 
 ```r
@@ -1088,7 +1123,7 @@ server <- function(input, output) {
  
 
   observeEvent(input$update, {
-    
+  # This code runs only when the "Update" button is clicked   
     penguins_filtered <- penguins |>
       filter(species == input$species)
     
@@ -1132,19 +1167,49 @@ shinyApp(ui = ui, server = server)
 
 Run this code. Which things are now updated by the plot button?
 
+## Notes on Reactivity
+
+Key Concepts in Shiny Reactivity:
+
+### Reactive Expressions
+
+Think of reactive expressions as formulas that automatically recalculate whenever their inputs change.
+
+In Shiny, you create reactive expressions using the `reactive()` function. These expressions can be reused throughout your app and will always be up-to-date with the latest input values.
+
+
+
+### Observe: 
+
+Functions wrapped in `observeEvent()`  is used to trigger actions, such as updating a value, sending a message, or creating a plot. These actions are called "side effects." For example, it could be used to update the value of an input field or display a notification when a button is clicked
+
+- Render Functions: Functions like `renderPlot()`, `renderText()`, and `renderDataTable()` that are used to generate outputs in response to changes in reactive values.
+
+### Common Errors and Best Practices
+
+- Accessing Reactive Values: Reactive values (e.g., input$species, reactive()) should only be accessed inside reactive contexts like render*() functions, reactive(), or observe(). Attempting to use them outside these contexts will result in errors.
+
+- Using Reactive Expressions: When using a reactive expression, you need to call it as a function with parentheses, e.g., penguins_filtered(). This ensures that the expression is re-evaluated whenever its dependencies change.
+
+- Avoiding Side Effects: Only use reactive expressions and observers for their intended purposes. Reactive expressions should return values, while observers are used to trigger side effects.
+
 
 # Shiny Dashboards
 
-`bslib` is an R package that extends Bootstrap 4 and allows you to customize the appearance and style of your Shiny applications or R Markdown documents. With `bslib`, you can easily modify the look and feel of your Shiny apps by defining custom themes, colors, fonts, and other visual aspects.
+`bslib` is an R package that makes it easy to customize the appearance of your Shiny applications or R Markdown documents. By leveraging the Bootstrap framework, `bslib` allows you to define custom themes, colors, fonts, and other visual elements without needing to write extensive CSS code.
 
-It provides a flexible way to create a consistent and visually appealing design for your Shiny applications without having to write extensive CSS code.
-
-You can use `bslib` functions like `bs_theme()`, to define and apply custom styles to your Shiny app. But there's no accounting for taste...
-
+With `bslib`, you can give your Shiny apps a consistent and visually appealing design in a flexible way, enhancing the user experience with a few lines of code.
 
 <img src="images/my_dashboard.png" width="100%" style="display: block; margin: auto;" />
 
 (https://philip-leftwich.shinyapps.io/penguin_demo")
+
+## How to Use bslib in Shiny
+
+`bslib` provides functions like `bs_theme()` to define and apply custom styles to your Shiny apps. Here is how you can use it:
+
+### Basic Example: Applying a Custom Theme
+To get started with `bslib`, let's create a basic Shiny dashboard and apply a custom theme. We will use the `palmerpenguins` dataset to build an interactive app that lets users select different species of penguins and view the distribution of their flipper lengths.
 
 
 
@@ -1164,11 +1229,23 @@ means <- penguins |>
   summarise(mean = round(mean(flipper_length_mm, na.rm = T), 2))
 
 
-theme <- bs_theme()
+theme <- bs_theme(
+  bg = "#FFFFFF", # Background color
+  fg = "#333333", # Foreground (text) color
+  primary = "#007BFF", # Primary accent color
+  base_font = c("Helvetica", "Arial", "sans-serif") # Base font
+)
+```
 
+#### Define UI
+
+Let's break down the `bslib` components used in the UI, focusing on the layout structure and how they work together to create a well-organized and visually appealing dashboard.
+
+
+```r
 # ui.R ----
 ui <- page_sidebar(
-  theme = bs_theme(),
+  theme = theme, # Apply the custom theme
   title = "Penguins flipper dashboard",
   sidebar = sidebar(
       demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
@@ -1229,8 +1306,59 @@ ui <- page_sidebar(
     )  
 )
 )
-  
+```
 
+### Overview of Key Components
+
+bslib uses Bootstrap to provide a set of components for creating a responsive layout in Shiny applications. The `layout_columns()`, `value_box()`, and `card()` functions, among others, help you create a dynamic, grid-based layout that adjusts automatically to different screen sizes.
+
+Below, we'll explain each function used in the code snippet.
+
+- `layout_columns()`
+
+The `layout_columns()` function is used to create a responsive grid layout with multiple columns. This is particularly useful for creating dashboards with value boxes, plots, and other UI elements that need to be arranged side-by-side.
+
+  - `fill = FALSE`: This argument
+  controls whether the columns should stretch to fill the entire width of their container. Setting `fill = FALSE` keeps the columns from expanding beyond their content size.
+  
+  - Inside `layout_columns()`, you can add multiple components (like `value_box()` and `card()`), which will be arranged into columns.
+  
+- `value_box()`
+The `value_box()` function creates a compact display element typically used to highlight key metrics or values, such as summary statistics or calculated values.
+
+  - `title`: A string specifying the title of the value box. For example, "Adelie Flipper Length" is the title of the first value box.
+
+ - `value`: The content to display in the value box. Here, it displays the mean flipper length of each penguin species, formatted with a unit ("mm").
+ 
+      - The scales::unit_format(unit = "mm") function is used to format the numeric values with the "mm" unit.
+      
+- `showcase`: An optional visual element, such as an icon, to be displayed in the value box. In this example, `bsicons::bs_icon()` is used to create icons (`align-bottom`, `align-center`, `align-top`) that are displayed next to the values.
+
+  - `theme_color`: Sets the background color of the value box. Here, it's set to "grey".
+  
+- `tags$ul()` and `tags$strong()`
+`tags$ul()` and `tags$strong()` are functions from the `htmltools` package (in base Shiny) that are used to create HTML elements:
+
+    - tags$ul(): Creates an unordered list (<ul>) element in HTML.
+    
+    - tags$strong(): Creates a bold text element (<strong>). This is used to emphasize the output text generated by textOutput("demo_sp").
+
+This part of the code is adding some text elements below the value boxes, dynamically rendered from server-side outputs like textOutput("demo_sp") and textOutput("demo_text").
+
+- `card()`
+The `card()` function creates a visually distinct container that groups related content together. It's a versatile component that can be used to display plots, tables, text, or any other UI element.
+
+    - full_screen = TRUE: Allows the card to expand to fill the entire available screen space when clicked.
+
+    -card_header(): Creates a header section at the top of the card, which can be used to provide a title or other contextual information. In the example, the headers are "Plot" and "Table".
+
+
+### Server
+
+The server runs as before: 
+
+
+```r
 # server.R ----
 
  
@@ -1280,289 +1408,8 @@ shinyApp(ui = ui, server = server)
 ```
 
 
-### Themable Dashboards
-
-Adding the `bsthemer()` function to the **server** adds real time theme changes to dashboards. Play with the parameters and you should see updated bstheme code being produced in your console. Make a note of this and you can add this directly to `bs_theme()` to pick a permanent style! 
 
 
-
-```r
-# Packages ----
-library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
-library(palmerpenguins)    # The source of your data
-library(bslib)
-
-# Load the data
-penguins <- as_tibble(penguins)
-
-# Calculate column means for the value boxes
-means <- penguins |> 
-  group_by(species) |> 
-  summarise(mean = round(mean(flipper_length_mm, na.rm = T), 2))
-
-
-# ui.R ----
-ui <- page_sidebar(
-  title = "Penguins flipper dashboard",
-  sidebar = sidebar(
-      demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
-                  label = "1. Select species",  # Give the input a label to be displayed in the app
-                  choices = c("Adelie" = "Adelie", "Chinstrap" = "Chinstrap", "Gentoo" = "Gentoo"), selected = "Adelie"),  # Create the choices that can be selected. e.g. Display "Adelie" and link to value "Adelie"
-      demo_select <- selectInput(inputId = "colour", 
-                  label = "2. Select histogram colour", 
-                  choices = c("blue","green","red","purple","grey"), selected = "grey"),
-      demo_slide <- sliderInput(inputId = "bin", 
-                  label = "3. Select number of histogram bins", 
-                  min=1, max=25, value= c(10)),
-      demo_text <- textAreaInput(inputId = "text", 
-                label = "4. Enter some text to be displayed",
-                rows = 5,
-                placeholder = "Enter some information here"),
-      demo_button <- actionButton("update", "Plot")
-    )
-  ,
-   layout_columns(
-    fill = FALSE,
-    value_box(
-      title = "Adelie Flipper Length",
-      value = scales::unit_format(unit = "mm")(means[[1,2]]),
-      showcase = bsicons::bs_icon("align-bottom"),
-      theme_color = "grey"
-    ),
-    value_box(
-      title = "Chinstrap Flipper",
-      value = scales::unit_format(unit = "mm")(means[[2,2]]),
-      showcase = bsicons::bs_icon("align-center"),
-      theme_color = "grey"
-    ),
- value_box(
-      title = "Gentoo Flipper Length",
-      value = scales::unit_format(unit = "mm")(means[[3,2]]),
-      showcase = bsicons::bs_icon("align-top"),
-      theme_color = "grey"
-    )
-  ),
-    
-    tags$ul(
-    tags$strong(textOutput("demo_sp")),
-    textOutput("demo_text")),
- 
-      # Output elements go here
-      layout_columns(
-    card(
-      full_screen = TRUE,
-      card_header("Plot"),
-      plotOutput("demo_plot")
-    ),
-    card(
-      full_screen = TRUE,
-      card_header("Table"),
-      DT::dataTableOutput("demo_table",
-                    width = "100%",
-                    height = "auto")
-    )  
-)
-)
-  
-
-# server.R ----
-
- 
-
-server <- function(input, output) {
-  # run this get dynamic theme tools  
-  bs_themer()
-
-# Turn on thematic for theme-matched plots
-thematic::thematic_shiny(font = "auto")
-
-  observeEvent(input$update, {
-    
-    penguins_filtered <- penguins |>
-      filter(species == input$species)
-    
-     bins <- input$bin
-     
-     colour <- input$colour
- 
-
-    output$demo_sp <- renderText({
-      paste("Figure 1.", input$species)
-    })
-
-    output$demo_text <- renderText({
-      (input$text)
-    })
-
-    output$demo_plot <- renderPlot({
-        ggplot(penguins_filtered, aes(x = flipper_length_mm)) +
-        geom_histogram(fill = colour, colour = "black", show.legend = FALSE, bins = bins) +
-        labs(fill = "Color") +
-    })
-
-    output$demo_table <- DT::renderDataTable({
-      penguins_filtered |> 
-        summarise(flipper_length_mm = quantile(flipper_length_mm, c(0.25, 0.5, 0.75), na.rm = T), quantile = c(0.25, 0.5, 0.75))
-    })
-  })
-  
-}
-
-
-
-
-# Run the app ----
-shinyApp(ui = ui, server = server)
-```
-
-
-### Updating your theme
-
-You can now update your `bstheme()` and remove the `bsthemer` dynamic interaction line. If you have extensively modified your app - you can add `thematic::thematic_shiny()` to your server so that your plots will be autothemed to the settings of your app. 
-
-
-```r
-# Packages ----
-library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
-library(palmerpenguins)    # The source of your data
-library(bslib)
-
-# Load the data
-penguins <- as_tibble(penguins)
-
-
-
-custom_theme <- bs_theme(
-  # Controls the default grayscale palette
-  bg = "#202123", fg = "#B8BCC2",
-  # Controls the accent (e.g., hyperlink, button, etc) colors
-  primary = "#EA80FC", secondary = "#48DAC6",
-  base_font = c("Grandstander", "sans-serif"),
-  code_font = c("Courier", "monospace"),
-  heading_font = "'Helvetica Neue', Helvetica, sans-serif",
-  # Can also add lower-level customization
-  "input-border-color" = "#EA80FC"
-)
-
-# Calculate column means for the value boxes
-means <- penguins |> 
-  group_by(species) |> 
-  summarise(mean = round(mean(flipper_length_mm, na.rm = T), 2))
-
-# ui.R ----
-ui <- page_sidebar(
-  theme = custom_theme,
-  title = "Penguins flipper dashboard",
-  sidebar = sidebar(
-      demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
-                  label = "1. Select species",  # Give the input a label to be displayed in the app
-                  choices = c("Adelie" = "Adelie", "Chinstrap" = "Chinstrap", "Gentoo" = "Gentoo"), selected = "Adelie"),  # Create the choices that can be selected. e.g. Display "Adelie" and link to value "Adelie"
-      demo_select <- selectInput(inputId = "colour", 
-                  label = "2. Select histogram colour", 
-                  choices = c("blue","green","red","purple","grey"), selected = "grey"),
-      demo_slide <- sliderInput(inputId = "bin", 
-                  label = "3. Select number of histogram bins", 
-                  min=1, max=25, value= c(10)),
-      demo_text <- textAreaInput(inputId = "text", 
-                label = "4. Enter some text to be displayed",
-                rows = 5,
-                placeholder = "Enter some information here"),
-      demo_button <- actionButton("update", "Plot")
-    )
-  ,
-   layout_columns(
-    fill = FALSE,
-    value_box(
-      title = "Adelie Flipper Length",
-      value = scales::unit_format(unit = "mm")(means[[1,2]]),
-      showcase = bsicons::bs_icon("align-bottom"),
-   
-    ),
-    value_box(
-      title = "Chinstrap Flipper",
-      value = scales::unit_format(unit = "mm")(means[[2,2]]),
-      showcase = bsicons::bs_icon("align-center"),
-     
-    ),
- value_box(
-      title = "Gentoo Flipper Length",
-      value = scales::unit_format(unit = "mm")(means[[3,2]]),
-      showcase = bsicons::bs_icon("align-top"),
-     
-    )
-  ),
-    
-    tags$ul(
-    tags$strong(textOutput("demo_sp")),
-    textOutput("demo_text")),
- 
-      # Output elements go here
-      layout_columns(
-    card(
-      full_screen = TRUE,
-      card_header("Plot"),
-      plotOutput("demo_plot")
-    ),
-    card(
-      full_screen = TRUE,
-      card_header("Table"),
-      DT::dataTableOutput("demo_table",
-                    width = "100%",
-                    height = "auto")
-    )  
-)
-)
-  
-
-# server.R ----
-
- 
-
-server <- function(input, output) {
-  
-# Turn on thematic for theme-matched plots
-thematic::thematic_shiny()
-
-  observeEvent(input$update, {
-    
-    penguins_filtered <- penguins |>
-      filter(species == input$species)
-    
-     bins <- input$bin
-     
-     colour <- input$colour
- 
-
-    output$demo_sp <- renderText({
-      paste("Figure 1.", input$species)
-    })
-
-    output$demo_text <- renderText({
-      (input$text)
-    })
-
-    output$demo_plot <- renderPlot({
-        ggplot(penguins_filtered, aes(x = flipper_length_mm)) +
-        geom_histogram(fill = colour, colour = "black", show.legend = FALSE, bins = bins) +
-        labs(fill = "Color") 
-    })
-
-    output$demo_table <- DT::renderDataTable({
-      penguins_filtered |> 
-        summarise(flipper_length_mm = quantile(flipper_length_mm, c(0.25, 0.5, 0.75), na.rm = T), quantile = c(0.25, 0.5, 0.75))
-    })
-  })
-  
-}
-
-
-
-
-# Run the app ----
-shinyApp(ui = ui, server = server)
-```
 
 
 ### Reading
@@ -1604,307 +1451,8 @@ You can put your app in a custom R package to make it even easier for people to 
 
 - https://mastering-shiny.org/
 
-- https://www.jumpingrivers.com/blog/r-shiny-customising-shinydashboard/#:~:text=The%20main%20way%20of%20including,css%20by%20convention.
 
 
-# Modules
 
-Currently, all the logic for your R Shiny app is concentrated within a single app.R file. However, there's a more effective approach that you're about to discover. In addition how do you structure your code when there are a lot of similar processes?
-
-R Shiny modules offer a way to break down your code into small, reusable components. This allows you to manage and organize your R scripts more efficiently. By integrating various modules into your app.R, you can create a code base that looks professional and is easy to maintain.
-
-While some may view R Shiny modules as an advanced concept, they don't have to be intimidating. Although they might initially challenge even seasoned R programmers, there are plenty of straightforward aspects to explore.
-
-Check out the modularised app you will make here (https://philip-leftwich.shinyapps.io/shiny-modules/)
-
-In essence, if you have a grasp of R Shiny fundamentals and can write R functions, you possess the prerequisites to delve into the realm of R Shiny modules.
-
-In this example we are going to use functions to rewrite an app that use very similar functions to generate plots and tables for two datasets: 
-
-In this first example chunk of code we see what we would do if we wanted to set our **UI** to accept two inputs on two separate tab separated pages: 
-
-
-```r
-iris_tab <- tabPanel(
-  "iris",
-  selectInput("iris_dv", "DV", choices = names(iris)[1:4]),
-  plotOutput("iris_plot"),
-  DT::dataTableOutput("iris_table")
-)
-
-penguins_tab <- tabPanel(
-  "penguins",
-  selectInput("penguins_dv", "DV", choices = names(penguins)[3:6]),
-  plotOutput("penguins_plot"),
-  DT::dataTableOutput("penguins_table")
-)
-```
-
-To modularize your code, start by creating a function that generates the mentioned UIs based on the base ID and other dynamic aspects. In the given example, since the choices vary for each `selectInput()`, a function with id and choices as arguments will be created.
-
-The initial line of a UI module function always begins with `ns <- NS(id)`, establishing a convenient way to include the base id in the id type. This ensures that instead of naming the `selectInput()` as "iris_dv" or "penguins_dv," (*dependent variable*, we designate it as `ns(dv)`. It's essential for all ids to utilize `ns()` to incorporate the *namespace* into their IDs.
-
-
-```r
-tabPanelUI <- function(id, choices) {
-    ns <- NS(id)
-    
-    tabPanel(
-        id,
-        selectInput(ns("dv"), "DV", choices = choices),
-        plotOutput(ns("plot")),
-        DT::dataTableOutput(ns("table"))
-    )
-}
-```
-
-Now, you can replace two tabPanel definitions with just the following code:
-
-
-```r
-iris_tab <- tabPanelUI("iris", names(iris)[1:4])
-penguins_tab <- tabPanelUI("penguins", names(select(penguins, where(is.numeric))))
-```
-
-
-## Modularising the server functions
-
-
-Here we have four functions that create the two output tables and two output plots, but these are also largely redundant - as we can see that basically we want the same plot and table, just running on different data: 
-
-
-```r
-output$iris_table <- DT::renderDataTable({
-    iris
-})
-
-output$iris_plot <- renderPlot({
-    ggplot(iris, aes(x = Species, 
-                     y = .data[[input$iris_dv]],
-                     fill = Species)) +
-        geom_violin(alpha = 0.5, show.legend = FALSE) +
-        scale_fill_viridis_d()
-})
-
-output$penguins_table <- DT::renderDataTable({
-    penguins
-})
-
-output$penguins_plot <- renderPlot({
-    ggplot(penguins, aes(x = species, 
-                     y = .data[[input$penguins_dv]],
-                     fill = species)) +
-        geom_violin(alpha = 0.5, show.legend = FALSE) +
-        scale_fill_viridis_d()
-})
-```
-
-
-The next stage in code modularization involves establishing a server function. In this function, you can consolidate all the functions related to inputs and outputs from the UI function. For instance, in our case, we'll incorporate functions to generate both the output table and the output plot.
-
-The server function requires the base id as its initial argument, followed by any additional arguments necessary to specify variations between base implementations. In the previous example, where tables display diverse data and plots utilize distinct groupings for the x-axis and fill, we'll introduce arguments for data and group_by.
-
-A standard server function always includes `moduleServer()` configured as illustrated below.
-
-
-```r
-tabPanelServer <- function(id, data, group_by) {
-    moduleServer(id, function(input, output, session) {
-        output$table <- DT::renderDataTable({
-            data
-        })
-        
-        output$plot <- renderPlot({
-            # handle non-string groupings
-            ggplot(data, aes(x = .data[[group_by]], 
-                             y = .data[[input$dv]],
-                             fill = .data[[group_by]])) +
-                geom_violin(alpha = 0.5, show.legend = FALSE) +
-                scale_fill_viridis_d()
-        })
-    })
-}
-```
-
-Now, you can take one of the set of server functions above, remove the base name (like "iris_" or "penguins_") from both inputs and outputs, and replace any specific references to data or grouping columns with generic terms such as 'data' and 'group_by'.
-
-
-```r
-tabPanelServer("iris", data = iris, group_by = "Species")
-tabPanelServer("penguins", data = penguins, group_by = "species")
-```
-
-## Exercise
-
-Can you work through the steps above to produce a set of shiny modules in you app.R file?
-
-<button id="displayTextunnamed-chunk-69" onclick="javascript:toggle('unnamed-chunk-69');">Show Solution</button>
-
-<div id="toggleTextunnamed-chunk-69" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
-
-```r
-library(shiny)
-library(bslib)
-library(palmerpenguins)
-
-# modules ----
-
-tabPanelUI <- function(id, choices) {
-    
-    ns <- NS(id)
-    
-    tabPanel(
-        id,
-        selectInput(ns("dv"), "DV", choices = choices),
-        plotOutput(ns("plot")),
-        DT::dataTableOutput(ns("table"))
-    )
-}
-
-tabPanelServer <- function(id, data, group_by) {
-    moduleServer(id, function(input, output, session) {
-        output$table <- DT::renderDataTable({
-            data
-        })
-        
-        output$plot <- renderPlot({
-            # handle non-string groupings
-            data[[group_by]] <- factor(data[[group_by]])
-            ggplot(data, aes(x = .data[[group_by]], 
-                             y = .data[[input$dv]],
-                             fill = .data[[group_by]])) +
-                geom_violin(alpha = 0.5, show.legend = FALSE) +
-                scale_fill_viridis_d()+
-              coord_flip()+
-              theme_minimal(base_size = 18)
-        })
-    })
-}
-
-# UI-----
-
-ui <- page_navbar(
-    nav_panel("Iris data", tabPanelUI("iris", names(iris)[1:4])),
-    nav_panel("Penguins data", tabPanelUI("penguins",names(select(penguins, where(is.numeric)))))
-  )
-
-
-# server ----
-server <- function(input, output, session) {
-    tabPanelServer("penguins", data = penguins, group_by = "species")
-    tabPanelServer("iris", data = iris, group_by = "Species")
-} 
-
-shinyApp(ui, server)
-```
-</div></div></div>
-
-
-## Separating files
-
-We now have streamlined modular code in our Shiny app, but we can go further. The `app.R` needs to contain the structure for the **UI** and the **server** but functions defined in your code can be put into a separate file and imported with `source("mod-code.R")` or whatever you have called your file. 
-
-> Shiny apps work in a similar way to Rmarkdown files in that the working directory is by default the location of your app.R file - so sort your filepaths accordingly. 
-
-This might seem like an unnecessary step at this stage - but once your apps get more complicated - partitioning your funcitons will make changing and debugging much easier.
-
-See below for the containers for the
-
-### app.r file
-
-<button id="displayTextunnamed-chunk-70" onclick="javascript:toggle('unnamed-chunk-70');">Show Solution</button>
-
-<div id="toggleTextunnamed-chunk-70" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
-
-```r
-library(shiny)
-library(bslib)
-source("mod-code.R")
-
-
-tabPanelUI <- id_choice
-
-tabPanelServer <- plot_table_function
-
-
-# UI-----
-
-
-ui <- page_navbar(
-  nav_panel("Iris data", tabPanelUI("iris", names(iris)[1:4])),
-  nav_panel("Penguins data", tabPanelUI("penguins",names(penguins)[3:6]))
-)
-
-
-# server ----
-server <- function(input, output, session) {
-  tabPanelServer("penguins", data = penguins, group_by = "species")
-  tabPanelServer("iris", data = iris, group_by = "Species")
-} 
-
-shinyApp(ui, server)
-```
-</div></div></div>
-
-
-### mod-code script
-
-<button id="displayTextunnamed-chunk-71" onclick="javascript:toggle('unnamed-chunk-71');">Show Solution</button>
-
-<div id="toggleTextunnamed-chunk-71" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
-
-```r
-# functions ====
-
-library(palmerpenguins)
-library(dplyr)
-library(ggplot2)
-library(stringr)        
-
-# data wrangling ====
-
-iris <- iris |> 
-  mutate(Species = str_to_title(Species))
-
-# define modules ====
-
-id_choice <- function(id, choices) {
-  
-  ns <- NS(id)
-  
-  tabPanel(
-    id,
-    selectInput(ns("dv"), "DV", choices = choices),
-    plotOutput(ns("plot")),
-    DT::dataTableOutput(ns("table"))
-  )
-}
-
-
-# server function modules ====
-
-plot_table_function <- function(id, data, group_by) {
-  moduleServer(id, function(input, output, session) {
-    output$table <- DT::renderDataTable({
-      data
-    })
-    
-    output$plot <- renderPlot({
-      data[[group_by]] <- factor(data[[group_by]])
-      ggplot(data, aes(x = .data[[group_by]], 
-                       y = .data[[input$dv]],
-                       fill = .data[[group_by]])) +
-        geom_violin(alpha = 0.5, show.legend = FALSE) +
-        scale_fill_viridis_d()+
-        coord_flip()+
-        theme_minimal(base_size = 18)+
-        theme(plot.margin = margin(0, 9, 0, 9, "cm"))+
-        labs(x= "")
-    })
-    
-  })
-}
-```
-</div></div></div>
 
 
