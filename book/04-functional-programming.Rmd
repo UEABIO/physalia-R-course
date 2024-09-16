@@ -2119,6 +2119,27 @@ function (X, FUN, ...)
 We can see the operation of an `lapply()` function here:
 
 ```{r, eval = F}
+set.seed(1234)
+
+# a simple tibble
+df <- tibble(
+  a =  rnorm(10),
+  b =  rnorm(10),
+  c =  rnorm(10),
+  d = rnorm(10),
+  e = rnorm(10),
+  f = rnorm(10),
+  g = rnorm(10),
+  h = rnorm(10),
+)
+
+df
+
+df_list <- as.list(df)
+
+```
+
+```{r, eval = F}
 
 lapply(df_list, mean)
 
@@ -2478,17 +2499,39 @@ Either run your cleaning script or run readRDS on the file you made
 ```
 
 
-
 Nested data frames in `tibbles` can be particularly useful when working with map functions, like `purrr::map()`to apply a function to elements within each nested structure. 
 
 First we use the `nest()` function and select how we want to nest our data
 
-```{r}
+
+```{r, echo = FALSE}
+
+nested_penguins <- penguins |> 
+  nest(data = -species)
+
+
+```
+
+
+```{r, eval = FALSE}
 
 nested_penguins <- penguins |> 
   nest(data = -species)
 
 nested_penguins
+
+```
+
+```
+A tibble:3 × 2
+species
+<chr>
+data
+<list>
+Adelie	<tibble>			
+Gentoo	<tibble>			
+Chinstrap	<tibble>			
+3 rows
 
 ```
 
@@ -2503,7 +2546,15 @@ nested_heavy_penguins <- penguins |>
                         |> filter(body_mass_g > mean(body_mass_g, na.rm = T)))
          )
 
-nested_heavy_penguins
+```
+
+```
+# A tibble: 3 × 3
+  species   data                new_data          
+  <chr>     <list>              <list>            
+1 Adelie    <tibble [152 × 19]> <tibble [70 × 19]>
+2 Gentoo    <tibble [124 × 19]> <tibble [58 × 19]>
+3 Chinstrap <tibble [68 × 19]>  <tibble [31 × 19]>
 
 ```
 
@@ -2597,7 +2648,7 @@ plots_df$scatterplots |>
 ```
 
 
-##pmap
+## pmap
 
 While `map` works with a single vector, and `map2` works with two vectors, `pmap` is a generalised version that works on any number of vectors. `pmap` also has all of the variants that we have seen before.
 
@@ -2745,6 +2796,44 @@ result$summaries
 ```{task}
 In the previous chapter with apply we wrote the `z_score()` function, can you apply this using map to our `df` tibble?
 ```
+
+
+`r hide("df tibble")`
+
+
+```
+set.seed(1234)
+
+# a simple tibble
+df <- tibble(
+  a =  rnorm(10),
+  b =  rnorm(10),
+  c =  rnorm(10),
+  d = rnorm(10),
+  e = rnorm(10),
+  f = rnorm(10),
+  g = rnorm(10),
+  h = rnorm(10),
+)
+
+```
+
+`r unhide()`
+
+
+`r hide("z score")`
+
+```
+
+z_score <- function(x) {
+    (x - mean(x, na.rm = TRUE)) /  
+        sd(x, na.rm = TRUE)
+}
+
+
+```
+
+`r unhide()`
 
 
 ```{solution}

@@ -2126,7 +2126,8 @@ penguins |>
     remove = TRUE,                # if TRUE, removes input cols from the data frame
     na.rm = TRUE                  # if TRUE, missing values are removed before uniting
   ) |> 
-  select(reproduction_status,species, region, island)
+  select(reproduction_status,species, region, island) |> 
+  head()
 
 ```
 
@@ -2161,7 +2162,8 @@ penguins |>
   select(stage) |> 
   separate(stage,
            into = c("age", "number_of_eggs", "reproductive_stage"),
-           extra = "merge")
+           extra = "merge") |> 
+  head()
 
 ```
 
@@ -2653,15 +2655,15 @@ Key Concepts:
 
 - . (dot): Matches any single character except a newline.
 
-- * (asterisk): Matches zero or more of the preceding element.
+- \* (asterisk): Matches zero or more of the preceding element.
 
-- + (plus): Matches one or more of the preceding element.
+- \+ (plus): Matches one or more of the preceding element.
 
-- ? (question mark): Matches zero or one of the preceding element.
+- \? (question mark): Matches zero or one of the preceding element.
 
-- | (pipe): Acts as a logical OR to match any one of several patterns.
+- \| (pipe): Acts as a logical OR to match any one of several patterns.
 
-- [] (square brackets): Defines a character class, e.g., [aeiou] matches any vowel.
+- [] (square brackets): Defines a character class, e.g., [aeiou] matches any vowel or [0-9] matches any number
 
 - () (parentheses): Groups patterns together.
 
@@ -2679,6 +2681,7 @@ basic_string <- "Today Observer A spotted  3 Adelie adults and 4 Chinstraps, Obs
 str_extract_all(basic_string, "[aeiou]")
 
 ```
+
 - Match a range of characters: We can find any capital letter from “A” to “F,” by using a hyphen, [A-F]. Character sets are case sensitive, so [A-F] is not the same as [a-f]
 
 ```{r}
@@ -2697,15 +2700,15 @@ str_extract_all(basic_string, "[0-9]")
 
 ### Meta characters
 
-Meta characters represent a type of character. They will typically begin with a backslash \. Since the backslash \ is a special character in R, it needs to be escaped each time it is used with another backslash. In other words, R requires 2 backslashes when using meta characters. Each meta character will match to a single character. Here are some of the most important ones in action:
+Meta characters represent a type of character. They will typically begin with a backslash \\. Since the backslash \\ is a special character in R, it needs to be escaped each time it is used with another backslash. In other words, **R requires 2 backslashes when using meta characters**. Each meta character will match to a single character. Here are some of the most important ones in action:
 
-- \\s: This meta character represents spaces. This will match to each space, tab, and newline character. You may also specify \\t and \\n for tab and newline characters respectively. 
+- \\\s: This meta character represents spaces. This will match to each space, tab, and newline character. You may also specify \\\t and \\\n for tab and newline characters respectively. 
 
-> Side note: our example string does not have any tabs, but be cautious when looking for them. Many integrated development environments, or IDE’s, have a setting that will replace all tabs with spaces while you are typing. In the example string, \\s returns a list of a vector of 17 spaces, the exact number of spaces in our example string!
+> Side note: our example string does not have any tabs, but be cautious when looking for them. Many integrated development environments, or IDE’s, have a setting that will replace all tabs with spaces while you are typing. In the example string, \\\s returns a list of a vector of 17 spaces, the exact number of spaces in our example string!
 
-\\w: This meta character represents alphanumeric characters. This includes all the letters a-z, capital and lowercase, and the numbers 0–9. This would be the equivalent of the bracket group [A-Za-z0-9], just much quicker to write. Take caution in remembering that the \\w meta character on its own only captures a single character, not entire words or numbers. 
+- \\\w: This meta character represents alphanumeric characters. This includes all the letters a-z, capital and lowercase, and the numbers 0–9. This would be the equivalent of the bracket group [A-Za-z0-9], just much quicker to write. Take caution in remembering that the \\\w meta character on its own only captures a single character, not entire words or numbers. 
 
-\\d: This metacharacter matches any digits (numbers). 
+\\\d: This metacharacter matches any digits (numbers), the equivalent of [0-9]. 
 
 ## Anchors away
 
@@ -2831,21 +2834,19 @@ all_tables[[1]]
 
 ### Clean
 
-```{r}
+Our aim is to produce a table as follows that has: 
+
+- Clean and standardised common names
+- Separated model organisms into multiple columns if they contain multiple names
+- Cleaned up extraneous characters
+- Use regular expressions to remove numeric references
+- pivot if applicable
+
+```{r, echo = FALSE}
 selected_table <- all_tables[[1]] |> 
   janitor::clean_names() |> 
   rename("informal_phylum" = x)
 
-```
-
-
-- Clean and standardise common names
-- Separate model organisms into multiple columns if they contain multiple names
-- Clean up extraneous characters
-- Use regular expressions to remove numeric references
-- pivot if applicable
-
-```{r}
 
 selected_table |> 
   mutate(common_name = if_else(common_name == "", "Unknown", common_name)) |> 
@@ -2855,5 +2856,40 @@ selected_table |>
   unnest(model_organism) |> 
   mutate(model_organism = str_trim(model_organism)) |> 
   mutate(model_organism = str_replace(model_organism, "^T\\.", "Tetrahymena"))
+
+```
+
+
+```{solution}
+
+``{r, eval = FALSE}
+
+# Select the first table from the list `all_tables`
+selected_table <- all_tables[[1]] |> 
+  # Clean column names using the `janitor` package
+  janitor::clean_names() |> 
+  # Rename the column `x` to `informal_phylum`
+  rename("informal_phylum" = x)
+
+
+selected_table |> 
+  # Replace empty `common_name` fields with "Unknown"
+  mutate(common_name = if_else(common_name == "", "Unknown", common_name)) |> 
+  # Remove all occurrences of square brackets with any digits inside them
+  mutate(across(.cols = everything(), .fns = ~ str_remove_all(.x, "\\[([0-9]*)\\]"))) |> 
+  # Replace multiple consecutive `Xenopus [a-z]+` with comma separation
+  mutate(model_organism = str_replace(model_organism, "(Xenopus [a-z]+)(Xenopus [a-z]+)", "\\1,\\2")) |> 
+  # Split `model_organism` at commas into a list of values
+  mutate(model_organism = str_split(model_organism, ",")) |> 
+  # Unnest the list in `model_organism` so that each value is in a separate row
+  unnest(model_organism) |> 
+  # Trim whitespace from each value in `model_organism`
+  mutate(model_organism = str_trim(model_organism)) |> 
+  # Replace `T.` at the start of `model_organism` with `Tetrahymena`
+  mutate(model_organism = str_replace(model_organism, "^T\\.", "Tetrahymena"))
+
+
+``
+
 
 ```
