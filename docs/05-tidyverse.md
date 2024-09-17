@@ -1300,6 +1300,26 @@ penguins_clean_split |>
 
 The goal here is to understand how to use tidy evaluation to write functions that incorporate `{tidyverse}` functions e.g. (mutate, select, filter) etc. 
 
+> Note you will need the dataframe below `penguins_clean_split`
+
+
+<div class='webex-solution'><button>penguins_clean_split</button>
+
+
+
+```r
+penguins_clean_split <- penguins_raw |> 
+janitor::clean_names() |> 
+  extract(species,
+          into = c("species", "full_latin_name"),
+          regex = "(\\w+) .* \\(([^)]+)\\)"
+          )
+```
+
+
+</div>
+
+
 Below is an example of some code to select a variable:
 
 
@@ -1587,9 +1607,9 @@ Write a `function` that uses filter to take any two of the penguin species then 
 
 
 
-<button id="displayTextunnamed-chunk-72" onclick="javascript:toggle('unnamed-chunk-72');">Show Solution</button>
+<button id="displayTextunnamed-chunk-73" onclick="javascript:toggle('unnamed-chunk-73');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-72" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-73" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 compare_species_plot <- function(data, species_1, species_2, feature) {
@@ -1607,14 +1627,14 @@ compare_species_plot <- function(data, species_1, species_2, feature) {
 compare_species_plot(penguins_clean_split, "Adelie", "Chinstrap", culmen_length_mm)
 ```
 
-<img src="05-tidyverse_files/figure-html/unnamed-chunk-77-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="05-tidyverse_files/figure-html/unnamed-chunk-78-1.png" width="100%" style="display: block; margin: auto;" />
 </div></div></div>
 
 Try substituting in `quo_name(enquo(filter_condition))`. To return a character string that represents your filter condition. In the example below I have used `quo_name(enquo())` to enable conversion to character strings, this means all of the function arguments can be provided without "quotes". 
 
-<button id="displayTextunnamed-chunk-73" onclick="javascript:toggle('unnamed-chunk-73');">Show Solution</button>
+<button id="displayTextunnamed-chunk-74" onclick="javascript:toggle('unnamed-chunk-74');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-73" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-74" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 compare_species_plot <- function(data, species_1, species_2, feature) {
@@ -1648,9 +1668,9 @@ compare_species_plot(penguins_clean_split, Adelie, Chinstrap, culmen_length_mm)
 
 Try and write a specific example first:
 
-<button id="displayTextunnamed-chunk-74" onclick="javascript:toggle('unnamed-chunk-74');">Show Solution</button>
+<button id="displayTextunnamed-chunk-75" onclick="javascript:toggle('unnamed-chunk-75');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-74" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-75" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 penguins|> 
@@ -1660,16 +1680,16 @@ penguins|>
   coord_flip()
 ```
 
-<img src="05-tidyverse_files/figure-html/unnamed-chunk-77-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="05-tidyverse_files/figure-html/unnamed-chunk-80-1.png" width="100%" style="display: block; margin: auto;" />
 
 </div></div></div>
 
 
 Then abstract this and use bare (unquoted) values in your arguments
 
-<button id="displayTextunnamed-chunk-75" onclick="javascript:toggle('unnamed-chunk-75');">Show Solution</button>
+<button id="displayTextunnamed-chunk-76" onclick="javascript:toggle('unnamed-chunk-76');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-75" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-76" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 plot_count <- function(filter_condition, colour_variable){
@@ -1683,7 +1703,7 @@ penguins|>
 plot_count(year == 2007 , colour_variable = island)
 ```
 
-<img src="05-tidyverse_files/figure-html/unnamed-chunk-78-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="05-tidyverse_files/figure-html/unnamed-chunk-81-1.png" width="100%" style="display: block; margin: auto;" />
 </div></div></div>
 
 

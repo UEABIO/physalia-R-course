@@ -708,19 +708,6 @@ While in debugging mode, you can use various commands to inspect and control the
 
 - print(var_name): Print the value of a variable.
 
-#### flow
-
-`flow` is a great package for helping to understand code structures - it visualizes a chart diagram of the functional architecture.
-
-
-```r
-library(flow)
-
-flow_run(fahr_to_kelvin_celsius(92))
-```
-
-
-<img src="images/flow.png" width="100%" style="display: block; margin: auto;" />
 
 ## Exercises
 
@@ -741,9 +728,9 @@ triangle_number <- function(x) {
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 Run `testthat()` to make sure this function works for multiple inputs </div></div>
 
-<button id="displayTextunnamed-chunk-50" onclick="javascript:toggle('unnamed-chunk-50');">Show Solution</button>
+<button id="displayTextunnamed-chunk-48" onclick="javascript:toggle('unnamed-chunk-48');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-50" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-48" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 test_that("it works as expected", {
@@ -771,9 +758,9 @@ test_that("it works as expected", {
 ```
 
 
-<button id="displayTextunnamed-chunk-53" onclick="javascript:toggle('unnamed-chunk-53');">Show Solution</button>
+<button id="displayTextunnamed-chunk-51" onclick="javascript:toggle('unnamed-chunk-51');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-53" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-51" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # the output is a named list, so these must be supplied with the test
@@ -960,6 +947,25 @@ In R, conditional statements are not vector operations. They deal only with a si
 <div class="tab"><button class="tablinks= T active" onclick="javascript:openCode(event, 'option1= T', '= T');">Base R</button><button class="tablinks= T" onclick="javascript:openCode(event, 'option2= T', '= T');"><tt>tidyverse</tt></button></div><div id="option1= T" class="tabcontent= T">
 
 ```r
+# Function: report_p
+# Description: This function formats p-values for reporting, rounding them to a specified number of digits
+#' and handling very small p-values by reporting them as "p < 0.001". 
+#
+# Input:
+#   p - numeric value representing the p-value to be formatted
+#   digits - an integer specifying the number of decimal places to round the p-value to
+#   default is 3
+#
+# Output:
+#   A character string with the formatted p-value, either in the form "p < 0.001" for
+#         values less than 0.001 or "p = X.XXX" where X.XXX is the rounded p-value.
+#
+# Example Output:
+# report_p(0.0005)     Returns "p < 0.001"
+# report_p(0.045)      Returns "p = 0.045"
+# report_p(0.04567, 2)  Returns "p = 0.05"
+
+
  report_p <- function(p, digits = 3) {
      reported <- ifelse(p < 0.001,
              "p < 0.001",
@@ -971,6 +977,28 @@ In R, conditional statements are not vector operations. They deal only with a si
 </div><div id="option2= T" class="tabcontent= T">
 
 ```r
+# Function: report_p
+# Description: This function formats p-values for reporting, rounding them to a specified number of digits
+#' and handling very small p-values by reporting them as "p < 0.001". 
+#
+# Input:
+#   p - numeric value representing the p-value to be formatted
+#   digits - an integer specifying the number of decimal places to round the p-value to
+#   default is 3
+#
+# Output:
+#   A character string with the formatted p-value, either in the form "p < 0.001" for
+#         values less than 0.001 or "p = X.XXX" where X.XXX is the rounded p-value.
+#
+# Dependencies:
+#   dplyr for if_else() function
+#
+# Example Output:
+# report_p(0.0005)     Returns "p < 0.001"
+# report_p(0.045)      Returns "p = 0.045"
+# report_p(0.04567, 2)  Returns "p = 0.05"
+
+
  report_p <- function(p, digits = 3) {
      reported <- if_else(p < 0.001,
              "p < 0.001",
@@ -1001,9 +1029,9 @@ For `p = "a"` there is a warning but perhaps not a very intuitive one.
 We can make our own custom/specific warnings, try this and run it with the arguments above again! 
 
 
-<button id="displayTextunnamed-chunk-66" onclick="javascript:toggle('unnamed-chunk-66');">Show Solution</button>
+<button id="displayTextunnamed-chunk-64" onclick="javascript:toggle('unnamed-chunk-64');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-66" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body"><div class="tab"><button class="tablinksunnamed-chunk-66 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-66', 'unnamed-chunk-66');">Base R</button><button class="tablinksunnamed-chunk-66" onclick="javascript:openCode(event, 'option2unnamed-chunk-66', 'unnamed-chunk-66');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-66" class="tabcontentunnamed-chunk-66">
+<div id="toggleTextunnamed-chunk-64" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body"><div class="tab"><button class="tablinksunnamed-chunk-64 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-64', 'unnamed-chunk-64');">Base R</button><button class="tablinksunnamed-chunk-64" onclick="javascript:openCode(event, 'option2unnamed-chunk-64', 'unnamed-chunk-64');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-64" class="tabcontentunnamed-chunk-64">
 
 ```r
  report_p <- function(p, digits = 3) {
@@ -1018,7 +1046,7 @@ We can make our own custom/specific warnings, try this and run it with the argum
      return(reported)
  }
 ```
- </div><div id="option2unnamed-chunk-66" class="tabcontentunnamed-chunk-66">
+ </div><div id="option2unnamed-chunk-64" class="tabcontentunnamed-chunk-64">
  
  
  ```r
@@ -1036,7 +1064,7 @@ We can make our own custom/specific warnings, try this and run it with the argum
     return(result)
  }
  ```
- </div><script> javascript:hide('option2unnamed-chunk-66') </script></div></div></div>
+ </div><script> javascript:hide('option2unnamed-chunk-64') </script></div></div></div>
 
 
 ## Activities
@@ -1065,9 +1093,9 @@ This is a common metric used in molecular biology and genetics to analyze DNA se
 
 
 
-<button id="displayTextunnamed-chunk-67" onclick="javascript:toggle('unnamed-chunk-67');">Show Solution</button>
+<button id="displayTextunnamed-chunk-65" onclick="javascript:toggle('unnamed-chunk-65');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-67" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body"><div class="tab"><button class="tablinksunnamed-chunk-67 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-67', 'unnamed-chunk-67');">Base R</button><button class="tablinksunnamed-chunk-67" onclick="javascript:openCode(event, 'option2unnamed-chunk-67', 'unnamed-chunk-67');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-67" class="tabcontentunnamed-chunk-67">
+<div id="toggleTextunnamed-chunk-65" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body"><div class="tab"><button class="tablinksunnamed-chunk-65 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-65', 'unnamed-chunk-65');">Base R</button><button class="tablinksunnamed-chunk-65" onclick="javascript:openCode(event, 'option2unnamed-chunk-65', 'unnamed-chunk-65');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-65" class="tabcontentunnamed-chunk-65">
 
 ```r
 gc_content <- function(dna_sequence) {
@@ -1101,7 +1129,7 @@ gc_content <- function(dna_sequence) {
   return(dna_content)
 }
 ```
-</div><div id="option2unnamed-chunk-67" class="tabcontentunnamed-chunk-67">
+</div><div id="option2unnamed-chunk-65" class="tabcontentunnamed-chunk-65">
 
 ```r
 gc_content <- function(dna_sequence) {
@@ -1135,15 +1163,15 @@ gc_content <- function(dna_sequence) {
   return(dna_content)
 }
 ```
-</div><script> javascript:hide('option2unnamed-chunk-67') </script></div></div></div>
+</div><script> javascript:hide('option2unnamed-chunk-65') </script></div></div></div>
 
 Exercise 2: Document the Function
 
 Add documentation to the factorial function with comments. Include a description, inputs, outputs and examples.
 
-<button id="displayTextunnamed-chunk-68" onclick="javascript:toggle('unnamed-chunk-68');">Show Solution</button>
+<button id="displayTextunnamed-chunk-66" onclick="javascript:toggle('unnamed-chunk-66');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-68" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-66" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Function: gc_content
@@ -1202,9 +1230,9 @@ Exercise 3: Test the Function
 
 Create a test script that uses test_that to check if the function returns the correct GC percentage and melting temps
 
-<button id="displayTextunnamed-chunk-69" onclick="javascript:toggle('unnamed-chunk-69');">Show Solution</button>
+<button id="displayTextunnamed-chunk-67" onclick="javascript:toggle('unnamed-chunk-67');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-69" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-67" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 test_that("gc_content function tests", {
@@ -1216,7 +1244,7 @@ test_that("gc_content function tests", {
 ```
 
 ```
-## Test passed 🥳
+## Test passed 😸
 ```
 </div></div></div>
 
@@ -1241,9 +1269,9 @@ str_detect(dna_sequence, "^[ATCG]+$"))
 
 
 
-<button id="displayTextunnamed-chunk-71" onclick="javascript:toggle('unnamed-chunk-71');">Show Solution</button>
+<button id="displayTextunnamed-chunk-69" onclick="javascript:toggle('unnamed-chunk-69');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-71" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body"><div class="tab"><button class="tablinksunnamed-chunk-71 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-71', 'unnamed-chunk-71');">Base R</button><button class="tablinksunnamed-chunk-71" onclick="javascript:openCode(event, 'option2unnamed-chunk-71', 'unnamed-chunk-71');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-71" class="tabcontentunnamed-chunk-71">
+<div id="toggleTextunnamed-chunk-69" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body"><div class="tab"><button class="tablinksunnamed-chunk-69 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-69', 'unnamed-chunk-69');">Base R</button><button class="tablinksunnamed-chunk-69" onclick="javascript:openCode(event, 'option2unnamed-chunk-69', 'unnamed-chunk-69');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-69" class="tabcontentunnamed-chunk-69">
 
 ```r
 gc_content <- function(dna_sequence) {
@@ -1282,7 +1310,7 @@ gc_content <- function(dna_sequence) {
   return(dna_content)
 }
 ```
-</div><div id="option2unnamed-chunk-71" class="tabcontentunnamed-chunk-71">
+</div><div id="option2unnamed-chunk-69" class="tabcontentunnamed-chunk-69">
 
 ```r
 gc_content <- function(dna_sequence) {
@@ -1320,7 +1348,7 @@ if (!str_detect(dna_sequence, "^[ATCG]+$")) stop("Invalid DNA sequence. Only A, 
   return(dna_content)
 }
 ```
-</div><script> javascript:hide('option2unnamed-chunk-71') </script></div></div></div>
+</div><script> javascript:hide('option2unnamed-chunk-69') </script></div></div></div>
 
 
 # Writing Packages
@@ -1372,7 +1400,44 @@ LazyData: true
 ```
 
 ## Step 3: Add Functions
-Add your R functions to the R/ directory. Create a new .R file (e.g., my_functions.R) and define your function:
+
+Add your R functions to the R/ directory. Create a new .R file (e.g., my_functions.R) and add this function: 
+
+
+```r
+report_p <- function(p, digits = 3) {
+
+  if (!is.numeric(p)) stop("p must be a number")
+  if (p <= 0) warning("p-values cannot less 0")
+  if (p >= 1) warning("p-values cannot be greater than 1")
+
+  reported <- if_else(p < 0.001,
+                     "p < 0.001",
+                     paste("p =", round(p, digits)))
+  return(reported)
+}
+```
+
+Put your cursor anywhere inside that function and choose **Insert Roxygen Skeleton** from the **Code** menu. It should generate documentation code in `roxygen` format like this:
+
+```
+#' Title
+#'
+#' @param x
+#' @param y
+#' @param dv
+#' @param level1
+#' @param level2
+#'
+#' @return
+#' @export
+#'
+#' @examples
+
+```
+
+Define your function:
+
 
 
 ```r
@@ -1381,8 +1446,8 @@ Add your R functions to the R/ directory. Create a new .R file (e.g., my_functio
 #' This function takes a p-value and to a specified number of digits reports as text.
 #'
 #' @param p numeric value of p
-#' @param digits numeric value of sig digits
-#' @return reported text
+#' @param digits integer value of significant digits
+#' @return reported p-values as character strings
 #' @export
 #' @examples
 #' report_p(0.001, 3)
@@ -1400,6 +1465,16 @@ report_p <- function(p, digits = 3) {
   return(reported)
 }
 ```
+
+
+
+| Syntax      | Description |
+| ----------- | ----------- |
+| \@param     | Defines arguments of the function     |
+| \@return  | Tells the user what type of object is returned       |
+| \@examples  | Add at least one example showing how it works     |
+| \@export | Tells the package you want others to be able to use it, without this the function will only be available internally to your package    |
+| \@import | Tells the package about dependencies "dplyr" your package has, and allows their functions to be called without calling `dplyr::` |
 
 
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
@@ -1469,6 +1544,8 @@ report_p <- function(p, digits = 3) {
   return(reported)
 }
 ```
+
+> Note we could add dplyr to import parameters here if we wanted to use the original code syntax
 
 Re-run you checks:
 
@@ -1622,9 +1699,9 @@ What do you think will happen if you set both times to 3 and each to 2?
 rep(c("Adelie", "Gentoo", "Chinstrap"), times = 2, each = 3)
 ```
 
-<button id="displayTextunnamed-chunk-94" onclick="javascript:toggle('unnamed-chunk-94');">Show Solution</button>
+<button id="displayTextunnamed-chunk-93" onclick="javascript:toggle('unnamed-chunk-93');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-94" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-93" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```
 ##  [1] "Adelie"    "Adelie"    "Adelie"    "Gentoo"    "Gentoo"    "Gentoo"   
@@ -1702,12 +1779,12 @@ replicate(3, # times to replicate function
 ```
 
 ```
-##           [,1]       [,2]       [,3]
-## [1,] 0.4855472  1.3989734  0.9805783
-## [2,] 0.5118151 -0.6837756 -0.3145477
-## [3,] 0.5323766  1.3011724  1.1032252
-## [4,] 1.2422195  0.8718050  1.9993913
-## [5,] 2.0864894  0.5190479  2.7924025
+##            [,1]       [,2]       [,3]
+## [1,]  1.1300744  0.8088472  1.3377588
+## [2,] -1.4967279  1.1876579  0.6652351
+## [3,] -0.3234730  0.7832688 -1.1258386
+## [4,]  0.3602738  1.0059769  0.2257241
+## [5,]  0.1974058 -0.9984007  1.7952228
 ```
 
 https://www.r-bloggers.com/2023/07/the-replicate-function-in-r/
@@ -2028,7 +2105,7 @@ Unit: milliseconds
 autoplot(mbm)
 ```
 
-<img src="04-functional-programming_files/figure-html/unnamed-chunk-115-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04-functional-programming_files/figure-html/unnamed-chunk-114-1.png" width="100%" style="display: block; margin: auto;" />
 
 
 
@@ -2065,6 +2142,24 @@ The data can be collected here:
 
 1. Can you make four plots using lists and for loops? For this exercise can you make a list of four
 species based on the column `Common.Name`, House sparrow, Great tit, Corn bunting and Meadow pipit then loop down this to make four plots? 
+
+
+
+<div class='webex-solution'><button>Initial list</button>
+
+
+
+```r
+# Method 1
+species_to_filter <- c("House sparrow", "Great tit", "Corn bunting", "Meadow pipit")
+
+filtered_data <- filter(LPI_UK, Common.Name %in% species_to_filter)
+
+sp_list <- split(filtered_data, filtered_data$Common.Name)
+```
+
+` r unhide()`
+
 
 <button id="displayTextunnamed-chunk-117" onclick="javascript:toggle('unnamed-chunk-117');">Show Solution</button>
 
@@ -2846,7 +2941,7 @@ summary_functions <- list(
 )
 
 # Apply the summary functions to each species using map2
-result <- nested_penguins %>%
+result <- nested_penguins |> 
     mutate(summaries = map2(data, summary_functions, ~ .y(.x)))
 
 result$summaries
@@ -2914,10 +3009,10 @@ z_score <- function(x) {
 map_df(.x = df, 
        .f = z_score)
 
-df %>% 
+df |>  
   map_df(z_score)
 
-df %>% 
+df |> 
     map_df(~z_score(.))
 ```
 </div></div></div>

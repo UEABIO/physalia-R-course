@@ -332,7 +332,7 @@ Then we use the `microbenchmark()` function to compare the three variants
 
 ### Generate some data
 
-```{r}
+```{r, eval = FALSE}
 
 x <-  rnorm(1000)
 microbenchmark(times = 10, unit = "ms", # milliseconds
@@ -342,7 +342,15 @@ microbenchmark(times = 10, unit = "ms", # milliseconds
 
 ```
 
-The compiled function is around seven times faster than the uncompiled function. Of course the native mean() function is faster, but compiling does make a significant difference
+```
+Unit: milliseconds
+          expr     min      lq       mean   median        uq      max neval
+     mean_r(x) 0.03448 0.03472 0.03619203 0.034840 0.0351495 0.132060  1000
+ cmp_mean_r(x) 0.03444 0.03473 0.02613626 0.034851 0.0351550 0.086510  1000
+       mean(x) 0.00604 0.00629 0.00689453 0.006435 0.0067100 0.053351  1000
+```
+
+The compiled function is faster than the uncompiled function. Of course the native mean() function is faster, but compiling does make a significant difference
 
 ## Profile code
 
@@ -353,6 +361,10 @@ To profile the code, wrap it in profvis() and run it. Here’s how you can profi
 ```{r, eval = FALSE}
 library(profvis)
 profvis(mean_r(rnorm(10000000)))
+```
+
+```{r, eval=TRUE, echo=FALSE, out.width="100%"}
+knitr::include_graphics("images/profile.png")
 ```
 
 After running the `profvis()` function, a new viewer pane will appear in RStudio (or your default web browser if not using RStudio). Here’s how to interpret the visual output:
@@ -697,56 +709,6 @@ Try running our functions on the `mtcars` dataset - try the functions with and w
 ```
 
 
-### memoise
-
-A more advanced form of caching is to use the `memoise` package. If a function is called multiple times with the same input, it may be possible to speed things up by keeping a cache of known answers that it can retrieve. The `memoise` package allows us to easily store the value of function call and returns the cached result when the function is called again with the same arguments. This package trades off memory versus speed, since the `memoised` function stores all previous *inputs* and *outputs*. To cache a function, we simply pass the function to the memoise function.
-
-> Unfortunately memoise does not play well with tidy evaluation see [here](https://github.com/r-lib/memoise/issues/79)
-
-```{r}
-library(memoise)
-
-x <- 20
-
-
-# Fibonacci function
-
-fibonacci_naive <- function(n) {
-  if (n <= 1) {
-    return(n)
-  } else {
-    return(fibonacci_naive(n - 1) + fibonacci_naive(n - 2))
-  }
-}
-
-# Fibonacci function with caching
-fibonacci_cached <- memoise(function(n) {
-  if (n <= 1) {
-    return(n)
-  } else {
-    return(fibonacci_cached(n - 1) + fibonacci_cached(n - 2))
-  }
-})
-
-# Benchmark the naive Fibonacci function
-benchmark_naive <- microbenchmark(
-    fibonacci_naive(x),  # Smaller number to avoid excessive computation time
-    times = 100
-)
-
-# Benchmark the cached Fibonacci function
-benchmark_cached <- microbenchmark(
-    fibonacci_cached(x),  # Same number to ensure comparability
-    times = 100
-)
-
-# Print benchmark results
-print(benchmark_naive)
-print(benchmark_cached)
-```
-
-Well the `memoise` function appears to slow the code down (but what if we increase the length of the sequence?)
-
 
 ## Saving to disk
 
@@ -829,6 +791,23 @@ If there are parts of your analysis that are time-consuming to execute, it's an 
 You can address this by isolating computationally intensive steps in separate scripts and saving the critical object to a file using `saveRDS`. Subsequently, you can create scripts for downstream tasks that reload the essential object with `readRDS`. Breaking down your analysis into logical steps with clear inputs and outputs is generally a sound practice.
 
 **Question** Can you edit the `fibonacci_naive` function to check for an RDS file on disk and only run if this is not found?
+
+```{r, eval = FALSE}
+
+x <- 20
+
+# Fibonacci function
+
+fibonacci_naive <- function(n) {
+  if (n <= 1) {
+    return(n)
+  } else {
+    return(fibonacci_naive(n - 1) + fibonacci_naive(n - 2))
+  }
+}
+
+
+```
 
 
 ```{solution}
@@ -1244,6 +1223,58 @@ dbl (1): hindfoot_length
 
 In combination these processes are very effective when working with large datasets that do not fit into memory or when you only need to analyze or process a specific subset of the data.
 
+## data.table syntax
+
+`dplyr` doesn't work with `data.table` - we can use the package `dtplyr` which allows us a back-end for dplyr commands to work with `data.table` but here are some common data manipulations:
+
+```{r}
+allData <- fread(csv_name, showProgress = FALSE)
+
+```
+
+### Select 
+
+```{multCode}
+
+``{r, eval= F}
+allData[, c(species_id, year)]
+``
+
+####
+
+``{r, eval = F}
+
+# DPLYR VERBS ----
+library(dtplyr)
+
+allData |> 
+select(species_id, year)
+``
+
+```
+
+### Filter
+
+```{multCode}
+
+``{r, eval= F}
+allData[year > 1988]
+``
+
+####
+
+``{r, eval = F}
+
+# DPLYR VERBS ----
+library(dtplyr)
+
+allData |> 
+filter(year > 1988)
+``
+
+```
+
+
 # Working with sql
 
 The `sqldf` package allows you to run SQL-like queries on a file, resulting in only a selection of the file being read. It allows you to limit both the number of lines and the number of rows at the same time. In the background, this actually creates a sqlite database on the fly to execute the query. Consider using the package when starting from a csv file, but the actual strategy boils down to making a sqlite database file of your data. See this section below to learn how to interact with those and create a SQlite database from a CSV-file.
@@ -1595,7 +1626,7 @@ walk(skip_rows_list, process_and_insert)
 
 ```
 
-# Reading
+## Reading
 
 
 http://www.sthda.com/english/wiki/saving-data-into-r-data-format-rds-and-rdata

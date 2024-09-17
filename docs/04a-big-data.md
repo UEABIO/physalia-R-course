@@ -362,44 +362,15 @@ microbenchmark(times = 10, unit = "ms", # milliseconds
           mean_r(x), cmp_mean_r(x), mean(x))
 ```
 
-<div class="kable-table">
+```
+Unit: milliseconds
+          expr     min      lq       mean   median        uq      max neval
+     mean_r(x) 0.03448 0.03472 0.03619203 0.034840 0.0351495 0.132060  1000
+ cmp_mean_r(x) 0.03444 0.03473 0.02613626 0.034851 0.0351550 0.086510  1000
+       mean(x) 0.00604 0.00629 0.00689453 0.006435 0.0067100 0.053351  1000
+```
 
-|expr          |    time|
-|:-------------|-------:|
-|cmp_mean_r(x) |   52910|
-|cmp_mean_r(x) |   35600|
-|mean_r(x)     | 3419360|
-|cmp_mean_r(x) |   36800|
-|mean(x)       |   17740|
-|mean_r(x)     |   35440|
-|cmp_mean_r(x) |   34570|
-|mean(x)       |    6950|
-|mean(x)       |    6370|
-|mean_r(x)     |   34790|
-|mean_r(x)     |   34910|
-|cmp_mean_r(x) |   34740|
-|cmp_mean_r(x) |   34580|
-|mean(x)       |    6360|
-|mean(x)       |    6240|
-|cmp_mean_r(x) |   34470|
-|mean_r(x)     |   34380|
-|mean_r(x)     |   34530|
-|mean(x)       |    6510|
-|mean_r(x)     |   34510|
-|cmp_mean_r(x) |   34490|
-|mean(x)       |    6260|
-|mean(x)       |    6480|
-|cmp_mean_r(x) |   34670|
-|mean_r(x)     |   34490|
-|cmp_mean_r(x) |   34750|
-|mean(x)       |    6350|
-|mean_r(x)     |   34370|
-|mean(x)       |    6260|
-|mean_r(x)     |   34510|
-
-</div>
-
-The compiled function is around seven times faster than the uncompiled function. Of course the native mean() function is faster, but compiling does make a significant difference
+The compiled function is faster than the uncompiled function. Of course the native mean() function is faster, but compiling does make a significant difference
 
 ## Profile code
 
@@ -412,6 +383,8 @@ To profile the code, wrap it in profvis() and run it. Here’s how you can profi
 library(profvis)
 profvis(mean_r(rnorm(10000000)))
 ```
+
+<img src="images/profile.png" width="100%" style="display: block; margin: auto;" />
 
 After running the `profvis()` function, a new viewer pane will appear in RStudio (or your default web browser if not using RStudio). Here’s how to interpret the visual output:
 
@@ -493,16 +466,16 @@ ggplot(simulation_results, aes(x = Simulated_Difference)) +
     theme_minimal()
 ```
 
-<img src="04a-big-data_files/figure-html/unnamed-chunk-16-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04a-big-data_files/figure-html/unnamed-chunk-17-1.png" width="100%" style="display: block; margin: auto;" />
 
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 
 Can you identify bottlenecks in this code that will allow you to improve the speed of this simulation?
  </div></div>
 
-<button id="displayTextunnamed-chunk-18" onclick="javascript:toggle('unnamed-chunk-18');">Show Solution</button>
+<button id="displayTextunnamed-chunk-19" onclick="javascript:toggle('unnamed-chunk-19');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-18" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-19" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 ## See simulation examples: 
@@ -525,9 +498,9 @@ set.seed(123)
 ```
 </div></div></div>
 
-<button id="displayTextunnamed-chunk-19" onclick="javascript:toggle('unnamed-chunk-19');">Show Solution</button>
+<button id="displayTextunnamed-chunk-20" onclick="javascript:toggle('unnamed-chunk-20');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-19" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-20" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Try parallel processing
@@ -554,9 +527,9 @@ sim_results <- future_map(1:num_simulations, ~ simple_sim(),
 ```
 </div></div></div>
 
-<button id="displayTextunnamed-chunk-20" onclick="javascript:toggle('unnamed-chunk-20');">Show Solution</button>
+<button id="displayTextunnamed-chunk-21" onclick="javascript:toggle('unnamed-chunk-21');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-20" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-21" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 autoplot(microbenchmark(times = 100, unit = "ms", # milliseconds
@@ -567,7 +540,7 @@ autoplot(microbenchmark(times = 100, unit = "ms", # milliseconds
                       future.seed = 123)))
 ```
 
-<img src="04a-big-data_files/figure-html/unnamed-chunk-66-1.png" width="100%" style="display: block; margin: auto;" />
+<img src="04a-big-data_files/figure-html/unnamed-chunk-69-1.png" width="100%" style="display: block; margin: auto;" />
 
 </div></div></div>
 
@@ -602,9 +575,9 @@ calculate_stats_naive(x)
 
 How could we make the function above more efficient? 
 
-<button id="displayTextunnamed-chunk-22" onclick="javascript:toggle('unnamed-chunk-22');">Show Solution</button>
+<button id="displayTextunnamed-chunk-23" onclick="javascript:toggle('unnamed-chunk-23');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-22" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-23" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 calculate_stats_optimized <- function(x) {
@@ -750,9 +723,9 @@ In general, using a cache environment is more scalable and versatile, especially
 
 **Question.** Will the function recognise if a new data source is used for the function input? 
 
-<button id="displayTextunnamed-chunk-26" onclick="javascript:toggle('unnamed-chunk-26');">Show Solution</button>
+<button id="displayTextunnamed-chunk-27" onclick="javascript:toggle('unnamed-chunk-27');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-26" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-27" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 No! We need to generate a hash or checksum of the input data and use it as part of the cache key. This way, you can determine if the input data has changed based on its hash.
 
 ```r
@@ -791,66 +764,6 @@ Try running our functions on the `mtcars` dataset - try the functions with and w
 
  </div></div>
 
-
-### memoise
-
-A more advanced form of caching is to use the `memoise` package. If a function is called multiple times with the same input, it may be possible to speed things up by keeping a cache of known answers that it can retrieve. The `memoise` package allows us to easily store the value of function call and returns the cached result when the function is called again with the same arguments. This package trades off memory versus speed, since the `memoised` function stores all previous *inputs* and *outputs*. To cache a function, we simply pass the function to the memoise function.
-
-> Unfortunately memoise does not play well with tidy evaluation see [here](https://github.com/r-lib/memoise/issues/79)
-
-
-```r
-library(memoise)
-
-x <- 20
-
-
-# Fibonacci function
-
-fibonacci_naive <- function(n) {
-  if (n <= 1) {
-    return(n)
-  } else {
-    return(fibonacci_naive(n - 1) + fibonacci_naive(n - 2))
-  }
-}
-
-# Fibonacci function with caching
-fibonacci_cached <- memoise(function(n) {
-  if (n <= 1) {
-    return(n)
-  } else {
-    return(fibonacci_cached(n - 1) + fibonacci_cached(n - 2))
-  }
-})
-
-# Benchmark the naive Fibonacci function
-benchmark_naive <- microbenchmark(
-    fibonacci_naive(x),  # Smaller number to avoid excessive computation time
-    times = 100
-)
-
-# Benchmark the cached Fibonacci function
-benchmark_cached <- microbenchmark(
-    fibonacci_cached(x),  # Same number to ensure comparability
-    times = 100
-)
-
-# Print benchmark results
-print(benchmark_naive)
-print(benchmark_cached)
-```
-
-```
-## Unit: milliseconds
-##                expr     min      lq     mean   median      uq      max neval
-##  fibonacci_naive(x) 7.13406 7.35067 8.105181 7.492025 7.73144 12.78379   100
-## Unit: microseconds
-##                 expr   min    lq     mean median     uq      max neval
-##  fibonacci_cached(x) 42.18 55.83 278.0468   61.9 65.675 21693.69   100
-```
-
-Well the `memoise` function appears to slow the code down (but what if we increase the length of the sequence?)
 
 
 ## Saving to disk
@@ -932,9 +845,24 @@ You can address this by isolating computationally intensive steps in separate sc
 **Question** Can you edit the `fibonacci_naive` function to check for an RDS file on disk and only run if this is not found?
 
 
-<button id="displayTextunnamed-chunk-31" onclick="javascript:toggle('unnamed-chunk-31');">Show Solution</button>
+```r
+x <- 20
 
-<div id="toggleTextunnamed-chunk-31" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+# Fibonacci function
+
+fibonacci_naive <- function(n) {
+  if (n <= 1) {
+    return(n)
+  } else {
+    return(fibonacci_naive(n - 1) + fibonacci_naive(n - 2))
+  }
+}
+```
+
+
+<button id="displayTextunnamed-chunk-32" onclick="javascript:toggle('unnamed-chunk-32');">Show Solution</button>
+
+<div id="toggleTextunnamed-chunk-32" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Define the function to compute Fibonacci numbers
@@ -1084,9 +1012,9 @@ attributes (like row names or class) takes extra time and memory.</p>
 
 Return the 30th element from a vector contained within a list, you can use double square brackets [[ ]] to access the vector inside the list, and single square brackets [ ] to access the specific element of that vector
 
-<button id="displayTextunnamed-chunk-36" onclick="javascript:toggle('unnamed-chunk-36');">Show Solution</button>
+<button id="displayTextunnamed-chunk-37" onclick="javascript:toggle('unnamed-chunk-37');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-36" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-37" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 microbenchmark(df_mixed$col1[30], 
@@ -1133,8 +1061,8 @@ data
 
 |method     | timing|
 |:----------|------:|
-|read.table |  0.046|
-|readr      |  0.352|
+|read.table |  0.045|
+|readr      |  0.588|
 |fread      |  0.007|
 
 </div>
@@ -1346,6 +1274,52 @@ dbl (1): hindfoot_length
 
 In combination these processes are very effective when working with large datasets that do not fit into memory or when you only need to analyze or process a specific subset of the data.
 
+## data.table syntax
+
+`dplyr` doesn't work with `data.table` - we can use the package `dtplyr` which allows us a back-end for dplyr commands to work with `data.table` but here are some common data manipulations:
+
+
+```r
+allData <- fread(csv_name, showProgress = FALSE)
+```
+
+### Select 
+
+<div class="tab"><button class="tablinksunnamed-chunk-47 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-47', 'unnamed-chunk-47');">Base R</button><button class="tablinksunnamed-chunk-47" onclick="javascript:openCode(event, 'option2unnamed-chunk-47', 'unnamed-chunk-47');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-47" class="tabcontentunnamed-chunk-47">
+
+```r
+allData[, c(species_id, year)]
+```
+</div><div id="option2unnamed-chunk-47" class="tabcontentunnamed-chunk-47">
+
+```r
+# DPLYR VERBS ----
+library(dtplyr)
+
+allData |> 
+select(species_id, year)
+```
+</div><script> javascript:hide('option2unnamed-chunk-47') </script>
+
+### Filter
+
+<div class="tab"><button class="tablinksunnamed-chunk-48 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-48', 'unnamed-chunk-48');">Base R</button><button class="tablinksunnamed-chunk-48" onclick="javascript:openCode(event, 'option2unnamed-chunk-48', 'unnamed-chunk-48');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-48" class="tabcontentunnamed-chunk-48">
+
+```r
+allData[year > 1988]
+```
+</div><div id="option2unnamed-chunk-48" class="tabcontentunnamed-chunk-48">
+
+```r
+# DPLYR VERBS ----
+library(dtplyr)
+
+allData |> 
+filter(year > 1988)
+```
+</div><script> javascript:hide('option2unnamed-chunk-48') </script>
+
+
 # Working with sql
 
 The `sqldf` package allows you to run SQL-like queries on a file, resulting in only a selection of the file being read. It allows you to limit both the number of lines and the number of rows at the same time. In the background, this actually creates a sqlite database on the fly to execute the query. Consider using the package when starting from a csv file, but the actual strategy boils down to making a sqlite database file of your data. See this section below to learn how to interact with those and create a SQlite database from a CSV-file.
@@ -1427,9 +1401,9 @@ Let's start wrangling the data and ask: how many males were observed in 1978 in 
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 Challenge: convert this question into a dplyr command. </div></div>
 
-<button id="displayTextunnamed-chunk-50" onclick="javascript:toggle('unnamed-chunk-50');">Show Solution</button>
+<button id="displayTextunnamed-chunk-54" onclick="javascript:toggle('unnamed-chunk-54');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-50" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-54" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 library(dbplyr)
@@ -1543,9 +1517,9 @@ FROM `surveys`)
 
 WHERE (`hindfoot_length` \> 20.0)
 
-<button id="displayTextunnamed-chunk-55" onclick="javascript:toggle('unnamed-chunk-55');">Show Solution</button>
+<button id="displayTextunnamed-chunk-59" onclick="javascript:toggle('unnamed-chunk-59');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-55" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-59" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 R syntax translated:
 
@@ -1598,9 +1572,9 @@ ORDER BY `species_id` \_\_\_\_
 ```
 
 
-<button id="displayTextunnamed-chunk-58" onclick="javascript:toggle('unnamed-chunk-58');">Show Solution</button>
+<button id="displayTextunnamed-chunk-62" onclick="javascript:toggle('unnamed-chunk-62');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-58" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-62" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 Underscores around words (e.g. __example__) indicate correct fill-in-the-blank answers.
 
@@ -1659,9 +1633,9 @@ Using the nrows and skip functions in fread. Can you write a function using purr
  </div></div>
 
 
-<button id="displayTextunnamed-chunk-61" onclick="javascript:toggle('unnamed-chunk-61');">Show Solution</button>
+<button id="displayTextunnamed-chunk-65" onclick="javascript:toggle('unnamed-chunk-65');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-61" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-65" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Define a function to read a chunk of the CSV file and insert it into the database
@@ -1694,7 +1668,7 @@ walk(skip_rows_list, process_and_insert)
 ```
 </div></div></div>
 
-# Reading
+## Reading
 
 
 http://www.sthda.com/english/wiki/saving-data-into-r-data-format-rds-and-rdata

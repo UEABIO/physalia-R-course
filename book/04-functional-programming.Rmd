@@ -684,21 +684,6 @@ While in debugging mode, you can use various commands to inspect and control the
 
 - print(var_name): Print the value of a variable.
 
-#### flow
-
-`flow` is a great package for helping to understand code structures - it visualizes a chart diagram of the functional architecture.
-
-```{r, eval = F}
-library(flow)
-
-flow_run(fahr_to_kelvin_celsius(92))
-
-```
-
-
-```{r, eval=TRUE, echo=FALSE, out.width="100%"}
-knitr::include_graphics("images/flow.png")
-```
 
 ## Exercises
 
@@ -934,6 +919,24 @@ In R, conditional statements are not vector operations. They deal only with a si
 ```{multCode = T}
 
 ``{r, eval = F}
+# Function: report_p
+# Description: This function formats p-values for reporting, rounding them to a specified number of digits
+#' and handling very small p-values by reporting them as "p < 0.001". 
+#
+# Input:
+#   p - numeric value representing the p-value to be formatted
+#   digits - an integer specifying the number of decimal places to round the p-value to
+#   default is 3
+#
+# Output:
+#   A character string with the formatted p-value, either in the form "p < 0.001" for
+#         values less than 0.001 or "p = X.XXX" where X.XXX is the rounded p-value.
+#
+# Example Output:
+# report_p(0.0005)     Returns "p < 0.001"
+# report_p(0.045)      Returns "p = 0.045"
+# report_p(0.04567, 2)  Returns "p = 0.05"
+
 
  report_p <- function(p, digits = 3) {
      reported <- ifelse(p < 0.001,
@@ -949,7 +952,26 @@ In R, conditional statements are not vector operations. They deal only with a si
 
 ``{r}
 
-
+# Function: report_p
+# Description: This function formats p-values for reporting, rounding them to a specified number of digits
+#' and handling very small p-values by reporting them as "p < 0.001". 
+#
+# Input:
+#   p - numeric value representing the p-value to be formatted
+#   digits - an integer specifying the number of decimal places to round the p-value to
+#   default is 3
+#
+# Output:
+#   A character string with the formatted p-value, either in the form "p < 0.001" for
+#         values less than 0.001 or "p = X.XXX" where X.XXX is the rounded p-value.
+#
+# Dependencies:
+#   dplyr for if_else() function
+#
+# Example Output:
+# report_p(0.0005)     Returns "p < 0.001"
+# report_p(0.045)      Returns "p = 0.045"
+# report_p(0.04567, 2)  Returns "p = 0.05"
 
 
  report_p <- function(p, digits = 3) {
@@ -1363,7 +1385,45 @@ LazyData: true
 ```
 
 ## Step 3: Add Functions
-Add your R functions to the R/ directory. Create a new .R file (e.g., my_functions.R) and define your function:
+
+Add your R functions to the R/ directory. Create a new .R file (e.g., my_functions.R) and add this function: 
+
+```{r, eval = FALSE}
+
+report_p <- function(p, digits = 3) {
+
+  if (!is.numeric(p)) stop("p must be a number")
+  if (p <= 0) warning("p-values cannot less 0")
+  if (p >= 1) warning("p-values cannot be greater than 1")
+
+  reported <- if_else(p < 0.001,
+                     "p < 0.001",
+                     paste("p =", round(p, digits)))
+  return(reported)
+}
+
+```
+
+Put your cursor anywhere inside that function and choose **Insert Roxygen Skeleton** from the **Code** menu. It should generate documentation code in `roxygen` format like this:
+
+```
+#' Title
+#'
+#' @param x
+#' @param y
+#' @param dv
+#' @param level1
+#' @param level2
+#'
+#' @return
+#' @export
+#'
+#' @examples
+
+```
+
+Define your function:
+
 
 ```{r, eval = FALSE}
 
@@ -1372,8 +1432,8 @@ Add your R functions to the R/ directory. Create a new .R file (e.g., my_functio
 #' This function takes a p-value and to a specified number of digits reports as text.
 #'
 #' @param p numeric value of p
-#' @param digits numeric value of sig digits
-#' @return reported text
+#' @param digits integer value of significant digits
+#' @return reported p-values as character strings
 #' @export
 #' @examples
 #' report_p(0.001, 3)
@@ -1391,6 +1451,16 @@ report_p <- function(p, digits = 3) {
   return(reported)
 }
 ```
+
+
+
+| Syntax      | Description |
+| ----------- | ----------- |
+| \@param     | Defines arguments of the function     |
+| \@return  | Tells the user what type of object is returned       |
+| \@examples  | Add at least one example showing how it works     |
+| \@export | Tells the package you want others to be able to use it, without this the function will only be available internally to your package    |
+| \@import | Tells the package about dependencies "dplyr" your package has, and allows their functions to be called without calling `dplyr::` |
 
 
 ```{task}
@@ -1464,6 +1534,8 @@ report_p <- function(p, digits = 3) {
 }
 
 ```
+
+> Note we could add dplyr to import parameters here if we wanted to use the original code syntax
 
 Re-run you checks:
 
@@ -2022,6 +2094,23 @@ downloadthis::download_link(
 
 1. Can you make four plots using lists and for loops? For this exercise can you make a list of four
 species based on the column `Common.Name`, House sparrow, Great tit, Corn bunting and Meadow pipit then loop down this to make four plots? 
+
+
+`r hide("Initial list")`
+
+```{r, eval = FALSE}
+
+# Method 1
+species_to_filter <- c("House sparrow", "Great tit", "Corn bunting", "Meadow pipit")
+
+filtered_data <- filter(LPI_UK, Common.Name %in% species_to_filter)
+
+sp_list <- split(filtered_data, filtered_data$Common.Name)
+
+```
+
+` r unhide()`
+
 
 ```{solution}
 
@@ -2782,7 +2871,7 @@ summary_functions <- list(
 )
 
 # Apply the summary functions to each species using map2
-result <- nested_penguins %>%
+result <- nested_penguins |> 
     mutate(summaries = map2(data, summary_functions, ~ .y(.x)))
 
 result$summaries
@@ -2843,10 +2932,10 @@ z_score <- function(x) {
 map_df(.x = df, 
        .f = z_score)
 
-df %>% 
+df |>  
   map_df(z_score)
 
-df %>% 
+df |> 
     map_df(~z_score(.))
 
 ``
