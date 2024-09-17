@@ -2158,7 +2158,11 @@ filtered_data <- filter(LPI_UK, Common.Name %in% species_to_filter)
 sp_list <- split(filtered_data, filtered_data$Common.Name)
 ```
 
-` r unhide()`
+
+
+</div>
+
+
 
 
 <button id="displayTextunnamed-chunk-117" onclick="javascript:toggle('unnamed-chunk-117');">Show Solution</button>
