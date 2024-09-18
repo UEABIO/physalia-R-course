@@ -473,6 +473,8 @@ ggplot(simulation_results, aes(x = Simulated_Difference)) +
 Can you identify bottlenecks in this code that will allow you to improve the speed of this simulation?
  </div></div>
 
+
+
 <button id="displayTextunnamed-chunk-19" onclick="javascript:toggle('unnamed-chunk-19');">Show Solution</button>
 
 <div id="toggleTextunnamed-chunk-19" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
@@ -498,6 +500,8 @@ set.seed(123)
 ```
 </div></div></div>
 
+
+
 <button id="displayTextunnamed-chunk-20" onclick="javascript:toggle('unnamed-chunk-20');">Show Solution</button>
 
 <div id="toggleTextunnamed-chunk-20" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
@@ -505,7 +509,7 @@ set.seed(123)
 ```r
 # Try parallel processing
 library(furrr)
-# Define the fast_sim function
+# Define the function
 simple_sim <- function(sample_size = 30, effect_size = 0.8) {
     
     # Generate random samples for both groups
@@ -527,20 +531,35 @@ sim_results <- future_map(1:num_simulations, ~ simple_sim(),
 ```
 </div></div></div>
 
-<button id="displayTextunnamed-chunk-21" onclick="javascript:toggle('unnamed-chunk-21');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-21" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+
+<button id="displayTextunnamed-chunk-22" onclick="javascript:toggle('unnamed-chunk-22');">Show Solution</button>
+
+<div id="toggleTextunnamed-chunk-22" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
-autoplot(microbenchmark(times = 100, unit = "ms", # milliseconds
-          simulate_difference(sample_size, effect_size), 
-          fast_sim(sample_size, effect_size),
-          future_map(1:num_simulations, ~ simple_sim(), 
-                     .progress = TRUE,
-                      future.seed = 123)))
+benchmark_results <- microbenchmark(
+  "LoopDiff" = simulate_difference(sample_size, effect_size),
+  "RepDiff" = fast_sim(sample_size, effect_size),
+  "FutureMapSim" = future_map(
+    1:num_simulations,
+    ~ simple_sim(),
+    .progress = TRUE,
+    .options = furrr_options(seed = 342)
+  ),
+    "MapSim" = map(
+    1:num_simulations,
+    ~ simple_sim()),
+  times = 100,
+  unit = "ms"
+)
+
+autoplot(benchmark_results)
 ```
 
 <img src="04a-big-data_files/figure-html/unnamed-chunk-69-1.png" width="100%" style="display: block; margin: auto;" />
+
+Our best and most effective approach was to use a simple replicate function. Parallelising code doesnt help much here
 
 </div></div></div>
 
@@ -575,9 +594,9 @@ calculate_stats_naive(x)
 
 How could we make the function above more efficient? 
 
-<button id="displayTextunnamed-chunk-23" onclick="javascript:toggle('unnamed-chunk-23');">Show Solution</button>
+<button id="displayTextunnamed-chunk-24" onclick="javascript:toggle('unnamed-chunk-24');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-23" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-24" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 calculate_stats_optimized <- function(x) {
@@ -723,9 +742,9 @@ In general, using a cache environment is more scalable and versatile, especially
 
 **Question.** Will the function recognise if a new data source is used for the function input? 
 
-<button id="displayTextunnamed-chunk-27" onclick="javascript:toggle('unnamed-chunk-27');">Show Solution</button>
+<button id="displayTextunnamed-chunk-28" onclick="javascript:toggle('unnamed-chunk-28');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-27" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-28" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 No! We need to generate a hash or checksum of the input data and use it as part of the cache key. This way, you can determine if the input data has changed based on its hash.
 
 ```r
@@ -860,9 +879,9 @@ fibonacci_naive <- function(n) {
 ```
 
 
-<button id="displayTextunnamed-chunk-32" onclick="javascript:toggle('unnamed-chunk-32');">Show Solution</button>
+<button id="displayTextunnamed-chunk-33" onclick="javascript:toggle('unnamed-chunk-33');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-32" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-33" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Define the function to compute Fibonacci numbers
@@ -1012,9 +1031,9 @@ attributes (like row names or class) takes extra time and memory.</p>
 
 Return the 30th element from a vector contained within a list, you can use double square brackets [[ ]] to access the vector inside the list, and single square brackets [ ] to access the specific element of that vector
 
-<button id="displayTextunnamed-chunk-37" onclick="javascript:toggle('unnamed-chunk-37');">Show Solution</button>
+<button id="displayTextunnamed-chunk-38" onclick="javascript:toggle('unnamed-chunk-38');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-37" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-38" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 microbenchmark(df_mixed$col1[30], 
@@ -1061,8 +1080,8 @@ data
 
 |method     | timing|
 |:----------|------:|
-|read.table |  0.045|
-|readr      |  0.588|
+|read.table |  0.121|
+|readr      |  0.549|
 |fread      |  0.007|
 
 </div>
@@ -1285,12 +1304,12 @@ allData <- fread(csv_name, showProgress = FALSE)
 
 ### Select 
 
-<div class="tab"><button class="tablinksunnamed-chunk-47 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-47', 'unnamed-chunk-47');">Base R</button><button class="tablinksunnamed-chunk-47" onclick="javascript:openCode(event, 'option2unnamed-chunk-47', 'unnamed-chunk-47');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-47" class="tabcontentunnamed-chunk-47">
+<div class="tab"><button class="tablinksunnamed-chunk-48 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-48', 'unnamed-chunk-48');">Base R</button><button class="tablinksunnamed-chunk-48" onclick="javascript:openCode(event, 'option2unnamed-chunk-48', 'unnamed-chunk-48');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-48" class="tabcontentunnamed-chunk-48">
 
 ```r
 allData[, c(species_id, year)]
 ```
-</div><div id="option2unnamed-chunk-47" class="tabcontentunnamed-chunk-47">
+</div><div id="option2unnamed-chunk-48" class="tabcontentunnamed-chunk-48">
 
 ```r
 # DPLYR VERBS ----
@@ -1300,16 +1319,16 @@ allData |>
 select(species_id, year) |> 
   as_tibble()
 ```
-</div><script> javascript:hide('option2unnamed-chunk-47') </script>
+</div><script> javascript:hide('option2unnamed-chunk-48') </script>
 
 ### Filter
 
-<div class="tab"><button class="tablinksunnamed-chunk-48 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-48', 'unnamed-chunk-48');">Base R</button><button class="tablinksunnamed-chunk-48" onclick="javascript:openCode(event, 'option2unnamed-chunk-48', 'unnamed-chunk-48');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-48" class="tabcontentunnamed-chunk-48">
+<div class="tab"><button class="tablinksunnamed-chunk-49 active" onclick="javascript:openCode(event, 'option1unnamed-chunk-49', 'unnamed-chunk-49');">Base R</button><button class="tablinksunnamed-chunk-49" onclick="javascript:openCode(event, 'option2unnamed-chunk-49', 'unnamed-chunk-49');"><tt>tidyverse</tt></button></div><div id="option1unnamed-chunk-49" class="tabcontentunnamed-chunk-49">
 
 ```r
 allData[year > 1988]
 ```
-</div><div id="option2unnamed-chunk-48" class="tabcontentunnamed-chunk-48">
+</div><div id="option2unnamed-chunk-49" class="tabcontentunnamed-chunk-49">
 
 ```r
 # DPLYR VERBS ----
@@ -1319,7 +1338,7 @@ allData |>
 filter(year > 1988) |> 
   as_tibble()
 ```
-</div><script> javascript:hide('option2unnamed-chunk-48') </script>
+</div><script> javascript:hide('option2unnamed-chunk-49') </script>
 
 
 # Working with sql
@@ -1406,9 +1425,9 @@ Let's start wrangling the data and ask: how many males were observed in 1978 in 
 <div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 Challenge: convert this question into a dplyr command. </div></div>
 
-<button id="displayTextunnamed-chunk-54" onclick="javascript:toggle('unnamed-chunk-54');">Show Solution</button>
+<button id="displayTextunnamed-chunk-55" onclick="javascript:toggle('unnamed-chunk-55');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-54" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-55" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 library(dbplyr)
@@ -1532,9 +1551,9 @@ FROM `surveys`)
 
 WHERE (`hindfoot_length` \> 20.0)
 
-<button id="displayTextunnamed-chunk-60" onclick="javascript:toggle('unnamed-chunk-60');">Show Solution</button>
+<button id="displayTextunnamed-chunk-61" onclick="javascript:toggle('unnamed-chunk-61');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-60" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-61" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 R syntax translated:
 
@@ -1587,9 +1606,9 @@ ORDER BY `species_id` \_\_\_\_
 ```
 
 
-<button id="displayTextunnamed-chunk-63" onclick="javascript:toggle('unnamed-chunk-63');">Show Solution</button>
+<button id="displayTextunnamed-chunk-64" onclick="javascript:toggle('unnamed-chunk-64');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-63" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-64" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 Underscores around words (e.g. __example__) indicate correct fill-in-the-blank answers.
 
@@ -1648,9 +1667,9 @@ Using the nrows and skip functions in fread. Can you write a function using purr
  </div></div>
 
 
-<button id="displayTextunnamed-chunk-66" onclick="javascript:toggle('unnamed-chunk-66');">Show Solution</button>
+<button id="displayTextunnamed-chunk-67" onclick="javascript:toggle('unnamed-chunk-67');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-66" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-67" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Define a function to read a chunk of the CSV file and insert it into the database

@@ -454,6 +454,8 @@ Can you identify bottlenecks in this code that will allow you to improve the spe
 
 ```
 
+
+
 ```{solution}
 
 
@@ -481,12 +483,14 @@ set.seed(123)
 
 ```
 
+
+
 ```{solution}
 
 ``{r}
 # Try parallel processing
 library(furrr)
-# Define the fast_sim function
+# Define the function
 simple_sim <- function(sample_size = 30, effect_size = 0.8) {
     
     # Generate random samples for both groups
@@ -511,18 +515,73 @@ sim_results <- future_map(1:num_simulations, ~ simple_sim(),
 
 ```
 
+```{r, echo = FALSE}
+
+
+ num_simulations <- 100
+
+# Fixed sample size of 20
+sample_size <- 30
+
+# Set the effect size
+effect_size <- .8  # Adjust as needed
+
+fast_sim <- function(sample_size = 30, effect_size = 0.8, num_simulations = 100, ...) {
+  
+ 
+  
+set.seed(123)
+  # Perform the simulation `num_simulations` times, replicate faster than loops
+  replicate(num_simulations, {
+    # Generate random samples for both groups, allowing extra parameters via `...`
+    group1 <- rnorm(sample_size, mean = 0, ...)
+    group2 <- rnorm(sample_size, mean = effect_size, ...)
+    
+    # Directly calculate the estimated difference in means faster than lm
+    mean(group2) - mean(group1)
+  })
+}
+
+
+# Define the function
+simple_sim <- function(sample_size = 30, effect_size = 0.8) {
+    
+    # Generate random samples for both groups
+    group1 <- rnorm(sample_size, mean = 0, sd = 1)
+    group2 <- rnorm(sample_size, mean = effect_size, sd = 1)
+    
+    # Directly calculate the estimated difference in means
+    mean(group2) - mean(group1)
+}
+
+```
+
 ```{solution}
 
 ``{r}
 
-autoplot(microbenchmark(times = 100, unit = "ms", # milliseconds
-          simulate_difference(sample_size, effect_size), 
-          fast_sim(sample_size, effect_size),
-          future_map(1:num_simulations, ~ simple_sim(), 
-                     .progress = TRUE,
-                      future.seed = 123)))
+benchmark_results <- microbenchmark(
+  "LoopDiff" = simulate_difference(sample_size, effect_size),
+  "RepDiff" = fast_sim(sample_size, effect_size),
+  "FutureMapSim" = future_map(
+    1:num_simulations,
+    ~ simple_sim(),
+    .progress = TRUE,
+    .options = furrr_options(seed = 342)
+  ),
+    "MapSim" = map(
+    1:num_simulations,
+    ~ simple_sim()),
+  times = 100,
+  unit = "ms"
+)
+
+autoplot(benchmark_results)
+
 
 ``
+
+Our best and most effective approach was to use a simple replicate function. Parallelising code doesnt help much here
 
 
 ```
