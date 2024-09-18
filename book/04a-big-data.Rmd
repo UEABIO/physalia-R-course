@@ -1248,7 +1248,8 @@ allData[, c(species_id, year)]
 library(dtplyr)
 
 allData |> 
-select(species_id, year)
+select(species_id, year) |> 
+  as_tibble()
 ``
 
 ```
@@ -1269,7 +1270,8 @@ allData[year > 1988]
 library(dtplyr)
 
 allData |> 
-filter(year > 1988)
+filter(year > 1988) |> 
+  as_tibble()
 ``
 
 ```
@@ -1350,7 +1352,10 @@ The table itself looks similar to what we're used to manipulating in R as data f
 
 ## dbplyr
 
-To interact with a database you usually use SQL, the Structured Query Language. SQL is over 40 years old, and is used by pretty much every database in existence. The goal of dbplyr is to automatically generate SQL for you so that you’re not forced to use it. However, SQL is a very large language and dbplyr doesn’t do everything. It focuses on SELECT statements, the SQL you write most often as an analyst.
+To interact with a database you usually use SQL, the Structured Query Language. SQL is over 40 years old, and is used by pretty much every database in existence. 
+In R we can send SQL queries to our databse within the function `dbgetquery()` but we have another option.
+
+The goal of `dbplyr` is to automatically generate SQL for you so that you’re not forced to use it. However, SQL is a very large language and dbplyr doesn’t do everything. It focuses on SELECT statements, the SQL you write most often as an analyst.
 
 Most of the time you don’t need to know anything about SQL, and you can continue to use the dplyr verbs that you’re already familiar with - and if curious you can use the `show_query()` function to see the translated SQL (see below).
 
@@ -1369,14 +1374,11 @@ surveys |>
          year == "1978",
          plot_id == "2") |> 
   count() |> 
-  collect()
+  collect() # this function converts to tibble
 
 ``
 
-A tibble: 1 × 1
-      n
-  <int>
-1    52
+
 
 ```
 
@@ -1438,6 +1440,21 @@ SELECT `year`, `species_id`, COUNT(*) AS `n`
 FROM `surveys`
 WHERE (`year` = '1998' OR `year` = '1999' OR `year` = '2000')
 GROUP BY `year`, `species_id`
+
+```
+
+Which would run as:
+
+```{r, eval = FALSE}
+dbGetQuery(
+  mammals,
+  "SELECT `year`, `species_id`, COUNT(*) AS `n`
+   FROM `surveys`
+   WHERE `year` IN ('1998', '1999', '2000')
+   GROUP BY `year`, `species_id`"
+)
+
+
 
 ```
 

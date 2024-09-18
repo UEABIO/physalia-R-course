@@ -241,7 +241,9 @@
 <h2>
 <span class="header-section-number">27.2</span> dbplyr<a class="anchor" aria-label="anchor" href="#dbplyr"><i class="fas fa-link"></i></a>
 </h2>
-<p>To interact with a database you usually use SQL, the Structured Query Language. SQL is over 40 years old, and is used by pretty much every database in existence. The goal of dbplyr is to automatically generate SQL for you so that you’re not forced to use it. However, SQL is a very large language and dbplyr doesn’t do everything. It focuses on SELECT statements, the SQL you write most often as an analyst.</p>
+<p>To interact with a database you usually use SQL, the Structured Query Language. SQL is over 40 years old, and is used by pretty much every database in existence.
+In R we can send SQL queries to our databse within the function <code>dbgetquery()</code> but we have another option.</p>
+<p>The goal of <code>dbplyr</code> is to automatically generate SQL for you so that you’re not forced to use it. However, SQL is a very large language and dbplyr doesn’t do everything. It focuses on SELECT statements, the SQL you write most often as an analyst.</p>
 <p>Most of the time you don’t need to know anything about SQL, and you can continue to use the dplyr verbs that you’re already familiar with - and if curious you can use the <code><a href="https://dplyr.tidyverse.org/reference/explain.html">show_query()</a></code> function to see the translated SQL (see below).</p>
 <p>Let's start wrangling the data and ask: how many males were observed in 1978 in plot 2?</p>
 <div class="panel panel-default">
@@ -268,11 +270,7 @@ Solution
 <span>         <span class="va">year</span> <span class="op">==</span> <span class="st">"1978"</span>,</span>
 <span>         <span class="va">plot_id</span> <span class="op">==</span> <span class="st">"2"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html">count</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html">collect</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>A tibble: 1 × 1
-n
-<int>
-1 52</int></p>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/compute.html">collect</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># this function converts to tibble</span></span></code></pre></div>
 </div>
 </div>
 </div>
@@ -325,8 +323,17 @@ FROM `surveys`
 WHERE (`year` = '1998' OR `year` = '1999' OR `year` = '2000')
 GROUP BY `year`, `species_id`
 </code></pre>
-<p><strong>Original R syntax</strong></p>
+<p>Which would run as:</p>
 <div class="sourceCode" id="cb638"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">dbGetQuery</span><span class="op">(</span></span>
+<span>  <span class="va">mammals</span>,</span>
+<span>  <span class="st">"SELECT `year`, `species_id`, COUNT(*) AS `n`</span></span>
+<span><span class="st">   FROM `surveys`</span></span>
+<span><span class="st">   WHERE `year` IN ('1998', '1999', '2000')</span></span>
+<span><span class="st">   GROUP BY `year`, `species_id`"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Original R syntax</strong></p>
+<div class="sourceCode" id="cb639"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annual_species_notcollected</span> <span class="op">&lt;-</span> <span class="va">surveys</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">year</span> <span class="op">==</span> <span class="st">"1998"</span>, <span class="st">"1999"</span>, <span class="st">"2000"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">year</span>, <span class="va">species_id</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
@@ -350,17 +357,17 @@ GROUP BY `year`, `species_id`
 <p>FROM (SELECT <code>record_id</code>, <code>hindfoot_length</code></p>
 <p>FROM <code>surveys</code>)</p>
 <p>WHERE (<code>hindfoot_length</code> &gt; 20.0)</p>
-<button id="displayTextunnamed-chunk-59" onclick="javascript:toggle('unnamed-chunk-59');">
+<button id="displayTextunnamed-chunk-60" onclick="javascript:toggle('unnamed-chunk-60');">
 Show Solution
 </button>
-<div id="toggleTextunnamed-chunk-59" style="display: none">
+<div id="toggleTextunnamed-chunk-60" style="display: none">
 <div class="panel panel-default">
 <div class="panel-heading panel-heading1">
 Solution
 </div>
 <div class="panel-body">
 <p>R syntax translated:</p>
-<div class="sourceCode" id="cb639"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb640"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">surveys</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="va">record_id</span>, <span class="va">hindfoot_length</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">hindfoot_length</span> <span class="op">&gt;</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
@@ -380,7 +387,7 @@ Task
 Translate this <code>dplyr</code> code into an SQL query by filling in the blanks.
 </div>
 </div>
-<div class="sourceCode" id="cb640"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb641"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">surveys</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">year</span> <span class="op">&gt;</span> <span class="fl">1977</span> <span class="op">&amp;</span> <span class="va">year</span> <span class="op">&lt;</span> <span class="fl">2000</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">hindfoot_length</span> <span class="op">==</span> <span class="fl">30</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
@@ -405,10 +412,10 @@ WHERE (`year` \&gt; 1977.0 \_\_\_\_ `year` \&lt; 2000.0))
 \_\_\_\_ (`hindfoot_length` = 30.0)
 
 ORDER BY `species_id` \_\_\_\_</code></pre>
-<button id="displayTextunnamed-chunk-62" onclick="javascript:toggle('unnamed-chunk-62');">
+<button id="displayTextunnamed-chunk-63" onclick="javascript:toggle('unnamed-chunk-63');">
 Show Solution
 </button>
-<div id="toggleTextunnamed-chunk-62" style="display: none">
+<div id="toggleTextunnamed-chunk-63" style="display: none">
 <div class="panel panel-default">
 <div class="panel-heading panel-heading1">
 Solution
@@ -430,7 +437,7 @@ ORDER BY <code>species_id</code> <strong>DESC</strong></p>
 <span class="header-section-number">27.4.3</span> Create a database<a class="anchor" aria-label="anchor" href="#create-a-database"><i class="fas fa-link"></i></a>
 </h3>
 <p>In the case you have a CSV file available and you would like to query the data using SQL queries or with dplyr as shown in the previous sections, you can decide to convert the data to a SQlite database. The conversion will require some time, but once available, it provides the opportunity to query the data using SQL queries or with dplyr as shown in the previous sections. Moreover, you can easily add additional tables with related information to combine the data with, by removing overwrite and replacing with <code>append = TRUE</code></p>
-<div class="sourceCode" id="cb643"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb644"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">csv_name</span> <span class="op">&lt;-</span> <span class="st">"surveys.csv"</span></span>
 <span></span>
 <span><span class="va">survey_data</span> <span class="op">&lt;-</span> <span class="fu">fread</span><span class="op">(</span><span class="va">csv_name</span>, showProgress <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -464,16 +471,16 @@ Task
 Using the nrows and skip functions in fread. Can you write a function using purrr to read the surveys file in chunks and assign it to the database?
 </div>
 </div>
-<button id="displayTextunnamed-chunk-65" onclick="javascript:toggle('unnamed-chunk-65');">
+<button id="displayTextunnamed-chunk-66" onclick="javascript:toggle('unnamed-chunk-66');">
 Show Solution
 </button>
-<div id="toggleTextunnamed-chunk-65" style="display: none">
+<div id="toggleTextunnamed-chunk-66" style="display: none">
 <div class="panel panel-default">
 <div class="panel-heading panel-heading1">
 Solution
 </div>
 <div class="panel-body">
-<div class="sourceCode" id="cb645"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb646"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Define a function to read a chunk of the CSV file and insert it into the database</span></span>
 <span></span>
 <span><span class="va">process_and_insert</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">skip_rows</span><span class="op">)</span> <span class="op">{</span></span>
@@ -738,7 +745,7 @@ $( document ).ready(function() {
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-17.</p>
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-18.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

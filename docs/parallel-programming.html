@@ -283,11 +283,14 @@
 <li><p>type="PSOCK": Specifies the type of parallel environment. PSOCK is a parallel socket cluster, suitable for both Windows and Unix systems. (Alternatively, FORK could be used for Unix-based systems, but PSOCK is more commonly used.)</p></li>
 <li><p>registerDoParallel(cl): Registers the cluster as the backend for parallel operations. This sets up the environment so that foreach can utilize the cluster for parallel execution.</p></li>
 <li><p>foreach(i = 1:5, .combine=c): This function iterates over a sequence from 1 to 5.</p></li>
-<li><p>i = 1:5: Specifies the range of values for the loop.
-.combine=c: Specifies how to combine the results from each iteration. In this case, the c function combines the results into a single vector.</p></li>
+<li><p>i = 1:5: Specifies the range of values for the loop.</p></li>
+<li><p>.combine=c: Specifies how to combine the results from each iteration. In this case, the c function combines the results into a single vector.</p></li>
 <li><p>%dopar%: Indicates that the loop should be executed in parallel using the registered cluster.</p></li>
 <li><p>print(i): The code inside the loop, executed in parallel. It prints the value of i in each iteration.</p></li>
 </ul>
+<blockquote>
+<p>Note because of the parallel nature of the loop, we let doParallel assemble it, rather than initialising an empty list or vector</p>
+</blockquote>
 <div id="differences-between-foreach-and-for-loops-in-r" class="section level3" number="23.1.1">
 <h3>
 <span class="header-section-number">23.1.1</span> Differences Between foreach and for Loops in R<a class="anchor" aria-label="anchor" href="#differences-between-foreach-and-for-loops-in-r"><i class="fas fa-link"></i></a>
@@ -327,9 +330,12 @@ foreach(i = 1:5) %do% {
 <span><span class="va">start_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span></span>
-<span><span class="va">simple_loop</span> <span class="op">&lt;-</span> <span class="kw">for</span><span class="op">(</span><span class="va">num</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">1000</span><span class="op">)</span>  <span class="op">{</span></span>
-<span>   <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">square</span><span class="op">(</span><span class="va">num</span><span class="op">)</span></span>
-<span>  </span>
+<span><span class="co"># Initialize an empty numeric vector to store results</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html">numeric</a></span><span class="op">(</span><span class="fl">1000</span><span class="op">)</span>  <span class="co"># Preallocate for efficiency</span></span>
+<span></span>
+<span><span class="co"># Run the loop and store the square of each number in the result vector</span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">num</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fl">1000</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">result</span><span class="op">[</span><span class="va">num</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu">square</span><span class="op">(</span><span class="va">num</span><span class="op">)</span>  <span class="co"># Store the result of square(num)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">end_time</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.time</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -354,8 +360,8 @@ foreach(i = 1:5) %do% {
 <span></span>
 <span><span class="co"># Stop the cluster</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/parallel/makeCluster.html">stopCluster</a></span><span class="op">(</span><span class="va">cl</span><span class="op">)</span></span></code></pre></div>
-<pre><code>## Time difference of 0.01028967 secs
-## Time difference of 0.258796 secs</code></pre>
+<pre><code>## Time difference of 0.006523132 secs
+## Time difference of 0.2886102 secs</code></pre>
 <div class="panel panel-default">
 <div class="panel-heading">
 Task
@@ -720,7 +726,7 @@ $( document ).ready(function() {
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-17.</p>
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-18.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

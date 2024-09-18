@@ -1297,7 +1297,8 @@ allData[, c(species_id, year)]
 library(dtplyr)
 
 allData |> 
-select(species_id, year)
+select(species_id, year) |> 
+  as_tibble()
 ```
 </div><script> javascript:hide('option2unnamed-chunk-47') </script>
 
@@ -1315,7 +1316,8 @@ allData[year > 1988]
 library(dtplyr)
 
 allData |> 
-filter(year > 1988)
+filter(year > 1988) |> 
+  as_tibble()
 ```
 </div><script> javascript:hide('option2unnamed-chunk-48') </script>
 
@@ -1392,7 +1394,10 @@ The table itself looks similar to what we're used to manipulating in R as data f
 
 ## dbplyr
 
-To interact with a database you usually use SQL, the Structured Query Language. SQL is over 40 years old, and is used by pretty much every database in existence. The goal of dbplyr is to automatically generate SQL for you so that you’re not forced to use it. However, SQL is a very large language and dbplyr doesn’t do everything. It focuses on SELECT statements, the SQL you write most often as an analyst.
+To interact with a database you usually use SQL, the Structured Query Language. SQL is over 40 years old, and is used by pretty much every database in existence. 
+In R we can send SQL queries to our databse within the function `dbgetquery()` but we have another option.
+
+The goal of `dbplyr` is to automatically generate SQL for you so that you’re not forced to use it. However, SQL is a very large language and dbplyr doesn’t do everything. It focuses on SELECT statements, the SQL you write most often as an analyst.
 
 Most of the time you don’t need to know anything about SQL, and you can continue to use the dplyr verbs that you’re already familiar with - and if curious you can use the `show_query()` function to see the translated SQL (see below).
 
@@ -1412,13 +1417,10 @@ surveys |>
          year == "1978",
          plot_id == "2") |> 
   count() |> 
-  collect()
+  collect() # this function converts to tibble
 ```
 
-A tibble: 1 × 1
-      n
-  <int>
-1    52
+
 </div></div></div>
 
 
@@ -1485,6 +1487,19 @@ GROUP BY `year`, `species_id`
 
 ```
 
+Which would run as:
+
+
+```r
+dbGetQuery(
+  mammals,
+  "SELECT `year`, `species_id`, COUNT(*) AS `n`
+   FROM `surveys`
+   WHERE `year` IN ('1998', '1999', '2000')
+   GROUP BY `year`, `species_id`"
+)
+```
+
 
 **Original R syntax**
 
@@ -1517,9 +1532,9 @@ FROM `surveys`)
 
 WHERE (`hindfoot_length` \> 20.0)
 
-<button id="displayTextunnamed-chunk-59" onclick="javascript:toggle('unnamed-chunk-59');">Show Solution</button>
+<button id="displayTextunnamed-chunk-60" onclick="javascript:toggle('unnamed-chunk-60');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-59" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-60" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 R syntax translated:
 
@@ -1572,9 +1587,9 @@ ORDER BY `species_id` \_\_\_\_
 ```
 
 
-<button id="displayTextunnamed-chunk-62" onclick="javascript:toggle('unnamed-chunk-62');">Show Solution</button>
+<button id="displayTextunnamed-chunk-63" onclick="javascript:toggle('unnamed-chunk-63');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-62" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-63" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 Underscores around words (e.g. __example__) indicate correct fill-in-the-blank answers.
 
@@ -1633,9 +1648,9 @@ Using the nrows and skip functions in fread. Can you write a function using purr
  </div></div>
 
 
-<button id="displayTextunnamed-chunk-65" onclick="javascript:toggle('unnamed-chunk-65');">Show Solution</button>
+<button id="displayTextunnamed-chunk-66" onclick="javascript:toggle('unnamed-chunk-66');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-65" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-66" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ```r
 # Define a function to read a chunk of the CSV file and insert it into the database

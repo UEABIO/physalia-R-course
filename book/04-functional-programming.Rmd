@@ -1894,7 +1894,7 @@ system.time(function)
 
 mm <- microbenchmark(function)
 
-autplot(mm)
+autoplot(mm)
 ```
 
 ### Initialise objects
@@ -3033,11 +3033,14 @@ outLoop
 - foreach(i = 1:5, .combine=c): This function iterates over a sequence from 1 to 5.
 
 - i = 1:5: Specifies the range of values for the loop.
-.combine=c: Specifies how to combine the results from each iteration. In this case, the c function combines the results into a single vector.
+
+- .combine=c: Specifies how to combine the results from each iteration. In this case, the c function combines the results into a single vector.
 
 - %dopar%: Indicates that the loop should be executed in parallel using the registered cluster.
 
 - print(i): The code inside the loop, executed in parallel. It prints the value of i in each iteration.
+
+> Note because of the parallel nature of the loop, we let doParallel assemble it, rather than initialising an empty list or vector
 
 ### Differences Between foreach and for Loops in R
 
@@ -3079,9 +3082,12 @@ square <- function(x) {
 start_time <- Sys.time()
 
 
-simple_loop <- for(num in 1:1000)  {
-   result <- square(num)
-  
+# Initialize an empty numeric vector to store results
+result <- numeric(1000)  # Preallocate for efficiency
+
+# Run the loop and store the square of each number in the result vector
+for(num in 1:1000) {
+  result[num] <- square(num)  # Store the result of square(num)
 }
 
 end_time <- Sys.time()
