@@ -975,8 +975,12 @@ However, we can put the data filtering inside `reactive()`. This means that when
 ```r
 server <- function(input, output) {
   
-penguins_filtered <- penguins |>
+ # Correct usage: reactive expression to filter data 
+penguins_filtered <- reactive({
+  penguins |>
       filter(species == input$species)
+})
+
 
   output$demo_plot <- renderPlot({
     
