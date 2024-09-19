@@ -4,17 +4,17 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Chapter 46 Reactive | Advancing in R</title>
+<title>Chapter 47 Reactive | Advancing in R</title>
 <meta name="author" content="Philip T. Leftwich">
 <meta name="description" content="Reactivity is how Shiny determines when code in server() gets to run. In the example below if you move the data filtering outside of renderPlot(), you'll get an error message like &quot;Can't access...">
 <meta name="generator" content="bookdown 0.34 with bs4_book()">
-<meta property="og:title" content="Chapter 46 Reactive | Advancing in R">
+<meta property="og:title" content="Chapter 47 Reactive | Advancing in R">
 <meta property="og:type" content="book">
 <meta property="og:url" content="https://ueabio.github.io/physalia-R-course-2023/reactive.html">
 <meta property="og:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
 <meta property="og:description" content="Reactivity is how Shiny determines when code in server() gets to run. In the example below if you move the data filtering outside of renderPlot(), you'll get an error message like &quot;Can't access...">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Chapter 46 Reactive | Advancing in R">
+<meta name="twitter:title" content="Chapter 47 Reactive | Advancing in R">
 <meta name="twitter:description" content="Reactivity is how Shiny determines when code in server() gets to run. In the example below if you move the data filtering outside of renderPlot(), you'll get an error message like &quot;Can't access...">
 <meta name="twitter:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
 <!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -167,14 +167,15 @@
 <li><a class="" href="make-our-own-app.html"><span class="header-section-number">43</span> Make our own App</a></li>
 <li><a class="" href="inputs.html"><span class="header-section-number">44</span> Inputs</a></li>
 <li><a class="" href="outputs.html"><span class="header-section-number">45</span> Outputs</a></li>
-<li><a class="active" href="reactive.html"><span class="header-section-number">46</span> Reactive</a></li>
-<li><a class="" href="shiny-dashboards.html"><span class="header-section-number">47</span> Shiny Dashboards</a></li>
-<li><a class="" href="sharing.html"><span class="header-section-number">48</span> Sharing</a></li>
+<li><a class="" href="server.html"><span class="header-section-number">46</span> Server</a></li>
+<li><a class="active" href="reactive.html"><span class="header-section-number">47</span> Reactive</a></li>
+<li><a class="" href="shiny-dashboards.html"><span class="header-section-number">48</span> Shiny Dashboards</a></li>
+<li><a class="" href="sharing.html"><span class="header-section-number">49</span> Sharing</a></li>
 <li class="book-part">Literate Programming and Reproducibility</li>
-<li><a class="" href="quarto.html"><span class="header-section-number">49</span> Quarto</a></li>
-<li><a class="" href="github-1.html"><span class="header-section-number">50</span> Github</a></li>
+<li><a class="" href="quarto.html"><span class="header-section-number">50</span> Quarto</a></li>
+<li><a class="" href="github-1.html"><span class="header-section-number">51</span> Github</a></li>
 <li class="book-part">BONUS: Installations</li>
-<li><a class="" href="installing-r.html"><span class="header-section-number">51</span> Installing R</a></li>
+<li><a class="" href="installing-r.html"><span class="header-section-number">52</span> Installing R</a></li>
 </ul>
 
         <div class="book-extra">
@@ -182,73 +183,37 @@
         </div>
       </nav>
 </div>
-  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="reactive" class="section level1" number="46">
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="reactive" class="section level1" number="47">
 <h1>
-<span class="header-section-number">46</span> Reactive<a class="anchor" aria-label="anchor" href="#reactive"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47</span> Reactive<a class="anchor" aria-label="anchor" href="#reactive"><i class="fas fa-link"></i></a>
 </h1>
 <p>Reactivity is how Shiny determines when code in <code>server()</code> gets to run.
 In the example below if you move the data filtering outside of <code><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot()</a></code>, you'll get an error message like "Can't access reactive value outside of reactive consumer." This means that the input values can only be read inside certain functions, like <code><a href="https://rdrr.io/pkg/shiny/man/reactive.html">reactive()</a></code>, <code><a href="https://rdrr.io/pkg/shiny/man/observeEvent.html">observeEvent()</a></code>, or a render function like <code><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot()</a></code>.</p>
-<div class="sourceCode" id="cb873"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Packages ----</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://shiny.posit.co/">shiny</a></span><span class="op">)</span>       <span class="co"># Essential for running any Shiny app</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://allisonhorst.github.io/palmerpenguins/">palmerpenguins</a></span><span class="op">)</span>    <span class="co"># The source of your data</span></span>
+<div id="render" class="section level2" number="47.1">
+<h2>
+<span class="header-section-number">47.1</span> Render<a class="anchor" aria-label="anchor" href="#render"><i class="fas fa-link"></i></a>
+</h2>
+<p>In this example I want the input of species to be reactive to user inputs, inside the function renderPlot this works just fine:</p>
+<div class="sourceCode" id="cb872"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
 <span></span>
-<span><span class="co"># Load the data</span></span>
-<span><span class="va">penguins</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html">as_tibble</a></span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># ui.R ----</span></span>
-<span><span class="va">ui</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/fluidPage.html">fluidPage</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarLayout</a></span><span class="op">(</span></span>
-<span>     <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarPanel</a></span><span class="op">(</span></span>
-<span>      <span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"species"</span>,  <span class="co"># Give the input a name "genotype"</span></span>
-<span>                  label <span class="op">=</span> <span class="st">"1. Select species"</span>,  <span class="co"># Give the input a label to be displayed in the app</span></span>
-<span>                  choices <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Adelie"</span> <span class="op">=</span> <span class="st">"Adelie"</span>, <span class="st">"Chinstrap"</span> <span class="op">=</span> <span class="st">"Chinstrap"</span>, <span class="st">"Gentoo"</span> <span class="op">=</span> <span class="st">"Gentoo"</span><span class="op">)</span>, selected <span class="op">=</span> <span class="st">"Adelie"</span><span class="op">)</span>,  <span class="co"># Create the choices that can be selected. e.g. Display "Adelie" and link to value "Adelie"</span></span>
-<span>      <span class="va">demo_select</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"colour"</span>, </span>
-<span>                  label <span class="op">=</span> <span class="st">"2. Select histogram colour"</span>, </span>
-<span>                  choices <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"blue"</span>,<span class="st">"green"</span>,<span class="st">"red"</span>,<span class="st">"purple"</span>,<span class="st">"grey"</span><span class="op">)</span>, selected <span class="op">=</span> <span class="st">"grey"</span><span class="op">)</span>,</span>
-<span>      <span class="va">demo_slide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sliderInput.html">sliderInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"bin"</span>, </span>
-<span>                  label <span class="op">=</span> <span class="st">"3. Select number of histogram bins"</span>, </span>
-<span>                  min<span class="op">=</span><span class="fl">1</span>, max<span class="op">=</span><span class="fl">25</span>, value<span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>      <span class="va">demo_text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textAreaInput.html">textAreaInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"text"</span>, </span>
-<span>                label <span class="op">=</span> <span class="st">"4. Enter some text to be displayed"</span>,</span>
-<span>                rows <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>                placeholder <span class="op">=</span> <span class="st">"Enter some information here"</span><span class="op">)</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">mainPanel</a></span><span class="op">(</span></span>
-<span>      <span class="co"># Output elements go here</span></span>
-<span>        </span>
-<span>    <span class="va">tags</span><span class="op">$</span><span class="fu">ul</span><span class="op">(</span></span>
-<span>    <span class="va">tags</span><span class="op">$</span><span class="fu">strong</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">textOutput</a></span><span class="op">(</span><span class="st">"demo_sp"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">textOutput</a></span><span class="op">(</span><span class="st">"demo_text"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  </span>
-<span>        <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/plotOutput.html">plotOutput</a></span><span class="op">(</span><span class="st">"demo_plot"</span>, width <span class="op">=</span> <span class="st">"500px"</span>, height<span class="op">=</span><span class="st">"300px"</span><span class="op">)</span>,</span>
-<span>        </span>
-<span>        <span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">dataTableOutput</a></span><span class="op">(</span><span class="st">"demo_table"</span>,</span>
-<span>                    width <span class="op">=</span> <span class="st">"50%"</span>,</span>
-<span>                    height <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co"># server.R ----</span></span>
-<span></span>
-<span> </span>
-<span></span>
-<span><span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="co"># Error: Cannot access reactive value outside of reactive context</span></span>
-<span><span class="va">penguins_filtered</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span>  <span class="co"># Error: `input$species` is reactive and can only be accessed in reactive contexts</span></span>
-<span>  </span>
-<span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"Figure 1."</span>, <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span></span>
-<span>  </span>
-<span><span class="va">output</span><span class="op">$</span><span class="va">demo_text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">text</span><span class="op">)</span> <span class="co"># here to trigger the function</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span>   </span>
-<span></span>
+<span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">penguins_filtered</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
 <span>    </span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">penguins_filtered</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">flipper_length_mm</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">input</span><span class="op">$</span><span class="va">colour</span>, show.legend <span class="op">=</span> <span class="cn">FALSE</span>, bins <span class="op">=</span> <span class="va">input</span><span class="op">$</span><span class="va">bin</span><span class="op">)</span> <span class="op">+</span></span>
+<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"Color"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p>But if we try to change the filtering outside of a render function we get an error:</p>
+<div class="sourceCode" id="cb873"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  </span>
+<span><span class="va">penguins_filtered</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
+<span></span>
 <span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    </span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">penguins_filtered</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">flipper_length_mm</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -256,18 +221,8 @@ In the example below if you move the data filtering outside of <code><a href="ht
 <span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"Color"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
 <span>  <span class="op">}</span><span class="op">)</span></span>
-<span>  </span>
-<span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_table</span> <span class="op">&lt;-</span> <span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">renderDataTable</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>   <span class="va">penguins_filtered</span> <span class="op">|&gt;</span> </span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarise</a></span><span class="op">(</span>flipper_length_mm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span><span class="op">(</span><span class="va">flipper_length_mm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>, quantile <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span>  </span>
-<span><span class="op">}</span></span>
 <span></span>
-<span></span>
-<span></span>
-<span><span class="co"># Run the app ----</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/shinyApp.html">shinyApp</a></span><span class="op">(</span>ui <span class="op">=</span> <span class="va">ui</span>, server <span class="op">=</span> <span class="va">server</span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">}</span></span></code></pre></div>
 <pre><code>Error in filter(., species == input$species) : 
   ℹ In argument: `species == input$species`.
 Caused by error in `input$species`:
@@ -275,23 +230,47 @@ Caused by error in `input$species`:
 ℹ Do you need to wrap inside reactive() or observe()?
 </code></pre>
 <p>However, we can put the data filtering inside <code><a href="https://rdrr.io/pkg/shiny/man/reactive.html">reactive()</a></code>. This means that whenever an input inside that function changes, the code will run and update the value of <code><a href="https://rdrr.io/r/utils/data.html">data()</a></code>. This can be useful if you need to recalculate the data table each time the inputs change, and then use it in more than one function.</p>
-<div id="correct-use" class="section level3" number="46.0.1">
+<div id="correct-use" class="section level3" number="47.1.1">
 <h3>
-<span class="header-section-number">46.0.1</span> Correct use<a class="anchor" aria-label="anchor" href="#correct-use"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.1.1</span> Correct use<a class="anchor" aria-label="anchor" href="#correct-use"><i class="fas fa-link"></i></a>
 </h3>
 <div class="sourceCode" id="cb875"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  </span>
+<span><span class="va">penguins_filtered</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
+<span></span>
+<span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    </span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu">penguins_filtered</span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">flipper_length_mm</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">input</span><span class="op">$</span><span class="va">colour</span>, show.legend <span class="op">=</span> <span class="cn">FALSE</span>, bins <span class="op">=</span> <span class="va">input</span><span class="op">$</span><span class="va">bin</span><span class="op">)</span> <span class="op">+</span></span>
+<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"Color"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<button id="displayTextunnamed-chunk-59" onclick="javascript:toggle('unnamed-chunk-59');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-59" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb876"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Packages ----</span></span>
+<span><span class="co"># Load the required packages</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://shiny.posit.co/">shiny</a></span><span class="op">)</span>       <span class="co"># Essential for running any Shiny app</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://rstudio.github.io/bslib/">bslib</a></span><span class="op">)</span> <span class="co"># Package for better looking apps</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span>  <span class="co"># Contains readr, dplyr and ggplot2</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://allisonhorst.github.io/palmerpenguins/">palmerpenguins</a></span><span class="op">)</span>    <span class="co"># The source of your data</span></span>
 <span></span>
 <span><span class="co"># Load the data</span></span>
 <span><span class="va">penguins</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html">as_tibble</a></span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span>
 <span></span>
-<span> </span>
-<span></span>
 <span><span class="co"># ui.R ----</span></span>
-<span><span class="va">ui</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/fluidPage.html">fluidPage</a></span><span class="op">(</span></span>
+<span><span class="va">ui</span> <span class="op">&lt;-</span> <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/page.html">page_fluid</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarLayout</a></span><span class="op">(</span></span>
 <span>     <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarPanel</a></span><span class="op">(</span></span>
 <span>      <span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"species"</span>,  <span class="co"># Give the input a name "genotype"</span></span>
@@ -364,25 +343,79 @@ Caused by error in `input$species`:
 <span></span>
 <span><span class="co"># Run the app ----</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/shinyApp.html">shinyApp</a></span><span class="op">(</span>ui <span class="op">=</span> <span class="va">ui</span>, server <span class="op">=</span> <span class="va">server</span><span class="op">)</span></span></code></pre></div>
-<div id="reactive-expression" class="section level4" number="46.0.1.1">
+</div>
+</div>
+</div>
+<div id="reactive-expression" class="section level4" number="47.1.1.1">
 <h4>
-<span class="header-section-number">46.0.1.1</span> Reactive Expression:<a class="anchor" aria-label="anchor" href="#reactive-expression"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.1.1.1</span> Reactive Expression:<a class="anchor" aria-label="anchor" href="#reactive-expression"><i class="fas fa-link"></i></a>
 </h4>
 <ul>
-<li><p><code>penguins_filtered</code> is defined as reactive(). This means it will automatically update whenever input$species changes.</p></li>
+<li><p><code>penguins_filtered</code> is defined as <code><a href="https://rdrr.io/pkg/shiny/man/reactive.html">reactive()</a></code>. This means it will automatically update whenever input$species changes.</p></li>
 <li><p>Accessing Reactive Values: Use <code>penguins_filtered()</code> to access the filtered data.</p></li>
 </ul>
-<p>My most common error is trying to use data or title as an object instead of as a function. Notice how the first argument to ggplot is no longer <code>penguins_filtered</code>, but <code>penguins_filtered()</code>.</p>
+<p>My most common error is trying to use data or title as an object instead of as a function. <strong>Notice how the first argument to ggplot is no longer <code>penguins_filtered</code>, but <code>penguins_filtered()</code>.</strong></p>
 </div>
 </div>
-<div id="observable" class="section level2" number="46.1">
+</div>
+<div id="observable" class="section level2" number="47.2">
 <h2>
-<span class="header-section-number">46.1</span> Observable<a class="anchor" aria-label="anchor" href="#observable"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.2</span> Observable<a class="anchor" aria-label="anchor" href="#observable"><i class="fas fa-link"></i></a>
 </h2>
 <p>What if you only want to update things when an update button is clicked, and not whenever the user changes an option?</p>
 <p><code><a href="https://rdrr.io/pkg/shiny/man/observeEvent.html">observeEvent()</a></code>. This function runs the code whenever the value of the first argument changes. If there are reactive values inside the function, they won't trigger the code to run when they change.</p>
 <p>Unlike <code><a href="https://rdrr.io/pkg/shiny/man/reactive.html">reactive()</a></code>, <code><a href="https://rdrr.io/pkg/shiny/man/observeEvent.html">observeEvent()</a></code> does not produce a reactive expression or a return value; it simply runs its code block whenever the event occurs (e.g., when the user clicks a button).</p>
-<div class="sourceCode" id="cb876"><pre class="downlit sourceCode r">
+<p>We wrap all of the server functions that we want to run as part of a trigger inside <code><a href="https://rdrr.io/pkg/shiny/man/observeEvent.html">observeEvent()</a></code> and set the trigger in the UI.</p>
+<div class="sourceCode" id="cb877"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## UI</span></span>
+<span><span class="va">demo_button</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/actionButton.html">actionButton</a></span><span class="op">(</span><span class="st">"update"</span>, <span class="st">"Plot"</span><span class="op">)</span></span>
+<span><span class="co">##</span></span>
+<span><span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  </span>
+<span> </span>
+<span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/observeEvent.html">observeEvent</a></span><span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">update</span>, <span class="op">{</span></span>
+<span>  <span class="co"># This code runs only when the "Update" button is clicked   </span></span>
+<span>    <span class="va">penguins_filtered</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
+<span>    </span>
+<span>     <span class="va">bins</span> <span class="op">&lt;-</span> <span class="va">input</span><span class="op">$</span><span class="va">bin</span></span>
+<span>     </span>
+<span>     <span class="va">colour</span> <span class="op">&lt;-</span> <span class="va">input</span><span class="op">$</span><span class="va">colour</span></span>
+<span> </span>
+<span></span>
+<span>    <span class="va">output</span><span class="op">$</span><span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"Figure 1."</span>, <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
+<span>    <span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span>    <span class="va">output</span><span class="op">$</span><span class="va">demo_text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>      <span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">text</span><span class="op">)</span></span>
+<span>    <span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span>    <span class="va">output</span><span class="op">$</span><span class="va">demo_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">penguins_filtered</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">flipper_length_mm</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">colour</span>, show.legend <span class="op">=</span> <span class="cn">FALSE</span>, bins <span class="op">=</span> <span class="va">bins</span><span class="op">)</span> <span class="op">+</span></span>
+<span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"Color"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>    <span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span>    <span class="va">output</span><span class="op">$</span><span class="va">demo_table</span> <span class="op">&lt;-</span> <span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">renderDataTable</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>      <span class="va">penguins_filtered</span> <span class="op">|&gt;</span> </span>
+<span>        <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarise</a></span><span class="op">(</span>flipper_length_mm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span><span class="op">(</span><span class="va">flipper_length_mm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>, quantile <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="op">}</span><span class="op">)</span></span>
+<span>  <span class="op">}</span><span class="op">)</span></span>
+<span>  </span>
+<span><span class="op">}</span></span></code></pre></div>
+<button id="displayTextunnamed-chunk-61" onclick="javascript:toggle('unnamed-chunk-61');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-61" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb878"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Packages ----</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://shiny.posit.co/">shiny</a></span><span class="op">)</span>       <span class="co"># Essential for running any Shiny app</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
@@ -394,7 +427,7 @@ Caused by error in `input$species`:
 <span> </span>
 <span></span>
 <span><span class="co"># ui.R ----</span></span>
-<span><span class="va">ui</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/fluidPage.html">fluidPage</a></span><span class="op">(</span></span>
+<span><span class="va">ui</span> <span class="op">&lt;-</span> <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/page.html">page_fluid</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarLayout</a></span><span class="op">(</span></span>
 <span>     <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarPanel</a></span><span class="op">(</span></span>
 <span>      <span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"species"</span>,  <span class="co"># Give the input a name "genotype"</span></span>
@@ -474,36 +507,39 @@ Caused by error in `input$species`:
 <span><span class="co"># Run the app ----</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/shinyApp.html">shinyApp</a></span><span class="op">(</span>ui <span class="op">=</span> <span class="va">ui</span>, server <span class="op">=</span> <span class="va">server</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div id="exercise-9" class="section level2" number="46.2">
+</div>
+</div>
+</div>
+<div id="exercise-9" class="section level2" number="47.3">
 <h2>
-<span class="header-section-number">46.2</span> Exercise<a class="anchor" aria-label="anchor" href="#exercise-9"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.3</span> Exercise<a class="anchor" aria-label="anchor" href="#exercise-9"><i class="fas fa-link"></i></a>
 </h2>
 <p>Run this code. Which things are now updated by the plot button?</p>
 </div>
-<div id="notes-on-reactivity" class="section level2" number="46.3">
+<div id="notes-on-reactivity" class="section level2" number="47.4">
 <h2>
-<span class="header-section-number">46.3</span> Notes on Reactivity<a class="anchor" aria-label="anchor" href="#notes-on-reactivity"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.4</span> Notes on Reactivity<a class="anchor" aria-label="anchor" href="#notes-on-reactivity"><i class="fas fa-link"></i></a>
 </h2>
 <p>Key Concepts in Shiny Reactivity:</p>
-<div id="reactive-expressions" class="section level3" number="46.3.1">
+<div id="reactive-expressions" class="section level3" number="47.4.1">
 <h3>
-<span class="header-section-number">46.3.1</span> Reactive Expressions<a class="anchor" aria-label="anchor" href="#reactive-expressions"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.4.1</span> Reactive Expressions<a class="anchor" aria-label="anchor" href="#reactive-expressions"><i class="fas fa-link"></i></a>
 </h3>
 <p>Think of reactive expressions as formulas that automatically recalculate whenever their inputs change.</p>
 <p>In Shiny, you create reactive expressions using the <code><a href="https://rdrr.io/pkg/shiny/man/reactive.html">reactive()</a></code> function. These expressions can be reused throughout your app and will always be up-to-date with the latest input values.</p>
 </div>
-<div id="observe" class="section level3" number="46.3.2">
+<div id="observe" class="section level3" number="47.4.2">
 <h3>
-<span class="header-section-number">46.3.2</span> Observe:<a class="anchor" aria-label="anchor" href="#observe"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.4.2</span> Observe:<a class="anchor" aria-label="anchor" href="#observe"><i class="fas fa-link"></i></a>
 </h3>
 <p>Functions wrapped in <code><a href="https://rdrr.io/pkg/shiny/man/observeEvent.html">observeEvent()</a></code> is used to trigger actions, such as updating a value, sending a message, or creating a plot. These actions are called "side effects." For example, it could be used to update the value of an input field or display a notification when a button is clicked</p>
 <ul>
 <li>Render Functions: Functions like <code><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot()</a></code>, <code><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText()</a></code>, and <code><a href="https://rdrr.io/pkg/shiny/man/renderDataTable.html">renderDataTable()</a></code> that are used to generate outputs in response to changes in reactive values.</li>
 </ul>
 </div>
-<div id="common-errors-and-best-practices" class="section level3" number="46.3.3">
+<div id="common-errors-and-best-practices" class="section level3" number="47.4.3">
 <h3>
-<span class="header-section-number">46.3.3</span> Common Errors and Best Practices<a class="anchor" aria-label="anchor" href="#common-errors-and-best-practices"><i class="fas fa-link"></i></a>
+<span class="header-section-number">47.4.3</span> Common Errors and Best Practices<a class="anchor" aria-label="anchor" href="#common-errors-and-best-practices"><i class="fas fa-link"></i></a>
 </h3>
 <ul>
 <li><p>Accessing Reactive Values: Reactive values (e.g., input$species, reactive()) should only be accessed inside reactive contexts like render*() functions, reactive(), or observe(). Attempting to use them outside these contexts will result in errors.</p></li>
@@ -693,21 +729,22 @@ $( document ).ready(function() {
   );
 });
 </script><div class="chapter-nav">
-<div class="prev"><a href="outputs.html"><span class="header-section-number">45</span> Outputs</a></div>
-<div class="next"><a href="shiny-dashboards.html"><span class="header-section-number">47</span> Shiny Dashboards</a></div>
+<div class="prev"><a href="server.html"><span class="header-section-number">46</span> Server</a></div>
+<div class="next"><a href="shiny-dashboards.html"><span class="header-section-number">48</span> Shiny Dashboards</a></div>
 </div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
     <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
       <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#reactive"><span class="header-section-number">47</span> Reactive</a></li>
 <li>
-<a class="nav-link" href="#reactive"><span class="header-section-number">46</span> Reactive</a><ul class="nav navbar-nav"><li><a class="nav-link" href="#correct-use"><span class="header-section-number">46.0.1</span> Correct use</a></li></ul>
+<a class="nav-link" href="#render"><span class="header-section-number">47.1</span> Render</a><ul class="nav navbar-nav"><li><a class="nav-link" href="#correct-use"><span class="header-section-number">47.1.1</span> Correct use</a></li></ul>
 </li>
-<li><a class="nav-link" href="#observable"><span class="header-section-number">46.1</span> Observable</a></li>
-<li><a class="nav-link" href="#exercise-9"><span class="header-section-number">46.2</span> Exercise</a></li>
+<li><a class="nav-link" href="#observable"><span class="header-section-number">47.2</span> Observable</a></li>
+<li><a class="nav-link" href="#exercise-9"><span class="header-section-number">47.3</span> Exercise</a></li>
 <li>
-<a class="nav-link" href="#notes-on-reactivity"><span class="header-section-number">46.3</span> Notes on Reactivity</a><ul class="nav navbar-nav">
-<li><a class="nav-link" href="#reactive-expressions"><span class="header-section-number">46.3.1</span> Reactive Expressions</a></li>
-<li><a class="nav-link" href="#observe"><span class="header-section-number">46.3.2</span> Observe:</a></li>
-<li><a class="nav-link" href="#common-errors-and-best-practices"><span class="header-section-number">46.3.3</span> Common Errors and Best Practices</a></li>
+<a class="nav-link" href="#notes-on-reactivity"><span class="header-section-number">47.4</span> Notes on Reactivity</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#reactive-expressions"><span class="header-section-number">47.4.1</span> Reactive Expressions</a></li>
+<li><a class="nav-link" href="#observe"><span class="header-section-number">47.4.2</span> Observe:</a></li>
+<li><a class="nav-link" href="#common-errors-and-best-practices"><span class="header-section-number">47.4.3</span> Common Errors and Best Practices</a></li>
 </ul>
 </li>
 </ul>
@@ -727,7 +764,7 @@ $( document ).ready(function() {
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-18.</p>
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-19.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

@@ -6,16 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Chapter 45 Outputs | Advancing in R</title>
 <meta name="author" content="Philip T. Leftwich">
-<meta name="description" content="In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. These...">
+<meta name="description" content="In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. You...">
 <meta name="generator" content="bookdown 0.34 with bs4_book()">
 <meta property="og:title" content="Chapter 45 Outputs | Advancing in R">
 <meta property="og:type" content="book">
 <meta property="og:url" content="https://ueabio.github.io/physalia-R-course-2023/outputs.html">
 <meta property="og:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
-<meta property="og:description" content="In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. These...">
+<meta property="og:description" content="In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. You...">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Chapter 45 Outputs | Advancing in R">
-<meta name="twitter:description" content="In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. These...">
+<meta name="twitter:description" content="In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. You...">
 <meta name="twitter:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
 <!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
@@ -167,14 +167,15 @@
 <li><a class="" href="make-our-own-app.html"><span class="header-section-number">43</span> Make our own App</a></li>
 <li><a class="" href="inputs.html"><span class="header-section-number">44</span> Inputs</a></li>
 <li><a class="active" href="outputs.html"><span class="header-section-number">45</span> Outputs</a></li>
-<li><a class="" href="reactive.html"><span class="header-section-number">46</span> Reactive</a></li>
-<li><a class="" href="shiny-dashboards.html"><span class="header-section-number">47</span> Shiny Dashboards</a></li>
-<li><a class="" href="sharing.html"><span class="header-section-number">48</span> Sharing</a></li>
+<li><a class="" href="server.html"><span class="header-section-number">46</span> Server</a></li>
+<li><a class="" href="reactive.html"><span class="header-section-number">47</span> Reactive</a></li>
+<li><a class="" href="shiny-dashboards.html"><span class="header-section-number">48</span> Shiny Dashboards</a></li>
+<li><a class="" href="sharing.html"><span class="header-section-number">49</span> Sharing</a></li>
 <li class="book-part">Literate Programming and Reproducibility</li>
-<li><a class="" href="quarto.html"><span class="header-section-number">49</span> Quarto</a></li>
-<li><a class="" href="github-1.html"><span class="header-section-number">50</span> Github</a></li>
+<li><a class="" href="quarto.html"><span class="header-section-number">50</span> Quarto</a></li>
+<li><a class="" href="github-1.html"><span class="header-section-number">51</span> Github</a></li>
 <li class="book-part">BONUS: Installations</li>
-<li><a class="" href="installing-r.html"><span class="header-section-number">51</span> Installing R</a></li>
+<li><a class="" href="installing-r.html"><span class="header-section-number">52</span> Installing R</a></li>
 </ul>
 
         <div class="book-extra">
@@ -186,23 +187,83 @@
 <h1>
 <span class="header-section-number">45</span> Outputs<a class="anchor" aria-label="anchor" href="#outputs"><i class="fas fa-link"></i></a>
 </h1>
-<p>In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. These IDs are then linked to corresponding rendering functions in the server function that dynamically generate content based on user interactions. Let’s explore the different types of outputs you can create in Shiny and how to implement them.</p>
+<p>In a Shiny app, outputs are dynamic components that display information to users based on their inputs.</p>
+<p>To create these outputs, you define them in the User Interface (UI) with specific IDs.</p>
+<p>You can add all kinds of different outputs to your UI with dedicated output functions. For example, let’s add a text output using <code>outputText()</code> function, a plot output with <code>plotOutput</code> and a table with <code><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">DT::dataTableOutput()</a></code></p>
+<div class="sourceCode" id="cb858"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Packages ----</span></span>
+<span><span class="co"># Load the required packages</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://shiny.posit.co/">shiny</a></span><span class="op">)</span>       <span class="co"># Essential for running any Shiny app</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://rstudio.github.io/bslib/">bslib</a></span><span class="op">)</span> <span class="co"># Package for better looking apps</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span>  <span class="co"># Contains readr, dplyr and ggplot2</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://allisonhorst.github.io/palmerpenguins/">palmerpenguins</a></span><span class="op">)</span>    <span class="co"># The source of your data</span></span>
+<span></span>
+<span><span class="co"># Load the data</span></span>
+<span><span class="va">penguins</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html">as_tibble</a></span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># ui.R ----</span></span>
+<span><span class="va">ui</span> <span class="op">&lt;-</span> <span class="fu">bslib</span><span class="fu">::</span><span class="fu"><a href="https://rstudio.github.io/bslib/reference/page.html">page_fluid</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarLayout</a></span><span class="op">(</span></span>
+<span>     <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarPanel</a></span><span class="op">(</span></span>
+<span>      <span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"species"</span>,  <span class="co"># Give the input a name "genotype"</span></span>
+<span>                  label <span class="op">=</span> <span class="st">"1. Select species"</span>,  <span class="co"># Give the input a label to be displayed in the app</span></span>
+<span>                  choices <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Adelie"</span> <span class="op">=</span> <span class="st">"Adelie"</span>, <span class="st">"Chinstrap"</span> <span class="op">=</span> <span class="st">"Chinstrap"</span>, <span class="st">"Gentoo"</span> <span class="op">=</span> <span class="st">"Gentoo"</span><span class="op">)</span>, selected <span class="op">=</span> <span class="st">"Adelie"</span><span class="op">)</span>,  <span class="co"># Create the choices that can be selected. e.g. Display "Adelie" and link to value "Adelie"</span></span>
+<span>      <span class="va">demo_select</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"colour"</span>, </span>
+<span>                  label <span class="op">=</span> <span class="st">"2. Select histogram colour"</span>, </span>
+<span>                  choices <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"blue"</span>,<span class="st">"green"</span>,<span class="st">"red"</span>,<span class="st">"purple"</span>,<span class="st">"grey"</span><span class="op">)</span>, selected <span class="op">=</span> <span class="st">"grey"</span><span class="op">)</span>,</span>
+<span>      <span class="va">demo_slide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sliderInput.html">sliderInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"bin"</span>, </span>
+<span>                  label <span class="op">=</span> <span class="st">"3. Select number of histogram bins"</span>, </span>
+<span>                  min<span class="op">=</span><span class="fl">1</span>, max<span class="op">=</span><span class="fl">25</span>, value<span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>      <span class="va">demo_text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textAreaInput.html">textAreaInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"text"</span>, </span>
+<span>                label <span class="op">=</span> <span class="st">"4. Enter some text to be displayed"</span>,</span>
+<span>                rows <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>                placeholder <span class="op">=</span> <span class="st">"Enter some information here"</span><span class="op">)</span></span>
+<span>    <span class="op">)</span>,</span>
+<span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">mainPanel</a></span><span class="op">(</span></span>
+<span>      <span class="co"># Output elements go here</span></span>
+<span>        </span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">textOutput</a></span><span class="op">(</span><span class="st">"demo_sp"</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">textOutput</a></span><span class="op">(</span><span class="st">"demo_text"</span><span class="op">)</span>,</span>
+<span>  </span>
+<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/plotOutput.html">plotOutput</a></span><span class="op">(</span><span class="st">"demo_plot"</span>, width <span class="op">=</span> <span class="st">"500px"</span>, height<span class="op">=</span><span class="st">"300px"</span><span class="op">)</span>,</span>
+<span>        </span>
+<span>    <span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">dataTableOutput</a></span><span class="op">(</span><span class="st">"demo_table"</span>,</span>
+<span>                    width <span class="op">=</span> <span class="st">"50%"</span>,</span>
+<span>                    height <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="co"># server.R ----</span></span>
+<span><span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="co"># Your server logic will be defined here</span></span>
+<span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span></span>
+<span><span class="co"># Run the app ----</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/shinyApp.html">shinyApp</a></span><span class="op">(</span>ui <span class="op">=</span> <span class="va">ui</span>, server <span class="op">=</span> <span class="va">server</span><span class="op">)</span></span></code></pre></div>
+<div class="inline-figure"><img src="07-shiny_files/figure-html/unnamed-chunk-37-1.png" width="100%" style="display: block; margin: auto;"></div>
+<blockquote>
+<p>If you look at your app now, you will see that there is no output yet. Everything still looks the same:</p>
+</blockquote>
 <div id="text-1" class="section level2" number="45.1">
 <h2>
 <span class="header-section-number">45.1</span> Text<a class="anchor" aria-label="anchor" href="#text-1"><i class="fas fa-link"></i></a>
 </h2>
-<p>The textOutput function is used in the UI to create a placeholder for text output. By default, this text is rendered inside a <code>&lt;span&gt;</code> or <code>&lt;div&gt;</code> element. You can also use the container argument to wrap the text in a specific HTML tag.</p>
-<div class="sourceCode" id="cb860"><pre class="downlit sourceCode r">
+<p>The <code>textOutput</code> function is used in the UI to create a placeholder for text output. By default, this text is rendered inside a <code>&lt;span&gt;</code> or <code>&lt;div&gt;</code> element. You can also use the container argument to wrap the text in a specific HTML tag.</p>
+<div class="sourceCode" id="cb859"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the UI function</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">textOutput</a></span><span class="op">(</span><span class="st">"demo_text"</span>, container <span class="op">=</span> <span class="va">tags</span><span class="op">$</span><span class="va">h3</span><span class="op">)</span> <span class="co"># Wraps the output in an &lt;h3&gt; tag</span></span></code></pre></div>
 <p>In the server function use <code>renderText</code> replaces the text of the linked element with its returned string.</p>
-<div class="sourceCode" id="cb861"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb860"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the server function</span></span>
 <span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"Figure 1."</span>, <span class="va">input</span><span class="op">$</span><span class="va">species</span>, <span class="va">input</span><span class="op">$</span><span class="va">text</span><span class="op">)</span></span>
 <span>  <span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>If you use <code>verbatimTextOutput</code> in the UI (no change to the render function), it will show the output in a fixed-width font. This can be good for code or text you want the user to copy. The rendering function in the server remains the same (<code>renderText</code>).</p>
-<div class="sourceCode" id="cb862"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb861"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the UI function</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">verbatimTextOutput</a></span><span class="op">(</span><span class="st">"demo_verbatim"</span><span class="op">)</span></span>
 <span></span>
@@ -224,11 +285,11 @@
 <span class="header-section-number">45.2</span> Plots<a class="anchor" aria-label="anchor" href="#plots"><i class="fas fa-link"></i></a>
 </h2>
 <p><code>plotOutput</code> is used in the UI to create a placeholder for a plot. You can specify its size using the width and height arguments.</p>
-<div class="sourceCode" id="cb863"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb862"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the UI function</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/plotOutput.html">plotOutput</a></span><span class="op">(</span><span class="st">"demo_plot"</span>, width <span class="op">=</span> <span class="st">"500px"</span>, height<span class="op">=</span><span class="st">"300px"</span><span class="op">)</span></span></code></pre></div>
 <p>In the server, use renderPlot to create the plot. This function should return a plot object created using <code>base R</code> or <code>ggplot2</code>.</p>
-<div class="sourceCode" id="cb864"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb863"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the server function</span></span>
 <span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">penguins_filtered</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span></span>
@@ -251,11 +312,11 @@ you need to use <code>y = .data[[input<span class="math inline">\(y]]&lt;/code&g
 <span class="header-section-number">45.3</span> Images<a class="anchor" aria-label="anchor" href="#images"><i class="fas fa-link"></i></a>
 </h2>
 <p>Use <code>imageOutput</code> in the UI to create a placeholder for the image.</p>
-<div class="sourceCode" id="cb865"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb864"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the UI function</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/plotOutput.html">imageOutput</a></span><span class="op">(</span><span class="st">"demo_image"</span><span class="op">)</span></span></code></pre></div>
 <p>Use <code>renderImage</code> in the server to generate or reference an image. This function needs to return a named list with at least an <code>src</code> with the image path. You can also set the <code>width</code> and <code>height</code> (numeric values are in pixels), <code>class</code> and <code>alt</code> (the alt-text for screen readers).</p>
-<div class="sourceCode" id="cb866"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb865"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the server function</span></span>
 <span><span class="va">output</span><span class="op">$</span><span class="va">demo_image</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderImage.html">renderImage</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/pkg/gsubfn/man/list.html">list</a></span><span class="op">(</span>src <span class="op">=</span> <span class="st">"images/penguin.jpg"</span>,</span>
@@ -278,11 +339,11 @@ you’re referencing a file you previously saved.
 <span class="header-section-number">45.4</span> Data Tables<a class="anchor" aria-label="anchor" href="#data-tables"><i class="fas fa-link"></i></a>
 </h2>
 <p>Display a table using <code>tableOutput</code> in the UI.</p>
-<div class="sourceCode" id="cb867"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb866"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the UI function</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderTable.html">tableOutput</a></span><span class="op">(</span><span class="st">"demo_table"</span><span class="op">)</span></span></code></pre></div>
 <p>This is paired with <code><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">DT::renderDataTable</a></code>, which makes a table out of any data frame it returns. The table will automatically update when the user inputs change.</p>
-<div class="sourceCode" id="cb868"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb867"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># in the server function</span></span>
 <span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_table</span> <span class="op">&lt;-</span> <span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">renderDataTable</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>   <span class="va">penguins</span>  <span class="op">|&gt;</span> </span>
@@ -311,11 +372,11 @@ same options.
 <p>Writing Data to a CSV File
 You can write data to a CSV file using <code><a href="https://rdrr.io/r/utils/write.table.html">write.csv()</a></code> or similar functions. Typically, this involves creating a download button in the UI and then using <code>downloadHandler</code> in the server to handle the file generation.</p>
 <p>Add a <code>downloadButton</code> to the UI to allow users to download the file.</p>
-<div class="sourceCode" id="cb869"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb868"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># In the UI function</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/downloadButton.html">downloadButton</a></span><span class="op">(</span><span class="st">"download_csv"</span>, label <span class="op">=</span> <span class="st">"Download CSV"</span><span class="op">)</span></span></code></pre></div>
 <p>Use <code>downloadHandler</code> to define the file to be generated and downloaded.</p>
-<div class="sourceCode" id="cb870"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb869"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># In the server function</span></span>
 <span><span class="va">output</span><span class="op">$</span><span class="va">download_csv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/downloadHandler.html">downloadHandler</a></span><span class="op">(</span></span>
 <span>  filename <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
@@ -341,133 +402,6 @@ You can write data to a CSV file using <code><a href="https://rdrr.io/r/utils/wr
 <li><p>File outputs: Use downloadButton and downloadHandler for file export</p></li>
 </ul>
 <p>Experiment with these functions in your Shiny app to create dynamic, interactive web applications that respond to user inputs in real-time.</p>
-</div>
-</div>
-<div id="emphasis" class="section level2" number="45.6">
-<h2>
-<span class="header-section-number">45.6</span> Emphasis<a class="anchor" aria-label="anchor" href="#emphasis"><i class="fas fa-link"></i></a>
-</h2>
-<p>We can use basic HTML to start customising appearance and emphasis - later we will use the <code>bslib</code> package to give us lots of easy customisation:</p>
-<pre><code>  
-p("p creates a paragraph of text."),
-
-      
-      p("A new p() command starts a new paragraph. Supply a style attribute to change the format of the entire paragraph.", style = "font-family: 'times'; font-si16pt"),
-      
-      strong("strong() makes bold text."),
-      
-      em("em() creates italicized (i.e, emphasized) text."),
-      
-      br(),
-      
-      code("code displays your text similar to computer code"),
-      
-      div("div creates segments of text with a similar style. This division of text is all blue because I passed the argument 'style = color:blue' to div", style = "color:blue"),
-      
-      br(),
-      
-      p("span does the same thing as div, but it works with",
-        span("groups of words", style = "color:blue"),
-        "that appear inside a paragraph."),
-</code></pre>
-</div>
-<div id="exercise-8" class="section level2" number="45.7">
-<h2>
-<span class="header-section-number">45.7</span> Exercise<a class="anchor" aria-label="anchor" href="#exercise-8"><i class="fas fa-link"></i></a>
-</h2>
-<p>Complete our app by adding the appropriate outputs to our file:</p>
-<div class="inline-figure"><img src="images/demo-app-simple.png" width="100%" style="display: block; margin: auto;"></div>
-<button id="displayTextunnamed-chunk-54" onclick="javascript:toggle('unnamed-chunk-54');">
-Show Solution
-</button>
-<div id="toggleTextunnamed-chunk-54" style="display: none">
-<div class="panel panel-default">
-<div class="panel-heading panel-heading1">
-Solution
-</div>
-<div class="panel-body">
-<div class="sourceCode" id="cb872"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Packages ----</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://shiny.posit.co/">shiny</a></span><span class="op">)</span>       <span class="co"># Essential for running any Shiny app</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://allisonhorst.github.io/palmerpenguins/">palmerpenguins</a></span><span class="op">)</span>    <span class="co"># The source of your data</span></span>
-<span></span>
-<span><span class="co"># Load the data</span></span>
-<span><span class="va">penguins</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html">as_tibble</a></span><span class="op">(</span><span class="va">penguins</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># ui.R ----</span></span>
-<span><span class="va">ui</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/fluidPage.html">fluidPage</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarLayout</a></span><span class="op">(</span></span>
-<span>     <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">sidebarPanel</a></span><span class="op">(</span></span>
-<span>      <span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"species"</span>,  <span class="co"># Give the input a name "genotype"</span></span>
-<span>                  label <span class="op">=</span> <span class="st">"1. Select species"</span>,  <span class="co"># Give the input a label to be displayed in the app</span></span>
-<span>                  choices <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Adelie"</span> <span class="op">=</span> <span class="st">"Adelie"</span>, <span class="st">"Chinstrap"</span> <span class="op">=</span> <span class="st">"Chinstrap"</span>, <span class="st">"Gentoo"</span> <span class="op">=</span> <span class="st">"Gentoo"</span><span class="op">)</span>, selected <span class="op">=</span> <span class="st">"Adelie"</span><span class="op">)</span>,  <span class="co"># Create the choices that can be selected. e.g. Display "Adelie" and link to value "Adelie"</span></span>
-<span>      <span class="va">demo_select</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/selectInput.html">selectInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"colour"</span>, </span>
-<span>                  label <span class="op">=</span> <span class="st">"2. Select histogram colour"</span>, </span>
-<span>                  choices <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"blue"</span>,<span class="st">"green"</span>,<span class="st">"red"</span>,<span class="st">"purple"</span>,<span class="st">"grey"</span><span class="op">)</span>, selected <span class="op">=</span> <span class="st">"grey"</span><span class="op">)</span>,</span>
-<span>      <span class="va">demo_slide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sliderInput.html">sliderInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"bin"</span>, </span>
-<span>                  label <span class="op">=</span> <span class="st">"3. Select number of histogram bins"</span>, </span>
-<span>                  min<span class="op">=</span><span class="fl">1</span>, max<span class="op">=</span><span class="fl">25</span>, value<span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>      <span class="va">demo_text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textAreaInput.html">textAreaInput</a></span><span class="op">(</span>inputId <span class="op">=</span> <span class="st">"text"</span>, </span>
-<span>                label <span class="op">=</span> <span class="st">"4. Enter some text to be displayed"</span>,</span>
-<span>                rows <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>                placeholder <span class="op">=</span> <span class="st">"Enter some information here"</span><span class="op">)</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/sidebarLayout.html">mainPanel</a></span><span class="op">(</span></span>
-<span>      <span class="co"># Output elements go here</span></span>
-<span>        </span>
-<span>    <span class="va">tags</span><span class="op">$</span><span class="fu">ul</span><span class="op">(</span></span>
-<span>    <span class="va">tags</span><span class="op">$</span><span class="fu">strong</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">textOutput</a></span><span class="op">(</span><span class="st">"demo_sp"</span><span class="op">)</span><span class="op">)</span>, <span class="co"># emphasise text</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/textOutput.html">textOutput</a></span><span class="op">(</span><span class="st">"demo_text"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  </span>
-<span>        <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/plotOutput.html">plotOutput</a></span><span class="op">(</span><span class="st">"demo_plot"</span>, width <span class="op">=</span> <span class="st">"500px"</span>, height<span class="op">=</span><span class="st">"300px"</span><span class="op">)</span>,</span>
-<span>        </span>
-<span>        <span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">dataTableOutput</a></span><span class="op">(</span><span class="st">"demo_table"</span>,</span>
-<span>                    width <span class="op">=</span> <span class="st">"50%"</span>,</span>
-<span>                    height <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
-<span>    <span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co"># server.R ----</span></span>
-<span></span>
-<span> </span>
-<span></span>
-<span><span class="va">server</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  </span>
-<span></span>
-<span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_sp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="st">"Figure 1."</span>, <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span></span>
-<span>  </span>
-<span><span class="va">output</span><span class="op">$</span><span class="va">demo_text</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPrint.html">renderText</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">text</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span>   </span>
-<span>    </span>
-<span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/shiny/man/renderPlot.html">renderPlot</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>    <span class="va">penguins_filtered</span> <span class="op">&lt;-</span> <span class="va">penguins</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
-<span>    </span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">penguins_filtered</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">flipper_length_mm</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html">geom_histogram</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">input</span><span class="op">$</span><span class="va">colour</span>, show.legend <span class="op">=</span> <span class="cn">FALSE</span>, bins <span class="op">=</span> <span class="va">input</span><span class="op">$</span><span class="va">bin</span><span class="op">)</span> <span class="op">+</span></span>
-<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="st">"Color"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>      <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span></span>
-<span>  </span>
-<span>  <span class="va">output</span><span class="op">$</span><span class="va">demo_table</span> <span class="op">&lt;-</span> <span class="fu">DT</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/DT/man/dataTableOutput.html">renderDataTable</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>   <span class="va">penguins</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">input</span><span class="op">$</span><span class="va">species</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarise</a></span><span class="op">(</span>flipper_length_mm <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html">quantile</a></span><span class="op">(</span><span class="va">flipper_length_mm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">T</span><span class="op">)</span>, quantile <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span>  </span>
-<span><span class="op">}</span></span>
-<span></span>
-<span></span>
-<span></span>
-<span><span class="co"># Run the app ----</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/shinyApp.html">shinyApp</a></span><span class="op">(</span>ui <span class="op">=</span> <span class="va">ui</span>, server <span class="op">=</span> <span class="va">server</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
 </div>
 </div>
 </div>
@@ -652,7 +586,7 @@ $( document ).ready(function() {
 });
 </script><div class="chapter-nav">
 <div class="prev"><a href="inputs.html"><span class="header-section-number">44</span> Inputs</a></div>
-<div class="next"><a href="reactive.html"><span class="header-section-number">46</span> Reactive</a></div>
+<div class="next"><a href="server.html"><span class="header-section-number">46</span> Server</a></div>
 </div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
     <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
       <ul class="nav navbar-nav">
@@ -664,8 +598,6 @@ $( document ).ready(function() {
 <li>
 <a class="nav-link" href="#writing-files"><span class="header-section-number">45.5</span> Writing Files</a><ul class="nav navbar-nav"><li><a class="nav-link" href="#summary-1"><span class="header-section-number">45.5.1</span> Summary</a></li></ul>
 </li>
-<li><a class="nav-link" href="#emphasis"><span class="header-section-number">45.6</span> Emphasis</a></li>
-<li><a class="nav-link" href="#exercise-8"><span class="header-section-number">45.7</span> Exercise</a></li>
 </ul>
 
       <div class="book-extra">
@@ -683,7 +615,7 @@ $( document ).ready(function() {
 <footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
 
   <div class="col-12 col-md-6 mt-3">
-    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-18.</p>
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2024-09-19.</p>
   </div>
 
   <div class="col-12 col-md-6 mt-3">

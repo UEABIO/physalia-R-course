@@ -242,11 +242,16 @@ Re-run your app and see if you can change the data and x-axis label with your ne
 
 Now that you've seen a basic Shiny app in action, let's return to the beginning and  create our own app.R file. A basic app.R consists of five key parts:
 
+```{r, echo = FALSE}
+knitr::include_graphics("images/skeleton_shiny.png")
+```
+
 **Package Loading:** At the top of the script, load any necessary R packages for your app to function. `shiny` is a requirement, but you can add others like `dplyr` or `ggplot2` as needed. If any packages are missing, you'll encounter an error, so ensure that you have them installed.
 
 ```{r, eval = FALSE}
 # Load the required packages
 library(shiny)       # Essential for running any Shiny app
+library(bslib) # Package for better looking apps
 library(tidyverse)  # Contains readr, dplyr and ggplot2
 library(palmerpenguins)    # The source of your data
 ```
@@ -260,12 +265,12 @@ penguins <- as_tibble(penguins)
 
 ```
 
-**UI Object:** Create an object called ui that defines the app's user interface. This specifies how the app will appear in the web browser. The `fluidPage()` function creates a responsive layout that adjusts to the browser window's size. All of your UI code will go inside the curly braces.
+**UI Object:** Create an object called ui that defines the app's user interface. This specifies how the app will appear in the web browser. The `page_fluid()` function creates a responsive layout that adjusts to the browser window's size. All of your UI code will go inside the curly braces.
 
 ```{r, eval = FALSE}
 
 # Define the UI
-ui <- fluidPage(
+ui <- bslib::page_fluid(
   # Your UI components will be defined here
 )
 
@@ -299,15 +304,17 @@ To create your own Shiny app, you should remove any example code generated autom
 
 ``{r, eval = FALSE}
 # Packages ----
+# Load the required packages
 library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
+library(bslib) # Package for better looking apps
+library(tidyverse)  # Contains readr, dplyr and ggplot2
 library(palmerpenguins)    # The source of your data
 
 # Load the data
 penguins <- as_tibble(penguins)
 
 # ui.R ----
-ui <- fluidPage(
+ui <- bslib::page_fluid(
   # Your UI components will be defined here
 )
 
@@ -322,7 +329,12 @@ shinyApp(ui = ui, server = server)
 
 ```
 
+The easiest way to create a UI is to use one of the `page_*()` functions from {bslib}. The default Shiny app uses `fluidPage()` but a more modern version would be to use `page_fluid()` instead.
+
+
 By following these steps, you'll have the basic structure of a Shiny app in place, ready for you to add your UI elements and server logic to create an interactive web application.
+
+If you run this app now - it will load but present a blank screen -  we need to generate a front page and some server logic
 
 # Inputs
 
@@ -330,15 +342,17 @@ Now that you have the basic structure of your Shiny app, you can start adding in
 
 ```{r, eval = FALSE}
 # Packages ----
+# Load the required packages
 library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
+library(bslib) # Package for better looking apps
+library(tidyverse)  # Contains readr, dplyr and ggplot2
 library(palmerpenguins)    # The source of your data
 
 # Load the data
 penguins <- as_tibble(penguins)
 
 # ui.R ----
-ui <- fluidPage(
+ui <- bslib::page_fluid(
   sidebarLayout(
      sidebarPanel(
       demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
@@ -429,44 +443,10 @@ What is the `arg("inputId")` of the widget above?
 
 `r mcq(c("textAreaInput", answer="demo_textarea", "Biography"))`
 
-#### selectInput
-
-`selectInput` creates a drop-down menu. Set the first ` arg("choice")` to `""` to default to `NA`. If your choices are a named `"list"` or `"vector"`, the names are what is shown and the values are what is recorded. If the choices aren't named, the displayed and recorded values are the same.
-
-```{r, eval = FALSE}
-demo_select <- 
-  selectInput("demo_select", 
-              label = "Do you like Shiny?", 
-              choices = list("", 
-                             "Yes, I do" = "y", 
-                             "No, I don't" = "n"),
-              selected = NULL,
-              width = "100%")
-```
-
-If you set ` arg("multiple")` to ` dt(TRUE)`, you can also make a select where users can choose multiple options.
-
-```{r, eval = FALSE}
-genders <- list( # no blank needed
-  "Non-binary" = "nb",
-  "Male" = "m",
-  "Female" = "f",
-  "Prefer not to say" = "p"
-)
-
-demo_select_multi <- 
-  selectInput("demo_select2", 
-              label = "Gender", 
-              choices = genders,
-              selected = NULL,
-              multiple = TRUE, 
-              selectize = FALSE,
-              size = 5)
-```
 
 #### checkboxGroupInput
 
-However, this interface almost always looks better with ` checkboxGroupInput`. 
+Select from options with a check box: ` checkboxGroupInput`. 
 
 ```{r, eval = FALSE}
 demo_cbgi <-
@@ -543,14 +523,6 @@ What would you set ` arg("accept")` to to accept any image file?
 `r mcq(c(answer = "image/*",".jpg", "jpg", "images", ".img"))`
 
 
-### Adding Output Elements and Server Logic
-
-After setting up your input elements, the next step is to define the server logic that determines how these inputs interact with your app's outputs in the `server.R` section. For example, you can create reactive expressions to generate plots, tables, or text outputs that dynamically update based on user input.
-
-Remember that Shiny allows you to create reactive expressions and functions that respond to changes in input values. You can use these reactive expressions to generate the histogram and associated table based on user input.
-
-As you proceed, you can add more details to your `server.R` to handle these inputs and create the corresponding outputs.
-
 
 ## Exercise 
 
@@ -559,13 +531,78 @@ As you proceed, you can add more details to your `server.R` to handle these inpu
 
 # Outputs
 
-In a Shiny app, outputs are dynamic components that display information to users based on their inputs. To create these outputs, you define them in the User Interface (UI) with specific IDs. These IDs are then linked to corresponding rendering functions in the server function that dynamically generate content based on user interactions. Let’s explore the different types of outputs you can create in Shiny and how to implement them.
+In a Shiny app, outputs are dynamic components that display information to users based on their inputs. 
+
+To create these outputs, you define them in the User Interface (UI) with specific IDs. 
+
+You can add all kinds of different outputs to your UI with dedicated output functions. For example, let’s add a text output using `outputText()` function, a plot output with `plotOutput` and a table with `DT::dataTableOutput()`
 
 
+```{r}
+
+
+# Packages ----
+# Load the required packages
+library(shiny)       # Essential for running any Shiny app
+library(bslib) # Package for better looking apps
+library(tidyverse)  # Contains readr, dplyr and ggplot2
+library(palmerpenguins)    # The source of your data
+
+# Load the data
+penguins <- as_tibble(penguins)
+
+# ui.R ----
+ui <- bslib::page_fluid(
+  sidebarLayout(
+     sidebarPanel(
+      demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
+                  label = "1. Select species",  # Give the input a label to be displayed in the app
+                  choices = c("Adelie" = "Adelie", "Chinstrap" = "Chinstrap", "Gentoo" = "Gentoo"), selected = "Adelie"),  # Create the choices that can be selected. e.g. Display "Adelie" and link to value "Adelie"
+      demo_select <- selectInput(inputId = "colour", 
+                  label = "2. Select histogram colour", 
+                  choices = c("blue","green","red","purple","grey"), selected = "grey"),
+      demo_slide <- sliderInput(inputId = "bin", 
+                  label = "3. Select number of histogram bins", 
+                  min=1, max=25, value= c(10)),
+      demo_text <- textAreaInput(inputId = "text", 
+                label = "4. Enter some text to be displayed",
+                rows = 5,
+                placeholder = "Enter some information here")
+    ),
+
+    mainPanel(
+      # Output elements go here
+        
+    textOutput("demo_sp"),
+    textOutput("demo_text"),
+  
+    plotOutput("demo_plot", width = "500px", height="300px"),
+        
+    DT::dataTableOutput("demo_table",
+                    width = "50%",
+                    height = "auto")
+    )
+    )
+  )
+
+# server.R ----
+server <- function(input, output) {
+  # Your server logic will be defined here
+
+}
+
+
+# Run the app ----
+shinyApp(ui = ui, server = server)
+
+
+```
+
+> If you look at your app now, you will see that there is no output yet. Everything still looks the same:
 
 ## Text
 
-The textOutput function is used in the UI to create a placeholder for text output. By default, this text is rendered inside a `<span>` or `<div>` element. You can also use the container argument to wrap the text in a specific HTML tag.
+The `textOutput` function is used in the UI to create a placeholder for text output. By default, this text is rendered inside a `<span>` or `<div>` element. You can also use the container argument to wrap the text in a specific HTML tag.
 
 ```{r, eval = FALSE}
 # in the UI function
@@ -721,6 +758,7 @@ output$download_csv <- downloadHandler(
 > Note you could alter this to run the ggsave() function to export images
 
 ### Summary
+
 By using these output functions, you can create dynamic, interactive elements in your Shiny app. Here is a brief overview of the output types covered:
 
 - Text Outputs: Use textOutput and renderText for dynamic text, or verbatimTextOutput for preformatted text.
@@ -736,34 +774,49 @@ By using these output functions, you can create dynamic, interactive elements in
 
 Experiment with these functions in your Shiny app to create dynamic, interactive web applications that respond to user inputs in real-time. 
 
-## Emphasis
 
-We can use basic HTML to start customising appearance and emphasis - later we will use the `bslib` package to give us lots of easy customisation:
+# Server
 
-```
+The server is the brains behind the Shiny operation. This function makes sure that things actually happen in the app. In the Shiny framework, the server is basically nothing but a function with the arguments input, output, and session. As we’ve seen earlier, the smallest server you can think of is just an empty function.
+
+Whenever something in the user interface is clicked, the server, or more specifically, this function that you call server, should detect what’s going on and react appropriately. But to do that, the server needs to have instructions how it is is supposed to **render/display outputs**.
+
+
+```{r, eval = FALSE}
+server <- function(input, output) {
   
-p("p creates a paragraph of text."),
 
-      
-      p("A new p() command starts a new paragraph. Supply a style attribute to change the format of the entire paragraph.", style = "font-family: 'times'; font-si16pt"),
-      
-      strong("strong() makes bold text."),
-      
-      em("em() creates italicized (i.e, emphasized) text."),
-      
-      br(),
-      
-      code("code displays your text similar to computer code"),
-      
-      div("div creates segments of text with a similar style. This division of text is all blue because I passed the argument 'style = color:blue' to div", style = "color:blue"),
-      
-      br(),
-      
-      p("span does the same thing as div, but it works with",
-        span("groups of words", style = "color:blue"),
-        "that appear inside a paragraph."),
+  output$demo_sp <- renderText({
+    paste("Figure 1.", input$species)
+  })
+  
+output$demo_text <- renderText({
+  (input$text)
+})
+   
+    
+  output$demo_plot <- renderPlot({
+    penguins_filtered <- penguins |>
+      filter(species == input$species)
+    
+    ggplot(penguins_filtered, aes(x = flipper_length_mm)) +
+      geom_histogram(fill = input$colour, show.legend = FALSE, bins = input$bin) +
+      labs(fill = "Color") +
+      theme_minimal()
+  })
+  
+  output$demo_table <- DT::renderDataTable({
+   penguins |>
+      filter(species == input$species) |> 
+    summarise(flipper_length_mm = quantile(flipper_length_mm, c(0.25, 0.5, 0.75), na.rm = T), quantile = c(0.25, 0.5, 0.75))
+})
 
 ```
+
+
+Earlier, we gave the `textOutput()` the ID demo_text. Hence, we have to assign render instructions to `output$demo_text`. And to assign these instructions, there’s the `renderText()` function.
+
+Similarly when we gave the `plotOutput()` the ID demo_plot, we therefore have to assing the render instructions to `output$demo_plot` and use the `renderPlot()` function
 
 ## Exercise
 
@@ -776,20 +829,21 @@ knitr::include_graphics("images/demo-app-simple.png")
 ```
 
 
-
 ```{solution}
 
 ``{r, eval = FALSE}
 # Packages ----
+# Load the required packages
 library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
+library(bslib) # Package for better looking apps
+library(tidyverse)  # Contains readr, dplyr and ggplot2
 library(palmerpenguins)    # The source of your data
 
 # Load the data
 penguins <- as_tibble(penguins)
 
 # ui.R ----
-ui <- fluidPage(
+ui <- bslib::page_fluid(
   sidebarLayout(
      sidebarPanel(
       demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
@@ -871,69 +925,36 @@ Reactivity is how Shiny determines when code in `server()` gets to run.
 In the example below if you move the data filtering outside of `renderPlot()`, you'll get an error message like "Can't access reactive value outside of reactive consumer." This means that the input values can only be read inside certain functions, like `reactive()`, `observeEvent()`, or a render function like `renderPlot()`.
 
 
+## Render
+
+In this example I want the input of species to be reactive to user inputs, inside the function renderPlot this works just fine:
+
 ```{r, eval = FALSE}
 
-
-# Packages ----
-library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
-library(palmerpenguins)    # The source of your data
-
-# Load the data
-penguins <- as_tibble(penguins)
-
-# ui.R ----
-ui <- fluidPage(
-  sidebarLayout(
-     sidebarPanel(
-      demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
-                  label = "1. Select species",  # Give the input a label to be displayed in the app
-                  choices = c("Adelie" = "Adelie", "Chinstrap" = "Chinstrap", "Gentoo" = "Gentoo"), selected = "Adelie"),  # Create the choices that can be selected. e.g. Display "Adelie" and link to value "Adelie"
-      demo_select <- selectInput(inputId = "colour", 
-                  label = "2. Select histogram colour", 
-                  choices = c("blue","green","red","purple","grey"), selected = "grey"),
-      demo_slide <- sliderInput(inputId = "bin", 
-                  label = "3. Select number of histogram bins", 
-                  min=1, max=25, value= c(10)),
-      demo_text <- textAreaInput(inputId = "text", 
-                label = "4. Enter some text to be displayed",
-                rows = 5,
-                placeholder = "Enter some information here")
-    ),
-    mainPanel(
-      # Output elements go here
-        
-    tags$ul(
-    tags$strong(textOutput("demo_sp")),
-    textOutput("demo_text")),
-  
-        plotOutput("demo_plot", width = "500px", height="300px"),
-        
-        DT::dataTableOutput("demo_table",
-                    width = "50%",
-                    height = "auto")
-    )
-  )
-)
-# server.R ----
-
- 
-
 server <- function(input, output) {
-  # Error: Cannot access reactive value outside of reactive context
-penguins_filtered <- penguins |>
-      filter(species == input$species)  # Error: `input$species` is reactive and can only be accessed in reactive contexts
-  
-  output$demo_sp <- renderText({
-    paste("Figure 1.", input$species)
-  })
-  
-output$demo_text <- renderText({
-  (input$text) # here to trigger the function
-})
-   
 
+  output$demo_plot <- renderPlot({
+    penguins_filtered <- penguins |>
+      filter(species == input$species)
     
+    ggplot(penguins_filtered, aes(x = flipper_length_mm)) +
+      geom_histogram(fill = input$colour, show.legend = FALSE, bins = input$bin) +
+      labs(fill = "Color") +
+      theme_minimal()
+  })
+}
+
+```
+
+
+But if we try to change the filtering outside of a render function we get an error: 
+
+```{r, eval = FALSE}
+server <- function(input, output) {
+  
+penguins_filtered <- penguins |>
+      filter(species == input$species)
+
   output$demo_plot <- renderPlot({
     
     ggplot(penguins_filtered, aes(x = flipper_length_mm)) +
@@ -941,18 +962,8 @@ output$demo_text <- renderText({
       labs(fill = "Color") +
       theme_minimal()
   })
-  
-  output$demo_table <- DT::renderDataTable({
-   penguins_filtered |> 
-    summarise(flipper_length_mm = quantile(flipper_length_mm, c(0.25, 0.5, 0.75), na.rm = T), quantile = c(0.25, 0.5, 0.75))
-})
-  
+
 }
-
-
-
-# Run the app ----
-shinyApp(ui = ui, server = server)
 
 ```
 
@@ -965,25 +976,46 @@ Caused by error in `input$species`:
 
 ```
 
+
 However, we can put the data filtering inside `reactive()`. This means that whenever an input inside that function changes, the code will run and update the value of `data()`. This can be useful if you need to recalculate the data table each time the inputs change, and then use it in more than one function.
 
 ### Correct use
 
 ```{r, eval = FALSE}
 
+server <- function(input, output) {
+  
+penguins_filtered <- penguins |>
+      filter(species == input$species)
+
+  output$demo_plot <- renderPlot({
+    
+    ggplot(penguins_filtered(), aes(x = flipper_length_mm)) +
+      geom_histogram(fill = input$colour, show.legend = FALSE, bins = input$bin) +
+      labs(fill = "Color") +
+      theme_minimal()
+  })
+
+}
+```
+
+
+```{solution}
+
+``{r, eval = FALSE}
 
 # Packages ----
+# Load the required packages
 library(shiny)       # Essential for running any Shiny app
-library(tidyverse)
+library(bslib) # Package for better looking apps
+library(tidyverse)  # Contains readr, dplyr and ggplot2
 library(palmerpenguins)    # The source of your data
 
 # Load the data
 penguins <- as_tibble(penguins)
 
- 
-
 # ui.R ----
-ui <- fluidPage(
+ui <- bslib::page_fluid(
   sidebarLayout(
      sidebarPanel(
       demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
@@ -1057,16 +1089,19 @@ output$demo_text <- renderText({
 # Run the app ----
 shinyApp(ui = ui, server = server)
 
+``
+
 ```
 
 
 #### Reactive Expression:
 
-- `penguins_filtered` is defined as reactive(). This means it will automatically update whenever input$species changes.
+- `penguins_filtered` is defined as `reactive()`. This means it will automatically update whenever input$species changes.
 
 - Accessing Reactive Values: Use `penguins_filtered()` to access the filtered data.
 
-My most common error is trying to use data or title as an object instead of as a function. Notice how the first argument to ggplot is no longer `penguins_filtered`, but `penguins_filtered()`.
+My most common error is trying to use data or title as an object instead of as a function. **Notice how the first argument to ggplot is no longer `penguins_filtered`, but `penguins_filtered()`.**
+
 
 ## Observable
 
@@ -1076,7 +1111,55 @@ What if you only want to update things when an update button is clicked, and not
 
 Unlike `reactive()`, `observeEvent()` does not produce a reactive expression or a return value; it simply runs its code block whenever the event occurs (e.g., when the user clicks a button).
 
+We wrap all of the server functions that we want to run as part of a trigger inside `observeEvent()` and set the trigger in the UI.
+
 ```{r, eval = FALSE}
+## UI
+demo_button <- actionButton("update", "Plot")
+##
+server <- function(input, output) {
+  
+ 
+
+  observeEvent(input$update, {
+  # This code runs only when the "Update" button is clicked   
+    penguins_filtered <- penguins |>
+      filter(species == input$species)
+    
+     bins <- input$bin
+     
+     colour <- input$colour
+ 
+
+    output$demo_sp <- renderText({
+      paste("Figure 1.", input$species)
+    })
+
+    output$demo_text <- renderText({
+      (input$text)
+    })
+
+    output$demo_plot <- renderPlot({
+        ggplot(penguins_filtered, aes(x = flipper_length_mm)) +
+        geom_histogram(fill = colour, show.legend = FALSE, bins = bins) +
+        labs(fill = "Color") +
+        theme_minimal()
+    })
+
+    output$demo_table <- DT::renderDataTable({
+      penguins_filtered |> 
+        summarise(flipper_length_mm = quantile(flipper_length_mm, c(0.25, 0.5, 0.75), na.rm = T), quantile = c(0.25, 0.5, 0.75))
+    })
+  })
+  
+}
+
+```
+
+
+```{solution}
+
+``{r, eval = FALSE}
 
 
 # Packages ----
@@ -1090,7 +1173,7 @@ penguins <- as_tibble(penguins)
  
 
 # ui.R ----
-ui <- fluidPage(
+ui <- bslib::page_fluid(
   sidebarLayout(
      sidebarPanel(
       demo_sp <- selectInput(inputId = "species",  # Give the input a name "genotype"
@@ -1170,6 +1253,8 @@ server <- function(input, output) {
 # Run the app ----
 shinyApp(ui = ui, server = server)
 
+``
+
 ```
 
 
@@ -1186,7 +1271,6 @@ Key Concepts in Shiny Reactivity:
 Think of reactive expressions as formulas that automatically recalculate whenever their inputs change.
 
 In Shiny, you create reactive expressions using the `reactive()` function. These expressions can be reused throughout your app and will always be up-to-date with the latest input values.
-
 
 
 ### Observe: 
