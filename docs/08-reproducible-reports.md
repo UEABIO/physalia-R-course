@@ -155,7 +155,7 @@ want them printed next to each other (pair with out-width = c(“33%”,
 </div>
 
 
-**Question.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value=''>echo = TRUE, eval = TRUE</option><option value='answer'>echo = TRUE, eval = FALSE</option><option value=''>echo = FALSE, eval = TRUE</option><option value=''>echo = FALSE, eval = FALSE</option></select>
+**Question.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value=''>echo = FALSE, eval = TRUE</option><option value=''>echo = FALSE, eval = FALSE</option><option value=''>echo = TRUE, eval = TRUE</option><option value='answer'>echo = TRUE, eval = FALSE</option></select>
 
 Default options for showing code, charts, and other elements in the rendered versions of the document. In Quarto, these options are set in the execute field of the YAML. For example, the following would provide the outputs of code, but hide the code itself, as well as all warnings and messages, from the rendered document:
 
@@ -245,7 +245,7 @@ This book was printed on `` `r Sys.Date()` ``
 
 When typed in-line within a section of what would otherwise be Markdown text, it knows to produce an r output instead: 
 
-This book was printed on 2024-09-19
+This book was printed on 2026-05-13
 
 ### Running code {-}
 

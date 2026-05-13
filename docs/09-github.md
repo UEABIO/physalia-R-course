@@ -4,6 +4,9 @@
 
 
 
+
+
+
 ## Let's Git it started 
 
 Git is a **version control system**. Originally built to help groups of developers work collaboratively on big software projects. It helps us manage our RStudio projects - with tracked changes. 
@@ -288,12 +291,10 @@ Stage and Commit and Push changes as usual
 
 In the Git pane, click on the Branch drop-down menu and select the branch you wish to use to switch between branches effortlessly
 
-
-```task
+<div class="panel panel-default"><div class="panel-heading"> Task </div><div class="panel-body"> 
 
 Add a new plot to your file - hist(cars$speed)
-
-```
+ </div></div>
 
 ### Merge branches
 
@@ -519,7 +520,6 @@ With a well organised and contained analysis project made into a repository on G
 This is a great exercise in practising dealing with merge conflicts when collaborating. To complete this exercise you will need a partner
 
 https://learning.nceas.ucsb.edu/2023-04-coreR/session_10.html
-
 
 
 

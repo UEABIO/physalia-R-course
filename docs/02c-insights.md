@@ -1125,10 +1125,7 @@ penguins |>
 Start thinking about more complex interactions. We wish to investigate the relationship between body mass and beak length. What other variables should we consider?
 
 
-
-
-<div class='webex-solution'><button>Confounding variables</button>
-
+### Confounding variables
 
 
 <img src="images/complexity.png" alt="Variables such as species or sex may directly or indirectly affect the relationship between body mass and beak length" width="80%" style="display: block; margin: auto;" />
@@ -1136,9 +1133,6 @@ Start thinking about more complex interactions. We wish to investigate the relat
 It is reasonable to think that perhaps either species or sex might affect the morphology of beaks directly - or that these might affect body mass (so that if there is a direct relationship between mass and beak length, there will also be an indirect relationship with sex or species).
 
 Failure to account for complex interactions can lead to misleading insights about your data. 
-
-
-` r unhide()` 
 
 
 

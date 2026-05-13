@@ -1,7 +1,7 @@
 --- 
 title: "Advancing in R"
 author: "Philip T. Leftwich"
-date: "2024-09-19"
+date: "2026-05-13"
 subtitle: A guide for Biologists and Ecologists
 site: bookdown::bookdown_site
 documentclass: book
@@ -11,6 +11,7 @@ bibliography:
 biblio-style: apa
 csl: include/apa.csl
 link-citations: yes
+suppress-bibliography: true
 description: |
   This book ...
 url: https://ueabio.github.io/physalia-R-course-2023/
