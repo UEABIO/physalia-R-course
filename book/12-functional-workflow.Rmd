@@ -1,0 +1,2304 @@
+# (PART\*) Functional Workflow and Pipelines {.unnumbered}
+
+# Workshop: From Scripts to Pipelines
+
+
+```{r, child= '_setup.Rmd', warning = F, message = F}
+
+```
+
+```{r, include = FALSE}
+library(palmerpenguins)
+library(tidyverse)
+library(broom)
+library(here)
+library(testthat)
+library(cli)
+library(patchwork)
+```
+
+This workshop builds on the previous chapters on writing functions, modern tidyverse usage, and data validation. We assume you can write a basic function with arguments and a return value, you are comfortable with the native pipe `|>` and core dplyr verbs, and you have used `here::here()` and `renv` for project organisation.
+
+The workshop runs for roughly four hours and is divided into seven blocks. By the end you will have refactored a deliberately messy analysis script into a function-based project with tests, scaled it across groups using iteration, generalised the functions using tidy evaluation, and orchestrated the whole thing as a `targets` pipeline. The throughline is a single running example so you see the same code transform across blocks rather than meeting a new example each time.
+
+## Learning objectives
+
+By the end of this workshop you will be able to:
+
+- Recognise the signs of a script that needs refactoring and execute the refactor in stages
+- Write tests for analysis functions using `testthat` without requiring package infrastructure
+- Decompose monolithic functions into composable single-responsibility units
+- Iterate over groups using `nest()`, `map()`, and list-columns
+- Write functions that accept tidyverse-style column references using embracing, the walrus operator, and the `.data` pronoun
+- Build a `targets` pipeline that selectively reruns only the parts of the analysis affected by a change
+- Decide which of these techniques are appropriate for the project in front of you
+
+## A note on scope
+
+The full toolkit presented here is calibrated for medium-to-large analyses: projects that take weeks to months, have one or two slow computational steps, get revised several times as co-authors and reviewers push back, and produce outputs that must regenerate identically. For a one-off descriptive analysis that runs in under a minute and will never be revised, much of this is over-engineering. The closing block discusses when each technique earns its overhead.
+
+Throughout the workshop, we follow the TADA principles from Ivimey-Cook et al. (2025): code should be Transferable, Available, Documented, and Annotated. Functions and pipelines are not ends in themselves; they are mechanisms for achieving those four properties.
+
+---
+
+# Block 1: Why refactor
+
+The pain of exploratory scripts. (20 minutes)
+
+## The starting point
+
+We begin with a piece of code that looks normal and is full of problems. The example is small and deliberately bad. The bugs in it are the kinds of bugs that script-style analysis routinely produces and that the rest of the workshop is designed to make impossible.
+
+Before running anything, set up the data:
+
+```{r, eval = FALSE}
+
+# Once per workshop: write palmerpenguins to CSV so we have a file
+# to read from. This sets up the targets pipeline material later.
+if (!dir.exists(here::here("data"))) dir.create(here::here("data"))
+
+readr::write_csv(
+  palmerpenguins::penguins,
+  here::here("data", "penguins.csv")
+)
+```
+
+The analysis goal: fit a linear regression of body mass on flipper length, separately for each of the three penguin species. Produce a coefficient table with 95% confidence intervals, diagnostic plots, and a multi-panel figure for a manuscript.
+
+Here is what the analysis often looks like as written:
+
+```{r, eval = FALSE}
+
+# analysis.R
+# Pre-refactor version
+
+library(tidyverse)
+library(broom)
+library(here)
+
+penguins_raw <- readr::read_csv(here("data", "penguins.csv"),
+                                show_col_types = FALSE)
+
+penguins_clean <- penguins_raw |>
+  tidyr::drop_na(body_mass_g, flipper_length_mm, species)
+
+# Adelie ----
+adelie <- penguins_clean |> dplyr::filter(species == "Adelie")
+mod_adelie <- lm(body_mass_g ~ flipper_length_mm, data = adelie)
+summary(mod_adelie)
+coefs_adelie <- broom::tidy(mod_adelie, conf.int = TRUE, conf.level = 0.95)
+coefs_adelie$species <- "Adelie"
+
+par(mfrow = c(2, 2))
+plot(mod_adelie)
+
+p_adelie <- ggplot2::ggplot(adelie,
+                            ggplot2::aes(flipper_length_mm, body_mass_g)) +
+  ggplot2::geom_point(alpha = 0.6) +
+  ggplot2::geom_smooth(method = "lm") +
+  ggplot2::labs(title = "Adelie",
+                x = "Flipper length (mm)",
+                y = "Body mass (g)") +
+  ggplot2::theme_minimal()
+
+# Gentoo ----
+gentoo <- penguins_clean |> dplyr::filter(species == "gentoo")
+mod_gentoo <- lm(body_mass_g ~ flipper_length_mm, data = gentoo)
+summary(mod_gentoo)
+coefs_gentoo <- broom::tidy(mod_gentoo, conf.int = TRUE, conf.level = 0.90)
+coefs_gentoo$species <- "Gentoo"
+
+par(mfrow = c(2, 2))
+plot(mod_gentoo)
+
+p_gentoo <- ggplot2::ggplot(gentoo,
+                            ggplot2::aes(flipper_length_mm, body_mass_g)) +
+  ggplot2::geom_point(alpha = 0.6) +
+  ggplot2::geom_smooth(method = "lm") +
+  ggplot2::labs(title = "Gentoo",
+                x = "Flipper length (mm)",
+                y = "Body mass (g)") +
+  ggplot2::theme_minimal()
+
+# Chinstrap ----
+chinstrap <- penguins_clean |> dplyr::filter(species == "Chinstrap")
+mod_chinstrap <- lm(body_mass_g ~ flipper_length_mm, data = chinstrap)
+summary(mod_chinstrap)
+coefs_chinstrap <- broom::tidy(mod_chinstrap, conf.int = TRUE, conf.level = 0.95)
+coefs_chinstrap$species <- "Chinstrap"
+
+par(mfrow = c(2, 2))
+plot(mod_chinstrap)
+
+p_chinstrap <- ggplot2::ggplot(chinstrap,
+                               ggplot2::aes(flipper_length_mm, body_mass_g)) +
+  ggplot2::geom_point(alpha = 0.6) +
+  ggplot2::geom_smooth(method = "lm") +
+  ggplot2::labs(title = "Chinstrap",
+                x = "Flipper length (mm)") +
+  ggplot2::theme_minimal()
+
+# Combine and save
+all_coefs <- rbind(coefs_adelie, coefs_gentoo, coefs_chinstrap)
+write_csv(all_coefs, here("outputs", "tables", "coefficients.csv"))
+
+library(patchwork)
+combined_plot <- p_adelie + p_gentoo + p_chinstrap
+ggsave(here("outputs", "figures", "figure_1.png"),
+       combined_plot, width = 12, height = 4)
+
+```
+
+### Activity: find the bugs
+
+```{task}
+
+There are three bugs in the script above. Find them. Hint: they were all introduced by copy-paste.
+
+```
+
+```{solution}
+
+1. The Gentoo filter uses lowercase: `filter(species == "gentoo")`. This produces a zero-row tibble, and `lm()` fails with the cryptic error `0 (non-NA) cases`. If you do not run the Gentoo block immediately after pasting it, you discover the bug days later.
+
+2. The Gentoo `tidy()` call uses `conf.level = 0.90` instead of `0.95`. This produces a table with mixed confidence intervals which will not error and may never be noticed.
+
+3. The Chinstrap plot has no y-axis label. The `labs()` call is missing the `y =` argument. The bug survives until the figure is in a manuscript proof.
+
+Every one of these bugs is caused by copy-paste and would have been impossible if the operation lived in a function.
+```
+
+## What is wrong here
+
+The structural problems, not just the bugs:
+
+- **Three near-identical blocks**. The Adelie, Gentoo, and Chinstrap blocks share more than 90 per cent of their code. Every change to the analysis must be made in three places.
+
+- **Object names by suffix**. `adelie`, `mod_adelie`, `coefs_adelie`, `p_adelie`. Four objects per species; the namespace fills up with related pairs that humans must track mentally.
+
+- **Implicit ordering**. The script must be run top to bottom. If you change `penguins_clean` halfway through and rerun just the modelling block, your figures will be out of sync with your coefficients.
+
+- **No verification**. The Gentoo filter typo produces a zero-row tibble silently. The CI mismatch produces an inconsistent table silently. Nothing in the script catches either.
+
+```{block, type = "info"}
+
+**Filazzola and Lortie (2022)** in *Methods in Ecology and Evolution* set out a case for clean code in ecology that closely tracks the structural problems we identify here. Their argument: code clarity is a scientific communication problem, not a style preference. The same applies to functions: small named units of code communicate what the code does and constrain what it can do wrong.
+
+```
+
+## The thesis of the workshop
+
+> Functions are the unit of reproducibility. Iteration eliminates copy-paste. Tests pin down behaviour. `targets` orchestrates the whole pipeline. Each technique builds on the previous one, and each is worth its overhead at a different scale of project.
+
+We spend the next three hours turning the script above into a small project that has none of the problems we just identified.
+
+---
+
+# Block 2: From script to function
+
+Refactoring in three stages. (25 minutes)
+
+The first instinct when seeing the script above is to "make it cleaner", but cleaner in what direction? The principled answer: identify the operation that varies and the operation that stays the same, extract the variable part as a function argument, and call the function once per case.
+
+In our script, three things vary across the per-species blocks: the species name, the resulting data subset, and the resulting model object. Everything else, including the formula, the confidence level, and the way the coefficients are tidied, is the same. The species name is the only true input; the rest are derived.
+
+## Stage 1: extract what varies
+
+Resist the urge to write documentation or input checks. First, make it work.
+
+```{r, eval = FALSE}
+# R/functions/modelling_functions.R
+
+fit_species_model <- function(data, sp) {
+  data_sp <- dplyr::filter(data, species == sp)
+  model   <- lm(body_mass_g ~ flipper_length_mm, data = data_sp)
+  broom::tidy(model, conf.int = TRUE)
+}
+```
+
+Verify against the existing script:
+
+```{r, eval = FALSE}
+source(here::here("R", "functions", "modelling_functions.R"))
+
+new_coefs_adelie <- fit_species_model(penguins_clean, "Adelie")
+
+# Compare with the original
+all.equal(
+  new_coefs_adelie |> dplyr::select(-species),
+  broom::tidy(mod_adelie, conf.int = TRUE)
+)
+# [1] TRUE
+```
+
+`all.equal()` returns `TRUE` if the objects match (within numerical tolerance) or a character vector describing the differences if they do not. For refactoring work this is sufficient. The Rmd test of a refactored function lives in the test file we write next; `all.equal()` here is the quick interactive check.
+
+```{block, type = "info"}
+
+For richer diffs of complex objects, the `waldo` package shows differences at the field level and is the default comparison engine inside `testthat::expect_equal()`. We mention it for completeness but the workshop uses base R throughout to keep dependencies minimal.
+
+```
+
+## Stage 2: handle the obvious failure
+
+The Gentoo bug from Block 1 was that lowercase `"gentoo"` produces a zero-row tibble. We can make this structurally impossible:
+
+```{r, eval = FALSE}
+
+fit_species_model <- function(data, sp) {
+
+  if (!sp %in% unique(data$species)) {
+    stop(
+      "Species '", sp, "' is not in the data. ",
+      "Available species: ",
+      paste(sort(unique(data$species)), collapse = ", ")
+    )
+  }
+
+  data_sp <- dplyr::filter(data, species == sp)
+  model   <- lm(body_mass_g ~ flipper_length_mm, data = data_sp)
+  broom::tidy(model, conf.int = TRUE) |>
+    dplyr::mutate(species = sp, .before = 1)
+}
+
+```
+
+Three changes from Stage 1. The species name is checked against the data and a clear error is raised if it is missing. The output tibble now includes a `species` column in position 1, removing the need to add it after the fact. Base R `stop()` is sufficient for input validation; you may have seen the `cli` package used for formatted error messages elsewhere, but for the learning aim here (validate input, abort with clear message) the base R version is simpler and requires no extra dependencies.
+
+Test that the error works:
+
+```{r, eval = FALSE}
+
+fit_species_model(penguins_clean, "gentoo")
+# Error in fit_species_model(penguins_clean, "gentoo"):
+#   Species 'gentoo' is not in the data.
+#   Available species: Adelie, Chinstrap, Gentoo
+
+```
+
+The error is informative and arrives before any modelling work is attempted.
+
+## Stage 3: add documentation and a default
+
+Documentation describes a thing that exists. We write it last.
+
+```{r, eval = FALSE}
+
+# R/functions/modelling_functions.R
+
+#' Fit body mass ~ flipper length for one species
+#'
+#' Fits a linear regression of `body_mass_g` on `flipper_length_mm`
+#' for a single species, returning tidied coefficients with
+#' confidence intervals.
+#'
+#' @param data A data frame with columns `species`, `body_mass_g`,
+#'   and `flipper_length_mm`. NA rows on these columns should be
+#'   removed beforehand.
+#' @param sp Character of length 1. Species name, matching the
+#'   spelling in `data$species` exactly.
+#' @param conf_level Numeric in (0, 1). Confidence level for the
+#'   coefficient intervals. Default 0.95.
+#'
+#' @return A tibble of tidied coefficients with a `species` column
+#'   prepended.
+#'
+#' @examples
+#' fit_species_model(penguins_clean, "Adelie")
+#' fit_species_model(penguins_clean, "Gentoo", conf_level = 0.99)
+fit_species_model <- function(data, sp, conf_level = 0.95) {
+
+  if (!sp %in% unique(data$species)) {
+    stop(
+      "Species '", sp, "' is not in the data. ",
+      "Available species: ",
+      paste(sort(unique(data$species)), collapse = ", ")
+    )
+  }
+
+  data_sp <- dplyr::filter(data, species == sp)
+  model   <- lm(body_mass_g ~ flipper_length_mm, data = data_sp)
+  broom::tidy(model, conf.int = TRUE, conf.level = conf_level) |>
+    dplyr::mutate(species = sp, .before = 1)
+}
+
+```
+
+This is the function in its mature form. It has one job, validates its input, has a sensible default, returns a predictable shape, and is documented in roxygen format that other people can read without running the code.
+
+## Extracting the plotting function
+
+The Chinstrap missing-y-label bug from Block 1 was a plotting bug, and it survived the modelling refactor untouched. Extract the plot too:
+
+```{r, eval = FALSE}
+
+# R/functions/plotting_functions.R
+
+#' Scatter plot of body mass against flipper length for one species
+#'
+#' @param data A data frame with `species`, `body_mass_g`, and
+#'   `flipper_length_mm` columns.
+#' @param sp Character of length 1. Species name to plot.
+#'
+#' @return A ggplot object.
+make_scatter_plot <- function(data, sp) {
+  data |>
+    dplyr::filter(species == sp) |>
+    ggplot2::ggplot(ggplot2::aes(flipper_length_mm, body_mass_g)) +
+    ggplot2::geom_point(alpha = 0.6) +
+    ggplot2::geom_smooth(method = "lm") +
+    ggplot2::labs(
+      title = sp,
+      x = "Flipper length (mm)",
+      y = "Body mass (g)"
+    ) +
+    ggplot2::theme_minimal()
+}
+
+```
+
+Now the labels are written once, so they cannot diverge across species.
+
+## The refactored script
+
+The three near-identical blocks collapse to three calls:
+
+```{r, eval = FALSE}
+
+# analysis.R, refactored
+
+source(here::here("R", "functions", "modelling_functions.R"))
+source(here::here("R", "functions", "plotting_functions.R"))
+
+coefs_adelie    <- fit_species_model(penguins_clean, "Adelie")
+coefs_gentoo    <- fit_species_model(penguins_clean, "Gentoo")
+coefs_chinstrap <- fit_species_model(penguins_clean, "Chinstrap")
+
+all_coefs <- dplyr::bind_rows(coefs_adelie, coefs_gentoo, coefs_chinstrap)
+
+p_adelie    <- make_scatter_plot(penguins_clean, "Adelie")
+p_gentoo    <- make_scatter_plot(penguins_clean, "Gentoo")
+p_chinstrap <- make_scatter_plot(penguins_clean, "Chinstrap")
+
+```
+
+We have not removed all the repetition. Block 3 addresses that with iteration. For now, every operation lives in a function with a clear name and a single responsibility.
+
+### Activity: when not to functionalise
+
+```{task}
+
+Consider this code:
+
+Should it be a function? Justify your answer.
+
+```
+
+```{r, eval = FALSE}
+
+penguins |> dplyr::filter(species == "Adelie") |> dplyr::summarise(n = dplyr::n())
+
+```
+
+```{solution}
+
+No. A one-line pipeline used once has no name that improves on the literal code, and abstracting it removes information from the reader. If you wrote a function `count_adelie()`, the next reader has to look up what it does. The pipeline itself tells the reader what it does.
+
+Premature abstraction is a real cost. Functions earn their keep when they are called more than once, when they bundle several lines into a named operation, or when they impose a constraint (input checks, default arguments) that is worth carrying.
+
+A good rule of thumb: extract a function when the inline code is harder to read than a named function would be. For one short pipeline, that is rarely true.
+
+```
+
+## Where functions live
+
+Three conventions for project organisation we will follow throughout the workshop:
+
+- Function definitions live in `R/functions/`. Group thematically (`modelling_functions.R`, `plotting_functions.R`, `cleaning_functions.R`) rather than one-function-per-file.
+
+- Function files contain only function definitions. No `library()` calls, no `source()` of other files, no top-level executable code. A function file should be sourceable without side effects.
+
+- Analysis scripts source from `R/functions/` and call the functions. Scripts orchestrate; they do not define.
+
+```{block, type = "info"}
+
+The principle is **separation of definition from invocation**. Functions are defined in one place and invoked from many. This is the prerequisite for everything that follows, including testing and pipelining.
+
+```
+
+---
+
+# Block 2b: Testing functions
+
+Regression safety nets with testthat. (20 minutes)
+
+## Why test
+
+When you refactor, you verify once that the new code produces the same output as the old. Then you move on. Six weeks later you change the function to add a new argument or a different default, and you have no way to know whether the change broke something else.
+
+Tests pin down behaviour. They capture what the function does today so that you can change it tomorrow with confidence. A function with no tests is a function you are afraid to modify, which defeats the purpose of having extracted it.
+
+## testthat without a package
+
+For analysis projects we do not need package infrastructure. A single test file in `tests/` and a one-line invocation is enough.
+
+Set up the layout:
+
+```
+project/
+├── R/functions/
+│   └── modelling_functions.R
+└── tests/
+    ├── test_modelling_functions.R
+    └── fixtures/
+        └── penguins_test_subset.rds
+```
+
+The fixture is a small, deterministic subset of the data, saved once and committed to the project. It exists so that tests do not depend on the full dataset (which may change) and so that test results are reproducible.
+
+```{r, eval = FALSE}
+
+# Run once to create the fixture, then never again
+penguins_test_subset <- palmerpenguins::penguins |>
+  tidyr::drop_na(body_mass_g, flipper_length_mm, species) |>
+  dplyr::slice_head(n = 20, by = species)
+
+dir.create(here::here("tests", "fixtures"), recursive = TRUE,
+           showWarnings = FALSE)
+
+saveRDS(
+  penguins_test_subset,
+  here::here("tests", "fixtures", "penguins_test_subset.rds")
+)
+
+```
+
+Twenty rows per species. Small enough that a human can read the fixture and reason about expected outputs; large enough to fit a regression.
+
+## The test file
+
+```{r, eval = FALSE}
+# tests/test_modelling_functions.R
+
+library(testthat)
+source(here::here("R", "functions", "modelling_functions.R"))
+
+test_data <- readRDS(
+  here::here("tests", "fixtures", "penguins_test_subset.rds")
+)
+
+test_that("fit_species_model returns a tibble", {
+  out <- fit_species_model(test_data, "Adelie")
+  expect_s3_class(out, "tbl_df")
+})
+
+test_that("fit_species_model has the expected columns", {
+  out <- fit_species_model(test_data, "Adelie")
+  expect_named(
+    out,
+    c("species", "term", "estimate", "std.error",
+      "statistic", "p.value", "conf.low", "conf.high")
+  )
+})
+
+test_that("fit_species_model labels the species correctly", {
+  out <- fit_species_model(test_data, "Gentoo")
+  expect_true(all(out$species == "Gentoo"))
+})
+
+test_that("fit_species_model returns intercept and one slope", {
+  out <- fit_species_model(test_data, "Chinstrap")
+  expect_equal(nrow(out), 2)
+})
+
+test_that("fit_species_model rejects unknown species", {
+  expect_error(
+    fit_species_model(test_data, "gentoo"),
+    regexp = "not in the data"
+  )
+})
+
+test_that("conf_level controls interval width", {
+  out_95 <- fit_species_model(test_data, "Adelie", conf_level = 0.95)
+  out_99 <- fit_species_model(test_data, "Adelie", conf_level = 0.99)
+  width_95 <- out_95$conf.high - out_95$conf.low
+  width_99 <- out_99$conf.high - out_99$conf.low
+  expect_true(all(width_99 > width_95))
+})
+```
+
+## Running tests
+
+```{r, eval = FALSE}
+
+testthat::test_file(here::here("tests", "test_modelling_functions.R"))
+# ✓ | F W S  OK | Context
+# ✓ |         6 | modelling functions
+
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 6 ]
+
+```
+
+Six passes. If any test fails, the output identifies which one and why.
+
+## Three principles for tests
+
+**Test the public behaviour, not the implementation.** The five tests above verify what the function returns and what it does on bad input. None of them verifies that the function uses `dplyr::filter()` internally. The implementation is free to change; the behaviour is what we have promised the caller.
+
+**Test properties, not exact numbers where possible.** The `conf_level` test does not assert `out_95$conf.high[1] == 4521.3`. It asserts that 99 per cent intervals are wider than 95 per cent intervals. The property is robust to changes in the numerical machinery of `lm()`; the exact number is not.
+
+**Fixtures should be small and obvious.** Twenty rows per species lets a human read the fixture file and predict what tests should pass. A fixture with 100,000 rows is opaque and discourages anyone from understanding what the test actually verifies.
+
+### Activity: write a test
+
+```{task}
+
+The function `make_scatter_plot()` returns a ggplot object. Write one test that verifies the return type, and one test that verifies the plot's title is set to the species name.
+
+"Hint: `expect_s3_class(p, "gg")` checks ggplot inheritance. The title is stored in `p$labels$title`."
+
+```
+
+```{solution}
+
+``{r, eval = FALSE}
+
+test_that("make_scatter_plot returns a ggplot object", {
+  p <- make_scatter_plot(test_data, "Adelie")
+  expect_s3_class(p, "gg")
+})
+
+test_that("make_scatter_plot sets the title to the species name", {
+  p <- make_scatter_plot(test_data, "Gentoo")
+  expect_equal(p$labels$title, "Gentoo")
+})
+
+``
+
+The first test confirms the function returns the right kind of object. The second confirms the species labelling behaviour, which is exactly the bug from Block 1 that this function was extracted to prevent.
+```
+
+## When to write tests
+
+For analysis projects, the realistic answer is: every function that takes more than one argument or returns more than a scalar. The marginal cost of one or two tests is small. The marginal benefit when a future change breaks something is large.
+
+What you do not need to test: simple wrappers around well-tested base functions, functions used only once for ad-hoc plotting, throwaway exploratory code. Test discipline scales with the importance of the function, not with the existence of a function.
+
+---
+
+# Block 3: Iteration with list-columns
+
+Replacing copy-paste with `nest()` and `map()`. (30 minutes)
+
+The refactored script from Block 2 still has three explicit function calls, one per species. If a fourth species appears in the data, we have to add a fourth call. If we want to fit ten models per species, we have to copy-paste again.
+
+Iteration removes the explicit per-group calls. The function is applied to each group automatically.
+
+## What is a list-column
+
+Before we iterate, we need the concept of a list-column. A tibble cell normally holds a single value: a number, a string, a logical. A list-column is a column whose cells each hold an arbitrary R object, including a tibble, a model, a plot, or another list.
+
+```{r, eval = FALSE}
+
+species_data <- penguins_clean |>
+  dplyr::group_by(species) |>
+  tidyr::nest()
+
+species_data
+# # A tibble: 3 × 2
+# # Groups:   species [3]
+#   species   data
+#   <fct>     <list>
+# 1 Adelie    <tibble [146 × 7]>
+# 2 Gentoo    <tibble [119 × 7]>
+# 3 Chinstrap <tibble [68  × 7]>
+
+```
+
+The `data` column is a list-column. Each cell contains a tibble: the Adelie observations, the Gentoo observations, the Chinstrap observations. Pull one out:
+
+```{r, eval = FALSE}
+
+species_data$data[[1]]
+# # A tibble: 146 × 7
+#   island    bill_length_mm bill_depth_mm flipper_length_mm body_mass_g ...
+
+```
+
+The list-column is not exotic. It is an ordinary tibble column whose values happen to be tibbles themselves. Once you accept that a cell can hold any R object, the rest follows.
+
+```{block, type = "info"}
+
+We deliberately use the classic `group_by() |> nest()` syntax rather than the newer `nest(.by = species)`. Both produce the same result. The classic form is backward-compatible with older tidyr versions and pedagogically clearer because the grouping step is named.
+
+```
+
+## Applying a function to each cell
+
+`purrr::map(.x, .f)` applies the function `.f` to each element of `.x`. Used inside `mutate()`, it applies the function to each cell of a list-column and stores the result as a new list-column.
+
+```{r, eval = FALSE}
+
+species_models <- species_data |>
+  dplyr::mutate(
+    model = purrr::map(data,
+                       \(d) lm(body_mass_g ~ flipper_length_mm,
+                               data = d)),
+    coefs = purrr::map(model,
+                       \(m) broom::tidy(m, conf.int = TRUE)),
+    n_obs = purrr::map_int(data, nrow)
+  )
+
+species_models
+# # A tibble: 3 × 5
+# # Groups:   species [3]
+#   species   data              model  coefs            n_obs
+#   <fct>     <list>            <list> <list>           <int>
+# 1 Adelie    <tibble [146×7]>  <lm>   <tibble [2×7]>     146
+# 2 Gentoo    <tibble [119×7]>  <lm>   <tibble [2×7]>     119
+# 3 Chinstrap <tibble [68×7]>   <lm>   <tibble [2×7]>      68
+
+```
+
+
+Three things to note. The `model` column holds a fitted `lm` object per species. The `coefs` column holds a tidied tibble per species. The `n_obs` column is an ordinary integer column, not a list-column, because `map_int()` returns an integer vector rather than a list. Type-stable variants of `map()` (`map_int`, `map_dbl`, `map_chr`, `map_lgl`) produce atomic vectors that slot directly into a tibble.
+
+The `\(d)` syntax is the anonymous function shorthand introduced in R 4.1, equivalent to `function(d)`. We use it throughout because it is the modern style and is shorter for one-line callbacks.
+
+## Unnesting
+
+To get a flat coefficient table for the manuscript, expand the `coefs` list-column back into rows:
+
+```{r, eval = FALSE}
+
+coefficient_table <- species_models |>
+  dplyr::ungroup() |>
+  dplyr::select(species, coefs) |>
+  tidyr::unnest(coefs)
+
+coefficient_table
+# # A tibble: 6 × 8
+#   species   term              estimate std.error statistic p.value ...
+#   <fct>     <chr>                <dbl>     <dbl>     <dbl>   <dbl>
+# 1 Adelie    (Intercept)         -2762.    1138.      -2.43 1.65e-2
+# 2 Adelie    flipper_length_mm     32.8      6.05      5.42 2.36e-7
+# 3 Gentoo    (Intercept)         -6788.    1144.      -5.93 3.65e-8
+# ...
+
+```
+
+`unnest()` expands a list-column where each cell is a tibble. Each row of the original tibble produces as many rows as the cell's tibble has, with the surrounding columns repeated. This is the dual of `nest()`.
+
+## A real refactor: decomposing the function
+
+There is a tension here. Our `fit_species_model()` function filters the data and then fits the model. But `nest()` has already done the filtering. Calling `fit_species_model()` inside the iteration would do the filtering work twice and pass the species name redundantly.
+
+The function tells us something. It is doing two jobs (filter, then fit) bundled together. For the script-style use case, that bundling was convenient. For the iteration use case, it is awkward. Decompose:
+
+```{r, eval = FALSE}
+
+# R/functions/modelling_functions.R, revised
+
+#' Fit body mass ~ flipper length on pre-filtered data
+#'
+#' @param data A data frame, assumed to be a single species' worth.
+#' @return A fitted lm object.
+fit_model <- function(data) {
+  lm(body_mass_g ~ flipper_length_mm, data = data)
+}
+
+#' Tidy a fitted lm with confidence intervals
+#'
+#' @param model A fitted lm object.
+#' @param conf_level Confidence level for intervals. Default 0.95.
+#' @return A tibble of tidied coefficients.
+tidy_model <- function(model, conf_level = 0.95) {
+  broom::tidy(model, conf.int = TRUE, conf.level = conf_level)
+}
+
+#' Fit body mass ~ flipper length for one species (wrapper)
+#'
+#' Filter to a species, then fit and tidy. Useful when the calling
+#' code has the full dataset and just wants the result for one
+#' species.
+#'
+#' @param data A data frame with a `species` column.
+#' @param sp Character of length 1. Species to filter to.
+#' @param conf_level Confidence level for intervals. Default 0.95.
+fit_species_model <- function(data, sp, conf_level = 0.95) {
+  if (!sp %in% unique(data$species)) {
+    stop(
+      "Species '", sp, "' is not in the data. ",
+      "Available species: ",
+      paste(sort(unique(data$species)), collapse = ", ")
+    )
+  }
+  data |>
+    dplyr::filter(species == sp) |>
+    fit_model() |>
+    tidy_model(conf_level = conf_level) |>
+    dplyr::mutate(species = sp, .before = 1)
+}
+
+```
+
+Three things have happened. The two atomic operations (`fit_model`, `tidy_model`) now exist independently and compose. The old public API is preserved as a wrapper, so existing callers and tests still work. Rerunning the test file confirms this with no manual intervention.
+
+```{block, type = "info"}
+
+This is what a good refactor looks like: behaviour preserved, internals improved, tests green. The wrapper exists for the script-style use case from Block 2; the decomposed functions exist for the iteration use case here. Both have their place. Single-responsibility functions compose; multi-responsibility functions do not.
+
+```
+
+## The iteration, rewritten
+
+With the decomposed functions, iteration uses them directly:
+
+```{r, eval = FALSE}
+
+species_models <- penguins_clean |>
+  dplyr::group_by(species) |>
+  tidyr::nest() |>
+  dplyr::mutate(
+    model = purrr::map(data, fit_model),
+    coefs = purrr::map(model, tidy_model)
+  )
+
+coefficient_table <- species_models |>
+  dplyr::ungroup() |>
+  dplyr::select(species, coefs) |>
+  tidyr::unnest(coefs)
+
+```
+
+This is the destination shape. The same modelling logic that was three copy-pasted blocks in Block 1, and three explicit function calls in Block 2, is now one pipeline that applies the same function to every group automatically.
+
+## An alternative: split-map-bind
+
+The nest pattern keeps grouped data and grouped results in the same tibble. If you do not need the data and the model in the same place, a lighter pattern works:
+
+```{r, eval = FALSE}
+
+coefficient_table_alt <- penguins_clean |>
+  base::split(~ species) |>
+  purrr::map(\(d) fit_model(d) |> tidy_model()) |>
+  purrr::list_rbind(names_to = "species")
+
+```
+
+`split()` produces a named list of data frames. `map()` applies a function to each. `list_rbind()` row-binds the results, with the `names_to` argument adding a column for the names.
+
+```{block, type = "info"}
+
+`list_rbind()` is the modern replacement for `purrr::map_dfr()` which was superseded in purrr 1.0.0. The split-map-bind pattern and the nest-map-unnest pattern produce equivalent results in this case; the choice is a matter of which intermediate objects you want to inspect.
+
+```
+
+### Activity: iterate over a different grouping
+
+```{task}
+
+The penguins data has a column `island` taking values "Biscoe", "Dream", and "Torgersen". Fit a separate model of `body_mass_g ~ flipper_length_mm` for each island and produce a tidied coefficient table. Use the nest pattern.
+
+```
+
+
+```{solution}
+
+``{r, eval = FALSE}
+
+island_models <- penguins_clean |>
+  dplyr::group_by(island) |>
+  tidyr::nest() |>
+  dplyr::mutate(
+    model = purrr::map(data, fit_model),
+    coefs = purrr::map(model, tidy_model)
+  )
+
+island_coefs <- island_models |>
+  dplyr::ungroup() |>
+  dplyr::select(island, coefs) |>
+  tidyr::unnest(coefs)
+
+``
+
+Notice that `fit_model()` and `tidy_model()` are reused without modification. The functions did not know they would be used to iterate over species; they work equally well for islands because they have a single responsibility.
+
+```
+
+
+## Break (10 minutes)
+
+The next block is the conceptually heaviest of the workshop. Take a proper break.
+
+---
+
+# Block 4: Tidy evaluation
+
+Writing functions that fit the tidyverse. (45 minutes)
+
+Our `fit_model()` function hardcodes the response and predictor. It always fits `body_mass_g ~ flipper_length_mm`. If we want the same machinery for body mass against bill length, we have to write a second function. If we want it for bill length against bill depth, we have to write a third.
+
+The solution is to make the response and predictor function arguments. The complication is that dplyr verbs do not look up names the way ordinary R does. This block teaches the mental model and syntax needed to write functions that work with tidyverse-style column references.
+
+## 4.1 The problem (5 minutes)
+
+A first attempt:
+
+```{r, eval = FALSE}
+
+summarise_by_species <- function(data, var) {
+  data |>
+    dplyr::summarise(
+      mean = mean(var, na.rm = TRUE),
+      .by = species
+    )
+}
+
+summarise_by_species(penguins, body_mass_g)
+# Error in mean(var, na.rm = TRUE) : object 'var' not found
+
+```
+
+Before reading on, think about what is happening. The function received `var = body_mass_g` as an argument. Inside the function, `var` is the name of the argument. R should be able to find it. But the error says `var` (or `body_mass_g`, depending on R version) is not found. Why?
+
+## 4.2 The mental model (10 minutes)
+
+Ordinary R looks up names in the calling environment. When you write `mean(x)`, R looks for `x` in the function's environment, then the enclosing environment, then the global environment, and so on.
+
+Tidyverse verbs do something different. Inside `dplyr::summarise()`, `dplyr::filter()`, `dplyr::mutate()`, and `dplyr::arrange()`, names are looked up inside the data frame first. So `summarise(mean = mean(body_mass_g))` finds `body_mass_g` as a column of the data. This is called **data-masking**: the data frame masks the calling environment.
+
+When you wrap a verb inside your own function, the argument `var` lives in the function's environment. dplyr looks for `var` in the data frame, does not find it (the data frame has no column called `var`), then looks in the function environment, finds `var` (whose value is the symbol `body_mass_g`), and fails to know what to do with a symbol.
+
+The fix: tell dplyr "the user passed me a column name; substitute it into the expression before evaluating". That is what the **embracing operator** `{{ }}` does. It captures the unevaluated expression that the user passed and re-injects it where it is written.
+
+```{block, type = "info"}
+
+The technical term in rlang documentation is "data-masked context" for the dplyr verb situation, and the embracing operator is sometimes called "curly-curly" by its shape. The rlang programming vignette by Hadley Wickham is the canonical reference. 
+
+```
+
+## 4.3 Embracing in practice (10 minutes)
+
+The fix to the broken function:
+
+```{r, eval = FALSE}
+
+summarise_by_species <- function(data, var) {
+  data |>
+    dplyr::summarise(
+      mean = mean({{ var }}, na.rm = TRUE),
+      .by = species
+    )
+}
+
+summarise_by_species(penguins, body_mass_g)
+# # A tibble: 3 × 2
+#   species    mean
+#   <fct>     <dbl>
+# 1 Adelie    3701.
+# 2 Gentoo    5076.
+# 3 Chinstrap 3733.
+
+```
+
+If the same column is used multiple times, embrace it each time:
+
+```{r, eval = FALSE}
+
+summarise_by_species <- function(data, var) {
+  data |>
+    dplyr::summarise(
+      mean = mean({{ var }}, na.rm = TRUE),
+      sd   = sd({{ var }}, na.rm = TRUE),
+      n    = sum(!is.na({{ var }})),
+      .by  = species
+    )
+}
+
+summarise_by_species(penguins, body_mass_g)
+
+```
+
+The grouping column can be embraced too:
+
+```{r, eval = FALSE}
+
+summary_grouped <- function(data, var, group) {
+  data |>
+    dplyr::summarise(
+      mean = mean({{ var }}, na.rm = TRUE),
+      .by  = {{ group }}
+    )
+}
+
+summary_grouped(penguins, body_mass_g, species)
+summary_grouped(penguins, body_mass_g, island)
+
+```
+
+## 4.4 Data-masking vs tidy-selection (15 minutes)
+
+A distinction rarely taught explicitly that is the single biggest source of later confusion. Take time with this section; the mental model pays back for years.
+
+### The two contexts
+
+Tidyverse functions evaluate column references in two different ways depending on the verb. The same name can mean different things in different positions. Knowing which is which determines what syntax you need to forward arguments from your own function.
+
+```
+                       USER WRITES
+                            │
+                 ┌──────────┴──────────┐
+                 │                     │
+                 ▼                     ▼
+         DATA-MASKING            TIDY-SELECTION
+                 │                     │
+   "Names are values you      "Names label columns
+    compute with"             you want to pick"
+                 │                     │
+                 ▼                     ▼
+  filter(body_mass_g > 4000)   select(species, body_mass_g)
+  mutate(z = x + y)            pivot_longer(cols = ends_with("_mm"))
+  summarise(m = mean(x))       rename_with(toupper)
+  arrange(desc(x))             across(.cols = where(is.numeric), ...)
+  aes(x = flipper_length_mm)
+```
+
+The principle:
+
+- **Data-masking** treats column names as **values you compute with**.
+
+- **Tidy-selection** treats column names as **labels you use to pick columns**.
+
+Two examples make the distinction concrete. To filter penguins by mass, you compute `body_mass_g > 4000` on each row; the value of the column matters. To select the body mass column for a table, you do not compute anything; only the column's name matters. Different problem, different context, different syntax.
+
+### Reference table
+
+Memorise the first three rows; the rest are reference.
+
+| | Data-masking | Tidy-selection |
+|---|---|---|
+| **Names refer to** | Values to compute with | Columns to pick |
+| **Forward a bare name** | `{{ var }}` | `{{ var }}` |
+| **Forward a string** | `.data[[var]]` | `all_of(var)` |
+| **Forward a character vector** | `pick(all_of(vars))` | `all_of(vars)` |
+| **Example verbs** | `filter`, `mutate`, `summarise`, `arrange`, `aes` | `select`, `across` (cols), `pivot_longer` (cols), `rename_with` |
+| **Selection helpers (`starts_with`, `where`)** | No | Yes |
+| **Column ranges and positions** | No | Yes |
+
+Three things to internalise from the table:
+
+- Both contexts forward bare names with `{{.}}`.
+- The two contexts need different syntax for strings (`.data[[.]]` vs `all_of()`).
+- Helpers like `starts_with()` and `where()` only work in tidy-selection.
+
+### Same task in both contexts
+
+Comparing the same operation in each context fixes the difference in memory.
+
+**Task A: a function that returns the mean of one column, grouped by species.** We need to *compute with* the column's values. This is data-masking.
+
+```{r, eval = FALSE}
+
+mean_by_species <- function(data, var) {
+  data |>
+    dplyr::summarise(
+      mean = mean({{ var }}, na.rm = TRUE),
+      .by  = species
+    )
+}
+
+mean_by_species(penguins, body_mass_g)
+
+```
+
+**Task B: a function that returns species plus one chosen column.** We need to *pick* a column by name. This is tidy-selection.
+
+```{r, eval = FALSE}
+
+pick_with_species <- function(data, var) {
+  data |>
+    dplyr::select(species, {{ var }})
+}
+
+pick_with_species(penguins, body_mass_g)
+
+```
+
+
+Both use `{{ var }}` to forward the argument. The semantics are different: one applies a function to the column's values, the other extracts the column as an object.
+
+### Activity 1: identify the context
+
+```{task}
+
+For each verb call below, identify whether it is a data-masking or tidy-selection context. Some are tricky.
+
+1. `filter(penguins, body_mass_g > 4000)`
+2. `select(penguins, species, body_mass_g)`
+3. `mutate(penguins, mass_kg = body_mass_g / 1000)`
+4. `pivot_longer(penguins, cols = ends_with("_mm"))`
+5. `summarise(penguins, mean(body_mass_g), .by = species)`
+6. `select(penguins, starts_with("bill"))`
+7. `arrange(penguins, desc(body_mass_g))`
+8. `summarise(penguins, across(where(is.numeric), mean))`
+
+```
+
+```{solution}
+
+1. Data-masking.** A comparison is computed on each row value.
+2. **Tidy-selection.** Columns are picked by name.
+3. **Data-masking.** A new value is computed from existing values.
+4. **Tidy-selection** (the `cols` argument). The `pivot_longer` verb itself is more complex, but its `cols` argument uses tidy-selection.
+5. **Data-masking** (both the summary expression and `.by`).
+6. **Tidy-selection.** A helper picks columns by name pattern.
+7. **Data-masking.** Arrange sorts rows by computed values.
+8. **Mixed.** `across()` takes a tidy-selection in `.cols` (`where(is.numeric)`) and applies a function in a data-masking context. This is the bridge case.
+
+The trickiest are four (verbs with both contexts at different argument positions) and 8 (across as bridge).
+
+```
+
+### Activity 2: fix the broken function (data-masking)
+
+```{task}
+
+This function does not work. Identify the problem and fix it.
+
+``{r, eval = FALSE}
+
+my_filter <- function(data, var, threshold) {
+  data |> dplyr::filter(var > threshold)
+}
+
+my_filter(penguins, body_mass_g, 4000)
+
+# Error in `dplyr::filter()`:
+# ! Caused by error:
+# ! object 'var' not found
+
+``
+
+```
+
+
+```{solution}
+
+The function uses `filter()` (data-masking) but does not embrace `var`. dplyr looks for a literal column named `var`, fails to find it, then evaluates `var` in the function environment and gets the unevaluated symbol `body_mass_g`, which is not a value it can compare to a number.
+
+The fix is to embrace `var`:
+
+``{verbatim, lang = "r"}
+
+my_filter <- function(data, var, threshold) {
+  data |> dplyr::filter({{ var }} > threshold)
+}
+
+my_filter(penguins, body_mass_g, 4000)
+``
+
+Note that `threshold` does not need embracing. It is an ordinary value (a number), not a column reference. Only column-name arguments need the embracing treatment.
+
+```
+
+### Activity 3: fix the broken function (tidy-selection)
+
+```{task}
+This function has a different problem. Identify it and fix it.
+
+``{r, eval = FALSE}
+
+keep_columns <- function(data, cols) {
+  data |> dplyr::select(cols)
+}
+
+keep_columns(penguins, c("species", "body_mass_g"))
+
+# Error in `dplyr::select()`:
+# ! Can't select columns past the end. Locations 1 and 2 don't exist.
+
+``
+
+```
+
+
+```{solution}
+
+The function passes a character vector to `select()`. In tidy-selection, character vectors are not column references by default; `select(c("species", "body_mass_g"))` is interpreted as selecting columns at positions in a vector, not as picking those columns by name.
+
+The fix uses `all_of()`:
+
+``{r, eval = FALSE}
+
+keep_columns <- function(data, cols) {
+  data |> dplyr::select(dplyr::all_of(cols))
+}
+
+keep_columns(penguins, c("species", "body_mass_g"))
+
+``
+
+If your function accepts a single bare name instead, embracing works: `select({{ cols }})`. The right tool depends on whether the input arrives as a bare name (use `{{ }}`) or as a string or character vector (use `all_of()`).
+
+```
+
+### Activity 4: the bridge
+
+```{task}
+
+Write a function `mean_of_columns(data, cols)` that takes a character vector of column names and returns the mean of each, grouped by species.
+
+You need both contexts: the columns arrive as strings and need to be selected, then a mean is computed for each.
+
+```
+
+```{solution}
+
+``{r, eval = FALSE}
+mean_of_columns <- function(data, cols) {
+  data |>
+    dplyr::summarise(
+      dplyr::across(dplyr::all_of(cols),
+                    \(x) mean(x, na.rm = TRUE)),
+      .by = species
+    )
+}
+
+mean_of_columns(penguins, c("body_mass_g", "flipper_length_mm"))
+# # A tibble: 3 × 3
+#   species   body_mass_g flipper_length_mm
+#   <fct>           <dbl>             <dbl>
+# 1 Adelie          3701.              190.
+# 2 Gentoo          5076.              217.
+# 3 Chinstrap       3733.              196.
+
+``
+
+`across()` is the bridge. Its first argument (`.cols`) is tidy-selection, accepting `all_of()` for our string vector. Its second argument (`.fns`) is data-masking, applying a function to each selected column. The bridge is the reason `across()` exists: it lets tidy-selection helpers reach into data-masking verbs.
+
+```
+
+### One last clarifier
+
+Some verbs use *both* contexts at different argument positions. `pivot_longer(data, cols = ..., names_to = ..., values_to = ...)` uses tidy-selection for `cols` (which columns to pivot) and ordinary character arguments for `names_to` and `values_to`. The instruction is "look at the argument, not just the verb". When forwarding from your own function, check which context the specific argument uses.
+
+The pattern repeats throughout dplyr and tidyr. When in doubt, the package documentation tags each argument with `<data-masking>` or `<tidy-select>` to make the context explicit.
+
+## 4.5 Strings and dynamic names (10 minutes)
+
+When the column name arrives as a string rather than a bare name, embracing does not apply. Strings are values; they do not need to be captured because they are not expressions.
+
+```{r, eval = FALSE}
+
+# String input: use the .data pronoun
+summarise_by_string <- function(data, var_name) {
+  data |>
+    dplyr::summarise(
+      mean = mean(.data[[var_name]], na.rm = TRUE),
+      .by  = species
+    )
+}
+
+summarise_by_string(penguins, "body_mass_g")
+
+```
+
+`.data[[var_name]]` says "look up this string in the data frame". It works in data-masking contexts (`mutate`, `summarise`, `filter`).
+
+For multiple strings in a tidy-selection context, use `all_of()`:
+
+```{r, eval = FALSE}
+
+select_by_strings <- function(data, var_names) {
+  data |> dplyr::select(dplyr::all_of(var_names))
+}
+
+select_by_strings(penguins, c("species", "body_mass_g"))
+
+```
+
+For dynamic output column names, R's grammar does not allow strings on the left of `=` inside function calls. The **walrus operator** `:=` is a substitute that does:
+
+```{r, eval = FALSE}
+
+summarise_dynamic <- function(data, var) {
+  data |>
+    dplyr::summarise(
+      "{{ var }}_mean" := mean({{ var }}, na.rm = TRUE),
+      "{{ var }}_sd"   := sd({{ var }}, na.rm = TRUE),
+      .by = species
+    )
+}
+
+summarise_dynamic(penguins, body_mass_g)
+# # A tibble: 3 × 3
+#   species   body_mass_g_mean body_mass_g_sd
+#   <fct>                <dbl>          <dbl>
+# 1 Adelie               3701.           459.
+# 2 Gentoo               5076.           504.
+# 3 Chinstrap            3733.           384.
+
+```
+
+Two separate things are happening on the left of `:=`. The string `"{{ var }}_mean"` uses glue-style name injection where `{{ var }}` is replaced by the embraced argument name. The `:=` is the walrus assignment that accepts a string on its left side. Both are needed; neither does the other's job.
+
+## 4.6 Generalising fit_model: the exercise (5 minutes)
+
+The running example. Take our current `fit_model()`:
+
+```{r, eval = FALSE}
+
+fit_model <- function(data) {
+  lm(body_mass_g ~ flipper_length_mm, data = data)
+}
+
+```
+
+### Activity
+
+```{task}
+
+Make `fit_model()` accept a response and predictor as bare column names, defaulting to body mass and flipper length so existing calls continue to work.
+
+There is a complication: `lm()`s first argument is a formula, captured before the function body evaluates. You will need either `{{ }}` inside the formula or `rlang::new_formula()` to build the formula explicitly.
+
+Try both approaches.
+
+```
+
+```{solution}
+
+The simple approach works because `lm()`s formula argument is itself a data-masked context. Embracing inside the formula is honoured:
+
+``{r, eval = FALSE}
+
+fit_model <- function(data,
+                     response = body_mass_g,
+                     predictor = flipper_length_mm) {
+  lm({{ response }} ~ {{ predictor }}, data = data)
+}
+
+fit_model(penguins_clean)                            # uses defaults
+fit_model(penguins_clean, bill_length_mm)            # different response
+fit_model(penguins_clean, bill_length_mm, bill_depth_mm)
+
+``
+
+The robust approach uses `rlang::new_formula()` to build the formula from captured expressions. This is needed if you want to manipulate the formula before passing it to `lm()`:
+
+``{r, eval = FALSE}
+fit_model <- function(data,
+                     response = body_mass_g,
+                     predictor = flipper_length_mm) {
+
+  formula <- rlang::new_formula(
+    lhs = rlang::enexpr(response),
+    rhs = rlang::enexpr(predictor)
+  )
+
+  lm(formula, data = data)
+}
+``
+
+`enexpr()` captures the unevaluated argument as an expression. `new_formula()` assembles it into a formula. Use the simple version unless you need to manipulate the formula.
+```
+
+Add a test for the new default behaviour, called a **characterisation test**:
+
+```{r, eval = FALSE}
+
+test_that("fit_model defaults reproduce previous behaviour", {
+  m_old <- lm(body_mass_g ~ flipper_length_mm,
+              data = test_data |> dplyr::filter(species == "Adelie"))
+  m_new <- fit_model(test_data |> dplyr::filter(species == "Adelie"))
+  expect_equal(coef(m_old), coef(m_new))
+})
+
+```
+
+The characterisation test pattern: when you change a function's interface, pin down the existing behaviour first, then confirm the change preserves it. The test does not care what the function does internally, only that calling it the old way returns the old result.
+
+
+**You have now seen the four main tidy-evaluation patterns:** 
+
+- embracing `{{ }}` for forwarding bare names, 
+
+- the walrus `:=` for dynamic output names, 
+
+- `.data[[ ]]` for string column names, 
+
+- `all_of()` for character vectors of column names. 
+
+The rlang package has more advanced machinery (`enquo()`, `!!`, `enquos()`, `!!!`) but most user code does not need it. The four patterns above cover the vast majority of practical situations.
+
+
+---
+
+# Block 5: Manual caching motivates `targets`
+
+A brief detour. (5 minutes)
+
+Our iteration produces a nested tibble of models. Suppose we extend it to fit bootstrapped confidence intervals with 10,000 resamples per species, and the whole pipeline now takes ten minutes. Every time we change a plot colour, we wait ten minutes.
+
+The instinct is to cache:
+
+```{r, eval = FALSE}
+cache_path <- here::here("cache", "species_models.rds")
+
+if (file.exists(cache_path)) {
+  species_models <- readRDS(cache_path)
+} else {
+  species_models <- penguins_clean |>
+    dplyr::group_by(species) |>
+    tidyr::nest() |>
+    dplyr::mutate(
+      model = purrr::map(data, fit_model)
+    )
+  saveRDS(species_models, cache_path)
+}
+```
+
+This works for one stage. The trouble starts at scale.
+
+**Problem 1.** If you change `fit_model()`, the cache is silently stale. R cannot tell that the function body has changed; it just sees a file on disk.
+
+**Problem 2.** If you change `penguins_clean`, the cache is silently stale. Same reason.
+
+**Problem 3.** Every cached stage needs the same boilerplate, and you have to remember to invalidate manually whenever an upstream change happens.
+
+You can handle each problem with effort. You can hash the inputs and the function body, write your own invalidation logic, build a dependency graph in your head. Or you can use a tool that does this for you.
+
+That tool is `targets`.
+
+---
+
+# Block 6: `targets`
+
+A light-touch introduction to pipelines. (60 minutes)
+
+This block introduces `targets` enough that you can build a basic pipeline, recognise when one would help, and decide whether to adopt it. We deliberately do not cover everything `targets` can do; the package has substantial machinery for parallel execution, HPC dispatch, and large-scale dynamic branching which we point to but leave for self-study. The aim is genuine working knowledge of the core, not encyclopaedic coverage.
+
+There are exercises throughout. Do them as you go. The material is concrete enough that watching alone will not produce retention.
+
+## 6.1 The ethos (7 minutes)
+
+`targets` solves three problems with the script-style analysis we have been doing:
+
+1. **You cannot tell which steps need rerunning after a change.** Edit step 2 and you must rerun everything from step 2 onwards by discipline. `targets` tracks dependencies and reruns exactly what changed.
+
+2. **You cannot cache intermediate results safely.** Manual caching with `saveRDS()` becomes stale silently when you change the function that produced it. `targets` invalidates caches automatically when their inputs change.
+
+3. **The pipeline is implicit in the script order.** Someone reading your code must infer the dependency structure. `targets` makes it explicit and machine-readable.
+
+The idea is not new. The Unix `make` utility solved this problem for software compilation in 1976 (Feldman, 1979, *Software: Practice and Experience*). `targets` brings the same idea to R analysis pipelines (Landau, 2021, *Journal of Open Source Software*), with R-specific machinery for tracking dependencies through R's lazy evaluation.
+
+```{block, type = "info"}
+What `targets` is not. It is not a workflow manager that orchestrates across machines (the `crew` package adds that). It is not a build system for R packages. It is not a notebook. It is a pipeline framework for analytical R code, sitting between the analyst's script and the project's reproducibility requirements.
+```
+
+### Activity: would `targets` help?
+
+```{task}
+For each scenario below, decide whether `targets` is worth introducing:
+
+1. A one-off analysis fitting one linear model to one dataset, producing one figure. Runs in 30 seconds.
+
+2. A meta-analysis with 12 sub-analyses, several of which take 10 minutes each. Will be revised several times based on reviewer feedback.
+
+3. An exploratory data dive where you do not yet know what the pipeline should be.
+
+4. A regulatory submission that must reproduce identical outputs in five years time.
+```
+
+```{solution}
+
+1. **No.** No slow steps, no revision, no reproducibility constraint. A script is fine.
+
+2. **Yes.** Slow steps and multiple revisions are exactly the case `targets` solves. Selective rerunning will save significant time.
+
+3. **No.** Exploration changes the structure of the analysis itself. `targets` imposes structure; you cannot impose structure on something whose structure is still being discovered. Convert later when the pipeline stabilises.
+
+4. **Yes.** The reproducibility requirement justifies the discipline. Five years from now, a script may have rotted in undocumented ways; an explicit pipeline is auditable.
+
+The pattern: `targets` earns its keep on revised projects with slow steps and reproducibility requirements. Skip it for exploration and one-offs.
+```
+
+## 6.2 How it works (12 minutes)
+
+A worked minimal example, then we examine what happened.
+
+```{r, eval = FALSE}
+# _targets.R (minimal example)
+library(targets)
+
+clean_data <- function(x) x[x > 0]
+summarise_data <- function(x) mean(x)
+
+list(
+  tar_target(raw, c(-1, 2, 3, 4, 5)),
+  tar_target(cleaned, clean_data(raw)),
+  tar_target(summary, summarise_data(cleaned))
+)
+```
+
+### Activity: build and inspect
+
+```{task}
+Save the code above as `_targets.R` in an empty directory. From R, with your working directory set to that directory, run each command below. Predict what will happen before running it.
+
+1. `targets::tar_make()`. What output do you see?
+2. `targets::tar_make()` again. What output now?
+3. `targets::tar_read(summary)`. What is the value?
+4. `targets::tar_visnetwork()`. What does the graph show?
+```
+
+```{solution}
+
+1. The first `tar_make()` builds all three targets in dependency order. Output reports each target as it runs ("running target raw", "running target cleaned", "running target summary"), followed by a summary of skipped/built counts.
+
+2. The second `tar_make()` builds nothing. Output reports all three targets as skipped. The whole operation takes milliseconds.
+
+3. `tar_read(summary)` returns `3.5`. The pipeline cleaned out `-1`, leaving `c(2, 3, 4, 5)`, whose mean is 3.5.
+
+4. The graph shows three nodes (`raw`, `cleaned`, `summary`) connected by arrows, with all targets coloured to indicate they are current (up to date).
+```
+
+### What gets hashed
+
+When `tar_make()` runs the first time, it stores a hash for each target. The hash combines: the function bodies of any functions used (so editing `clean_data` invalidates `cleaned`), the input values of upstream targets (so changing `raw` invalidates `cleaned` and `summary`), and the unevaluated expression of each target (so editing the expression in `_targets.R` invalidates the target).
+
+On subsequent `tar_make()` calls, the hash is recomputed and compared. If it matches, the target is skipped and its cached value is reused. If it differs, the target is rerun and downstream targets are marked stale.
+
+### Activity: predict the invalidation
+
+```{task}
+Given the pipeline above, predict which targets will rebuild on the next `tar_make()` for each edit. Verify your prediction by making the edit and running `targets::tar_outdated()`.
+
+1. Change `clean_data` to `function(x) x[x >= 0]`.
+2. Change `raw` to `c(0, 2, 3, 4, 5)`.
+3. Change `summarise_data` to `function(x) median(x)`.
+4. Add a new target `tar_target(squared, raw^2)`.
+5. Delete the comment line `# _targets.R (minimal example)`.
+```
+
+```{solution}
+
+1. **`cleaned` and `summary`.** `clean_data` produces `cleaned`; downstream of `cleaned` is `summary`.
+
+2. **`cleaned` and `summary`.** `raw` changed, so `cleaned` is stale; `summary` depends on `cleaned`.
+
+3. **Only `summary`.** `summarise_data` only produces `summary`.
+
+4. **Only the new `squared` target builds.** The others are unchanged.
+
+5. **Nothing rebuilds.** Comments are not part of the hash.
+
+The insight: `targets` sees dependencies through function calls and target references. Anything else (comments, whitespace, unused variables) does not affect the hash.
+```
+
+## 6.3 File inputs and outputs (10 minutes)
+
+The most common practical complication. Data lives in files. Outputs are files. `targets` needs to know about both.
+
+### File inputs
+
+```{r, eval = FALSE}
+tar_target(
+  raw_file,
+  here::here("data", "penguins.csv"),
+  format = "file"
+)
+```
+
+`format = "file"` tells `targets` that the expression returns a file path and to hash the file's contents, not the path. Without `format = "file"`, `targets` would hash the string `"data/penguins.csv"`, which never changes even when the file does.
+
+### File outputs
+
+Targets that write files need the same treatment: the expression both writes the file and returns the path as the target's value.
+
+```{r, eval = FALSE}
+tar_target(
+  coefficient_csv,
+  {
+    path <- here::here("outputs", "coefficients.csv")
+    readr::write_csv(coefficient_table, path)
+    path
+  },
+  format = "file"
+)
+```
+
+The block expression first writes the file, then returns the path. `format = "file"` ensures the file's contents are hashed.
+
+### Activity: spot the bugs
+
+```{task}
+The target below is buggy. Find all the problems.
+
+``{r, eval = FALSE}
+tar_target(
+  figure_png,
+  ggplot2::ggsave(
+    here::here("outputs", "figure.png"),
+    combined_figure
+  )
+)
+``
+
+Hint: think about what `ggsave()` returns, and whether `targets` knows about the file.
+```
+
+```{solution}
+
+Two problems:
+
+1. **`ggsave()` returns the plot invisibly, not the path.** The target stores the plot as its value. This is not useful for downstream targets that should depend on the file.
+
+2. **No `format = "file"`.** Even if the target returned the path, `targets` would hash the path string, not the files contents. Editing the file externally (or deleting it) would not invalidate downstream targets.
+
+The fix:
+
+``{r, eval = FALSE}
+tar_target(
+  figure_png,
+  {
+    path <- here::here("outputs", "figure.png")
+    ggplot2::ggsave(path, combined_figure)
+    path
+  },
+  format = "file"
+)
+``
+
+The block expression writes the file then returns the path. `format = "file"` ensures the contents are hashed.
+```
+
+## 6.4 Common functions (5 minutes)
+
+The minimum vocabulary for everyday use:
+
+- `tar_target(name, expression, format = "qs")` defines a target. `format = "qs"` is a fast serialisation; `format = "file"` declares a file target.
+- `tar_make()` builds the pipeline.
+- `tar_outdated()` reports stale targets without building.
+- `tar_visnetwork()` shows the DAG in your browser.
+- `tar_read(name)` returns a cached value.
+- `tar_load(name)` loads a value into your environment.
+- `tar_source(files = "R/functions")` sources function files for the pipeline. **Use this, not `source()`.**
+- `tar_option_set(packages = ...)` declares packages used in the pipeline.
+
+For debugging:
+- `tar_workspace(name)` reconstructs the environment of a failed target run.
+
+The `targets` package has many more functions for specific cases; the package manual at <https://docs.ropensci.org/targets/> is the reference.
+
+### Activity: vocabulary in use
+
+```{task}
+Without running any code, describe in words what each of these commands does:
+
+1. `targets::tar_outdated()`
+2. `targets::tar_invalidate(matches("model_"))`
+3. `targets::tar_read(coefficient_table) |> head()`
+4. `targets::tar_visnetwork()`
+5. `targets::tar_workspace(failed_target)`
+```
+
+```{solution}
+
+1. Lists target names that need rebuilding, without actually building anything. Useful before running `tar_make()` to see what would happen.
+
+2. Marks every target whose name matches the regular expression `"model_"` as stale. The next `tar_make()` will rebuild them.
+
+3. Reads the cached value of the `coefficient_table` target and shows the first six rows. Does not rebuild.
+
+4. Opens an interactive HTML widget in the browser showing the pipeline graph, with stale targets coloured differently from current ones.
+
+5. Reconstructs the environment that the named target was running in when it last failed: loads its inputs, sets the seed, leaves you ready to step through the failing code manually.
+```
+
+## 6.5 The penguin pipeline (15 minutes)
+
+The full pipeline for our running example. The functions are unchanged from Block 3; only the orchestration is new.
+
+```{r, eval = FALSE}
+# _targets.R
+library(targets)
+library(tarchetypes)
+
+tar_option_set(
+  packages = c("dplyr", "tidyr", "purrr", "broom",
+               "ggplot2", "readr", "here", "janitor",
+               "patchwork"),
+  format   = "qs"
+)
+
+tar_source(files = "R/functions")
+
+list(
+
+  # ---- Data ingestion ----
+  tar_target(
+    raw_file,
+    here::here("data", "penguins.csv"),
+    format = "file"
+  ),
+
+  tar_target(
+    penguins_raw,
+    readr::read_csv(raw_file, show_col_types = FALSE)
+  ),
+
+  tar_target(
+    penguins_clean,
+    penguins_raw |>
+      janitor::clean_names() |>
+      tidyr::drop_na(body_mass_g, flipper_length_mm, species)
+  ),
+
+  # ---- Per-species data, branched ----
+  tar_target(
+    species_name,
+    sort(unique(penguins_clean$species))
+  ),
+
+  tar_target(
+    species_data,
+    penguins_clean |> dplyr::filter(species == species_name),
+    pattern = map(species_name)
+  ),
+
+  # ---- Modelling ----
+  tar_target(
+    species_model,
+    fit_model(species_data),
+    pattern = map(species_data)
+  ),
+
+  tar_target(
+    species_coefs,
+    tidy_model(species_model) |>
+      dplyr::mutate(species = species_name, .before = 1),
+    pattern = map(species_model, species_name)
+  ),
+
+  tar_target(
+    coefficient_table,
+    species_coefs
+  ),
+
+  # ---- File outputs ----
+  tar_target(
+    coefficient_csv,
+    {
+      path <- here::here("outputs", "tables", "coefficients.csv")
+      readr::write_csv(coefficient_table, path)
+      path
+    },
+    format = "file"
+  ),
+
+  # ---- Figures ----
+  tar_target(
+    species_plot,
+    make_scatter_plot_from_data(species_data),
+    pattern = map(species_data)
+  ),
+
+  tar_target(
+    combined_figure,
+    patchwork::wrap_plots(species_plot, nrow = 1)
+  ),
+
+  tar_target(
+    figure_png,
+    {
+      path <- here::here("outputs", "figures", "figure_1.png")
+      ggplot2::ggsave(path, combined_figure,
+                      width = 12, height = 4)
+      path
+    },
+    format = "file"
+  )
+)
+```
+
+### Activity: read the pipeline
+
+```{task}
+Without running it, answer these questions about the pipeline above.
+
+1. Which targets read files?
+2. Which targets write files?
+3. Which target produces the combined coefficient table?
+4. If you edit `make_scatter_plot_from_data()`, which targets rebuild?
+5. If you edit `penguins.csv` externally, which targets rebuild?
+6. Why is `coefficient_table` simply `species_coefs`?
+```
+
+```{solution}
+
+1. **`raw_file`** (the file-tracking target) and indirectly **`penguins_raw`** (which reads via `read_csv(raw_file)`).
+
+2. **`coefficient_csv`** and **`figure_png`**.
+
+3. **`coefficient_table`**.
+
+4. **`species_plot`**, **`combined_figure`**, and **`figure_png`**. The model-related targets are not downstream of the plotting function.
+
+5. Everything in the pipeline. The data flows through every target.
+
+6. Because `species_coefs` is a branched target (one branch per species). When a downstream target references a branched target by name, `targets` automatically combines the branches via `vctrs::vec_c()`. For tibbles, this is row-binding. `coefficient_table` exists to make the combined object explicit and to give it a clear name.
+```
+
+### Activity: run it
+
+```{task}
+With the workshop starter project set up (see Appendix D), run the following sequence. Predict what will happen at each step before executing.
+
+1. `targets::tar_make()`. How long does each target take?
+2. Open `R/functions/modelling_functions.R` and change `fit_model()`'s formula to `log(body_mass_g) ~ flipper_length_mm`.
+3. `targets::tar_outdated()`. Which targets are listed?
+4. `targets::tar_make()`. Compare what rebuilds with your prediction.
+5. `targets::tar_read(coefficient_table)`. What changed in the output?
+```
+
+Use this exercise to see the selective rerun in action. The model targets rebuild; the plots and the file targets that depend only on the plotting function do not. The CSV does rebuild because the table changed. This is the moment most learners report that `targets` "clicks".
+
+## 6.6 Branching: static, briefly (5 minutes)
+
+When you have many similar things to process (one model per species, one analysis per study site), branching produces one target per group automatically. The pipeline above uses **dynamic branching** (`pattern = map(...)`), which adapts to whatever values are in the source vector. We mention dynamic branching here but cover only **static branching** in detail, because static is simpler, more readable, and sufficient for fixed group sets.
+
+### Static branching with `tarchetypes`
+
+```{r, eval = FALSE}
+library(tarchetypes)
+
+tar_map(
+  values = tibble::tibble(
+    sp = c("Adelie", "Gentoo", "Chinstrap")
+  ),
+  tar_target(species_data, dplyr::filter(penguins_clean, species == sp)),
+  tar_target(species_model, fit_model(species_data))
+)
+```
+
+This produces six named targets: `species_data_Adelie`, `species_data_Gentoo`, `species_data_Chinstrap`, and the three corresponding `species_model_*` targets. Readable names, individually inspectable, individually invalidatable with `tar_invalidate(species_model_Gentoo)`.
+
+### Activity: static or dynamic?
+
+```{task}
+
+For each scenario, decide whether static branching (`tar_map`) or dynamic branching (`pattern = map`) is more appropriate.
+
+1. Fitting a model to each of 3 penguin species. The species set will not change.
+2. Bootstrap analysis: 1000 resamples of the same dataset.
+3. Per-study-site analysis across 8 sites; new sites occasionally added.
+4. Per-year analysis across 50 years of climate data.
+
+```
+
+```{solution}
+
+1. Static. Three named targets, readable names, fixed set.
+
+2. Dynamic. A thousand named targets is unworkable; the set is large and the individual branches are interchangeable.
+
+3. Dynamic. New sites should not require editing the pipeline definition. The set is open.
+
+4. Dynamic. Fifty branches is too many for readable static names; the year set may be extended.
+
+Heuristic: static when the set is **small and stable**; dynamic when the set is large, open, or interchangeable.
+
+```
+
+Dynamic branching uses `pattern = map(...)`, `pattern = cross(...)` for combinations of inputs, and `tar_branches()` to inspect which branch corresponds to which input value. The `targets` user manual covers dynamic branching in detail; we leave it for self-study.
+
+## 6.7 Common pitfalls (4 minutes)
+
+The errors that cost hours. We list four; the `targets` documentation has more.
+
+1. **Reading a file from inside a function without declaring it as a target.** The hash does not include the file; edits do not invalidate the pipeline. Always pass file paths through `format = "file"` targets and pass the value to functions as an argument.
+
+2. **Writing a file from inside a target without `format = "file"`.** The target returns whatever the file-writing function returned (often `NULL`) and `targets` does not track the output. Wrap file-writing targets to return the path; declare `format = "file"`.
+
+3. **`library()` calls inside functions.** Functions become impure (they modify the search path). Declare packages once in `tar_option_set(packages = ...)`.
+
+4. **Using `source()` instead of `tar_source()`** in `_targets.R`. Edits to functions do not invalidate the pipeline. Always use `tar_source()`.
+
+### Activity: find the bugs
+
+```{task}
+This pipeline has at least two bugs. Find them.
+
+``{r, eval = FALSE}
+library(targets)
+
+source("R/functions/cleaning.R")
+
+list(
+  tar_target(raw, readr::read_csv("data/measurements.csv")),
+  tar_target(cleaned, clean_measurements(raw))
+)
+``
+
+```
+
+
+```{solution}
+
+Two bugs:
+
+1. **`source()` is used instead of `tar_source()`.** Edits to `clean_measurements()` will not invalidate `cleaned`.
+
+2. **The data file is not declared with `format = "file"`.** Edits to `data/measurements.csv` will not invalidate the pipeline. The expression `readr::read_csv("data/measurements.csv")` runs every time the target is built, but the target is only rebuilt when its expression hash changes (which it does not, since the string is constant).
+
+The fix:
+
+``{r, eval = FALSE}
+
+library(targets)
+
+tar_source("R/functions")
+
+list(
+  tar_target(raw_file, "data/measurements.csv", format = "file"),
+  tar_target(raw, readr::read_csv(raw_file)),
+  tar_target(cleaned, clean_measurements(raw))
+)
+
+``
+
+The data file is now an explicit target. Edits to either the file or the function invalidate downstream targets.
+
+```
+
+## 6.8 When to stop
+
+`targets` is one tool. It works best for projects that are:
+
+- Multi-stage with clear handoffs between stages.
+- Iterated multiple times.
+- Slow enough that re-running everything is painful.
+- Reproducible by requirement.
+
+It works less well for:
+
+- One-off analyses.
+- Exploratory work where the pipeline structure is still emerging.
+- Single-script work that completes in under a minute.
+
+You can adopt `targets` for one project and not others. You can adopt it midway through a project once the pipeline structure stabilises. You do not have to commit to it for all your work.
+
+The `targets` user manual (<https://books.ropensci.org/targets/>) is the canonical reference for everything we have not covered: parallel execution, HPC dispatch, dynamic branching at scale, Quarto integration via `tar_quarto()`, file groups via `tar_files()`, and time-based reruns via `tar_age()`.
+
+---
+
+# Block 7: Wrap-up
+
+When to use what. (10 minutes)
+
+## What you now have
+
+The workshop has produced, on top of your existing skills:
+
+- A project structure that scales from one analyst to a team.
+- Functions that compose because each does one thing.
+- Tests that catch regressions before they reach the manuscript.
+- Iteration that scales without copy-paste.
+- Tidy-evaluation skills to write functions that fit the tidyverse.
+- A `targets` pipeline that is reproducible by construction.
+
+## Scaling the investment to the project
+
+The full toolkit is not always appropriate. Match the technique to the scale.
+
+| Project shape | Functions | Tests | Iteration | Tidy eval | targets |
+|---|---|---|---|---|---|
+| One-off script, runs once | If used twice | Optional | If three+ groups | If needed | No |
+| Single-paper project, weeks of work | Yes | For key functions | Yes | If you write reusable functions | If steps are slow |
+| Multi-month project, many revisions | Yes | Comprehensive | Yes | Yes | Yes |
+| Collaborative, regulatory, audited | Yes | Comprehensive | Yes | Yes | Yes |
+
+What is universal regardless of scale:
+
+- `here::here()` for relative paths.
+- A few well-named functions for any operation done more than twice.
+- Input checks at function boundaries (`stopifnot()` for terse checks or `if (...) stop(...)` for informative messages).
+- `set.seed()` once at the top of any script with randomness.
+- Version control.
+
+Tests, iteration, tidy evaluation, and `targets` earn their overhead when the project is complex enough to justify them. Teach yourself the full toolkit so you can choose, rather than learning only the universal subset and being stranded when a project grows.
+
+## A take-home question
+
+Pick one of your current projects. Which technique from this workshop would have the largest payoff if applied tomorrow? It is almost always "extract one function and write one test", rarely "convert everything to `targets`".
+
+## References cited
+
+- Backus, J. (1978). Can programming be liberated from the von Neumann style? *Communications of the ACM*, 21(8), 613–641.
+- Di Tommaso, P. et al. (2017). Nextflow enables reproducible computational workflows. *Nature Biotechnology*, 35, 316–319.
+- Feldman, S. (1979). Make: a program for maintaining computer programs. *Software: Practice and Experience*, 9(4), 255–265.
+- Filazzola, A., & Lortie, C. (2022). A call for clean code to effectively communicate science. *Methods in Ecology and Evolution*, 13, 2119–2128.
+- Hughes, J. (1989). Why functional programming matters. *Computer Journal*, 32(2), 98–107.
+- Ivimey-Cook, E. R. et al. (2025). TADA! Simple guidelines to improve analytical code sharing for transparency and reproducibility. *Preprint*.
+- Kellner, K. F. et al. (2025). Functional R code is rare in species distribution and abundance papers. *Ecology*, 106, e4475.
+- Landau, W. M. (2021). The targets R package. *Journal of Open Source Software*, 6(57), 2959.
+- Mölder, F. et al. (2021). Sustainable data analysis with Snakemake. *F1000Research*, 10, 33.
+- Sánchez-Tójar, A. et al. (2025). Code-sharing policies are associated with increased reproducibility potential of ecological findings. *Peer Community Journal*, 5.
+
+---
+
+# Appendix
+
+## A: Complete function files
+
+For the workshop starter project. Each function file is copy-pasteable.
+
+### R/functions/modelling_functions.R
+
+```{r, eval = FALSE}
+#' Fit body mass ~ flipper length on pre-filtered data
+#'
+#' @param data A data frame, assumed to contain a single species.
+#'   Must have `body_mass_g` and `flipper_length_mm` columns.
+#' @param response Bare column name for the response. Default
+#'   `body_mass_g`.
+#' @param predictor Bare column name for the predictor. Default
+#'   `flipper_length_mm`.
+#' @return A fitted lm object.
+fit_model <- function(data,
+                      response = body_mass_g,
+                      predictor = flipper_length_mm) {
+  lm({{ response }} ~ {{ predictor }}, data = data)
+}
+
+#' Tidy a fitted lm with confidence intervals
+#'
+#' @param model A fitted lm object.
+#' @param conf_level Confidence level for intervals. Default 0.95.
+#' @return A tibble of tidied coefficients.
+tidy_model <- function(model, conf_level = 0.95) {
+  broom::tidy(model, conf.int = TRUE, conf.level = conf_level)
+}
+
+#' Fit and tidy for one species (script-style wrapper)
+#'
+#' @param data A data frame with a `species` column.
+#' @param sp Character of length 1. Species to filter to.
+#' @param conf_level Confidence level for intervals. Default 0.95.
+#' @return A tibble of tidied coefficients with a `species` column.
+fit_species_model <- function(data, sp, conf_level = 0.95) {
+
+  if (!sp %in% unique(data$species)) {
+    stop(
+      "Species '", sp, "' is not in the data. ",
+      "Available species: ",
+      paste(sort(unique(data$species)), collapse = ", ")
+    )
+  }
+
+  data |>
+    dplyr::filter(species == sp) |>
+    fit_model() |>
+    tidy_model(conf_level = conf_level) |>
+    dplyr::mutate(species = sp, .before = 1)
+}
+```
+
+### R/functions/plotting_functions.R
+
+```{r, eval = FALSE}
+#' Scatter plot of body mass vs flipper length for one species
+#' (script-style: takes full data and a species name)
+#'
+#' @param data A data frame with `species`, `body_mass_g`, and
+#'   `flipper_length_mm`.
+#' @param sp Character of length 1. Species to plot.
+#' @return A ggplot object.
+make_scatter_plot <- function(data, sp) {
+  data |>
+    dplyr::filter(species == sp) |>
+    make_scatter_plot_from_data()
+}
+
+#' Scatter plot from pre-filtered single-species data
+#' (pipeline-style: takes already-filtered data)
+#'
+#' @param data A data frame assumed to be one species' worth.
+#' @return A ggplot object.
+make_scatter_plot_from_data <- function(data) {
+  sp <- unique(data$species)
+  ggplot2::ggplot(data,
+                  ggplot2::aes(flipper_length_mm, body_mass_g)) +
+    ggplot2::geom_point(alpha = 0.6) +
+    ggplot2::geom_smooth(method = "lm") +
+    ggplot2::labs(title = sp,
+                  x = "Flipper length (mm)",
+                  y = "Body mass (g)") +
+    ggplot2::theme_minimal()
+}
+```
+
+
+
+## Appendix B: Complete test file
+
+### tests/test_modelling_functions.R
+
+```{r, eval = FALSE}
+library(testthat)
+source(here::here("R", "functions", "modelling_functions.R"))
+
+test_data <- readRDS(
+  here::here("tests", "fixtures", "penguins_test_subset.rds")
+)
+
+# ---- fit_species_model ----
+
+test_that("fit_species_model returns a tibble", {
+  out <- fit_species_model(test_data, "Adelie")
+  expect_s3_class(out, "tbl_df")
+})
+
+test_that("fit_species_model has the expected columns", {
+  out <- fit_species_model(test_data, "Adelie")
+  expect_named(
+    out,
+    c("species", "term", "estimate", "std.error",
+      "statistic", "p.value", "conf.low", "conf.high")
+  )
+})
+
+test_that("fit_species_model labels species correctly", {
+  out <- fit_species_model(test_data, "Gentoo")
+  expect_true(all(out$species == "Gentoo"))
+})
+
+test_that("fit_species_model returns intercept and one slope", {
+  out <- fit_species_model(test_data, "Chinstrap")
+  expect_equal(nrow(out), 2)
+})
+
+test_that("fit_species_model rejects unknown species", {
+  expect_error(
+    fit_species_model(test_data, "gentoo"),
+    regexp = "not in the data"
+  )
+})
+
+test_that("conf_level controls interval width", {
+  out_95 <- fit_species_model(test_data, "Adelie", conf_level = 0.95)
+  out_99 <- fit_species_model(test_data, "Adelie", conf_level = 0.99)
+  width_95 <- out_95$conf.high - out_95$conf.low
+  width_99 <- out_99$conf.high - out_99$conf.low
+  expect_true(all(width_99 > width_95))
+})
+
+# ---- fit_model ----
+
+test_that("fit_model defaults reproduce previous behaviour", {
+  adelie <- test_data |> dplyr::filter(species == "Adelie")
+  m_old <- lm(body_mass_g ~ flipper_length_mm, data = adelie)
+  m_new <- fit_model(adelie)
+  expect_equal(coef(m_old), coef(m_new))
+})
+
+test_that("fit_model accepts alternative response and predictor", {
+  adelie <- test_data |> dplyr::filter(species == "Adelie")
+  m <- fit_model(adelie,
+                 response = bill_length_mm,
+                 predictor = bill_depth_mm)
+  expect_s3_class(m, "lm")
+  expect_equal(names(coef(m)),
+               c("(Intercept)", "bill_depth_mm"))
+})
+
+# ---- tidy_model ----
+
+test_that("tidy_model returns broom output", {
+  adelie <- test_data |> dplyr::filter(species == "Adelie")
+  m <- fit_model(adelie)
+  out <- tidy_model(m)
+  expect_s3_class(out, "tbl_df")
+  expect_true("conf.low" %in% names(out))
+})
+```
+
+
+
+## Appendix C: Complete `_targets.R`
+
+```{r, eval = FALSE}
+# _targets.R
+library(targets)
+library(tarchetypes)
+
+tar_option_set(
+  packages = c("dplyr", "tidyr", "purrr", "broom",
+               "ggplot2", "readr", "here", "janitor",
+               "patchwork", "rlang"),
+  format   = "qs",
+  seed     = 1234
+)
+
+tar_source(files = "R/functions")
+
+list(
+
+  # ---- Data ingestion ----
+  tar_target(
+    raw_file,
+    here::here("data", "penguins.csv"),
+    format = "file"
+  ),
+
+  tar_target(
+    penguins_raw,
+    readr::read_csv(raw_file, show_col_types = FALSE)
+  ),
+
+  tar_target(
+    penguins_clean,
+    penguins_raw |>
+      janitor::clean_names() |>
+      tidyr::drop_na(body_mass_g, flipper_length_mm, species)
+  ),
+
+  # ---- Branching index ----
+  tar_target(
+    species_name,
+    sort(unique(penguins_clean$species))
+  ),
+
+  # ---- Per-species data ----
+  tar_target(
+    species_data,
+    penguins_clean |> dplyr::filter(species == species_name),
+    pattern = map(species_name)
+  ),
+
+  # ---- Per-species model ----
+  tar_target(
+    species_model,
+    fit_model(species_data),
+    pattern = map(species_data)
+  ),
+
+  tar_target(
+    species_coefs,
+    tidy_model(species_model) |>
+      dplyr::mutate(species = species_name, .before = 1),
+    pattern = map(species_model, species_name)
+  ),
+
+  # ---- Combined coefficient table ----
+  tar_target(
+    coefficient_table,
+    species_coefs
+  ),
+
+  tar_target(
+    coefficient_csv,
+    {
+      path <- here::here("outputs", "tables", "coefficients.csv")
+      if (!dir.exists(dirname(path))) {
+        dir.create(dirname(path), recursive = TRUE)
+      }
+      readr::write_csv(coefficient_table, path)
+      path
+    },
+    format = "file"
+  ),
+
+  # ---- Per-species plots ----
+  tar_target(
+    species_plot,
+    make_scatter_plot_from_data(species_data),
+    pattern = map(species_data)
+  ),
+
+  tar_target(
+    combined_figure,
+    patchwork::wrap_plots(species_plot, nrow = 1)
+  ),
+
+  tar_target(
+    figure_png,
+    {
+      path <- here::here("outputs", "figures", "figure_1.png")
+      if (!dir.exists(dirname(path))) {
+        dir.create(dirname(path), recursive = TRUE)
+      }
+      ggplot2::ggsave(path, combined_figure,
+                      width = 12, height = 4)
+      path
+    },
+    format = "file"
+  ),
+
+  # ---- Tests ----
+  tar_target(
+    tests,
+    testthat::test_file(
+      here::here("tests", "test_modelling_functions.R"),
+      reporter = "summary"
+    )
+  )
+)
+```
+
+
+
+## Appendix D: Workshop setup script
+
+For learners to run before the workshop begins.
+
+```{r, eval = FALSE}
+# setup.R
+# Run once before the workshop
+
+required <- c("tidyverse", "broom", "here", "testthat",
+              "palmerpenguins", "patchwork",
+              "targets", "tarchetypes", "qs", "janitor")
+
+missing <- required[!required %in% rownames(installed.packages())]
+if (length(missing) > 0) {
+  install.packages(missing)
+}
+
+# Create the project structure
+dirs <- c("data", "R/functions", "tests/fixtures",
+          "outputs/figures", "outputs/tables", "reports",
+          "exploratory")
+for (d in dirs) {
+  if (!dir.exists(here::here(d))) {
+    dir.create(here::here(d), recursive = TRUE)
+  }
+}
+
+# Write the penguins CSV
+readr::write_csv(
+  palmerpenguins::penguins,
+  here::here("data", "penguins.csv")
+)
+
+# Write the test fixture
+fixture <- palmerpenguins::penguins |>
+  tidyr::drop_na(body_mass_g, flipper_length_mm, species) |>
+  dplyr::slice_head(n = 20, by = species)
+
+saveRDS(
+  fixture,
+  here::here("tests", "fixtures", "penguins_test_subset.rds")
+)
+
+# Write a .gitignore
+writeLines(
+  c("_targets/", "exploratory/", ".Rproj.user/",
+    ".Rhistory", ".RData", "renv/library/"),
+  here::here(".gitignore")
+)
+
+message("Workshop setup complete.")
+```
