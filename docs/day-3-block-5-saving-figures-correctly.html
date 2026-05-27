@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Day 3 Block 5: Saving figures correctly | Advancing in R</title>
+<meta name="author" content="Philip T. Leftwich">
+<meta name="description" content="The on-screen plot pane is rarely the same physical size as the saved figure. A font that looks correct at 10pt in the RStudio viewer will appear smaller in the saved PDF because the viewer...">
+<meta name="generator" content="bookdown 0.46 with bs4_book()">
+<meta property="og:title" content="Day 3 Block 5: Saving figures correctly | Advancing in R">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://ueabio.github.io/physalia-R-course-2023/day-3-block-5-saving-figures-correctly.html">
+<meta property="og:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<meta property="og:description" content="The on-screen plot pane is rarely the same physical size as the saved figure. A font that looks correct at 10pt in the RStudio viewer will appear smaller in the saved PDF because the viewer...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Day 3 Block 5: Saving figures correctly | Advancing in R">
+<meta name="twitter:description" content="The on-screen plot pane is rarely the same physical size as the saved figure. A font that looks correct at 10pt in the RStudio viewer will appear smaller in the saved PDF because the viewer...">
+<meta name="twitter:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.6.0/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.5.0/transition.js"></script><script src="libs/bs3compat-0.5.0/tabs.js"></script><script src="libs/bs3compat-0.5.0/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="libs/kePrint-0.0.1/kePrint.js"></script><link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-6NP3MF25W3"></script><script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-6NP3MF25W3');
+    </script><script language="javascript"> 
+        function toggle(id) {
+            var ele = document.getElementById("toggleText" + id);
+            var text = document.getElementById("displayText" + id);
+            var buttonText = text.innerHTML.replace("Show ", "");
+            buttonText = buttonText.replace("Hide ", "");
+            if(ele.style.display == "block") {
+                ele.style.display = "none";
+                text.innerHTML = "Show " + buttonText;
+            } else {
+                ele.style.display = "block";
+                text.innerHTML = "Hide " + buttonText;
+            }
+        } 
+    </script><script language="javascript">
+        function openCode(evt, codeName, id) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent" + id);
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks" + id);
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(codeName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script><script language="javascript">
+        function hide(id){
+            document.getElementById(id).style.display = "none";
+        }
+    </script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- CSS --><style type="text/css">
+    
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  </style>
+<link rel="stylesheet" href="include/psyteachr.css">
+<link rel="stylesheet" href="include/webex.css">
+<link rel="stylesheet" href="include/style.css">
+</head>
+<body data-spy="scroll" data-target="#toc">
+
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="A guide for Biologists and Ecologists">Advancing in R</a>:
+        <small class="text-muted">A guide for Biologists and Ecologists</small>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Overview</a></li>
+<li class="book-part">Day 1</li>
+<li><a class="" href="day-1-block-1-project-based-workflows.html">Day 1 Block 1: Project-based workflows</a></li>
+<li><a class="" href="day-1-block-2-getting-more-out-of-tidyverse.html">Day 1 Block 2: Getting more out of tidyverse</a></li>
+<li><a class="" href="day-1-block-3-writing-functions.html">Day 1 Block 3: Writing functions</a></li>
+<li><a class="" href="day-1-block-4-iterations-with-map.html">Day 1 Block 4: Iterations with map</a></li>
+<li><a class="" href="day-1-block-5-tidy-evaluation-and-data-masking.html">Day 1 Block 5: Tidy evaluation and data masking</a></li>
+<li class="book-part">Day 2</li>
+<li><a class="" href="day-2-block-1-reproducibility.html">Day 2 Block 1: Reproducibility</a></li>
+<li><a class="" href="day-2-block-2-code-review.html">Day 2 Block 2: Code Review</a></li>
+<li class="book-part">Day 3</li>
+<li><a class="" href="day-3-block-1-foundations-and-graph-crimes.html">Day 3 Block 1: Foundations and graph crimes</a></li>
+<li><a class="" href="day-3-block-2-choosing-the-right-figure.html">Day 3 Block 2: Choosing the right figure</a></li>
+<li><a class="" href="day-3-block-3-themes-and-scales.html">Day 3 Block 3: Themes and scales</a></li>
+<li><a class="" href="day-3-block-4-extensions-in-action.html">Day 3 Block 4: Extensions in action</a></li>
+<li><a class="active" href="day-3-block-5-saving-figures-correctly.html">Day 3 Block 5: Saving figures correctly</a></li>
+<li><a class="" href="day-3-block-6-writing-figure-legends.html">Day 3 Block 6: Writing figure legends</a></li>
+<li><a class="" href="day-3-block-7-three-questions-for-every-figure.html">Day 3 Block 7: Three questions for every figure</a></li>
+<li><a class="" href="day-3-block-8-quarto.html">Day 3 Block 8: Quarto</a></li>
+<li><a class="" href="day-3-block-9-github.html">Day 3 Block 9: Github</a></li>
+<li class="book-part">Extra Material</li>
+<li><a class="" href="making-tables-with-gt.html">Making tables with gt</a></li>
+<li><a class="" href="basic-ggplot.html">Basic ggplot</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/UEABIO/physalia-intro-stats-2023">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="day-3-block-5-saving-figures-correctly" class="section level1 unnumbered">
+<h1>Day 3 Block 5: Saving figures correctly<a class="anchor" aria-label="anchor" href="#day-3-block-5-saving-figures-correctly"><i class="fas fa-link"></i></a>
+</h1>
+<p>The on-screen plot pane is rarely the same physical size as the saved figure. A font that looks correct at 10pt in the RStudio viewer will appear smaller in the saved PDF because the viewer renders at 72 dpi and the PDF embeds at the dimensions you specify. This is the single most common source of "the figure looks fine on my screen but is unreadable in the manuscript" problems.</p>
+<p>Two extensions and one discipline solve this.</p>
+<div id="ggview-for-canvas-size-preview" class="section level2" number="3.17">
+<h2>
+<span class="header-section-number">3.17</span> ggview for canvas-size preview<a class="anchor" aria-label="anchor" href="#ggview-for-canvas-size-preview"><i class="fas fa-link"></i></a>
+</h2>
+<p><code>ggview</code> (Domin, 2025) adds a <code>canvas()</code> layer to the plot. The preview then renders at the dimensions the file will be saved at, so what you see is what you save.</p>
+<div class="sourceCode" id="cb131"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fig</span> <span class="op">&lt;-</span> <span class="va">penguins_complete</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">species</span>, y <span class="op">=</span> <span class="va">body_mass_g</span>, fill <span class="op">=</span> <span class="va">species</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggdist</span><span class="fu">::</span><span class="fu"><a href="https://mjskay.github.io/ggdist/reference/stat_halfeye.html">stat_halfeye</a></span><span class="op">(</span>adjust <span class="op">=</span> <span class="fl">0.5</span>, justification <span class="op">=</span> <span class="op">-</span><span class="fl">0.2</span>,</span>
+<span>                       .width <span class="op">=</span> <span class="fl">0</span>, point_colour <span class="op">=</span> <span class="cn">NA</span>, alpha <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_boxplot.html">geom_boxplot</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">0.12</span>, outlier.shape <span class="op">=</span> <span class="cn">NA</span>, alpha <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">colorspace</span><span class="fu">::</span><span class="fu"><a href="https://colorspace.R-Forge.R-project.org/reference/scale_colour_discrete_qualitative.html">scale_fill_discrete_qualitative</a></span><span class="op">(</span>palette <span class="op">=</span> <span class="st">"Dark2"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Body mass (g)"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">12</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html">theme</a></span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggview</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggview/man/canvas.html">canvas</a></span><span class="op">(</span>width <span class="op">=</span> <span class="fl">7</span>, height <span class="op">=</span> <span class="fl">5</span>, units <span class="op">=</span> <span class="st">"in"</span>, dpi <span class="op">=</span> <span class="fl">300</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Print displays the figure at the canvas size</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">fig</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># save_ggplot uses the canvas dimensions</span></span>
+<span><span class="fu">ggview</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ggview/man/save_ggplot.html">save_ggplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">fig</span>,</span>
+<span>  <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"outputs"</span>, <span class="st">"figures"</span>, <span class="st">"fig01_body_mass.png"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For one-off iteration, <code>canvas()</code> is lighter than the older <code>camcorder</code> package, which auto-saves every plot to disk. Use <code>camcorder</code> only when you specifically want a session-wide recording or a GIF of your iteration history.</p>
+</div>
+<div id="the-ragg-graphics-device" class="section level2" number="3.18">
+<h2>
+<span class="header-section-number">3.18</span> The ragg graphics device<a class="anchor" aria-label="anchor" href="#the-ragg-graphics-device"><i class="fas fa-link"></i></a>
+</h2>
+<p><code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html">ggsave()</a></code> is the interface for writing figures; under the hood it calls a graphics device to do the rendering. For raster output (PNG, JPG, TIFF), <code><a href="https://ragg.r-lib.org/reference/agg_png.html">ragg::agg_png</a></code> is the modern recommended device because it renders text with better antialiasing, accesses system fonts without <code>extrafont</code> or <code>showtext</code>, and — importantly for version control — writes no timestamp into the file. Identical code produces byte-identical output, so <code>git diff</code> works as expected.</p>
+<p>To set <code>ragg</code> as the plot pane backend in Positron or RStudio (≥1.4), go to <em>Settings → Graphics → Backend: AGG</em>. For Quarto documents, set <code>knitr::opts_chunk$set(dev = "ragg_png")</code> in the setup chunk.</p>
+</div>
+<div id="the-two-format-default" class="section level2" number="3.19">
+<h2>
+<span class="header-section-number">3.19</span> The two-format default<a class="anchor" aria-label="anchor" href="#the-two-format-default"><i class="fas fa-link"></i></a>
+</h2>
+<p>Save publication figures in two formats:</p>
+<ul>
+<li>
+<strong>PDF</strong> for inclusion in LaTeX manuscripts and final journal submission. Vector, infinitely scalable, the default for serious typesetting.</li>
+<li>
+<strong>PNG at 300 dpi</strong> via <code><a href="https://ragg.r-lib.org/reference/agg_png.html">ragg::agg_png</a></code> for slides, posters, and quick previews.</li>
+</ul>
+<div class="sourceCode" id="cb132"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html">ggsave</a></span><span class="op">(</span></span>
+<span>  filename <span class="op">=</span> <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"outputs"</span>, <span class="st">"figures"</span>, <span class="st">"fig01_body_mass.pdf"</span><span class="op">)</span>,</span>
+<span>  plot <span class="op">=</span> <span class="va">fig</span>,</span>
+<span>  width <span class="op">=</span> <span class="fl">7</span>,</span>
+<span>  height <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  units <span class="op">=</span> <span class="st">"in"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsave.html">ggsave</a></span><span class="op">(</span></span>
+<span>  filename <span class="op">=</span> <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"outputs"</span>, <span class="st">"figures"</span>, <span class="st">"fig01_body_mass.png"</span><span class="op">)</span>,</span>
+<span>  plot <span class="op">=</span> <span class="va">fig</span>,</span>
+<span>  width <span class="op">=</span> <span class="fl">7</span>,</span>
+<span>  height <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  units <span class="op">=</span> <span class="st">"in"</span>,</span>
+<span>  dpi <span class="op">=</span> <span class="fl">300</span>,</span>
+<span>  device <span class="op">=</span> <span class="fu">ragg</span><span class="fu">::</span><span class="va"><a href="https://ragg.r-lib.org/reference/agg_png.html">agg_png</a></span>,</span>
+<span>  bg <span class="op">=</span> <span class="st">"white"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><code>bg = "white"</code> is needed for PNG output because the <code>ggplot2</code> default is transparent, which causes display issues in many viewers.</p>
+<div class="warning">
+<p>
+Always specify <code>width</code>, <code>height</code>,
+<code>units</code>, and <code>dpi</code> explicitly. Never rely on
+<code><a href="https://ggplot2.tidyverse.org/reference/ggsave.html">ggsave()</a></code> defaults. The defaults rarely match the dimensions
+of the figure you actually want.
+</p>
+</div>
+</div>
+</div>
+<script>
+
+/* update total correct if #webex-total_correct exists */
+update_total_correct = function() {
+  console.log("webex: update total_correct");
+
+  if (t = document.getElementById("webex-total_correct")) {
+    var correct = document.getElementsByClassName("webex-correct").length;
+    var solvemes = document.getElementsByClassName("webex-solveme").length;
+    var radiogroups = document.getElementsByClassName("webex-radiogroup").length;
+    var selects = document.getElementsByClassName("webex-select").length;
+    
+    t.innerHTML = correct + " of " + (solvemes + radiogroups + selects) + " correct";
+  }
+}
+
+/* webex-solution button toggling function */
+b_func = function() {
+  console.log("webex: toggle hide");
+  
+  var cl = this.parentElement.classList;
+  if (cl.contains('open')) {
+    cl.remove("open");
+  } else {
+    cl.add("open");
+  }
+}
+
+/* function for checking solveme answers */
+solveme_func = function(e) {
+  console.log("webex: check solveme");
+
+  var real_answers = JSON.parse(this.dataset.answer);
+  var my_answer = this.value;
+  var cl = this.classList;
+  if (cl.contains("ignorecase")) {
+    my_answer = my_answer.toLowerCase();
+  }
+  if (cl.contains("nospaces")) {
+    my_answer = my_answer.replace(/ /g, "")
+  }
+
+  if (my_answer == "") {
+    cl.remove("webex-correct");
+    cl.remove("webex-incorrect");
+  } else if (real_answers.includes(my_answer)) {
+    cl.add("webex-correct");
+    cl.remove("webex-incorrect");
+  } else {
+    cl.add("webex-incorrect");
+    cl.remove("webex-correct");
+  }
+
+  // match numeric answers within a specified tolerance
+  if(this.dataset.tol > 0){
+    var tol = JSON.parse(this.dataset.tol);
+    var matches = real_answers.map(x => Math.abs(x - my_answer) < tol)
+    if (matches.reduce((a, b) => a + b, 0) > 0) {
+      cl.add("webex-correct");
+    } else {
+      cl.remove("webex-correct");
+    }
+  }
+
+  // added regex bit
+  if (cl.contains("regex")){
+    answer_regex = RegExp(real_answers.join("|"))
+    if (answer_regex.test(my_answer)) {
+      cl.add("webex-correct");
+    }
+  }
+
+  update_total_correct();
+}
+
+/* function for checking select answers */
+select_func = function(e) {
+  console.log("webex: check select");
+  
+  var cl = this.classList
+  
+  /* add style */
+  cl.remove("webex-incorrect");
+  cl.remove("webex-correct");
+  if (this.value == "answer") {
+    cl.add("webex-correct");
+  } else if (this.value != "blank") {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+/* function for checking radiogroups answers */
+radiogroups_func = function(e) {
+  console.log("webex: check radiogroups");
+
+  var checked_button = document.querySelector('input[name=' + this.id + ']:checked');
+  var cl = checked_button.parentElement.classList;
+  var labels = checked_button.parentElement.parentElement.children;
+  
+  /* get rid of styles */
+  for (i = 0; i < labels.length; i++) {
+    labels[i].classList.remove("webex-incorrect");
+    labels[i].classList.remove("webex-correct");
+  }
+  
+  /* add style */
+  if (checked_button.value == "answer") {
+    cl.add("webex-correct");
+  } else {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+window.onload = function() {
+  console.log("onload");
+  /* set up solution buttons */
+  var buttons = document.getElementsByTagName("button");
+
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].parentElement.classList.contains('webex-solution')) {
+      buttons[i].onclick = b_func;
+    }
+  }
+
+  /* set up webex-solveme inputs */
+  var solveme = document.getElementsByClassName("webex-solveme");
+
+  for (var i = 0; i < solveme.length; i++) {
+    /* make sure input boxes don't auto-anything */
+    solveme[i].setAttribute("autocomplete","off");
+    solveme[i].setAttribute("autocorrect", "off");
+    solveme[i].setAttribute("autocapitalize", "off");
+    solveme[i].setAttribute("spellcheck", "false");
+    solveme[i].value = "";
+
+    /* adjust answer for ignorecase or nospaces */
+    var cl = solveme[i].classList;
+    var real_answer = solveme[i].dataset.answer;
+    if (cl.contains("ignorecase")) {
+      real_answer = real_answer.toLowerCase();
+    }
+    if (cl.contains("nospaces")) {
+      real_answer = real_answer.replace(/ /g, "");
+    }
+    solveme[i].dataset.answer = real_answer;
+
+    /* attach checking function */
+    solveme[i].onkeyup = solveme_func;
+    solveme[i].onchange = solveme_func;
+  }
+  
+  /* set up radiogroups */
+  var radiogroups = document.getElementsByClassName("webex-radiogroup");
+  for (var i = 0; i < radiogroups.length; i++) {
+    radiogroups[i].onchange = radiogroups_func;
+  }
+  
+  /* set up selects */
+  var selects = document.getElementsByClassName("webex-select");
+  for (var i = 0; i < selects.length; i++) {
+    selects[i].onchange = select_func;
+  }
+
+  update_total_correct();
+}
+
+</script><script>
+$( document ).ready(function() {
+  var cite = ' ';
+  var license = ' <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"></a>';
+
+  $("footer div.row div:eq(1) p").html(
+    license
+  );
+});
+</script><div class="chapter-nav">
+<div class="prev"><a href="day-3-block-4-extensions-in-action.html">Day 3 Block 4: Extensions in action</a></div>
+<div class="next"><a href="day-3-block-6-writing-figure-legends.html">Day 3 Block 6: Writing figure legends</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#day-3-block-5-saving-figures-correctly">Day 3 Block 5: Saving figures correctly</a></li>
+<li><a class="nav-link" href="#ggview-for-canvas-size-preview"><span class="header-section-number">3.17</span> ggview for canvas-size preview</a></li>
+<li><a class="nav-link" href="#the-ragg-graphics-device"><span class="header-section-number">3.18</span> The ragg graphics device</a></li>
+<li><a class="nav-link" href="#the-two-format-default"><span class="header-section-number">3.19</span> The two-format default</a></li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/UEABIO/physalia-intro-stats-2023/blob/main/book/08-ggplot.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/UEABIO/physalia-intro-stats-2023/edit/main/book/08-ggplot.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2026-05-26.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer>
+</body>
+</html>

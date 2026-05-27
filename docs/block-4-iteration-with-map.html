@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Chapter 4 Block 4: Iteration with map | Advancing in R</title>
+<meta name="author" content="Philip T. Leftwich">
+<meta name="description" content="Roughly 55 minutes. First the map toolkit, then the same tools applied to the running example so that the three function calls from Block 3 become one pipeline. The refactored script still has...">
+<meta name="generator" content="bookdown 0.34 with bs4_book()">
+<meta property="og:title" content="Chapter 4 Block 4: Iteration with map | Advancing in R">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://ueabio.github.io/physalia-R-course-2023/block-4-iteration-with-map.html">
+<meta property="og:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<meta property="og:description" content="Roughly 55 minutes. First the map toolkit, then the same tools applied to the running example so that the three function calls from Block 3 become one pipeline. The refactored script still has...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chapter 4 Block 4: Iteration with map | Advancing in R">
+<meta name="twitter:description" content="Roughly 55 minutes. First the map toolkit, then the same tools applied to the running example so that the three function calls from Block 3 become one pipeline. The refactored script still has...">
+<meta name="twitter:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.6.0/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.5.0/transition.js"></script><script src="libs/bs3compat-0.5.0/tabs.js"></script><script src="libs/bs3compat-0.5.0/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="libs/kePrint-0.0.1/kePrint.js"></script><link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-6NP3MF25W3"></script><script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-6NP3MF25W3');
+    </script><script language="javascript"> 
+        function toggle(id) {
+            var ele = document.getElementById("toggleText" + id);
+            var text = document.getElementById("displayText" + id);
+            var buttonText = text.innerHTML.replace("Show ", "");
+            buttonText = buttonText.replace("Hide ", "");
+            if(ele.style.display == "block") {
+                ele.style.display = "none";
+                text.innerHTML = "Show " + buttonText;
+            } else {
+                ele.style.display = "block";
+                text.innerHTML = "Hide " + buttonText;
+            }
+        } 
+    </script><script language="javascript">
+        function openCode(evt, codeName, id) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent" + id);
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks" + id);
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(codeName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script><script language="javascript">
+        function hide(id){
+            document.getElementById(id).style.display = "none";
+        }
+    </script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- CSS --><style type="text/css">
+    
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  </style>
+<link rel="stylesheet" href="include/psyteachr.css">
+<link rel="stylesheet" href="include/webex.css">
+<link rel="stylesheet" href="include/style.css">
+</head>
+<body data-spy="scroll" data-target="#toc">
+
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="A guide for Biologists and Ecologists">Advancing in R</a>:
+        <small class="text-muted">A guide for Biologists and Ecologists</small>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Overview</a></li>
+<li class="book-part">Day 1:</li>
+<li><a class="" href="opening-why-organise.html">Opening: why organise?</a></li>
+<li><a class="" href="day-1-block-1-project-based-workflows.html"><span class="header-section-number">1</span> Day 1 Block 1: Project-based workflows</a></li>
+<li><a class="" href="day-1-block-2-getting-more-out-of-tidyverse.html"><span class="header-section-number">2</span> Day 1 Block 2: Getting more out of tidyverse</a></li>
+<li><a class="" href="block-3-writing-functions-and-the-first-refactor.html"><span class="header-section-number">3</span> Block 3: Writing functions, and the first refactor</a></li>
+<li><a class="active" href="block-4-iteration-with-map.html"><span class="header-section-number">4</span> Block 4: Iteration with map</a></li>
+<li><a class="" href="block-5-tidy-evaluation-and-data-masking.html"><span class="header-section-number">5</span> Block 5: Tidy evaluation and data masking</a></li>
+<li class="book-part">Day 2: Reproducibility and Code Review</li>
+<li><a class="" href="reproducibility.html"><span class="header-section-number">6</span> Reproducibility</a></li>
+<li><a class="" href="code-review.html"><span class="header-section-number">7</span> Code Review</a></li>
+<li class="book-part">Data visualisation workshop</li>
+<li><a class="" href="workshop-overview.html"><span class="header-section-number">8</span> Workshop overview</a></li>
+<li><a class="" href="block-1-foundations-and-graph-crimes.html"><span class="header-section-number">9</span> Block 1: Foundations and graph crimes</a></li>
+<li><a class="" href="block-2-choosing-the-right-figure.html"><span class="header-section-number">10</span> Block 2: Choosing the right figure</a></li>
+<li><a class="" href="block-3-themes-and-scales.html"><span class="header-section-number">11</span> Block 3: Themes and scales</a></li>
+<li><a class="" href="block-4-extensions-in-action.html"><span class="header-section-number">12</span> Block 4: Extensions in action</a></li>
+<li><a class="" href="block-5-saving-figures-correctly.html"><span class="header-section-number">13</span> Block 5: Saving figures correctly</a></li>
+<li><a class="" href="block-6-writing-figure-legends.html"><span class="header-section-number">14</span> Block 6: Writing figure legends</a></li>
+<li><a class="" href="block-7-three-questions-for-every-figure.html"><span class="header-section-number">15</span> Block 7: Three questions for every figure</a></li>
+<li><a class="" href="take-home-exercise.html"><span class="header-section-number">16</span> Take-home exercise</a></li>
+<li><a class="" href="further-reading-and-references.html"><span class="header-section-number">17</span> Further reading and references</a></li>
+<li><a class="" href="quarto.html"><span class="header-section-number">18</span> Quarto</a></li>
+<li><a class="" href="github.html"><span class="header-section-number">19</span> Github</a></li>
+<li class="book-part">Extra Material</li>
+<li><a class="" href="making-tables-with-gt.html"><span class="header-section-number">20</span> Making tables with gt</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/UEABIO/physalia-intro-stats-2023">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="block-4-iteration-with-map" class="section level1" number="4">
+<h1>
+<span class="header-section-number">4</span> Block 4: Iteration with <code>map</code><a class="anchor" aria-label="anchor" href="#block-4-iteration-with-map"><i class="fas fa-link"></i></a>
+</h1>
+<p><em>Roughly 55 minutes. First the <code>map</code> toolkit, then the same tools applied to the
+running example so that the three function calls from Block 3 become one pipeline.</em></p>
+<p>The refactored script still has three explicit calls, one per species. A fourth
+species means a fourth call. Iteration removes the per-group calls entirely: the
+function is applied to each group automatically.</p>
+<div id="part-a-the-map-toolkit" class="section level2" number="4.1">
+<h2>
+<span class="header-section-number">4.1</span> Part A: the <code>map</code> toolkit<a class="anchor" aria-label="anchor" href="#part-a-the-map-toolkit"><i class="fas fa-link"></i></a>
+</h2>
+<p><code>purrr::map(.x, .f)</code> applies the function <code>.f</code> to each element of <code>.x</code> and returns
+a list. It is the tidyverse counterpart of base R's <code><a href="https://rdrr.io/r/base/lapply.html">lapply()</a></code>.</p>
+<div class="sourceCode" id="cb73"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">df_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/gsubfn/man/list.html">list</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, b <span class="op">=</span> <span class="fl">11</span><span class="op">:</span><span class="fl">20</span>, c <span class="op">=</span> <span class="fl">21</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">df_list</span>, <span class="va">mean</span><span class="op">)</span>   <span class="co"># a list of three means</span></span></code></pre></div>
+<p><code><a href="https://purrr.tidyverse.org/reference/map.html">map()</a></code> always returns a list, which is maximally general but often more than you
+want. The typed variants return an atomic vector and <em>fail</em> if the result is not
+of that type, which is a feature: it catches mistakes early.</p>
+<div class="inline-table"><table class="table table-sm">
+<thead><tr>
+<th>Function</th>
+<th>Returns</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="https://purrr.tidyverse.org/reference/map.html">map()</a></code></td>
+<td>a list</td>
+</tr>
+<tr>
+<td><code><a href="https://purrr.tidyverse.org/reference/map.html">map_lgl()</a></code></td>
+<td>a logical vector</td>
+</tr>
+<tr>
+<td><code><a href="https://purrr.tidyverse.org/reference/map.html">map_int()</a></code></td>
+<td>an integer vector</td>
+</tr>
+<tr>
+<td><code><a href="https://purrr.tidyverse.org/reference/map.html">map_dbl()</a></code></td>
+<td>a double vector</td>
+</tr>
+<tr>
+<td><code><a href="https://purrr.tidyverse.org/reference/map.html">map_chr()</a></code></td>
+<td>a character vector</td>
+</tr>
+</tbody>
+</table></div>
+<div class="sourceCode" id="cb74"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map_dbl</a></span><span class="op">(</span><span class="va">df_list</span>, <span class="va">mean</span><span class="op">)</span>   <span class="co"># a named numeric vector, not a list</span></span></code></pre></div>
+<div class="info">
+<p>
+This type-safety is the reason to prefer <code>map_*()</code> over
+base <code><a href="https://rdrr.io/r/base/lapply.html">sapply()</a></code>. <code><a href="https://rdrr.io/r/base/lapply.html">sapply()</a></code> guesses the output
+type and can return a vector, a matrix or a list depending on the input,
+so a function that worked on Tuesday can silently return a different
+shape on Wednesday. <code><a href="https://purrr.tidyverse.org/reference/map.html">map_dbl()</a></code> either returns a double
+vector or errors. Predictability beats convenience.
+</p>
+</div>
+<div id="anonymous-functions-x-and-the-you-will-still-see" class="section level3" number="4.1.1">
+<h3>
+<span class="header-section-number">4.1.1</span> Anonymous functions: <code>\(x)</code>, and the <code>~</code> you will still see<a class="anchor" aria-label="anchor" href="#anonymous-functions-x-and-the-you-will-still-see"><i class="fas fa-link"></i></a>
+</h3>
+<p>When the callback is not already a named function, write it inline. The modern
+form is the R 4.1 shorthand <code>\(x)</code>:</p>
+<div class="sourceCode" id="cb75"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map_dbl</a></span><span class="op">(</span><span class="va">df_list</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html">sum</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html">length</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>You will frequently meet the older purrr formula-lambda, <code>~ sum(.x) / length(.x)</code>,
+where <code>.x</code> (or <code>.</code>) stands for the current element. It still works, but <code>\(x)</code> is
+clearer because the argument has a real name, and it is ordinary R rather than
+purrr-specific syntax. We use <code>\(x)</code> throughout.</p>
+<p>Extra arguments can be passed either inside the lambda or as trailing arguments to
+<code><a href="https://purrr.tidyverse.org/reference/map.html">map()</a></code>:</p>
+<div class="sourceCode" id="cb76"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map_dbl</a></span><span class="op">(</span><span class="va">df_list</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">x</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>   <span class="co"># inside the lambda</span></span>
+<span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map_dbl</a></span><span class="op">(</span><span class="va">df_list</span>, <span class="va">mean</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>           <span class="co"># forwarded by map()</span></span></code></pre></div>
+</div>
+<div id="returning-a-data-frame-map-list_rbind" class="section level3" number="4.1.2">
+<h3>
+<span class="header-section-number">4.1.2</span> Returning a data frame: <code>map() |&gt; list_rbind()</code><a class="anchor" aria-label="anchor" href="#returning-a-data-frame-map-list_rbind"><i class="fas fa-link"></i></a>
+</h3>
+<p>To stack per-element tibbles into one tibble, run <code><a href="https://purrr.tidyverse.org/reference/map.html">map()</a></code> and then <code><a href="https://purrr.tidyverse.org/reference/list_c.html">list_rbind()</a></code>.</p>
+<div class="sourceCode" id="cb77"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html">list.files</a></span><span class="op">(</span><span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="st">"many_files"</span><span class="op">)</span>,</span>
+<span>                    pattern <span class="op">=</span> <span class="st">"\\.csv$"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">all_data</span> <span class="op">&lt;-</span> <span class="va">files</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span>\<span class="op">(</span><span class="va">f</span><span class="op">)</span> <span class="fu">readr</span><span class="fu">::</span><span class="fu"><a href="https://readr.tidyverse.org/reference/read_delim.html">read_csv</a></span><span class="op">(</span><span class="va">f</span>, show_col_types <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/list_c.html">list_rbind</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="warning">
+<p>
+You will see <code><a href="https://purrr.tidyverse.org/reference/map_dfr.html">map_dfr()</a></code> and <code><a href="https://purrr.tidyverse.org/reference/map_dfr.html">map_dfc()</a></code> in
+older code and tutorials. These are <strong>superseded</strong>: the
+current idiom is <code>map() |&gt; list_rbind()</code> for row-binding
+and <code>map() |&gt; list_cbind()</code> for column-binding. They are
+clearer about the two separate steps (apply, then combine) and are the
+forms the tidyverse now recommends.
+</p>
+</div>
+</div>
+<div id="the-base-r-family-in-one-paragraph" class="section level3" number="4.1.3">
+<h3>
+<span class="header-section-number">4.1.3</span> The base R family, in one paragraph<a class="anchor" aria-label="anchor" href="#the-base-r-family-in-one-paragraph"><i class="fas fa-link"></i></a>
+</h3>
+<p>You will encounter <code><a href="https://rdrr.io/r/base/lapply.html">lapply()</a></code>, <code><a href="https://rdrr.io/r/base/lapply.html">sapply()</a></code>, <code><a href="https://rdrr.io/r/base/lapply.html">vapply()</a></code> and <code><a href="https://rdrr.io/r/base/apply.html">apply()</a></code> in existing
+code, and parallel iteration via <code>foreach</code> or <code>furrr</code>. The translation is direct:
+<code>lapply(x, f)</code> is <code>map(x, f)</code>; <code>sapply(x, f)</code> is one of the typed <code>map_*()</code>
+variants depending on the return type. Parallel back-ends such as <code><a href="https://furrr.futureverse.org/reference/future_map.html">furrr::future_map()</a></code>
+mirror <code><a href="https://purrr.tidyverse.org/reference/map.html">map()</a></code>'s interface for when a computation is genuinely slow and
+embarrassingly parallel. We mention these so you recognise them; for new code,
+<code>purrr</code> is the consistent default and parallelism is a later optimisation, applied
+only after profiling shows it is needed.</p>
+</div>
+<div id="map2-and-pmap-iterating-over-more-than-one-input" class="section level3" number="4.1.4">
+<h3>
+<span class="header-section-number">4.1.4</span> <code>map2</code> and <code>pmap</code>: iterating over more than one input<a class="anchor" aria-label="anchor" href="#map2-and-pmap-iterating-over-more-than-one-input"><i class="fas fa-link"></i></a>
+</h3>
+<p><code>map2(.x, .y, .f)</code> walks two collections in parallel, passing one element from
+each to the function. <code>pmap(.l, .f)</code> generalises to any number of inputs, taking a
+list (or a data frame, treating each column as an input).</p>
+<div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sizes</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="va">widths</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">5</span>, <span class="fl">6</span>, <span class="fl">7</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">map2_dbl</a></span><span class="op">(</span><span class="va">sizes</span>, <span class="va">widths</span>, \<span class="op">(</span><span class="va">s</span>, <span class="va">w</span><span class="op">)</span> <span class="va">s</span> <span class="op">*</span> <span class="va">w</span><span class="op">)</span>   <span class="co"># 10 18 28</span></span></code></pre></div>
+</div>
+<div id="walk-iteration-for-side-effects" class="section level3" number="4.1.5">
+<h3>
+<span class="header-section-number">4.1.5</span> <code>walk</code>: iteration for side effects<a class="anchor" aria-label="anchor" href="#walk-iteration-for-side-effects"><i class="fas fa-link"></i></a>
+</h3>
+<p>When you iterate to <em>do</em> something (write files, print plots) rather than to
+<em>return</em> a value, use <code><a href="https://purrr.tidyverse.org/reference/map.html">walk()</a></code>/<code><a href="https://purrr.tidyverse.org/reference/map2.html">walk2()</a></code>. They run the function for its side
+effect and return their input invisibly, so the console is not flooded with output.</p>
+<div class="sourceCode" id="cb79"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Write each split of the data to its own file, silently</span></span>
+<span><span class="va">peng_split</span> <span class="op">&lt;-</span> <span class="va">penguins_clean</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">species</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_split.html">group_split</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">peng_split</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"Adelie"</span>, <span class="st">"Chinstrap"</span>, <span class="st">"Gentoo"</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map2.html">walk2</a></span><span class="op">(</span></span>
+<span>  <span class="va">peng_split</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html">names</a></span><span class="op">(</span><span class="va">peng_split</span><span class="op">)</span>,</span>
+<span>  \<span class="op">(</span><span class="va">data</span>, <span class="va">nm</span><span class="op">)</span> <span class="fu">readr</span><span class="fu">::</span><span class="fu"><a href="https://readr.tidyverse.org/reference/write_delim.html">write_csv</a></span><span class="op">(</span><span class="va">data</span>, <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste0</a></span><span class="op">(</span><span class="va">nm</span>, <span class="st">".csv"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+</div>
+<div id="part-b-iteration-on-the-running-example-block-3-of-the-workshop" class="section level2" number="4.2">
+<h2>
+<span class="header-section-number">4.2</span> Part B: iteration on the running example (Block 3 of the workshop)<a class="anchor" aria-label="anchor" href="#part-b-iteration-on-the-running-example-block-3-of-the-workshop"><i class="fas fa-link"></i></a>
+</h2>
+<p>Recall the list-column from Block 2: <code>group_by(species) |&gt; nest()</code> puts each
+species' tibble into one cell of a <code>data</code> column.</p>
+<div class="sourceCode" id="cb80"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">species_data</span> <span class="op">&lt;-</span> <span class="va">penguins_clean</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">species</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/nest.html">nest</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">species_data</span></span>
+<span><span class="co"># # A tibble: 3 x 2</span></span>
+<span><span class="co">#   species   data</span></span>
+<span><span class="co">#   &lt;fct&gt;     &lt;list&gt;</span></span>
+<span><span class="co"># 1 Adelie    &lt;tibble [146 x 7]&gt;</span></span>
+<span><span class="co"># 2 Gentoo    &lt;tibble [119 x 7]&gt;</span></span>
+<span><span class="co"># 3 Chinstrap &lt;tibble [68 x 7]&gt;</span></span></code></pre></div>
+<div class="info">
+<p>
+We use the classic <code>group_by() |&gt; nest()</code> rather than
+the newer <code>nest(.by = species)</code>. Both give the same result;
+the explicit grouping step is clearer and backward-compatible.
+</p>
+</div>
+<div id="applying-a-function-to-each-cell" class="section level3" number="4.2.1">
+<h3>
+<span class="header-section-number">4.2.1</span> Applying a function to each cell<a class="anchor" aria-label="anchor" href="#applying-a-function-to-each-cell"><i class="fas fa-link"></i></a>
+</h3>
+<p>Used inside <code><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate()</a></code>, <code><a href="https://purrr.tidyverse.org/reference/map.html">map()</a></code> applies a function to each cell of a list-column
+and stores the result as a new list-column:</p>
+<div class="sourceCode" id="cb81"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">species_models</span> <span class="op">&lt;-</span> <span class="va">species_data</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    model <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">data</span>, \<span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span><span class="va">body_mass_g</span> <span class="op">~</span> <span class="va">flipper_length_mm</span>, data <span class="op">=</span> <span class="va">d</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    coefs <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">model</span>, \<span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html">tidy</a></span><span class="op">(</span><span class="va">m</span>, conf.int <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    n_obs <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map_int</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">nrow</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="va">species_models</span></span>
+<span><span class="co"># # A tibble: 3 x 5</span></span>
+<span><span class="co">#   species   data              model  coefs            n_obs</span></span>
+<span><span class="co">#   &lt;fct&gt;     &lt;list&gt;            &lt;list&gt; &lt;list&gt;           &lt;int&gt;</span></span>
+<span><span class="co"># 1 Adelie    &lt;tibble [146x7]&gt;  &lt;lm&gt;   &lt;tibble [2x7]&gt;     146</span></span>
+<span><span class="co"># 2 Gentoo    &lt;tibble [119x7]&gt;  &lt;lm&gt;   &lt;tibble [2x7]&gt;     119</span></span>
+<span><span class="co"># 3 Chinstrap &lt;tibble [68x7]&gt;   &lt;lm&gt;   &lt;tibble [2x7]&gt;      68</span></span></code></pre></div>
+<p>Three things to notice. The <code>model</code> cell holds a fitted <code>lm</code> per species; the
+<code>coefs</code> cell holds a tidied tibble per species; and <code>n_obs</code> is an ordinary integer
+column, not a list-column, because <code><a href="https://purrr.tidyverse.org/reference/map.html">map_int()</a></code> returns an atomic vector. The typed
+variants slot straight into a tibble.</p>
+</div>
+<div id="unnesting-back-to-a-flat-table" class="section level3" number="4.2.2">
+<h3>
+<span class="header-section-number">4.2.2</span> Unnesting back to a flat table<a class="anchor" aria-label="anchor" href="#unnesting-back-to-a-flat-table"><i class="fas fa-link"></i></a>
+</h3>
+<p>For a manuscript coefficient table, expand the <code>coefs</code> list-column back into rows.
+<code><a href="https://tidyr.tidyverse.org/reference/unnest.html">unnest()</a></code> is the dual of <code><a href="https://tidyr.tidyverse.org/reference/nest.html">nest()</a></code>: each cell's tibble becomes rows, with the
+surrounding columns repeated.</p>
+<div class="sourceCode" id="cb82"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">coefficient_table</span> <span class="op">&lt;-</span> <span class="va">species_models</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">ungroup</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="va">species</span>, <span class="va">coefs</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/unnest.html">unnest</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div id="a-real-refactor-decompose-the-function" class="section level3" number="4.2.3">
+<h3>
+<span class="header-section-number">4.2.3</span> A real refactor: decompose the function<a class="anchor" aria-label="anchor" href="#a-real-refactor-decompose-the-function"><i class="fas fa-link"></i></a>
+</h3>
+<p>There is a tension. <code>fit_species_model()</code> filters <em>and</em> fits, but <code><a href="https://tidyr.tidyverse.org/reference/nest.html">nest()</a></code> has
+already done the filtering. Calling it inside the iteration would filter twice.
+That tension is information: the function is doing two jobs. Split them.</p>
+<div class="sourceCode" id="cb83"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># R/functions/modelling_functions.R -- revised</span></span>
+<span></span>
+<span><span class="co">#' Fit body mass ~ flipper length on pre-filtered data</span></span>
+<span><span class="co">#' @param data A data frame, assumed to be one species' worth.</span></span>
+<span><span class="co">#' @return A fitted lm object.</span></span>
+<span><span class="va">fit_model</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/lm.html">lm</a></span><span class="op">(</span><span class="va">body_mass_g</span> <span class="op">~</span> <span class="va">flipper_length_mm</span>, data <span class="op">=</span> <span class="va">data</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co">#' Tidy a fitted lm with confidence intervals</span></span>
+<span><span class="co">#' @param model A fitted lm object.</span></span>
+<span><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
+<span><span class="co">#' @return A tibble of tidied coefficients.</span></span>
+<span><span class="va">tidy_model</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">model</span>, <span class="va">conf_level</span> <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu">broom</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html">tidy</a></span><span class="op">(</span><span class="va">model</span>, conf.int <span class="op">=</span> <span class="cn">TRUE</span>, conf.level <span class="op">=</span> <span class="va">conf_level</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="co">#' Fit for one species (wrapper preserving the old interface)</span></span>
+<span><span class="co">#' @param data A data frame with a `species` column.</span></span>
+<span><span class="co">#' @param sp Character of length 1. Species to filter to.</span></span>
+<span><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
+<span><span class="va">fit_species_model</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">sp</span>, <span class="va">conf_level</span> <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="va">sp</span> <span class="op"><a href="https://rdrr.io/r/base/match.html">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html">unique</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">species</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/stop.html">stop</a></span><span class="op">(</span><span class="st">"Species '"</span>, <span class="va">sp</span>, <span class="st">"' is not in the data. "</span>,</span>
+<span>         <span class="st">"Available species: "</span>,</span>
+<span>         <span class="fu"><a href="https://rdrr.io/r/base/paste.html">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html">sort</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html">unique</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">species</span><span class="op">)</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="va">data</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html">filter</a></span><span class="op">(</span><span class="va">species</span> <span class="op">==</span> <span class="va">sp</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">fit_model</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">tidy_model</span><span class="op">(</span>conf_level <span class="op">=</span> <span class="va">conf_level</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>species <span class="op">=</span> <span class="va">sp</span>, .before <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p><code>fit_model()</code> and <code>tidy_model()</code> now exist independently and compose. The old
+public interface survives as a wrapper, so existing callers and the tests from
+Block 3 still pass with no edits. That is what a good refactor looks like:
+behaviour preserved, internals improved, tests green.</p>
+</div>
+<div id="the-iteration-rewritten" class="section level3" number="4.2.4">
+<h3>
+<span class="header-section-number">4.2.4</span> The iteration, rewritten<a class="anchor" aria-label="anchor" href="#the-iteration-rewritten"><i class="fas fa-link"></i></a>
+</h3>
+<p>With single-responsibility functions, the iteration uses them directly and reads
+cleanly:</p>
+<div class="sourceCode" id="cb84"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">species_models</span> <span class="op">&lt;-</span> <span class="va">penguins_clean</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">species</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/nest.html">nest</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    model <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">fit_model</span><span class="op">)</span>,</span>
+<span>    coefs <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">tidy_model</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="va">coefficient_table</span> <span class="op">&lt;-</span> <span class="va">species_models</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">ungroup</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="va">species</span>, <span class="va">coefs</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/unnest.html">unnest</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span></span></code></pre></div>
+<p>This is the destination. The modelling logic that was three copy-pasted blocks in
+Block 1, then three function calls in Block 3, is now one pipeline that applies the
+same function to every group.</p>
+</div>
+<div id="activity-iterate-over-a-different-grouping" class="section level3" number="4.2.5">
+<h3>
+<span class="header-section-number">4.2.5</span> Activity: iterate over a different grouping<a class="anchor" aria-label="anchor" href="#activity-iterate-over-a-different-grouping"><i class="fas fa-link"></i></a>
+</h3>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+The penguins data has an <code>island</code> column ("Biscoe", "Dream", "Torgersen"). Fit a
+separate <code>body_mass_g ~ flipper_length_mm</code> model for each island and produce a
+tidied coefficient table, using the nest pattern.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-18" onclick="javascript:toggle('unnamed-chunk-18');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-18" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb85"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">island_coefs</span> <span class="op">&lt;-</span> <span class="va">penguins_clean</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">island</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/nest.html">nest</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    model <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">fit_model</span><span class="op">)</span>,</span>
+<span>    coefs <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">tidy_model</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">ungroup</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span><span class="op">(</span><span class="va">island</span>, <span class="va">coefs</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/unnest.html">unnest</a></span><span class="op">(</span><span class="va">coefs</span><span class="op">)</span></span></code></pre></div>
+<p><code>fit_model()</code> and <code>tidy_model()</code> are reused unchanged. They never knew they would
+iterate over species; they work for islands too, because each has a single
+responsibility and no hidden assumption about the grouping.</p>
+</div>
+</div>
+</div>
+</div>
+<div id="extension-exercise-plots-in-a-list-column" class="section level3" number="4.2.6">
+<h3>
+<span class="header-section-number">4.2.6</span> Extension exercise: plots in a list-column<a class="anchor" aria-label="anchor" href="#extension-exercise-plots-in-a-list-column"><i class="fas fa-link"></i></a>
+</h3>
+<div class="panel panel-default">
+<div class="panel-heading">
+Task
+</div>
+<div class="panel-body">
+A list-column can hold plots as readily as models. Using the nested data, add a
+<code>plot</code> column made with <code><a href="https://purrr.tidyverse.org/reference/map.html">map()</a></code> that holds one scatter plot per species, then draw
+them together with <code><a href="https://patchwork.data-imaginist.com/reference/wrap_plots.html">patchwork::wrap_plots()</a></code>. Hint: build each plot inside
+<code>\(d) ggplot(d, ...)</code>.
+</div>
+</div>
+<button id="displayTextunnamed-chunk-20" onclick="javascript:toggle('unnamed-chunk-20');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-20" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb86"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">species_plots</span> <span class="op">&lt;-</span> <span class="va">penguins_clean</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">species</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/nest.html">nest</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span></span>
+<span>    plot <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html">map</a></span><span class="op">(</span><span class="va">data</span>, \<span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
+<span>      <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="va">d</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html">aes</a></span><span class="op">(</span><span class="va">flipper_length_mm</span>, <span class="va">body_mass_g</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html">geom_point</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span> <span class="op">+</span></span>
+<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_smooth.html">geom_smooth</a></span><span class="op">(</span>method <span class="op">=</span> <span class="st">"lm"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>        <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html">theme_minimal</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="fu">patchwork</span><span class="fu">::</span><span class="fu"><a href="https://patchwork.data-imaginist.com/reference/wrap_plots.html">wrap_plots</a></span><span class="op">(</span><span class="va">species_plots</span><span class="op">$</span><span class="va">plot</span><span class="op">)</span></span></code></pre></div>
+<p>The same <code>nest |&gt; mutate(map(...))</code> pattern that fits models also builds figures.
+Once you see a cell as "any R object", models, plots and tables are all just
+list-columns.</p>
+</div>
+</div>
+</div>
+<div class="info">
+<p>
+<strong>Where this leaves us.</strong> Copy-paste is gone. One
+pipeline fits a model per group, whatever the group is. But
+<code>fit_model()</code> still hardcodes the response and predictor: it
+only ever fits body mass on flipper length. Block 5 removes that last
+limitation.
+</p>
+</div>
+
+</div>
+</div>
+</div>
+<script>
+
+/* update total correct if #webex-total_correct exists */
+update_total_correct = function() {
+  console.log("webex: update total_correct");
+
+  if (t = document.getElementById("webex-total_correct")) {
+    var correct = document.getElementsByClassName("webex-correct").length;
+    var solvemes = document.getElementsByClassName("webex-solveme").length;
+    var radiogroups = document.getElementsByClassName("webex-radiogroup").length;
+    var selects = document.getElementsByClassName("webex-select").length;
+    
+    t.innerHTML = correct + " of " + (solvemes + radiogroups + selects) + " correct";
+  }
+}
+
+/* webex-solution button toggling function */
+b_func = function() {
+  console.log("webex: toggle hide");
+  
+  var cl = this.parentElement.classList;
+  if (cl.contains('open')) {
+    cl.remove("open");
+  } else {
+    cl.add("open");
+  }
+}
+
+/* function for checking solveme answers */
+solveme_func = function(e) {
+  console.log("webex: check solveme");
+
+  var real_answers = JSON.parse(this.dataset.answer);
+  var my_answer = this.value;
+  var cl = this.classList;
+  if (cl.contains("ignorecase")) {
+    my_answer = my_answer.toLowerCase();
+  }
+  if (cl.contains("nospaces")) {
+    my_answer = my_answer.replace(/ /g, "")
+  }
+
+  if (my_answer == "") {
+    cl.remove("webex-correct");
+    cl.remove("webex-incorrect");
+  } else if (real_answers.includes(my_answer)) {
+    cl.add("webex-correct");
+    cl.remove("webex-incorrect");
+  } else {
+    cl.add("webex-incorrect");
+    cl.remove("webex-correct");
+  }
+
+  // match numeric answers within a specified tolerance
+  if(this.dataset.tol > 0){
+    var tol = JSON.parse(this.dataset.tol);
+    var matches = real_answers.map(x => Math.abs(x - my_answer) < tol)
+    if (matches.reduce((a, b) => a + b, 0) > 0) {
+      cl.add("webex-correct");
+    } else {
+      cl.remove("webex-correct");
+    }
+  }
+
+  // added regex bit
+  if (cl.contains("regex")){
+    answer_regex = RegExp(real_answers.join("|"))
+    if (answer_regex.test(my_answer)) {
+      cl.add("webex-correct");
+    }
+  }
+
+  update_total_correct();
+}
+
+/* function for checking select answers */
+select_func = function(e) {
+  console.log("webex: check select");
+  
+  var cl = this.classList
+  
+  /* add style */
+  cl.remove("webex-incorrect");
+  cl.remove("webex-correct");
+  if (this.value == "answer") {
+    cl.add("webex-correct");
+  } else if (this.value != "blank") {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+/* function for checking radiogroups answers */
+radiogroups_func = function(e) {
+  console.log("webex: check radiogroups");
+
+  var checked_button = document.querySelector('input[name=' + this.id + ']:checked');
+  var cl = checked_button.parentElement.classList;
+  var labels = checked_button.parentElement.parentElement.children;
+  
+  /* get rid of styles */
+  for (i = 0; i < labels.length; i++) {
+    labels[i].classList.remove("webex-incorrect");
+    labels[i].classList.remove("webex-correct");
+  }
+  
+  /* add style */
+  if (checked_button.value == "answer") {
+    cl.add("webex-correct");
+  } else {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+window.onload = function() {
+  console.log("onload");
+  /* set up solution buttons */
+  var buttons = document.getElementsByTagName("button");
+
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].parentElement.classList.contains('webex-solution')) {
+      buttons[i].onclick = b_func;
+    }
+  }
+
+  /* set up webex-solveme inputs */
+  var solveme = document.getElementsByClassName("webex-solveme");
+
+  for (var i = 0; i < solveme.length; i++) {
+    /* make sure input boxes don't auto-anything */
+    solveme[i].setAttribute("autocomplete","off");
+    solveme[i].setAttribute("autocorrect", "off");
+    solveme[i].setAttribute("autocapitalize", "off");
+    solveme[i].setAttribute("spellcheck", "false");
+    solveme[i].value = "";
+
+    /* adjust answer for ignorecase or nospaces */
+    var cl = solveme[i].classList;
+    var real_answer = solveme[i].dataset.answer;
+    if (cl.contains("ignorecase")) {
+      real_answer = real_answer.toLowerCase();
+    }
+    if (cl.contains("nospaces")) {
+      real_answer = real_answer.replace(/ /g, "");
+    }
+    solveme[i].dataset.answer = real_answer;
+
+    /* attach checking function */
+    solveme[i].onkeyup = solveme_func;
+    solveme[i].onchange = solveme_func;
+  }
+  
+  /* set up radiogroups */
+  var radiogroups = document.getElementsByClassName("webex-radiogroup");
+  for (var i = 0; i < radiogroups.length; i++) {
+    radiogroups[i].onchange = radiogroups_func;
+  }
+  
+  /* set up selects */
+  var selects = document.getElementsByClassName("webex-select");
+  for (var i = 0; i < selects.length; i++) {
+    selects[i].onchange = select_func;
+  }
+
+  update_total_correct();
+}
+
+</script><script>
+$( document ).ready(function() {
+  var cite = ' ';
+  var license = ' <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"></a>';
+
+  $("footer div.row div:eq(1) p").html(
+    license
+  );
+});
+</script><div class="chapter-nav">
+<div class="prev"><a href="block-3-writing-functions-and-the-first-refactor.html"><span class="header-section-number">3</span> Block 3: Writing functions, and the first refactor</a></div>
+<div class="next"><a href="block-5-tidy-evaluation-and-data-masking.html"><span class="header-section-number">5</span> Block 5: Tidy evaluation and data masking</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#block-4-iteration-with-map"><span class="header-section-number">4</span> Block 4: Iteration with map</a></li>
+<li>
+<a class="nav-link" href="#part-a-the-map-toolkit"><span class="header-section-number">4.1</span> Part A: the map toolkit</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#anonymous-functions-x-and-the-you-will-still-see"><span class="header-section-number">4.1.1</span> Anonymous functions: \(x), and the ~ you will still see</a></li>
+<li><a class="nav-link" href="#returning-a-data-frame-map-list_rbind"><span class="header-section-number">4.1.2</span> Returning a data frame: map() |&gt; list_rbind()</a></li>
+<li><a class="nav-link" href="#the-base-r-family-in-one-paragraph"><span class="header-section-number">4.1.3</span> The base R family, in one paragraph</a></li>
+<li><a class="nav-link" href="#map2-and-pmap-iterating-over-more-than-one-input"><span class="header-section-number">4.1.4</span> map2 and pmap: iterating over more than one input</a></li>
+<li><a class="nav-link" href="#walk-iteration-for-side-effects"><span class="header-section-number">4.1.5</span> walk: iteration for side effects</a></li>
+</ul>
+</li>
+<li>
+<a class="nav-link" href="#part-b-iteration-on-the-running-example-block-3-of-the-workshop"><span class="header-section-number">4.2</span> Part B: iteration on the running example (Block 3 of the workshop)</a><ul class="nav navbar-nav">
+<li><a class="nav-link" href="#applying-a-function-to-each-cell"><span class="header-section-number">4.2.1</span> Applying a function to each cell</a></li>
+<li><a class="nav-link" href="#unnesting-back-to-a-flat-table"><span class="header-section-number">4.2.2</span> Unnesting back to a flat table</a></li>
+<li><a class="nav-link" href="#a-real-refactor-decompose-the-function"><span class="header-section-number">4.2.3</span> A real refactor: decompose the function</a></li>
+<li><a class="nav-link" href="#the-iteration-rewritten"><span class="header-section-number">4.2.4</span> The iteration, rewritten</a></li>
+<li><a class="nav-link" href="#activity-iterate-over-a-different-grouping"><span class="header-section-number">4.2.5</span> Activity: iterate over a different grouping</a></li>
+<li><a class="nav-link" href="#extension-exercise-plots-in-a-list-column"><span class="header-section-number">4.2.6</span> Extension exercise: plots in a list-column</a></li>
+</ul>
+</li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/UEABIO/physalia-intro-stats-2023/blob/main/book/04-iteration.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/UEABIO/physalia-intro-stats-2023/edit/main/book/04-iteration.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2026-05-22.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer>
+</body>
+</html>

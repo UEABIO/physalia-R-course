@@ -1,7 +1,7 @@
 --- 
 title: "Advancing in R"
 author: "Philip T. Leftwich"
-date: "2026-05-13"
+date: "2026-05-26"
 subtitle: A guide for Biologists and Ecologists
 site: bookdown::bookdown_site
 documentclass: book
@@ -86,7 +86,6 @@ This course is designed for anyone with basic knowledge of R who is looking to e
 
 - rvest
 - data.table
-- sqldf
 
 ## Reproducible Reports:
 - rmarkdown
@@ -111,10 +110,6 @@ This course is designed for anyone with basic knowledge of R who is looking to e
 - geomtextpath
 - colorBlindness
 - patchwork
-
-## Working with Shiny:
-- shiny
-- bslib
 
 ## Working with Github:
 - gitcreds
