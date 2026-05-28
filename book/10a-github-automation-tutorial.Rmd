@@ -1,0 +1,561 @@
+#  Day 3 Block 10: Github Automations {.unnumbered}
+
+```{r, child='_setup.Rmd'}
+```
+
+```{r, include = FALSE}
+
+library(usethis)
+library(gitcreds)
+
+```
+
+## What you will learn
+
+By the end of this tutorial you will have two automated checks running in your project:
+
+1. A **git hook** that runs on your machine every time you commit, checking that your
+   `renv.lock` file is up to date
+   
+2. A **GitHub Actions workflow** that runs on GitHub's servers every time you push,
+   automatically rendering your Quarto document and storing the output for download
+
+Neither requires manual triggering. Both connect directly to your existing project workflow.
+
+---
+
+## The mental model: two gates, two purposes
+
+Before writing any code, it is worth understanding what these tools are and why you would
+use both.
+
+**A git hook** is a script that fires automatically when a specific git event occurs — in
+this case, when you run `git commit`. It runs on your own machine, before the commit
+completes. If the script fails, the commit is blocked and you see an error message
+explaining why. This makes hooks ideal for catching problems *before* they leave your
+machine.
+
+**GitHub Actions** is a set of instructions stored in your repository that GitHub's
+servers execute automatically when a specified event occurs — in this case, when you push.
+To understand what "GitHub's servers" means in practice: imagine a brand-new computer with
+nothing installed — no R, no packages, no files. GitHub provides that computer, downloads
+your repository onto it, and follows your instructions step by step. This is what is meant
+by a "clean environment": there are no local settings, no previously installed packages,
+and no assumptions about your machine. If your code works there, it will work anywhere.
+
+The two tools are complementary rather than interchangeable. The hook catches problems
+locally before they are committed. Actions verifies that your code works in a clean
+environment after they are pushed. Together they form two checkpoints:
+
+```
+You write code → git commit → [HOOK: renv check] → git push → [ACTIONS: render Quarto]
+```
+
+
+
+## A note on YAML
+
+The GitHub Actions workflow file is written in YAML (rhymes with "camel"). YAML is a
+format for writing structured configuration — think of it as a way of expressing a nested
+list using indentation rather than brackets. You do not need to learn YAML deeply for this
+tutorial; the file is fully annotated and you only need to make small edits to adapt it to
+your project. The one rule that matters: **indentation is significant**. Use spaces, not
+tabs, and keep the indentation consistent with the examples shown.
+
+
+
+## A note on r-lib/actions
+
+The R community maintains a library of pre-built GitHub Actions specifically for R users,
+available at [https://github.com/r-lib/actions](https://github.com/r-lib/actions). These
+cover common tasks such as installing R, restoring renv packages, and running checks.
+Rather than writing these steps from scratch, you can use them in your workflow file with
+a single line. This tutorial uses two of them: `setup-r` and `setup-renv`. When you are
+ready to go further, the r-lib/actions repository contains a full set of examples for
+other tasks.
+
+
+
+## Before you start
+
+**Check that renv.lock is committed.** In RStudio or Positron, open the Git pane (usually
+in the top-right panel). If `renv.lock` appears in the list of changed files, it has not
+been committed yet. If it does not appear, it is already committed and you are ready to
+proceed.
+
+If `renv.lock` is not yet committed, run the following in R and then commit the result
+using the Git pane:
+
+```r
+renv::snapshot()
+```
+
+**Check your branch name.** In the Git pane, your current branch name is shown at the
+top. If it says `main`, you are ready to proceed. If it says `master` or something else,
+note the name — you will need to substitute it in the workflow file in Part 2.
+
+**Confirm you have a Quarto document.** Your project should contain a `.qmd` file, for
+example `analysis.qmd`. If you do not have one yet, create a minimal file now:
+
+````markdown
+---
+title: "My Analysis"
+format: html
+---
+
+This document is rendered automatically by GitHub Actions.
+
+```{r}`r ''`
+summary(cars)
+```
+
+````
+
+
+
+## Part 1: Your first hook — checking renv synchronisation
+
+### Why this matters
+
+`renv` tracks your project's package dependencies in `renv.lock`. When you install,
+update, or remove a package, `renv.lock` must be updated with `renv::snapshot()` to
+reflect the change. If you forget, anyone who restores from your lockfile — including
+yourself on a new machine, or GitHub Actions — will get a different set of packages. This
+is one of the most common reproducibility failures in R projects and one of the easiest
+to prevent automatically.
+
+### How the hook works
+
+Every time you run `git commit`, the hook calls `renv::status()`. If your installed
+packages and `renv.lock` are out of sync, the commit is blocked and you are told to run
+`renv::snapshot()`. If they are in sync, the commit proceeds normally. You do not interact
+with the hook directly — it fires on its own.
+
+### Setting up the hook using usethis
+
+The `usethis` package provides a function that creates the hook file and sets the correct
+file permissions in a single R call, with no terminal commands required.
+
+First, install `usethis` if you do not have it:
+
+```{r, eval = FALSE}
+install.packages("usethis")
+```
+
+Make the following file
+
+use .gitignore changes to ignore the `.git/hooks/` directory, so that the hook script is not accidentally added to git:
+
+scripts/hooks/pre-commit.sh:
+
+```
+echo "--- Checking renv synchronisation..."
+"/c/Program Files/R/R-4.5.2/bin/x64/Rscript" --no-save --no-restore-data -e '
+  renv::load(".")
+  status <- renv::status()
+  ok <- isTRUE(status$synchronized)
+  if (!ok) {
+    message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")
+    quit(status = 1)
+  }
+  message("renv check passed.")
+' || exit 1
+
+```
+
+
+```{r, eval = FALSE}
+
+usethis::use_git_hook(
+  hook   = "pre-commit",
+  script = readLines("scripts/hooks/pre-commit.sh") |> paste(collapse = "\n")
+)
+
+```
+
+`usethis::use_git_hook()` writes the script into `.git/hooks/pre-commit` and makes it
+executable. You do not need to use the terminal for any of this.
+
+> **What is `.git/`?** Every git repository contains a hidden folder called `.git/` that
+> stores git's internal data — your commit history, configuration, and hooks. You will not
+> normally interact with it directly. It does not appear in RStudio's Files pane because
+> it is hidden; you can see it in your operating system's file explorer if you enable
+> hidden files.
+
+## Part 2: Your first GitHub Action — rendering a Quarto document
+
+### Why this matters
+
+Rendering a Quarto document on GitHub's clean servers achieves two things. First, it
+confirms that your document renders correctly using only the packages in `renv.lock`,
+catching the common situation where something works on your machine but fails elsewhere.
+Second, it produces a rendered HTML file that anyone with access to the repository can
+download, without needing R or Quarto installed.
+
+### usethis::use_github_action()
+
+The `usethis` package provides `use_github_action()`, which sets up common GitHub Actions
+workflows with a single R function call. Running it without arguments shows you the
+available options:
+
+```
+usethis::use_github_action()
+```
+
+This opens an interactive menu. The built-in options are primarily aimed at R package
+developers (running checks, computing test coverage, building documentation sites).
+For an analysis project with a Quarto document, none of the built-in templates fits
+directly, so we will write the workflow file manually. However, `use_github_action()` is
+worth knowing about: as your use of GitHub grows, it provides a fast path to common
+workflows without writing YAML from scratch. The r-lib/actions repository
+([https://github.com/r-lib/actions](https://github.com/r-lib/actions)) lists all
+available options and their corresponding `use_github_action()` calls.
+
+### Step 1: Enable write permissions in your repository
+
+GitHub Actions needs permission to write to your repository. Granting this now avoids a
+common failure mode later.
+
+1. Go to your repository on GitHub.com
+2. Click **Settings** in the top navigation bar
+3. Click **Actions** in the left sidebar, then **General**
+4. Scroll to *Workflow permissions*
+5. Select **Read and write permissions**
+6. Click **Save**
+
+### Step 2: Create the workflow file
+
+Create the following folder structure in your project. You can do this in RStudio's Files
+pane: New Folder → `.github`, then inside that New Folder → `workflows`.
+
+```
+.github/
+  workflows/
+    render-quarto.yml
+```
+
+Open `render-quarto.yml` and paste the following. Every section is explained in the
+comments.
+
+```yaml
+# The name shown in the Actions tab on GitHub.
+name: Render Quarto document
+
+# When to run this workflow.
+# 'push' means: every time you push commits to GitHub.
+# Adjust the branch name below if yours is not 'main'.
+on:
+  push:
+    branches: ["main"]
+
+# A workflow contains one or more jobs.
+# Each job runs on a separate machine provided by GitHub.
+jobs:
+  render:
+
+    # The operating system for GitHub's machine.
+    # ubuntu-latest means the current version of Ubuntu Linux.
+    # Linux is the standard choice: it is fast and free for public repositories.
+    # You do not need to know Linux to use it here.
+    runs-on: ubuntu-latest
+
+    # Steps are the individual tasks that run in sequence on that machine.
+    # If any step fails, the job stops and reports a failure.
+    steps:
+
+      # Step 1: Download your repository files onto GitHub's machine.
+      # This is always the first step — without it, the machine has no
+      # access to your code.
+      # 'uses:' means this step uses a pre-built action rather than
+      # running a command directly. The @v4 pins the version of the
+      # action, so updates to it do not break your workflow unexpectedly.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install R.
+      # This uses a pre-built action from r-lib/actions — the community-
+      # maintained collection of R-specific actions.
+      # 'release' installs the current stable version of R.
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.2" # set to the version recorded in renv.lock
+          use-public-rspm: true  # add this line
+
+      # Step 3: Install renv and restore your packages.
+           - name: Install pak
+        run: Rscript -e 'install.packages("pak")'
+
+      - name: Set up renv
+        uses: r-lib/actions/setup-renv@v2
+        env:
+          RENV_CONFIG_REPOS_OVERRIDE: https://packagemanager.posit.co/cran/2026-05-21
+          RENV_CONFIG_PAK_ENABLED: "true"
+
+      # Step 4: Install Quarto so we can render the document.
+      - name: Install Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # Step 5: Render the document.
+      # 'run:' means this step executes a command directly, rather than
+      # using a pre-built action.
+      # Change 'analysis.qmd' to the name of your Quarto file if it differs.
+      - name: Render Quarto document
+        run: quarto render analysis.qmd
+
+      # Step 6: Save the rendered output so you can download it.
+      # GitHub stores this as an 'artefact' attached to the workflow run.
+      # After 7 days, GitHub deletes it automatically to save storage space.
+      # Change 'analysis.html' to match your output file if it differs.
+      - name: Upload rendered output
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-analysis
+          path: analysis.html
+          retention-days: 7
+```
+
+OR SIMPLER?
+
+```
+- uses: actions/checkout@v4
+
+- uses: r-lib/actions/setup-r@v2
+  with:
+    r-version: "4.5.2"
+    use-public-rspm: true
+
+- uses: quarto-dev/quarto-actions/setup@v2
+
+- uses: r-lib/actions/setup-renv@v2
+  env:
+    RENV_CONFIG_PAK_ENABLED: "true"
+
+```
+
+
+### Step 3: Commit and push
+
+Save the file, then commit and push using the Git pane or terminal:
+
+```
+git add .github/workflows/render-quarto.yml
+git commit -m "chore: add Quarto rendering workflow"
+git push
+```
+
+Note that the pre-commit hook will run before this commit. It will pass because you have
+not changed any packages.
+
+### Step 4: Watch the workflow run
+
+1. Go to your repository on GitHub.com
+2. Click the **Actions** tab in the top navigation bar
+3. You will see a workflow run listed, named *Render Quarto document*
+4. Click on it, then click the **render** job
+5. Each step expands to show its output as it runs
+
+A green tick next to a step means it passed. A red cross means it failed and the job has
+stopped. The workflow typically takes three to five minutes on first run because packages
+are being installed; on subsequent runs, caching makes the renv step much faster.
+
+### Step 5: Download the rendered output
+
+When the run completes with a green tick:
+
+1. Scroll to the bottom of the run page
+2. Under **Artefacts**, click **rendered-analysis**
+3. A zip file downloads containing `analysis.html`
+
+This is your rendered Quarto document, produced on GitHub's servers without any action
+on your part beyond pushing a commit.
+
+---
+
+## Reading a failure
+
+Failures are normal, particularly on first run. Click on the red cross next to the
+failing step to see the full log. The four most common causes are:
+
+**`renv.lock` is not committed**
+
+```
+Error in renv::restore() : renv.lock does not exist
+```
+
+Fix: run `renv::snapshot()` locally, commit `renv.lock`, and push again.
+
+**A package used in the document is not in `renv.lock`**
+
+```
+Error in library(somepackage) : there is no package called 'somepackage'
+```
+
+Fix: install the package locally, run `renv::snapshot()`, commit the updated `renv.lock`,
+and push.
+
+```{block, type = "info"}
+
+Renv looks for explicit library() in your scripts and Quarto documents. If you load a package with library() but forget to snapshot, the workflow will fail with this error. If you load a package without library() — for example, using `dplyr::filter()` without loading dplyr — the workflow will not know to install it and will fail with a different error: "could not find function 'filter'". In either case, the fix is the same: install the package locally, snapshot, commit, and push.
+
+```
+
+**The Quarto document contains a code error**
+
+The log will show the R error message from inside the document, with a line number. Fix:
+correct the code locally, render the document in RStudio or Positron to confirm it works,
+commit, and push.
+
+**The workflow does not appear in the Actions tab**
+
+The trigger branch name in the workflow file does not match your actual branch. Fix: open
+the workflow file and change `"main"` to your branch name, commit, and push.
+
+---
+
+## How the two tools work together
+
+With both in place, your workflow now looks like this:
+
+| Event | What fires | What it catches |
+|---|---|---|
+| `git commit` | Pre-commit hook | renv out of sync with `renv.lock` |
+| `git push` | GitHub Actions | Render failures; missing packages; clean-environment problems |
+
+The hook catches the most common problem before it is committed. Actions catches problems
+that are invisible in your local environment and produces output anyone can download.
+Neither replaces the other.
+
+---
+
+## Going further: running code on a schedule
+
+So far, the workflow has been triggered by a push — useful for testing, but not always
+the most natural fit. For many analytical tasks, a scheduled run is more appropriate: a
+report that refreshes every morning, or a data file that is updated weekly, without you
+having to do anything at all.
+
+GitHub Actions supports scheduled runs using what are called **cron jobs**. A cron
+expression is a compact way of specifying a time schedule. Replace the `on: push:`
+trigger in your workflow file with the following:
+
+```yaml
+# Run every day at 9:00am UTC
+on:
+  schedule:
+    - cron: '0 9 * * *'
+```
+
+The five fields in a cron expression represent, in order: minute, hour, day of month,
+month, and day of week. An asterisk means "every". So `0 9 * * *` means: at minute 0 of
+hour 9, every day of every month. The time is always in UTC, which is one hour behind
+British Summer Time and five hours ahead of Eastern Time — adjust accordingly.
+
+The syntax is not intuitive to read or write from memory. The website
+[crontab.guru](https://crontab.guru) translates cron expressions into plain English and
+lets you build expressions interactively. It is worth bookmarking.
+
+Some useful examples:
+
+| Cron expression | When it runs |
+|---|---|
+| `0 9 * * 1` | Every Monday at 9:00am UTC |
+| `0 8 1 * *` | The first day of every month at 8:00am UTC |
+| `*/30 * * * *` | Every 30 minutes |
+| `0 9 * * 1-5` | Weekdays at 9:00am UTC |
+
+You can also combine a schedule with a push trigger, so the workflow runs both on demand
+and on a timer:
+
+```yaml
+on:
+  push:
+    branches: ["main"]
+  schedule:
+    - cron: '0 9 * * 1'
+```
+
+---
+
+## Going further: committing output back to the repository
+
+The workflow in Part 2 uploads the rendered document as a temporary artefact, which
+GitHub deletes after seven days and which requires a manual download to access. An
+alternative is to have the workflow commit the rendered file back into the repository
+directly, making it a permanent part of your commit history and accessible at a fixed
+URL.
+
+Add the following step after the render step, replacing the upload-artifact step:
+
+```yaml
+      - name: Commit rendered output to repository
+        run: |
+          # Set the git identity for this commit.
+          # These details appear in the commit history.
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+
+          # Stage the rendered file.
+          git add analysis.html
+
+          # Commit it. The || handles the case where nothing has changed:
+          # if there is no new output, git commit would normally fail with
+          # an error. The || tells bash: if the left side fails, run the
+          # right side instead — in this case, just print a message and
+          # continue without failing the workflow.
+          git commit -m "chore: update rendered analysis" || echo "No changes to commit"
+
+          # Push the commit back to GitHub.
+          git push origin || echo "No changes to commit"
+```
+
+This pattern is particularly useful for scheduled workflows: the workflow runs on a timer,
+re-renders the document with current data, and pushes the updated HTML back to the
+repository automatically. The `||` operator is a bash pattern worth understanding — it
+means "or", and separates a command from a fallback to run if the first command fails.
+
+Note that this approach writes to your repository's main branch directly, which adds
+commits generated by GitHub Actions to your history. Whether this is desirable depends on
+your project; for a solo analyst it is usually fine.
+
+---
+
+## Going further: projects without renv
+
+The workflow in Part 2 uses `r-lib/actions/setup-renv@v2`, which requires a committed
+`renv.lock` file. If you encounter a project or tutorial that does not use renv, you will
+see a different approach: `r-lib/actions/setup-r-dependencies@v2`, which installs packages
+listed explicitly in the workflow file:
+
+```yaml
+- name: Install packages
+  uses: r-lib/actions/setup-r-dependencies@v2
+  with:
+    packages: |
+      any::ggplot2
+      any::dplyr
+      any::quarto
+```
+
+This is less reproducible than `renv` because it installs the latest available version of
+each package rather than the exact version you used locally. For your own projects, renv
+and `setup-renv` is the better choice. For adapting workflows from others who do not use
+renv, `setup-r-dependencies` is what you will encounter.
+
+---
+
+## Where to go next
+
+The r-lib/actions repository ([https://github.com/r-lib/actions](https://github.com/r-lib/actions))
+contains example workflows for a wide range of R tasks. Each example includes its
+`usethis::use_github_action()` call where one exists. The patterns you have learned here
+transfer directly: adjust the trigger, swap the render step, change what is uploaded.
+
+**Render only on pull requests** rather than every push, to keep the per-push feedback
+loop fast:
+
+```yaml
+on:
+  pull_request:
+    branches: ["main"]
+```

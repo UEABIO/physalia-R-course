@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Chapter 9 Part 2: AI - Inline completions | Advancing in R</title>
+<meta name="author" content="Philip T. Leftwich">
+<meta name="description" content="Inline completion is the most familiar AI-coding feature: ghost text appears as you type, suggesting a continuation. You accept with Tab, reject with Esc, or ignore by continuing to type. This...">
+<meta name="generator" content="bookdown 0.46 with bs4_book()">
+<meta property="og:title" content="Chapter 9 Part 2: AI - Inline completions | Advancing in R">
+<meta property="og:type" content="book">
+<meta property="og:url" content="https://ueabio.github.io/physalia-R-course-2023/part-2-ai---inline-completions.html">
+<meta property="og:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<meta property="og:description" content="Inline completion is the most familiar AI-coding feature: ghost text appears as you type, suggesting a continuation. You accept with Tab, reject with Esc, or ignore by continuing to type. This...">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Chapter 9 Part 2: AI - Inline completions | Advancing in R">
+<meta name="twitter:description" content="Inline completion is the most familiar AI-coding feature: ghost text appears as you type, suggesting a continuation. You accept with Tab, reject with Esc, or ignore by continuing to type. This...">
+<meta name="twitter:image" content="https://ueabio.github.io/physalia-R-course-2023/images/logos/twitter_card.png">
+<!-- JS --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://kit.fontawesome.com/6ecbd6c532.js" crossorigin="anonymous"></script><script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="libs/bootstrap-4.6.0/bootstrap.min.css" rel="stylesheet">
+<script src="libs/bootstrap-4.6.0/bootstrap.bundle.min.js"></script><script src="libs/bs3compat-0.5.0/transition.js"></script><script src="libs/bs3compat-0.5.0/tabs.js"></script><script src="libs/bs3compat-0.5.0/bs3compat.js"></script><link href="libs/bs4_book-1.0.0/bs4_book.css" rel="stylesheet">
+<script src="libs/bs4_book-1.0.0/bs4_book.js"></script><script src="libs/kePrint-0.0.1/kePrint.js"></script><link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<script src="libs/font-awesome-5.13.0/js/script.js"></script><!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-6NP3MF25W3"></script><script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-6NP3MF25W3');
+    </script><script language="javascript"> 
+        function toggle(id) {
+            var ele = document.getElementById("toggleText" + id);
+            var text = document.getElementById("displayText" + id);
+            var buttonText = text.innerHTML.replace("Show ", "");
+            buttonText = buttonText.replace("Hide ", "");
+            if(ele.style.display == "block") {
+                ele.style.display = "none";
+                text.innerHTML = "Show " + buttonText;
+            } else {
+                ele.style.display = "block";
+                text.innerHTML = "Hide " + buttonText;
+            }
+        } 
+    </script><script language="javascript">
+        function openCode(evt, codeName, id) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent" + id);
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks" + id);
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(codeName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script><script language="javascript">
+        function hide(id){
+            document.getElementById(id).style.display = "none";
+        }
+    </script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- CSS --><style type="text/css">
+    
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  </style>
+<link rel="stylesheet" href="include/psyteachr.css">
+<link rel="stylesheet" href="include/webex.css">
+<link rel="stylesheet" href="include/style.css">
+</head>
+<body data-spy="scroll" data-target="#toc">
+
+<div class="container-fluid">
+<div class="row">
+  <header class="col-sm-12 col-lg-3 sidebar sidebar-book"><a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
+
+    <div class="d-flex align-items-start justify-content-between">
+      <h1>
+        <a href="index.html" title="A guide for Biologists and Ecologists">Advancing in R</a>:
+        <small class="text-muted">A guide for Biologists and Ecologists</small>
+      </h1>
+      <button class="btn btn-outline-primary d-lg-none ml-2 mt-1" type="button" data-toggle="collapse" data-target="#main-nav" aria-expanded="true" aria-controls="main-nav"><i class="fas fa-bars"></i><span class="sr-only">Show table of contents</span></button>
+    </div>
+
+    <div id="main-nav" class="collapse-lg">
+      <form role="search">
+        <input id="search" class="form-control" type="search" placeholder="Search" aria-label="Search">
+</form>
+
+      <nav aria-label="Table of contents"><h2>Table of contents</h2>
+        <ul class="book-toc list-unstyled">
+<li><a class="" href="index.html">Overview</a></li>
+<li class="book-part">Day 1</li>
+<li><a class="" href="day-1-block-1-project-based-workflows.html">Day 1 Block 1: Project-based workflows</a></li>
+<li><a class="" href="day-1-block-2-getting-more-out-of-tidyverse.html">Day 1 Block 2: Getting more out of tidyverse</a></li>
+<li><a class="" href="day-1-block-3-writing-functions.html">Day 1 Block 3: Writing functions</a></li>
+<li><a class="" href="day-1-block-4-iterations-with-map.html">Day 1 Block 4: Iterations with map</a></li>
+<li><a class="" href="day-1-block-5-tidy-evaluation-and-data-masking.html">Day 1 Block 5: Tidy evaluation and data masking</a></li>
+<li class="book-part">Day 2</li>
+<li><a class="" href="day-2-block-1-reproducibility.html">Day 2 Block 1: Reproducibility</a></li>
+<li><a class="" href="day-2-block-2-code-review.html">Day 2 Block 2: Code Review</a></li>
+<li class="book-part">Day 3: Data Visualisation</li>
+<li><a class="" href="day-3-block-1-foundations-and-graph-crimes.html">Day 3 Block 1: Foundations and graph crimes</a></li>
+<li><a class="" href="day-3-block-2-choosing-the-right-figure.html">Day 3 Block 2: Choosing the right figure</a></li>
+<li><a class="" href="day-3-block-3-themes-and-scales.html">Day 3 Block 3: Themes and scales</a></li>
+<li><a class="" href="day-3-block-4-extensions-in-action.html">Day 3 Block 4: Extensions in action</a></li>
+<li><a class="" href="day-3-block-5-saving-figures-correctly.html">Day 3 Block 5: Saving figures correctly</a></li>
+<li><a class="" href="day-3-block-6-writing-figure-legends.html">Day 3 Block 6: Writing figure legends</a></li>
+<li><a class="" href="day-3-block-7-three-questions-for-every-figure.html">Day 3 Block 7: Three questions for every figure</a></li>
+<li class="book-part">Day 3: Quarto</li>
+<li><a class="" href="day-3-block-8-quarto.html">Day 3 Block 8: Quarto</a></li>
+<li class="book-part">Reproducible Reports with Quarto</li>
+<li><a class="" href="sec-quarto-workshop.html"><span class="header-section-number">5</span> Quarto: a 90-minute workshop</a></li>
+<li class="book-part">Day 3: Github</li>
+<li><a class="" href="day-3-block-9-github.html">Day 3 Block 9: Github</a></li>
+<li><a class="" href="day-3-block-10-github-automations.html">Day 3 Block 10: Github Automations</a></li>
+<li class="book-part">Day 4</li>
+<li><a class="" href="part-1-ai-assisted-r-programming.html"><span class="header-section-number">8</span> Part 1: AI-Assisted R Programming</a></li>
+<li><a class="active" href="part-2-ai---inline-completions.html"><span class="header-section-number">9</span> Part 2: AI - Inline completions</a></li>
+<li><a class="" href="part-3-debugging-with-ai.html"><span class="header-section-number">10</span> Part 3: Debugging with AI</a></li>
+<li><a class="" href="part-4-copilot-chat-in-ask-mode.html"><span class="header-section-number">11</span> Part 4: Copilot Chat in Ask mode</a></li>
+<li><a class="" href="part-5-custom-instructions-and-skills.html"><span class="header-section-number">12</span> Part 5: Custom instructions and skills</a></li>
+<li><a class="" href="part-6-functionalise-a-script-step-and-prove-the-result-is-unchanged.html"><span class="header-section-number">13</span> Part 6: Functionalise a script step and prove the result is unchanged</a></li>
+<li><a class="" href="appendix-dataset-generation.html"><span class="header-section-number">14</span> Appendix: Dataset generation</a></li>
+<li><a class="" href="appendix-workshop-template-repository.html"><span class="header-section-number">15</span> Appendix: Workshop template repository</a></li>
+<li class="book-part">Extra Material</li>
+<li><a class="" href="making-tables-with-gt.html">Making tables with gt</a></li>
+<li><a class="" href="basic-ggplot.html">Basic ggplot</a></li>
+<li><a class="" href="customisation-with-ggplot2.html"><span class="header-section-number">17</span> Customisation with ggplot2</a></li>
+<li><a class="" href="extensions-for-ggplot2.html"><span class="header-section-number">18</span> Extensions for ggplot2</a></li>
+<li><a class="" href="custom-ggplot-themes.html"><span class="header-section-number">19</span> Custom ggplot themes</a></li>
+<li><a class="" href="making-tables-with-gt-1.html"><span class="header-section-number">20</span> Making tables with gt</a></li>
+<li><a class="" href="sql-and-data.table.html"><span class="header-section-number">21</span> SQL and Data.Table</a></li>
+<li><a class="" href="r-and-rstudio-refresher.html">R and RStudio Refresher</a></li>
+<li><a class="" href="r-basics.html"><span class="header-section-number">22</span> R basics</a></li>
+</ul>
+
+        <div class="book-extra">
+          <p><a id="book-repo" href="https://github.com/UEABIO/physalia-intro-stats-2023">View book source <i class="fab fa-github"></i></a></p>
+        </div>
+      </nav>
+</div>
+  </header><main class="col-sm-12 col-md-9 col-lg-7" id="content"><div id="part-2-ai---inline-completions" class="section level1" number="9">
+<h1>
+<span class="header-section-number">9</span> Part 2: AI - Inline completions<a class="anchor" aria-label="anchor" href="#part-2-ai---inline-completions"><i class="fas fa-link"></i></a>
+</h1>
+<p>Inline completion is the most familiar AI-coding feature: ghost text appears as you type, suggesting a continuation. You accept with Tab, reject with Esc, or ignore by continuing to type. This block teaches what context inline completion uses, and the practical consequence: comments matter more than anything else.</p>
+<p>Approximate duration: 35 minutes.</p>
+<div id="setup-verification" class="section level2" number="9.1">
+<h2>
+<span class="header-section-number">9.1</span> Setup verification<a class="anchor" aria-label="anchor" href="#setup-verification"><i class="fas fa-link"></i></a>
+</h2>
+<p>Verify that inline completion is enabled and working in your chosen IDE.</p>
+<p><strong>RStudio:</strong> Tools → Global Options → Copilot → Enable GitHub Copilot, then sign in to GitHub.</p>
+<p><strong>Positron:</strong> Copilot is provided through the bundled Positron Assistant extension. Open the Copilot panel in the sidebar and sign in.</p>
+<p><strong>VS Code:</strong> Install the GitHub Copilot extension from the marketplace, then sign in via the prompt that appears.</p>
+<p>In all three, verify by opening a blank R script and typing <code># Calculate the mean of 1 to 100</code>. After a second or two you should see grey ghost text suggesting <code>mean(1:100)</code> or similar (If nothing appears try hitting enter to move the blinking cursor to the next line).</p>
+</div>
+<div id="the-context-principle" class="section level2" number="9.2">
+<h2>
+<span class="header-section-number">9.2</span> The context principle<a class="anchor" aria-label="anchor" href="#the-context-principle"><i class="fas fa-link"></i></a>
+</h2>
+<p>Inline completion sees, at minimum, the current file. In Positron and VS Code (and likely in newer RStudio versions, though the behaviour has changed historically and is worth checking against current documentation rather than asserting), it may also draw on other open tabs. It does not search your project for unrelated files, and it does not remember previous sessions.</p>
+<p>The practical consequence: the comment immediately before your cursor, and the code above it in the same file, dominate what you get. Everything else has at best a modest effect.</p>
+</div>
+<div id="exercise-1-the-context-demonstration" class="section level2" number="9.3">
+<h2>
+<span class="header-section-number">9.3</span> Exercise 1: The context demonstration<a class="anchor" aria-label="anchor" href="#exercise-1-the-context-demonstration"><i class="fas fa-link"></i></a>
+</h2>
+<p>For this exercise you will use <code>voles_metabolism.csv</code>, a small synthetic biological dataset deliberately chosen because its column names are unlikely to feature in Copilot's training data. The columns are <code>subject_id</code>, <code>sex</code>, <code>treatment_arm</code>, <code>mass_pre_g</code>, <code>mass_post_g</code>, and <code>metabolic_rate_post</code>. The data record a hypothetical metabolism trial in voles with three treatment arms and two sexes, sample size 72.</p>
+<p><strong>1. Start with no context.</strong> Open a blank R script. Type only this single comment <strong>into your script</strong>, then wait:</p>
+<div class="sourceCode" id="cb212"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># calculate the mean change in mass by treatment</span></span></code></pre></div>
+<p>Record what Copilot suggests. With no <code><a href="https://rdrr.io/r/base/library.html">library()</a></code> call, no data loaded, and no column names visible, Copilot has to guess. It will produce something syntactically plausible but most likely wrong for your dataset, because it does not know what your columns are called.</p>
+<p><strong>2. Restart with full context.</strong> Start a new blank script. Add the following at the top:</p>
+<div class="sourceCode" id="cb213"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Voles metabolism trial: effect of treatment on body mass</span></span>
+<span><span class="co"># 72 voles, three treatment arms (Control, Low_dose, High_dose), two sexes</span></span>
+<span><span class="co"># Native pipe |&gt;, tidyverse</span></span>
+<span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org">tidyverse</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">voles</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://readr.tidyverse.org/reference/read_delim.html">read_csv</a></span><span class="op">(</span><span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html">here</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="st">"voles_metabolism.csv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://pillar.r-lib.org/reference/glimpse.html">glimpse</a></span><span class="op">(</span><span class="va">voles</span><span class="op">)</span></span></code></pre></div>
+<p>Then add the same comment as before, on a new line:</p>
+<div class="sourceCode" id="cb214"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># calculate the mean change in mass by treatment</span></span></code></pre></div>
+<p>Record what Copilot suggests this time. The expected output resembles:</p>
+<button id="displayTextunnamed-chunk-7" onclick="javascript:toggle('unnamed-chunk-7');">
+Show Solution
+</button>
+<div id="toggleTextunnamed-chunk-7" style="display: none">
+<div class="panel panel-default">
+<div class="panel-heading panel-heading1">
+Solution
+</div>
+<div class="panel-body">
+<div class="sourceCode" id="cb215"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">voles</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span><span class="op">(</span>mass_change_g <span class="op">=</span> <span class="va">mass_post_g</span> <span class="op">-</span> <span class="va">mass_pre_g</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html">summarise</a></span><span class="op">(</span></span>
+<span>    mean_change <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html">mean</a></span><span class="op">(</span><span class="va">mass_change_g</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>    .by <span class="op">=</span> <span class="va">treatment_arm</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+</div>
+</div>
+</div>
+<p>The exact form will vary between participants and between sessions; that variation is itself part of the lesson.</p>
+<p>How different were the two outputs? Did the second version use column names that exist in the data? Did Copilot construct <code>mass_change_g</code> itself or did you have to prompt for it?</p>
+</div>
+<div id="exercise-2-build-a-small-analysis" class="section level2" number="9.4">
+<h2>
+<span class="header-section-number">9.4</span> Exercise 2: Build a small analysis<a class="anchor" aria-label="anchor" href="#exercise-2-build-a-small-analysis"><i class="fas fa-link"></i></a>
+</h2>
+<p>Working on the same script you set up in Exercise 1, drive inline completion through a four-step analysis. Write the comment for each step first, then accept, reject, or modify the suggestion.</p>
+<p><strong>1.</strong> Filter to subjects with non-missing <code>metabolic_rate_post</code> and create a derived variable <code>mass_change_g</code>.</p>
+<p><strong>2.</strong> Produce a summary table of mean and standard deviation of <code>mass_change_g</code> by <code>treatment_arm</code> and <code>sex</code>, with sample sizes per cell.</p>
+<p><strong>3.</strong> Fit a linear model of <code>metabolic_rate_post</code> on <code>treatment_arm</code> and <code>sex</code>. Inspect the coefficients.</p>
+<p><strong>4.</strong> Produce one diagnostic plot relating <code>mass_change_g</code> to <code>metabolic_rate_post</code>, coloured by <code>treatment_arm</code>.</p>
+<p>For each step, your deliverable is the comment you wrote, the code Copilot suggested, and a one-line note on whether you accepted it, modified it, or rejected it and wrote something else. The point of recording this is not bureaucratic; it is to make you notice when you accepted something without inspecting it.</p>
+<p>Work in pairs. Each partner attempts steps 2 and 4 independently before comparing. The pair-comparison stage typically surfaces interesting variation: different suggestions, different acceptance decisions, and (often) different bugs.</p>
+</div>
+<div id="check-your-understanding-1" class="section level2" number="9.5">
+<h2>
+<span class="header-section-number">9.5</span> Check your understanding<a class="anchor" aria-label="anchor" href="#check-your-understanding-1"><i class="fas fa-link"></i></a>
+</h2>
+<p><strong>The single most reliable way to improve the quality of inline completion suggestions in a new script is to:</strong></p>
+<div id="radio_MTXTWNIOTR" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value=""><span>Switch to a different underlying model</span></label><label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value=""><span>Open more files in the editor as additional context</span></label><label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value="answer"><span>Write a detailed comment immediately before the code you want, including data frame name and column names</span></label><label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value=""><span>Restart the IDE so Copilot has a fresh context</span></label>
+</div>
+</div>
+</div>
+<script>
+
+/* update total correct if #webex-total_correct exists */
+update_total_correct = function() {
+  console.log("webex: update total_correct");
+
+  if (t = document.getElementById("webex-total_correct")) {
+    var correct = document.getElementsByClassName("webex-correct").length;
+    var solvemes = document.getElementsByClassName("webex-solveme").length;
+    var radiogroups = document.getElementsByClassName("webex-radiogroup").length;
+    var selects = document.getElementsByClassName("webex-select").length;
+    
+    t.innerHTML = correct + " of " + (solvemes + radiogroups + selects) + " correct";
+  }
+}
+
+/* webex-solution button toggling function */
+b_func = function() {
+  console.log("webex: toggle hide");
+  
+  var cl = this.parentElement.classList;
+  if (cl.contains('open')) {
+    cl.remove("open");
+  } else {
+    cl.add("open");
+  }
+}
+
+/* function for checking solveme answers */
+solveme_func = function(e) {
+  console.log("webex: check solveme");
+
+  var real_answers = JSON.parse(this.dataset.answer);
+  var my_answer = this.value;
+  var cl = this.classList;
+  if (cl.contains("ignorecase")) {
+    my_answer = my_answer.toLowerCase();
+  }
+  if (cl.contains("nospaces")) {
+    my_answer = my_answer.replace(/ /g, "")
+  }
+
+  if (my_answer == "") {
+    cl.remove("webex-correct");
+    cl.remove("webex-incorrect");
+  } else if (real_answers.includes(my_answer)) {
+    cl.add("webex-correct");
+    cl.remove("webex-incorrect");
+  } else {
+    cl.add("webex-incorrect");
+    cl.remove("webex-correct");
+  }
+
+  // match numeric answers within a specified tolerance
+  if(this.dataset.tol > 0){
+    var tol = JSON.parse(this.dataset.tol);
+    var matches = real_answers.map(x => Math.abs(x - my_answer) < tol)
+    if (matches.reduce((a, b) => a + b, 0) > 0) {
+      cl.add("webex-correct");
+    } else {
+      cl.remove("webex-correct");
+    }
+  }
+
+  // added regex bit
+  if (cl.contains("regex")){
+    answer_regex = RegExp(real_answers.join("|"))
+    if (answer_regex.test(my_answer)) {
+      cl.add("webex-correct");
+    }
+  }
+
+  update_total_correct();
+}
+
+/* function for checking select answers */
+select_func = function(e) {
+  console.log("webex: check select");
+  
+  var cl = this.classList
+  
+  /* add style */
+  cl.remove("webex-incorrect");
+  cl.remove("webex-correct");
+  if (this.value == "answer") {
+    cl.add("webex-correct");
+  } else if (this.value != "blank") {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+/* function for checking radiogroups answers */
+radiogroups_func = function(e) {
+  console.log("webex: check radiogroups");
+
+  var checked_button = document.querySelector('input[name=' + this.id + ']:checked');
+  var cl = checked_button.parentElement.classList;
+  var labels = checked_button.parentElement.parentElement.children;
+  
+  /* get rid of styles */
+  for (i = 0; i < labels.length; i++) {
+    labels[i].classList.remove("webex-incorrect");
+    labels[i].classList.remove("webex-correct");
+  }
+  
+  /* add style */
+  if (checked_button.value == "answer") {
+    cl.add("webex-correct");
+  } else {
+    cl.add("webex-incorrect");
+  }
+  
+  update_total_correct();
+}
+
+window.onload = function() {
+  console.log("onload");
+  /* set up solution buttons */
+  var buttons = document.getElementsByTagName("button");
+
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].parentElement.classList.contains('webex-solution')) {
+      buttons[i].onclick = b_func;
+    }
+  }
+
+  /* set up webex-solveme inputs */
+  var solveme = document.getElementsByClassName("webex-solveme");
+
+  for (var i = 0; i < solveme.length; i++) {
+    /* make sure input boxes don't auto-anything */
+    solveme[i].setAttribute("autocomplete","off");
+    solveme[i].setAttribute("autocorrect", "off");
+    solveme[i].setAttribute("autocapitalize", "off");
+    solveme[i].setAttribute("spellcheck", "false");
+    solveme[i].value = "";
+
+    /* adjust answer for ignorecase or nospaces */
+    var cl = solveme[i].classList;
+    var real_answer = solveme[i].dataset.answer;
+    if (cl.contains("ignorecase")) {
+      real_answer = real_answer.toLowerCase();
+    }
+    if (cl.contains("nospaces")) {
+      real_answer = real_answer.replace(/ /g, "");
+    }
+    solveme[i].dataset.answer = real_answer;
+
+    /* attach checking function */
+    solveme[i].onkeyup = solveme_func;
+    solveme[i].onchange = solveme_func;
+  }
+  
+  /* set up radiogroups */
+  var radiogroups = document.getElementsByClassName("webex-radiogroup");
+  for (var i = 0; i < radiogroups.length; i++) {
+    radiogroups[i].onchange = radiogroups_func;
+  }
+  
+  /* set up selects */
+  var selects = document.getElementsByClassName("webex-select");
+  for (var i = 0; i < selects.length; i++) {
+    selects[i].onchange = select_func;
+  }
+
+  update_total_correct();
+}
+
+</script><script>
+$( document ).ready(function() {
+  var cite = ' ';
+  var license = ' <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/" target="blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png"></a>';
+
+  $("footer div.row div:eq(1) p").html(
+    license
+  );
+});
+</script><div class="chapter-nav">
+<div class="prev"><a href="part-1-ai-assisted-r-programming.html"><span class="header-section-number">8</span> Part 1: AI-Assisted R Programming</a></div>
+<div class="next"><a href="part-3-debugging-with-ai.html"><span class="header-section-number">10</span> Part 3: Debugging with AI</a></div>
+</div></main><div class="col-md-3 col-lg-2 d-none d-md-block sidebar sidebar-chapter">
+    <nav id="toc" data-toggle="toc" aria-label="On this page"><h2>On this page</h2>
+      <ul class="nav navbar-nav">
+<li><a class="nav-link" href="#part-2-ai---inline-completions"><span class="header-section-number">9</span> Part 2: AI - Inline completions</a></li>
+<li><a class="nav-link" href="#setup-verification"><span class="header-section-number">9.1</span> Setup verification</a></li>
+<li><a class="nav-link" href="#the-context-principle"><span class="header-section-number">9.2</span> The context principle</a></li>
+<li><a class="nav-link" href="#exercise-1-the-context-demonstration"><span class="header-section-number">9.3</span> Exercise 1: The context demonstration</a></li>
+<li><a class="nav-link" href="#exercise-2-build-a-small-analysis"><span class="header-section-number">9.4</span> Exercise 2: Build a small analysis</a></li>
+<li><a class="nav-link" href="#check-your-understanding-1"><span class="header-section-number">9.5</span> Check your understanding</a></li>
+</ul>
+
+      <div class="book-extra">
+        <ul class="list-unstyled">
+<li><a id="book-source" href="https://github.com/UEABIO/physalia-intro-stats-2023/blob/main/book/11-AI-programming-integrated.Rmd">View source <i class="fab fa-github"></i></a></li>
+          <li><a id="book-edit" href="https://github.com/UEABIO/physalia-intro-stats-2023/edit/main/book/11-AI-programming-integrated.Rmd">Edit this page <i class="fab fa-github"></i></a></li>
+        </ul>
+</div>
+    </nav>
+</div>
+
+</div>
+</div> <!-- .container -->
+
+<footer class="bg-primary text-light mt-5"><div class="container"><div class="row">
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>"<strong>Advancing in R</strong>: A guide for Biologists and Ecologists" was written by Philip T. Leftwich. It was last built on 2026-05-28.</p>
+  </div>
+
+  <div class="col-12 col-md-6 mt-3">
+    <p>This book was built by the <a class="text-light" href="https://bookdown.org">bookdown</a> R package.</p>
+  </div>
+
+</div></div>
+</footer><!-- dynamically load mathjax for compatibility with self-contained --><script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script><script type="text/x-mathjax-config">const popovers = document.querySelectorAll('a.footnote-ref[data-toggle="popover"]');
+for (let popover of popovers) {
+  const div = document.createElement('div');
+  div.setAttribute('style', 'position: absolute; top: 0, left:0; width:0, height:0, overflow: hidden; visibility: hidden;');
+  div.innerHTML = popover.getAttribute('data-content');
+
+  var has_math = div.querySelector("span.math");
+  if (has_math) {
+    document.body.appendChild(div);
+    MathJax.Hub.Queue(["Typeset", MathJax.Hub, div]);
+    MathJax.Hub.Queue(function() {
+      popover.setAttribute('data-content', div.innerHTML);
+      document.body.removeChild(div);
+    })
+  }
+}
+</script>
+</body>
+</html>

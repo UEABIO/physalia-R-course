@@ -1,3 +1,6 @@
+# (PART\*) Day 3: Quarto
+
+
 # Day 3 Block 8: Quarto {.unnumbered}
 
 
@@ -243,7 +246,7 @@ This book was printed on `` `r Sys.Date()` ``
 
 When typed in-line within a section of what would otherwise be Markdown text, it knows to produce an r output instead: 
 
-This book was printed on 2026-05-26
+This book was printed on 2026-05-28
 
 ### Running code {-}
 
@@ -264,7 +267,7 @@ Generate a self-contained report from data
 
 For a relatively simple report, you may elect to organize your R Markdown script such that it is “self-contained” and does not involve any external scripts.
 
-**Set up your Rmd file to 'read' the penguins data file.**
+**Set up your Qmd file to 'read' the penguins data file.**
 
 Everything you need to run the R markdown is imported or created within the Rmd file, including all the code chunks and package loading. This “self-contained” approach is appropriate when you do not need to do much data processing (e.g. it brings in a clean or semi-clean data file) and the rendering of the R Markdown will not take too long.
 

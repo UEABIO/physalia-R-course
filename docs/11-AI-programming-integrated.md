@@ -1,0 +1,1254 @@
+# (PART\*) Day 4
+
+# Part 1: AI-Assisted R Programming
+
+
+
+
+
+
+
+## Prerequisites
+
+You need a GitHub account, a working IDE (RStudio, Positron, or VS Code), (ideally)  an active GitHub Copilot subscription (the Education plan is sufficient and provides cloud-agent access), and basic Git and GitHub fluency at the level of cloning a repository, making a branch, opening a pull request, and merging. Part 6 also assumes a working knowledge of `renv` for project-local package management, and a first acquaintance with GitHub Actions as the mechanism that runs automated workflows on a repository. All of these are assumed from prior sessions.
+
+
+## Learning outcomes
+
+By the end of the workshop, you will be able to:
+
+1. Articulate what a large language model is, and explain what choosing between underlying models materially affects.
+
+2. Use GitHub Copilot inline completion in their chosen IDE, and identify what context the tool can and cannot see.
+
+3. Use AI assistance to debug code they have written, and recognise the cases in which AI is most and least useful for debugging.
+
+4. Use GitHub Copilot Chat in Ask mode for planning, error explanation, and approach selection, and distinguish it from inline completion.
+
+5. Distinguish workspace-level custom instructions, scoped instructions, Agent Skills, and agent-facing files (`AGENTS.md` and custom agent profiles) as separate configuration mechanisms, and produce a working `copilot-instructions.md` for their own research.
+
+6. Distinguish in-IDE Agent mode from the asynchronous GitHub cloud coding agent, and use the cloud agent to functionalise a script step under a characterisation test, reading continuous-integration checks to confirm the result is reproducible while keeping in their own hands the reference that makes the verification non-circular.
+
+
+## Materials
+
+Participants will work with a synthetic biological dataset (`voles_metabolism.csv`) and a workshop template repository that they fork at the start of the workshop. The template uses `renv` for project-local packages, so after forking and opening the project, run `renv::restore()` once to install the locked versions. This matters in Part 6, where the same lockfile is restored by the continuous-integration checks and by the cloud agent. The dataset is available below; the template repository URL will be provided on the day.
+
+
+```{=html}
+<a href="https://raw.githubusercontent.com/UEABIO/data-sci-v1/main/book/files/voles_metabolism.csv">
+<button class="btn btn-success"><i class="fa fa-save"></i> Download voles_metabolism.csv</button>
+</a>
+```
+
+
+## A note on platform variation
+
+Where workflow behaviour depends on which IDE participants are using, the relevant differences are noted in the text. RStudio is the most constrained environment: inline completion works, browser-based Copilot Chat works, but in-IDE Chat panels and in-IDE Agent mode do not. Positron and VS Code support all features. Where the workshop refers to in-IDE Agent mode, RStudio users should follow the cloud-agent material instead, which is platform-agnostic and is the focus of Part 6.
+
+**Verification is the workshop's only non-negotiable.** AI tools generate plausible code quickly. They do not guarantee correctness, and they do not relieve you of responsibility for what your code does. Every exercise in this workshop ends with a verification step. Treat that step as the most important part of the exercise, not an afterthought.
+
+
+## Framing and mental models
+
+This block establishes the conceptual scaffold that the rest of the workshop builds on. There are no participant coding exercises; the block is presentation, short discussion, and a comprehension check.
+
+Approximate duration: 25 minutes.
+
+
+## What is a large language model?
+
+A large language model (LLM) is a statistical model trained to predict the next token (roughly, the next fragment of text) given the tokens before it. Modern LLMs are trained on a substantial portion of the public internet, including code repositories, technical documentation, and prose. GitHub Copilot uses LLMs under the hood, with several providers currently available: Anthropic's Claude family, OpenAI's GPT family, and Google's Gemini family. Copilot exposes a model selector in the chat interface; the choice matters because models differ measurably in code quality, instruction-following, and propensity to hallucinate library calls or function signatures that do not exist.
+
+For the present workshop, you do not need to develop strong opinions about which model is best. You do need to know that the choice exists, that it changes the output, and that if a model produces consistently poor suggestions for your work, switching is a free experiment.
+
+
+## Two modes of execution
+
+Throughout the workshop you will encounter two fundamentally different modes in which Copilot can act on your behalf. The distinction is the most important conceptual point in Part 1 and recurs in Parts 5 and 6.
+
+The first mode is synchronous and in-IDE. Inline completion, Copilot Chat panels, and in-IDE Agent mode all run inside your editor. They respond in seconds, you watch their output as it appears, and you can interrupt at any point. The scope is limited to whatever the IDE chooses to send as context: the current file, perhaps neighbouring tabs, perhaps the workspace.
+
+The second mode is asynchronous and runs in the cloud. The GitHub cloud coding agent takes an issue you have written, creates its own branch, edits files, runs tests, opens a pull request, and waits for your review. You do not watch it work. You verify by reviewing the pull request after the agent has finished, which typically takes a few minutes. The scope is the entire repository the agent is working in.
+
+Both modes are agents in some sense, but they sit at opposite ends of a synchrony spectrum, and they invite different verification strategies. The synchronous mode invites you to watch and interrupt; the asynchronous mode invites you to write a precise specification, walk away, and review what comes back. That specification need not be rewritten for every task. As Part 5 shows, much of it can be captured once in reusable instructions and skills, so that by Part 6 the issue you hand the agent can be short while the standards behind it stay exacting.
+
+| Property | In-IDE (synchronous) | Cloud agent (asynchronous) |
+|---|---|---|
+| Where it runs | Your editor | GitHub's servers |
+| What you see | Real-time output | A completed pull request |
+| Speed of feedback | Seconds | Minutes |
+| Interruption | Yes, at any point | No, only by closing the PR |
+| Scope of action | Files in editor context | Whole repository |
+| IDE availability | Positron, VS Code; RStudio chat only | Any (browser-based) |
+| Verification model | Watch and steer | Review and approve |
+
+
+## Why the context window matters
+
+LLMs do not have memory between calls. Each interaction starts fresh, with whatever you supply as context. The "context window" is the upper limit on how much text the model can consider in a single call. This is the technical fact that motivates everything else in the workshop: instructions exist to inject persistent context into a system that has none; skills exist to make procedural context available on demand; well-written issues exist because the cloud agent has nothing else to go on.
+
+If you remember nothing else from Part 1, remember that the AI sees only what you give it. The rest of the workshop is mostly about giving it the right things.
+
+
+## Discussion
+
+Allocate five minutes to a think-pair-share. Two questions:
+
+1. What kinds of task would you trust to an unattended cloud agent that runs while you are not watching?
+2. What kinds of task would you not delegate to AI at all?
+
+The point of the discussion is not to reach consensus. It is to surface the criteria participants are already applying intuitively, which will inform their use of these tools after the workshop.
+
+
+## Check your understanding
+
+**Which statement best describes the difference between in-IDE Agent mode and the GitHub cloud coding agent?**
+
+<div class='webex-radiogroup' id='radio_ZVOARBTHMF'><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value=""></input> <span>They are the same tool with different names</span></label><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value="answer"></input> <span>In-IDE Agent mode runs synchronously in your editor while you watch; the cloud agent runs asynchronously on GitHub&apos;s servers and produces a pull request</span></label><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value=""></input> <span>In-IDE Agent mode is paid and the cloud agent is free</span></label><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value=""></input> <span>The cloud agent runs in your editor and the in-IDE agent runs on GitHub&apos;s servers</span></label></div>
+
+
+**True or false: a large language model has no memory between calls, so each interaction starts with only the context you supply.** <select class='webex-select'><option value='blank'></option><option value='answer'>TRUE</option><option value=''>FALSE</option></select>
+
+
+# Part 2: AI - Inline completions
+
+Inline completion is the most familiar AI-coding feature: ghost text appears as you type, suggesting a continuation. You accept with Tab, reject with Esc, or ignore by continuing to type. This block teaches what context inline completion uses, and the practical consequence: comments matter more than anything else.
+
+Approximate duration: 35 minutes.
+
+
+## Setup verification
+
+Verify that inline completion is enabled and working in your chosen IDE.
+
+**RStudio:** Tools → Global Options → Copilot → Enable GitHub Copilot, then sign in to GitHub.
+
+**Positron:** Copilot is provided through the bundled Positron Assistant extension. Open the Copilot panel in the sidebar and sign in.
+
+**VS Code:** Install the GitHub Copilot extension from the marketplace, then sign in via the prompt that appears.
+
+In all three, verify by opening a blank R script and typing `# Calculate the mean of 1 to 100`. After a second or two you should see grey ghost text suggesting `mean(1:100)` or similar (If nothing appears try hitting enter to move the blinking cursor to the next line).
+
+
+## The context principle
+
+Inline completion sees, at minimum, the current file. In Positron and VS Code (and likely in newer RStudio versions, though the behaviour has changed historically and is worth checking against current documentation rather than asserting), it may also draw on other open tabs. It does not search your project for unrelated files, and it does not remember previous sessions.
+
+The practical consequence: the comment immediately before your cursor, and the code above it in the same file, dominate what you get. Everything else has at best a modest effect.
+
+
+## Exercise 1: The context demonstration
+
+For this exercise you will use `voles_metabolism.csv`, a small synthetic biological dataset deliberately chosen because its column names are unlikely to feature in Copilot's training data. The columns are `subject_id`, `sex`, `treatment_arm`, `mass_pre_g`, `mass_post_g`, and `metabolic_rate_post`. The data record a hypothetical metabolism trial in voles with three treatment arms and two sexes, sample size 72.
+
+**1. Start with no context.** Open a blank R script. Type only this single comment **into your script**, then wait:
+
+
+``` r
+# calculate the mean change in mass by treatment
+```
+
+Record what Copilot suggests. With no `library()` call, no data loaded, and no column names visible, Copilot has to guess. It will produce something syntactically plausible but most likely wrong for your dataset, because it does not know what your columns are called.
+
+**2. Restart with full context.** Start a new blank script. Add the following at the top:
+
+
+``` r
+# Voles metabolism trial: effect of treatment on body mass
+# 72 voles, three treatment arms (Control, Low_dose, High_dose), two sexes
+# Native pipe |>, tidyverse
+
+library(tidyverse)
+
+voles <- read_csv(here::here("data", "voles_metabolism.csv"))
+glimpse(voles)
+```
+
+Then add the same comment as before, on a new line:
+
+
+``` r
+# calculate the mean change in mass by treatment
+```
+
+Record what Copilot suggests this time. The expected output resembles:
+
+<button id="displayTextunnamed-chunk-7" onclick="javascript:toggle('unnamed-chunk-7');">Show Solution</button>
+
+<div id="toggleTextunnamed-chunk-7" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+
+``` r
+voles |>
+  mutate(mass_change_g = mass_post_g - mass_pre_g) |>
+  summarise(
+    mean_change = mean(mass_change_g, na.rm = TRUE),
+    .by = treatment_arm
+  )
+```
+</div></div></div>
+
+The exact form will vary between participants and between sessions; that variation is itself part of the lesson.
+
+How different were the two outputs? Did the second version use column names that exist in the data? Did Copilot construct `mass_change_g` itself or did you have to prompt for it?
+
+
+## Exercise 2: Build a small analysis
+
+Working on the same script you set up in Exercise 1, drive inline completion through a four-step analysis. Write the comment for each step first, then accept, reject, or modify the suggestion.
+
+**1.** Filter to subjects with non-missing `metabolic_rate_post` and create a derived variable `mass_change_g`.
+
+**2.** Produce a summary table of mean and standard deviation of `mass_change_g` by `treatment_arm` and `sex`, with sample sizes per cell.
+
+**3.** Fit a linear model of `metabolic_rate_post` on `treatment_arm` and `sex`. Inspect the coefficients.
+
+**4.** Produce one diagnostic plot relating `mass_change_g` to `metabolic_rate_post`, coloured by `treatment_arm`.
+
+For each step, your deliverable is the comment you wrote, the code Copilot suggested, and a one-line note on whether you accepted it, modified it, or rejected it and wrote something else. The point of recording this is not bureaucratic; it is to make you notice when you accepted something without inspecting it.
+
+Work in pairs. Each partner attempts steps 2 and 4 independently before comparing. The pair-comparison stage typically surfaces interesting variation: different suggestions, different acceptance decisions, and (often) different bugs.
+
+
+## Check your understanding
+
+**The single most reliable way to improve the quality of inline completion suggestions in a new script is to:**
+
+<div class='webex-radiogroup' id='radio_MTXTWNIOTR'><label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value=""></input> <span>Switch to a different underlying model</span></label><label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value=""></input> <span>Open more files in the editor as additional context</span></label><label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value="answer"></input> <span>Write a detailed comment immediately before the code you want, including data frame name and column names</span></label><label><input type="radio" autocomplete="off" name="radio_MTXTWNIOTR" value=""></input> <span>Restart the IDE so Copilot has a fresh context</span></label></div>
+
+
+
+# Part 3: Debugging with AI
+
+AI is at its most useful for debugging code you wrote. You know what you intended; the AI can spot syntactic mistakes you missed, suggest fixes for runtime errors, and help you interpret unfamiliar error messages. The verification cost is low, because you are comparing the AI's diagnosis against your own intention rather than against an unknown ground truth.
+
+This block uses four error types, ordered by how much the debugger needs to know. The first error is a typo Copilot can catch with no data; the second requires knowledge of the data values; the third requires knowledge of ggplot2's grammar; the fourth runs cleanly, returns a plausible answer, and is wrong, so that only knowledge of the expected result reveals it. The differences matter, because they show where AI can substitute for documentation lookup, where it cannot substitute for inspecting the data, and where it cannot substitute for knowing the biology.
+
+Approximate duration: 40 minutes.
+
+
+## Setup
+
+Have the voles dataset loaded:
+
+
+``` r
+library(tidyverse)
+voles <- read_csv(here::here("data", "voles_metabolism.csv"))
+```
+
+
+## Exercise 1: A syntax error
+
+You wrote the following to count voles per treatment:
+
+
+``` r
+ggplot(voles, aes(x = treatment_arm)) +
+  geom_barchart()
+```
+
+R returns:
+
+```
+Error in geom_barchart(): could not find function "geom_barchart"
+```
+
+**1. Paste both the code and the error message into your script as a block comment, then add `# Fix this code:` and let Copilot suggest a continuation:**
+
+
+``` r
+# This code gives an error:
+# ggplot(voles, aes(x = treatment_arm)) +
+#   geom_barchart()
+#
+# Error: could not find function "geom_barchart"
+#
+# Fix this code:
+```
+
+Before accepting any suggestion, write a single sentence explaining why the original failed. Your sentence is the verification step. If you can write the sentence, you understood the fix; if you cannot, the AI has solved the problem but you have not learned anything.
+
+<button id="displayTextunnamed-chunk-11" onclick="javascript:toggle('unnamed-chunk-11');">Show Solution</button>
+
+<div id="toggleTextunnamed-chunk-11" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+
+``` r
+ggplot(voles, aes(x = treatment_arm)) +
+  geom_bar()
+```
+
+The function is `geom_bar()`, not `geom_barchart()`. ggplot2's geom functions use short names; there is no `_chart` suffix anywhere in the package. The error message "could not find function" is the standard R response when a function does not exist in any loaded package, and it is the easiest class of error to recognise.
+</div></div></div>
+
+
+## Exercise 2: A logic error
+
+You wrote the following to filter to high-dose voles and compute mean post-treatment mass:
+
+
+``` r
+high_dose <- voles |>
+  filter(treatment_arm == "high_dose")
+
+high_dose |>
+  summarise(mean_mass = mean(mass_post_g))
+```
+
+The code runs without error and returns:
+
+```
+# A tibble: 1 × 1
+  mean_mass
+      <dbl>
+1       NaN
+```
+
+This is harder than the syntax error, because there is no error message to paste. The code is doing exactly what you asked it to; the bug is in what you asked for. AI cannot diagnose this without first knowing what your data look like.
+
+**1. Before asking AI for help, inspect the data.** Three diagnostic calls take seconds and tell you everything you need to know:
+
+
+``` r
+voles |> distinct(treatment_arm)
+voles |> count(treatment_arm)
+nrow(high_dose)
+```
+
+The first two reveal that the factor levels are `Control`, `Low_dose`, and `High_dose` (initial capital, underscore between words). The third returns zero. At this point you have already diagnosed the bug without involving an AI.
+
+**2. With the diagnostic information in hand, paste both the code and the diagnostic output into Chat (or as a block comment in your script) and ask for confirmation of the diagnosis:**
+
+```
+# I am trying to compute mean post-treatment mass for high-dose voles. My code:
+
+#  high_dose <- voles |>
+#    filter(treatment_arm == "high_dose")
+
+#  high_dose |>
+#    summarise(mean_mass = mean(mass_post_g))
+
+# returns NaN. But voles |> distinct(treatment_arm) returns
+# "Control", "Low_dose", "High_dose". I think the filter is failing
+# because of the case. Is that the only problem?
+```
+
+The exercise is to ask the question with the diagnostic context already in place, not to ask AI to diagnose blind. AI is faster than you at typo-spotting and syntax recall, but slower than `distinct()` at telling you what is actually in your data.
+
+<button id="displayTextunnamed-chunk-14" onclick="javascript:toggle('unnamed-chunk-14');">Show Solution</button>
+
+<div id="toggleTextunnamed-chunk-14" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+
+``` r
+high_dose <- voles |>
+  filter(treatment_arm == "High_dose")
+
+high_dose |>
+  summarise(mean_mass = mean(mass_post_g, na.rm = TRUE))
+```
+
+The capitalisation now matches the actual factor level. Adding `na.rm = TRUE` is precautionary; for this dataset there are no missing values in `mass_post_g`, but in real biological data there usually are.
+</div></div></div>
+
+
+## Exercise 3: An aesthetic-mapping error
+
+You wanted a scatter plot of post-treatment metabolic rate against post-treatment mass, coloured by treatment arm:
+
+
+``` r
+ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
+  geom_point(color = treatment_arm) +
+  labs(title = "Metabolic rate by mass")
+```
+
+R returns:
+
+```
+Error in layer(): object 'treatment_arm' not found
+```
+
+**1. Paste code and error as before, and ask Copilot for a fix. Before accepting, write a sentence on why ggplot2 refused to find `treatment_arm`.**
+
+<button id="displayTextunnamed-chunk-16" onclick="javascript:toggle('unnamed-chunk-16');">Show Solution</button>
+
+<div id="toggleTextunnamed-chunk-16" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+
+``` r
+ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
+  geom_point(aes(colour = treatment_arm)) +
+  labs(title = "Metabolic rate by mass")
+```
+
+`treatment_arm` is a column in the data, so the mapping must go inside `aes()`. The `color =` argument outside `aes()` expects a fixed value such as `"red"` or `"#0072B2"`, not a variable name. When ggplot2 looked for an object called `treatment_arm` in the global environment, it did not find one, and produced the error. British spelling `colour` works as an alias for `color` in ggplot2.
+</div></div></div>
+
+
+## Exercise 4: A correct-looking but wrong result
+
+You want the mean change in body mass by treatment arm. You write:
+
+
+``` r
+voles |>
+  mutate(mass_change_g = mass_pre_g - mass_post_g) |>
+  summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
+```
+
+The code runs. There is no error and no `NaN`. It returns something like:
+
+```
+# A tibble: 3 × 2
+  treatment_arm mean_change
+  <chr>               <dbl>
+1 Control            -0.21 
+2 Low_dose           -1.49 
+3 High_dose          -3.19 
+```
+
+Every value is a small number of grams, which is entirely plausible for a vole, so nothing here looks wrong on its face. But the result is the reverse of the truth. The treatment was administered to increase body mass, and the dataset was built so that mass rises with dose. The table reports that mass falls, and falls most at the highest dose.
+
+This is the error class that neither your diagnostics nor an AI can catch for you. `glimpse()`, `distinct()`, and `count()` all report a clean dataset, because the data are clean; the fault is in the arithmetic, and the arithmetic produces a plausible number. The subtraction is the wrong way round. `mass_pre_g - mass_post_g` measures loss, when you wanted gain.
+
+**1. Before you trust any result that runs cleanly, write down what a correct result should look like.** For this table: the sign should be positive, because the treatment adds mass, and the magnitude should increase from Control to High_dose. Only then compare. The mismatch between "should be positive and increasing" and "is negative and decreasing" is the diagnosis.
+
+**2. You may give the code to AI for a second opinion, but it can only help if you supply the expected direction.** A prompt that says "this should show increasing mass gain with dose, but it shows decreasing values; what is wrong?" will get the sign error named. A prompt that gives only the code and the output will get a description of what the code does, which is not the same as catching that it does the wrong thing.
+
+<button id="displayTextunnamed-chunk-18" onclick="javascript:toggle('unnamed-chunk-18');">Show Solution</button>
+
+<div id="toggleTextunnamed-chunk-18" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+
+``` r
+voles |>
+  mutate(mass_change_g = mass_post_g - mass_pre_g) |>
+  summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
+```
+
+`mass_change_g` is post minus pre, not pre minus post. With the subtraction the right way round the means are positive and increase with dose, matching the design of the study. The original ran without complaint because subtraction is defined in both directions; the only signal that it was wrong was knowing what the answer should be.
+</div></div></div>
+
+
+## The debugging checklist
+
+When code fails, the order matters. Inspect the data first, ask the AI second.
+
+1. Read the error message in full. The function name and the phrase ("could not find function", "object not found", "non-numeric argument") usually localise the bug.
+
+2. Inspect the relevant data. `glimpse()`, `distinct()` on factor columns, `summary()` on numeric columns, and `nrow()` after a filter are the four commands that catch most logic errors in seconds.
+
+3. Verify variable names exactly, including capitalisation and underscores. Most "object not found" errors are typos.
+
+4. If steps 1 to 3 do not localise the bug, paste the code, the error message, and the diagnostic output into Chat together. The combination is much more useful than the error alone.
+
+5. After AI suggests a fix, write a one-sentence explanation of why the original failed. If you cannot write the sentence, you have not understood the fix.
+
+6. Before trusting a result that runs without error, state in advance what it should look like: the sign, the rough magnitude, and the expected ordering. Compare the output against that statement. This is the one check AI cannot perform for you, because it requires knowing the biology.
+
+
+## Check your understanding
+
+**When R returns `Error in layer(): object 'X' not found` inside a ggplot2 call, the most common cause is:**
+
+<div class='webex-radiogroup' id='radio_ZWWSYVLDIA'><label><input type="radio" autocomplete="off" name="radio_ZWWSYVLDIA" value=""></input> <span>The data argument was supplied incorrectly</span></label><label><input type="radio" autocomplete="off" name="radio_ZWWSYVLDIA" value="answer"></input> <span>A column name was used outside aes() where ggplot2 expected a fixed value</span></label><label><input type="radio" autocomplete="off" name="radio_ZWWSYVLDIA" value=""></input> <span>The ggplot2 package is not loaded</span></label><label><input type="radio" autocomplete="off" name="radio_ZWWSYVLDIA" value=""></input> <span>The variable contains missing values</span></label></div>
+
+
+
+# Part 4: Copilot Chat in Ask mode
+
+Copilot Chat uses the same underlying AI model as inline completion, but for a different kind of help. Inline completion is best when you are actively writing code and want quick suggestions or continuations, which are usually included in standard Copilot usage. Chat is better for higher-level tasks such as planning an approach, understanding an error, or discussing design decisions, and these features are more likely to be usage-limited or *metered* because they require more computation. The two tools complement each other rather than replace one another.
+
+Approximate duration: 40 minutes (after a fifteen-minute break).
+
+
+## What Chat sees, and what it does not
+
+Here Copilot Chat differs fundamentally from a general chatbot such as ChatGPT, and the difference is easy to get wrong. ChatGPT sees only the text you paste; it has no connection to your files. Copilot is integrated with your editor and repository and can draw on context you did not paste. How much it draws on, and whether it can act on your machine, depends on the surface. Three matter for this workshop, and they are not equivalent.
+
+- Browser Chat on github.com (usable from any IDE, including RStudio): open your repository on github.com and select the Copilot icon. It works in the context of that repository and can reach its files, but it has no connection to your local machine, runs no code, and cannot see your R session. This is the one that behaves the same for everyone.
+
+- The Copilot Chat extension in VS Code: by default it includes the active file, your current selection, and the file name as context and can index the workspace. You steer this with #editor for the open file, #<filename> for a named file, and #codebase (formerly @workspace) for a project-wide question. Ask and Edit modes reason over this context but run nothing; agent mode can run terminal commands and tests, so it can execute R itself, in a process it controls rather than your interactive console, and only if the data can be rebuilt from files it can read.
+
+- Positron: Positron also uses GitHub Copilot, signed in with your GitHub account, unless you configure a different provider such as an Anthropic API key. It is delivered through a Positron-modified build of the Copilot Chat extension, and the difference that matters is the context it adds. Positron hands Copilot context about your interactive data science work, such as your loaded data, plots, and console history, and in agent mode it can execute code in the console and view the output. So although the model is Copilot, in Positron it is fed your session, and the "cannot see your data" assumption does not hold the way it does in browser Chat. PositronGitHub
+
+- Your `copilot-instructions.md`, if present, is loaded automatically into every Copilot Chat request in that workspace. Exactly what is pulled in automatically has changed between versions and differs across surfaces, so the reliable habit is to set the context yourself with the references above rather than to assume (see Part 5).
+
+One thing is constant: no memory between sessions, so a new chat starts blank. Two things people assume are constant are not. Whether Copilot runs your code, and whether it can see the objects in your R session, both depend on the surface. Browser Chat does neither. The VS Code extension sees your files but not your live session, and executes only in agent mode, in its own process. In Positron, Copilot is given your loaded data and console history and can run code in the Console. The durable point for browser Chat, where these exercises run, is this: a tibble that exists only in memory after a `read_csv()` and a few pipes is invisible to a tool that holds neither your session nor the file, so for anything about the contents of your data, the values, the result of a transformation, the levels of a factor, you supply it yourself.
+
+This is why the exercises below should be run in browser Chat, or in a session where the relevant file and environment are not already in context. If your script is open in the VS Code editor, Copilot may already hold the context an exercise asks you to add; in Positron, Copilot may already have your data frame in context, or be able to inspect it by running code, which removes the contrast entirely. Either is worth noticing. RStudio users should use browser Chat throughout. VS Code users may use either, subject to the caveat. Positron users should use browser Chat for these exercises specifically, because Positron's session context defeats the demonstration
+
+<div class="info">
+<p>An assistant can describe your data confidently for two different
+reasons: 1) it has been given real information about your session, 2) or
+it is recalling something from training data. Only the first is
+reliable.</p>
+<p>It has real information when one of these holds: you pasted the
+output (<code>glimpse()</code>, <code>summary()</code>, the printed
+result), or the data sits in a file it can read.</p>
+<p>In Positron the IDE injects your session context (look for the
+Console session tab); or, in agent mode, it can run code and read the
+output.</p>
+<p>It is guessing from training data when none of those apply, which is
+always the case in browser Chat on github.com. Tells: it substitutes a
+well-known dataset (mtcars, iris, penguins) you never mentioned, or
+asserts column names, factor levels, or values you never supplied.</p>
+<p>Even when context is supplied, the model’s claim about what it can
+see is unreliable, and the context may be structure rather than actual
+values. Verify any data-specific claim against your real object.</p>
+</div>
+
+
+**Browser Chat** (all IDEs, including RStudio): navigate to your repository on github.com and click the Copilot icon in the top right. This is the one that works for everyone.
+
+**In-IDE Chat panel** (Positron and VS Code only): open the Copilot panel in the sidebar, and use the `#` and `@workspace` references above to control what it sees.
+
+RStudio users should use the browser Chat throughout this block. Positron and VS Code users may use either; the exercises work in both, subject to the context caveat above.
+
+
+## Exercise 1: Reading a stack trace
+
+This exercise demonstrates the dependency of Chat's answer quality on the context you supply.
+
+**For Positron disable current session context to see the different responses you get**
+
+**1. Open a fresh Chat session. Paste only the following error message and ask "What does this error mean?":**
+
+```
+Error in `mutate()`:
+ℹ In argument: `mass_change = mass_post - mass_pre_g`.
+Caused by error:
+! object 'mass_post' not found
+```
+
+Read the answer. It will be generic and slightly tentative, because Chat is reasoning from the error alone.
+
+**2. Now open a new Chat session and paste the same error along with the code that produced it and the output of `glimpse(voles)`:**
+
+```
+I am running this code:
+
+  voles |>
+    mutate(mass_change = mass_post - mass_pre_g)
+
+and getting:
+
+  Error in `mutate()`:
+  ℹ In argument: `mass_change = mass_post - mass_pre_g`.
+  Caused by error:
+  ! object 'mass_post' not found
+
+The data structure is:
+
+  Rows: 72
+  Columns: 6
+  $ subject_id          <chr> "V001", "V002", "V003", ...
+  $ sex                 <chr> "M", "F", "M", ...
+  $ treatment_arm       <chr> "Control", "Control", ...
+  $ mass_pre_g          <dbl> 28.3, 27.9, 30.1, ...
+  $ mass_post_g         <dbl> 28.5, 28.0, 30.5, ...
+  $ metabolic_rate_post <dbl> 13.21, 12.84, 13.55, ...
+
+What is wrong?
+```
+
+Read this answer. It will name the specific bug (a missing `_g` suffix on `mass_post`) and propose the fix. Chat could not name it from the error alone because the column names are a property of the data loaded in your R session, which Chat cannot see; supplying the `glimpse()` output put them in front of it. A generic question gets a generic answer; a specific question gets a specific answer.
+
+
+## How much of your data to show
+
+The contents of your data can reach the model by three routes, and each is a disclosure:
+
+- You paste it into the chat: an error, an output, a printed result.
+
+- It reads a data file that sits in a repository or workspace it can see. Browser Chat on github.com works in the context of the repository you open it from, so a committed voles.csv is within reach; the VS Code extension can surface project files through workspace indexing.
+
+- The IDE injects your session context. In Positron, the assistant is given context about your interactive data science work, such as your loaded data, plots, and console history, so a data frame already in memory can reach it without a paste. Positron
+
+Describing your data to Chat is therefore a recurring task, but it is not the only way your data is exposed. Before you decide what to show, know what the surface can already reach: a data file committed to the repo, or a tibble loaded in a Positron session, may have been disclosed already.
+
+When you do describe a data frame deliberately, three commands reveal increasing amounts:
+
+- `names(voles)`, or equivalently `colnames(voles)`, lists the column names only, in their original order, and discloses nothing about the values. Prefer this to `ls(voles)`, which returns the same names but sorts them alphabetically and so loses the column order.
+
+- `summary(voles)` adds the range, quartiles, and missing-value counts for numeric columns, and is less informative for character or factor columns. It reveals the shape of the data, not individual records.
+
+- `glimpse(voles)` and `str(voles)` add the first few actual values of every column.
+
+Use the least-disclosing call that still lets the AI help, and scale up only if the answer needs it. For the synthetic voles data this is moot, because no real subject is described. For your own data it is not. Human-participant data, and sensitive ecological data such as the locations of a protected species, may not be shared with an external tool at all under your data-management plan or ethics approval. names() is almost always safe; summary() and str() expose real values and may not be.
+
+## Exercise 2: Refining an approach question
+
+Run this in browser Chat, or with no analysis file referenced. If your script is open in the editor, Copilot may infer the design from it, and the first answer will be less generic than described below. The refinement in step 2 still helps in that case, because your scientific question and your design intent are not written in any file; they exist only in your head until you state them.
+
+**1. Open a Chat session and ask, exactly as written:**
+
+```
+I have a dataset with pre and post measurements. How should I analyse it?
+```
+
+Read the answer. With no design and no scientific question supplied, it will be a tour of paired t-tests, mixed models, change scores, ANCOVA, and so on, because the question is too vague to permit a recommendation.
+
+**2. Refine the question, with the dataset structure and the scientific question explicit:**
+
+```
+I have 72 voles, balanced across three treatment arms (Control, Low_dose,
+High_dose) and two sexes (M, F). Each animal has body mass measured before
+and after treatment, and a single post-treatment metabolic-rate reading.
+
+My biological question is whether the high-dose treatment changes mass
+relative to control, and whether the effect differs between sexes.
+
+The dataset is small (n = 12 per cell). I will report effect sizes
+alongside any inferential test. Given this design, what is a defensible
+primary analysis, and what are the main threats to its validity?
+```
+
+Read the second answer. It will be substantially more useful, because the question now has enough information to permit a recommendation. The exercise is about question-craft: AI tools answer the question you actually asked, not the question you meant.
+
+
+## Exercise 3: Verify the AI did not change behaviour
+
+Asking AI to comment or to refactor code carries a specific risk: that it changes what the code does while claiming only to have tidied it. Reading the diff catches changed code. It does not always catch changed output, because a small alteration is easy to miss by eye. There is a cheap check for the output.
+
+**1. Compute and keep a reference result:**
+
+
+``` r
+original <- voles |>
+  mutate(mass_change_g = mass_post_g - mass_pre_g) |>
+  summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
+```
+
+**2. Ask Chat to refactor or comment the pipeline.** Use a prompt such as: "Add explanatory comments to this pipeline and make it more readable, but do not change what it returns." Run the version it gives you, assigning the result to `refactored`.
+
+**3. Compare the two results:**
+
+
+``` r
+all.equal(original, refactored)
+```
+
+`all.equal()` returns `TRUE` when the two objects are identical to within numerical tolerance. Anything else is a report of the differences, and a signal that the refactor changed the output. For tibbles, `waldo::compare(original, refactored)` gives a more readable account of where they diverge.
+
+The point is not that AI always changes your code; often it does not. The point is that you cannot tell by trust, and the check costs one line. Whenever you ask AI to transform code that already works, verify that the output survived the transformation.
+
+
+## When to use Chat versus inline
+
+A short decision rule covers most cases:
+
+| Task | Inline | Chat |
+|---|---|---|
+| Writing the next line of code | Yes | No |
+| One-line typo or syntax fix | Yes | No |
+| Reading an unfamiliar error | Marginal | Yes |
+| Choosing between two approaches | No | Yes |
+| Planning the structure of a script | No | Yes |
+| Refactoring more than a few lines | No | Yes |
+
+The rule is not strict; both tools have considerable overlap. The principle is: inline for typing, Chat for thinking.
+
+
+## Check your understanding
+
+**Which statement best describes the context available to in-IDE Copilot Chat, compared with a general chatbot such as ChatGPT?**
+
+<div class='webex-radiogroup' id='radio_IITGZERIGM'><label><input type="radio" autocomplete="off" name="radio_IITGZERIGM" value=""></input> <span>Like ChatGPT, it sees only the text you paste into the prompt</span></label><label><input type="radio" autocomplete="off" name="radio_IITGZERIGM" value="answer"></input> <span>It is integrated with your editor and project, so it can draw on open files, a workspace index, and files you reference, but it cannot see the objects loaded in your R session</span></label><label><input type="radio" autocomplete="off" name="radio_IITGZERIGM" value=""></input> <span>It has full automatic access to every file in the repository and to your running R session</span></label><label><input type="radio" autocomplete="off" name="radio_IITGZERIGM" value=""></input> <span>It can execute your R code to read the data directly</span></label></div>
+
+
+
+# Part 5: Custom instructions and skills
+
+The biggest single improvement you can make to your AI workflow is to give Copilot persistent context about how you write code, so you do not have to re-state your conventions in every comment and every Chat session. This block introduces the configuration mechanisms that allow you to do this, and gets you to write the most important one.
+
+Approximate duration: 55 minutes.
+
+
+## Three configuration mechanisms
+
+GitHub Copilot supports three distinct ways of injecting context into its responses. They are easy to confuse because they all live in `.github/` and all use markdown. Knowing what each does is the precondition for using any of them well.
+
+**Workspace-level custom instructions** live in `.github/copilot-instructions.md`. Copilot loads this file automatically for every Chat interaction in the repository. Use it for things that are always true about your project: which packages you use, your naming conventions, your file structure, your statistical conventions. The file is short (a few hundred words) and broad in scope.
+
+**Scoped instructions** live in `.github/instructions/*.instructions.md`, with a YAML front-matter `applyTo` glob that restricts the file to particular paths (for example `applyTo: "**/*.qmd"` to apply only to Quarto documents). Use these for instructions that apply to one type of file but not all. They load automatically when Copilot is working on a matching file.
+
+**Agent Skills** live in `.github/skills/<skill-name>/SKILL.md`, with a YAML front-matter `name` and `description`. Unlike the first two mechanisms, skills are not always loaded; they are invoked. Either you type `/skill-name` in Chat or the agent infers that the skill is relevant from its description. Skills are appropriate for procedures: how to make a publication figure, how to write a function, how to review code. They can contain extensive material because they are not loaded except when needed.
+
+A fourth, related mechanism is custom prompt files (`.github/prompts/*.prompt.md`), which are explicitly invoked as slash commands. These are not the focus of this workshop.
+
+The three mechanisms answer different questions. Custom instructions answer "how should code in this project be written?" Scoped instructions answer "how should this kind of file be written?" Skills answer "how should this specific task be executed?" The visualisation skill you will see demonstrated shortly is an example of the third.
+
+
+## How to write effective instructions
+
+A `copilot-instructions.md` file is loaded into every Chat interaction in the repository and is read by the cloud agent before it starts work, so its length is a recurring cost and brevity is a virtue. A handful of accurate lines outperforms a long file.
+
+A few principles carry most of the value:
+
+- Write each instruction as a single, simple statement. If you have several points, use several lines rather than one dense paragraph; the model parses discrete statements more reliably than prose.
+
+- Describe the conventions you actually follow, not the ones you aspire to. An instruction your own code routinely breaks teaches the model a rule the surrounding code contradicts, which makes its suggestions less consistent.
+
+- Be concrete and positive. "Use the native pipe `|>`" and "snake_case for all object names" are actionable; "write clean, idiomatic code" is not.
+
+- Avoid contradiction and overlap. When a workspace instruction and a scoped instruction conflict, Copilot's choice between them is not deterministic, so do not rely on one quietly overriding the other.
+
+- Tell the agent how to run the project, not only how to style it. For the cloud agent in Part 6, "tests are run with `testthat::test_file()`" matters as much as any naming rule, because the agent uses it to check its own work.
+
+You do not have to start from a blank file. In VS Code you can generate a first draft with `/init`, and the first time you open a cloud-agent pull request Copilot offers to generate an instructions file by inspecting the repository. Generate, then edit down to what is true.
+
+
+## Exercise 1: Build your `copilot-instructions.md`
+
+In the workshop template repository (which you forked at the start of the day), create the file `.github/copilot-instructions.md`. The file should specify, at minimum:
+
+**1. Project context.** One sentence on what the project is for. Use your own work, not the workshop dataset. For example: "Longitudinal analysis of badger sett occupancy, 2015–2024, three counties, hierarchical model fit with brms."
+
+**2. Package and syntax preferences.** Which packages you use by default; which pipe operator (`|>` or `%>%`); which assignment operator (`<-` or `=`); naming convention (snake_case is the tidyverse standard).
+
+**3. File structure.** Where data live, where scripts live, where outputs live. The standard analysis-project layout (`data/raw/`, `data/processed/`, `R/`, `outputs/figures/`, `outputs/tables/`) is a reasonable default; adapt it to your conventions.
+
+**4. One statistical or coding convention you care about.** This is the most important entry, because it is the one that is specific to you. Examples: "Report effect sizes alongside p-values; never report a p-value alone." "Always use `na.rm = TRUE` in summary functions." "Models in `R/04_models.R`, figures in `R/05_figures.R`; never mix the two." "Use `set.seed(2026)` at the top of any script that uses random numbers."
+
+**5. One common mistake to avoid.** Pick one error from Part 3 that you have made before, or a different one from your own work, and instruct Copilot to flag or prevent it.
+
+The deliverable for this exercise is the committed `copilot-instructions.md` file in your forked repository. After committing, open a fresh Chat session in the browser and ask:
+
+```
+Following the conventions in #.github/copilot-instructions.md,
+sketch a project structure for analysing the voles_metabolism.csv
+dataset.
+```
+
+Compare the answer with what a partner gets from their own instructions file. The differences are the personality of your standards.
+
+Resist the temptation to write an exhaustive style guide on day one. A short, accurate file is more useful than a long file that includes rules you do not actually follow. Add entries when you find yourself correcting the same suggestion repeatedly.
+
+
+## Demonstration: a skill in action
+
+This is an instructor-driven demonstration. The skill being demonstrated is `pub-figures`, which governs the production of every figure in the project that a human will read. The skill encodes a chart-selection table, a list of unconditional prohibitions (no pie charts, no dual y-axes, no dynamite plots when raw data are available), an accessible colour scheme (Okabe-Ito via the `colorspace` package), audience-specific styling, a mandatory colour-vision-deficiency check, and a pre-flight checklist.
+
+The demonstration has three parts.
+
+**1. Default output.** In a fresh Chat session (with no skill loaded), ask:
+
+```
+Produce a ggplot2 boxplot of mass_post_g by treatment_arm for the voles
+dataset.
+```
+
+The result is a default-styled boxplot: grey background, ggplot2 default colours, no consideration of accessibility, no annotation of sample sizes. It runs and answers the literal question, and that is all.
+
+**2. With the skill.** Open a new Chat session, invoke the skill (`/pub-figures`), and ask the same question. The skill requires the agent to elicit the audience before producing code. The agent will ask whether the figure is for a journal/lab report, a poster, a talk, or public engagement. Answer "journal/lab report" and confirm the plan it produces.
+
+The output is materially different. A raincloud (`ggdist::stat_halfeye` plus a boxplot plus jittered points) replaces the bare boxplot, because the skill specifies raincloud as the default for discrete-continuous comparisons where raw data are available. The palette is Okabe-Ito applied via `colorspace::scale_fill_discrete_qualitative()`. Axis labels carry units. The pre-flight checklist is reported in the chat.
+
+**3. Iteration.** Ask the agent to add pairwise statistical annotation. The skill prohibits hallucinating p-values, so the agent will refuse unless a fitted model object is available. Provide a fitted `lm()` and the `emmeans` contrasts; the agent will use `ggpubr::stat_pvalue_manual()` to draw brackets and labels from the model-derived data. The four-element figure legend appears at the bottom of the output.
+
+The pedagogical point of the demonstration is not the figure. It is the visible difference between an AI tool with no scaffolding (which answers literally and stops) and an AI tool with a procedural scaffold (which checks audience, applies project conventions, runs accessibility checks, and refuses to fabricate statistics). The same model produced both outputs. The scaffold did the work.
+
+The `pub-figures` skill demonstrated above is one of three general-purpose skills being developed for the broader course; the other two, tidyverse-style code optimisation and code review, will be released alongside the demonstration repository. A fourth skill, `characterisation-test`, is narrower and task-specific: it ships inside today's workshop template, and you will put it to work with the cloud agent in Part 6. In every case you receive the skill rather than author it here, but receiving is not passive. Using a skill well, as Part 6 shows, still requires you to set up the task and verify the result.
+
+
+## How to write skills, and the agent files beyond them
+
+You will receive these skills rather than author them in this workshop, but it is worth seeing how a skill is built, because the same structure applies when you write your own, because it explains why the demonstration above behaved as it did, and because it explains why the `characterisation-test` skill in Part 6 is able to constrain the cloud agent so tightly.
+
+A skill is a folder, `.github/skills/<skill-name>/SKILL.md`, with a YAML front-matter block and a Markdown body. Two parts decide whether it works:
+
+- The `description` in the front matter is the trigger. It is the text the agent reads to decide whether the skill is relevant to a request, so it must name the condition under which the skill applies, specifically. "Used when producing any ggplot2 figure a human will read" loads when it should; "for plots" loads erratically. A skill invoked by name with `/skill-name` does not depend on the description, but a skill you want loaded automatically does.
+
+- The body is a procedure: when to use the skill, the ordered steps, any hard prohibitions, and a final checklist. Because a skill is read only when invoked, it can be long without slowing ordinary interactions, which is why the `pub-figures` skill can carry a chart-selection table, a prohibition list, and an accessibility check at no cost to a routine question. Supporting files such as templates or reference tables can sit in the skill folder alongside `SKILL.md`.
+
+Two further file types target the agent specifically. Both are recent, and the GitHub documentation is the authority on their current behaviour:
+
+- `AGENTS.md` is an always-on instructions file at the repository root, with the same role as `copilot-instructions.md` but following a cross-tool convention that several AI tools read. The cloud agent treats a root `AGENTS.md` as primary instructions; if both it and `.github/copilot-instructions.md` are present, both are used, so keep them from duplicating or contradicting each other.
+
+- A custom agent, defined in `.github/agents/<name>.agent.md`, is a specialist with a constrained set of tools. The front matter names the agent, describes its purpose, and lists the tools it may use; a test-writing agent might be restricted to reading, searching, and editing so that it cannot alter production code. The distinction worth holding is that a skill packages a procedure, whereas a custom agent packages a role with a tool boundary. Use a skill for "how to do this task"; use a custom agent for "a specialist that only ever does this kind of work".
+
+The mechanisms are layered rather than competing. Instructions set the always-on context, scoped instructions narrow it by file type, skills supply procedures on demand, and agent files configure how the autonomous agent of Part 6 behaves. You can run this workshop with only the first of them; the rest are there for when a recurring need justifies the setup.
+
+
+## Check your understanding
+
+**An Agent Skill differs from a workspace-level custom instructions file in that:**
+
+<div class='webex-radiogroup' id='radio_RQEASIHBTC'><label><input type="radio" autocomplete="off" name="radio_RQEASIHBTC" value=""></input> <span>Skills only work in Positron and VS Code, custom instructions work in all IDEs</span></label><label><input type="radio" autocomplete="off" name="radio_RQEASIHBTC" value="answer"></input> <span>Custom instructions are loaded automatically for every Chat interaction, whereas skills are invoked by name or loaded only when judged relevant</span></label><label><input type="radio" autocomplete="off" name="radio_RQEASIHBTC" value=""></input> <span>Skills are paid features and custom instructions are free</span></label><label><input type="radio" autocomplete="off" name="radio_RQEASIHBTC" value=""></input> <span>Custom instructions can include code but skills cannot</span></label></div>
+
+
+**A skill is invoked in Chat by typing** <input class='webex-solveme nospaces' size='15' data-answer='["/skill-name","/pub-figures"]'/> **(write the general form).**
+
+
+# Part 6: Functionalise a script step and prove the result is unchanged
+
+Suppose you have a computation that already works and you want the cloud agent to
+tidy it into a reusable function. The agent can do that in minutes. The difficulty
+is verification: a refactor that "improves" code can quietly change its output, so
+how do you confidently check that the function still does what the script did? The
+answer this part teaches is to freeze the original result before the agent touches
+anything. You run the analysis once, save its output to a reference file (an
+`.rds`), and then require the agent's function to reproduce that reference exactly.
+You hold the reference; the agent does the refactor and proves that it matches. The
+reference is the check, and because you captured it, the check cannot be quietly
+redefined by the agent.
+
+Allow about 25 minutes of teaching time for this part. That figure covers the
+framing, the review and the discussion around the agent's work. It does not
+cover the agent's own wall-clock time, which you do not control.
+
+> **Instructor note on timing.** The coding agent runs asynchronously, and its
+> turnaround depends on queueing: a single cycle can take from a couple of
+> minutes to considerably longer, and a failure-and-fix loop adds another. Do
+> not build the segment around a live run fitting a fixed slot. Pre-run the
+> whole exercise before the session and have the finished pull request ready,
+> including its failed-then-fixed history, so you can walk through it whatever
+> the live agent does. Treat any live run as a bonus.
+
+## Recap: in-IDE Agent versus cloud agent
+
+The distinction from Part 1 matters here. In-IDE Agent mode, available in Positron and VS Code, edits files in your editor in real time while you watch. The cloud agent runs on GitHub's servers, takes an issue as input, creates a branch and a pull request without you watching, and notifies you when it has finished. This block uses the cloud agent throughout, because it is platform-agnostic and exposes the full software-engineering workflow the workshop is building towards. RStudio users are therefore on equal footing in this part.
+
+## Prerequisites already in the repository
+
+For this part to run you need the pieces assembled earlier: `data/voles_metabolism.csv`
+from the generation script, the two scripts `R/01_load_data.R` (load and `glimpse()`)
+and `R/02_analysis.R` (which sources the first and computes the summary), the capture
+script `tests/fixtures/make_reference.R`, and a `renv.lock` that includes at least
+tidyverse, here, and testthat so both workflows can restore. The reference `.rds` is
+not shipped; you produce it yourself in Step 0. The agent produces
+`R/functions/summary_functions.R` and `tests/test_summary_functions.R`, and rewires
+`R/02_analysis.R` to call the new function, during this part.
+
+## What the template already provides (read, do not write)
+
+Recall from the GitHub session that GitHub Actions runs automated workflows in
+response to repository events such as a push or a pull request. Two such workflows
+sit in `.github/workflows/`, both placed there for you. `copilot-setup-steps.yml`
+configures the environment the cloud agent works in, installing R and your locked
+packages so the agent can run the tests while it works; the job inside it must be
+named exactly `copilot-setup-steps` for the agent to use it. `r-checks.yml` runs the
+tests on pushes to `main` and on every pull request, and is the independent check
+that neither you nor the agent can fake. The full contents of both files are in the
+workshop-template appendix.
+
+The repository also holds two short scripts. `R/01_load_data.R` loads the data and
+runs `glimpse()`; `R/02_analysis.R` sources it and computes the summary you will
+functionalise:
+
+
+``` r
+# R/02_analysis.R — the original, trusted version
+library(tidyverse)
+library(here)
+
+# 01_load_data.R reads the CSV into `voles` and runs glimpse()
+source(here::here("R", "01_load_data.R"))
+
+metabolic_summary <- voles |>
+  group_by(treatment_arm, sex) |>
+  summarise(
+    mean_rate = mean(metabolic_rate_post),
+    sd_rate   = sd(metabolic_rate_post),
+    n         = n(),
+    .groups   = "drop"
+  )
+```
+
+And a skill telling the agent how to behave for this kind of job:
+
+```markdown
+# .github/skills/characterisation-test/SKILL.md
+---
+name: characterisation-test
+description: >-
+  Use for background (cloud agent) tasks that move a computation from a script into a
+  function in R/functions/ and verify it reproduces a saved reference. The reference is
+  captured by the investigator, never by the agent.
+---
+
+# Functionalise and characterise
+
+## What you must not do
+Do not create, regenerate, or modify the reference output, and do not touch any file under
+tests/fixtures/. If the fixture is missing, stop and ask the investigator to capture it. A
+reference you make or alter from your own code proves nothing.
+
+## Procedure
+1. Write the computation as a function in R/functions/, with a roxygen2 block, argument
+   checks, and one @examples entry. Reproduce the original output exactly, including column
+   and row order.
+2. Add a test that loads the fixture, runs the function, and compares with expect_equal().
+3. Update the originating script (R/02_analysis.R) to call the new function in place of the
+   inline computation, so the script and the function do not drift apart. Do not re-run any
+   reference-capture script and do not touch tests/fixtures/.
+
+## Verification
+Run the test in your own environment first. Then push and wait for r-checks. If it fails,
+read the log, fix the specific cause, and push again. Done means r-checks is green.
+
+## If a failure persists after three attempts
+Stop and comment on the pull request explaining what you tried and the remaining error.
+Do not make speculative changes.
+```
+
+## Before you start: one repository setting
+
+In this workshop repository, which holds no secrets, turn on the setting that
+lets the Copilot coding agent's workflows run without approval, so you can watch
+the checks run live. By default GitHub blocks them, treating the agent as an
+outside contributor. Say to learners plainly that in a real project with secrets
+you leave this off; the agent still self-checks in its own environment, and you
+click "Approve and run" when you come to review.
+
+Be precise about what each run certifies, because that distinction is the point
+of the exercise. The agent's own run is self-reported: it is the agent saying
+"I ran the tests and they passed", which you cannot independently confirm. The
+r-checks run is machine-verified and tamper-resistant: the agent cannot fake a
+green tick on a check whose result it does not control, so a green r-checks tells
+you the tests genuinely pass on clean, locked infrastructure. What neither run
+can tell you is whether the test is honest. If the reference were wrong, or if
+the agent had quietly regenerated it from its own output, both runs would still
+go green. Reproducibility is what CI gives you; non-circularity is not. That part
+stays with you, through the reference you capture in Step 0 and the diff you
+review in Step 4.
+
+## Step 0 — You capture the reference (this stays with you)
+
+Before the agent is involved at all, run `R/02_analysis.R` yourself and confirm
+`metabolic_summary` looks as it should. This is the output you want to preserve. Then
+run the capture script below, once, and commit the resulting `.rds`. This frozen
+output is the trust anchor, and the agent never touches it. Run the capture from
+within the project, so `renv` is active and the reference reflects the same locked
+package versions that `r-checks` will restore. Capture it now, before the refactor:
+afterwards `02_analysis.R` computes the summary through the very function under test,
+so re-capturing from it would compare the function against itself. For this exercise
+you capture once and leave the reference frozen.
+
+
+``` r
+# tests/fixtures/make_reference.R
+# Capture the trusted reference once, from within the project so renv is active,
+# so the reference reflects the locked package versions r-checks restores.
+# Run this BEFORE the agent refactors 02_analysis.R, and capture only once: after
+# the refactor that script computes the summary via the function under test, so a
+# later capture would compare the function against itself.
+
+if (!requireNamespace("renv", quietly = TRUE) || is.null(renv::project())) {
+  stop(
+    "Run this from within the project, with renv active, so the reference ",
+    "matches the locked environment used by r-checks.",
+    call. = FALSE
+  )
+}
+
+source(here::here("R", "02_analysis.R"))
+saveRDS(
+  metabolic_summary,
+  here::here("tests", "fixtures", "metabolic_summary.rds")
+)
+```
+
+## Step 1 — Read the skill
+
+Find the one line that matters: the agent must not create, regenerate or modify
+the reference, and must not touch anything under `tests/fixtures/`. That single
+instruction is what stops the verification becoming circular, and it is your
+first aim in miniature, a few words of instruction setting a boundary the agent
+will respect.
+
+## Step 2 — Write a thin issue and hand it over
+
+```text
+Title: Functionalise the metabolic-rate summary and verify it is unchanged
+
+R/02_analysis.R computes metabolic_summary. Move that computation into a documented
+function in R/functions/, have the script call it, and add a test that checks the function
+reproduces the saved reference in tests/fixtures/metabolic_summary.rds.
+
+Use the characterisation-test skill and follow the project conventions.
+Push, make r-checks pass, and tell me when it is ready to review.
+```
+
+Notice how little you wrote. The return shape, the roxygen, the naming and the
+assertion style are absent, because the skill and your standing instructions
+already hold them. That is the lesson: short instructions work because the
+architecture carries the standards.
+
+## Step 3 — Watch it work, and probably stumble
+
+The agent moves the computation into a function, writes the test, runs it in its
+own environment, and pushes. The likely first failure is instructive. A tidy
+refactor often switches `group_by()` for the modern `.by`, and the two do not
+order their output the same way: `group_by()` sorts the grouping keys, whereas
+`.by` returns groups in order of first appearance. The numbers are right, but
+the rows are arranged differently, so `expect_equal()` reports a mismatch. Watch
+the agent read that, add an `arrange()` to match the original order, and go
+green. If it passes first time, walk through the prepared failed-then-fixed pull
+request instead, so the recover-from-failure loop is seen either way. The point
+to land is that improving code during a refactor can quietly change the output,
+and the characterisation test is what catches it.
+
+## Step 4 — Review the green pull request
+
+
+``` r
+# R/functions/summary_functions.R
+#' Summarise post-treatment metabolic rate by treatment arm and sex
+#'
+#' @param data A data frame containing the columns treatment_arm, sex and
+#'   metabolic_rate_post.
+#' @return A tibble with one row per treatment_arm and sex, giving the mean,
+#'   standard deviation and n.
+#' @examples
+#' demo <- tibble::tibble(
+#'   treatment_arm = c("Control", "Control", "Low_dose", "Low_dose"),
+#'   sex = c("F", "F", "M", "M"),
+#'   metabolic_rate_post = c(1.2, 1.3, 1.6, 1.7)
+#' )
+#' summarise_metabolic_rate(demo)
+summarise_metabolic_rate <- function(data) {
+  stopifnot(is.data.frame(data))
+  required <- c("treatment_arm", "sex", "metabolic_rate_post")
+  missing_cols <- setdiff(required, names(data))
+  if (length(missing_cols) > 0) {
+    stop(
+      "`data` is missing required column(s): ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  data |>
+    dplyr::summarise(
+      mean_rate = mean(metabolic_rate_post),
+      sd_rate   = sd(metabolic_rate_post),
+      n         = dplyr::n(),
+      .by = c(treatment_arm, sex)
+    ) |>
+    dplyr::arrange(treatment_arm, sex)
+}
+```
+
+
+``` r
+# tests/test_summary_functions.R
+library(testthat)
+source(here::here("R", "functions", "summary_functions.R"))
+
+test_that("summarise_metabolic_rate reproduces the original summary", {
+  reference <- readRDS(here::here("tests", "fixtures", "metabolic_summary.rds"))
+  voles <- readr::read_csv(
+    here::here("data", "voles_metabolism.csv"),
+    show_col_types = FALSE
+  )
+  expect_equal(summarise_metabolic_rate(voles), reference, tolerance = 1e-8)
+})
+```
+
+And `R/02_analysis.R`, now a thin caller rather than the inline pipeline:
+
+
+``` r
+# R/02_analysis.R — after the refactor
+library(tidyverse)
+library(here)
+
+source(here::here("R", "01_load_data.R"))
+source(here::here("R", "functions", "summary_functions.R"))
+
+metabolic_summary <- summarise_metabolic_rate(voles)
+```
+
+Read four things. First, the green tick: trust it as evidence that the tests
+pass reproducibly on locked infrastructure, not as evidence that the test is the
+right test. Second, the test body, to confirm it compares against your reference
+and not one the agent invented. Third, that `R/02_analysis.R` now calls
+`summarise_metabolic_rate()` rather than carrying the old inline pipeline, so the
+function has genuinely replaced the code it was extracted from. Fourth, and most
+important for the circularity gap, the "Files changed" tab: confirm the agent's
+commits do not touch `tests/fixtures/`. Because the `.rds` is binary and git
+cannot show you what changed inside it, the safeguard is that it must not appear
+in the diff at all. The fixture you committed in Step 0 is the trust anchor; if
+the agent has modified it, the verification is circular whatever the green tick
+says.
+
+## Step 5 — Notice the limit
+
+You captured the reference; the agent could not, by design. That is the division
+the whole tutorial is building. The agent does the mechanical work, and the one
+thing that anchors the trust stays with you.
+
+## Debrief — when is this worth it?
+
+Use a CI agent task when the work is tedious, has a clear pass-or-fail check, and
+you are content to review afterwards rather than steer live. Functionalising a
+script step under a characterisation test fits all three. Deciding what the
+script should compute in the first place, and judging whether the result is
+scientifically sensible, do not, and stay with you.
+
+## Check your understanding
+
+**A green `r-checks` tick on the pull request tells you that:**
+
+<div class='webex-radiogroup' id='radio_QGKKKFQTLX'><label><input type="radio" autocomplete="off" name="radio_QGKKKFQTLX" value=""></input> <span>the function is correct and the result is scientifically sensible</span></label><label><input type="radio" autocomplete="off" name="radio_QGKKKFQTLX" value="answer"></input> <span>the tests pass reproducibly on clean, locked infrastructure, but not that the test compares against an honest reference</span></label><label><input type="radio" autocomplete="off" name="radio_QGKKKFQTLX" value=""></input> <span>nothing useful, because the agent controls the outcome</span></label><label><input type="radio" autocomplete="off" name="radio_QGKKKFQTLX" value=""></input> <span>both that the result is reproducible and that the verification is non-circular</span></label></div>
+
+
+**True or false: the reference fixture is captured by the investigator rather than the agent because a reference generated from the agent's own output would make the verification circular.** <select class='webex-select'><option value='blank'></option><option value='answer'>TRUE</option><option value=''>FALSE</option></select>
+
+
+## Wrap-up
+
+Approximate duration: 10 minutes.
+
+
+## What to do tomorrow
+
+The most useful thing you can do tomorrow morning is the smallest possible version of Part 5 Exercise 1 in your own work: create `.github/copilot-instructions.md` in one of your existing repositories, write three or four sentences about your conventions, and commit it. The file does not need to be polished. It needs to exist, so that the next Chat session you open gets your conventions for free.
+
+The second most useful thing is to disable inline completion for one short task, attempt the task, and re-enable completion. The discrepancy between what you can do unaided and what you accept from the AI is the size of the verification gap you need to close. Notice it, and the rest follows.
+
+
+## What comes next
+
+This workshop is the foundation for a separate strand of work on Agent Skills. Three general-purpose skills are in development: tidyverse-style code optimisation, the publication-figure skill you saw demonstrated, and a code-review skill that applies a structured checklist to your work before submission. These will be released with documentation and worked examples. The `characterisation-test` skill you used with the cloud agent in Part 6 is a narrower, task-specific example of the same architecture, and it ships in the workshop template today. The architecture is intended to be modular; you can add your own skills as you identify recurring procedures in your work.
+
+
+## Self-study pointers
+
+For the underlying tools and conventions:
+
+- The GitHub Copilot documentation is the canonical source for current behaviour and capabilities, and it changes faster than written materials can keep up. The model selector, the in-IDE Chat panel, and the cloud-agent assignment feature have all changed materially within the last twelve months.
+- The TADA guidelines for analytical code sharing (Ivimey-Cook et al., 2025, EcoEvoRxiv preprint) cover the reproducibility scaffolding the skills assume.
+- The tidyverse style guide (style.tidyverse.org) is the convention base layer; most of what you specify in your `copilot-instructions.md` will sit on top of it.
+
+For the underlying ideas:
+
+- Wilke's *Fundamentals of Data Visualization* (2019, free at clauswilke.com/dataviz) underpins the publication-figure skill.
+- The tidymodels and broom packages provide the model-tidying conventions the figure skill assumes for statistical annotation.
+
+
+## Final note
+
+AI tools accelerate code production. They do not accelerate understanding. The two diverge unless you actively close the gap by reading suggestions, inspecting data, writing one-sentence explanations of fixes, and reviewing what the agent has done. The verification habit is not a checklist item; it is the only thing that distinguishes AI-assisted research from research that has accepted unverified output. Maintain it, and the tools make you faster. Drop it, and the tools make you wrong faster.
+
+
+# Appendix: Dataset generation
+
+The synthetic dataset `voles_metabolism.csv` is generated by the following script. The instructor runs this once and distributes the CSV.
+
+
+``` r
+library(tidyverse)
+
+set.seed(2026)
+
+n_per_cell <- 12
+treatments <- c("Control", "Low_dose", "High_dose")
+
+voles <- expand_grid(
+  treatment_arm = treatments,
+  sex = c("M", "F"),
+  replicate = seq_len(n_per_cell)
+) |>
+  mutate(
+    subject_id = sprintf("V%03d", row_number()),
+    mass_pre_g = round(rnorm(n(), mean = 28, sd = 3), 1),
+    mass_change = case_when(
+      treatment_arm == "Control"   ~ rnorm(n(), 0.2, 0.8),
+      treatment_arm == "Low_dose"  ~ rnorm(n(), 1.5, 1.0),
+      treatment_arm == "High_dose" ~ rnorm(n(), 3.2, 1.2)
+    ),
+    mass_post_g = round(mass_pre_g + mass_change, 1),
+    metabolic_rate_post = round(
+      8.5 + 0.15 * mass_post_g +
+        case_when(
+          treatment_arm == "Control"   ~ 0,
+          treatment_arm == "Low_dose"  ~ 0.8,
+          treatment_arm == "High_dose" ~ 1.6
+        ) +
+        if_else(sex == "M", 0.5, 0) +
+        rnorm(n(), 0, 0.4),
+      2
+    )
+  ) |>
+  select(subject_id, sex, treatment_arm,
+         mass_pre_g, mass_post_g, metabolic_rate_post)
+
+write_csv(voles, here::here("data", "voles_metabolism.csv"))
+```
+
+The seed `2026` produces a dataset with detectable effects of treatment on both mass change and metabolic rate, and a small additive effect of sex on metabolic rate. Tests on the dataset will recover these effects.
+
+
+# Appendix: Workshop template repository
+
+The fork-target repository should contain, at minimum:
+
+```
+workshop-template/
+├── .github/
+│   ├── workflows/
+│   │   ├── copilot-setup-steps.yml
+│   │   └── r-checks.yml
+│   └── skills/
+│       └── characterisation-test/
+│           └── SKILL.md
+├── data/
+│   └── voles_metabolism.csv
+├── R/
+│   ├── functions/
+│   │   └── (empty; the agent populates this in Part 6)
+│   ├── 01_load_data.R
+│   └── 02_analysis.R
+├── tests/
+│   ├── fixtures/
+│   │   └── make_reference.R
+│   └── (test_summary_functions.R is added by the agent in Part 6)
+├── outputs/
+│   ├── figures/
+│   └── tables/
+├── renv/
+│   └── activate.R
+├── renv.lock
+├── .Rprofile
+├── .gitignore
+└── README.md
+```
+
+Participants create `.github/copilot-instructions.md` themselves in Part 5; everything else above ships in the template.
+
+The two analysis scripts are short. `R/01_load_data.R` contains only the load step and a `glimpse()` call, and `R/02_analysis.R` sources it and computes `metabolic_summary` (the `02_analysis.R` body is shown in Part 6, "What the template provides"):
+
+
+``` r
+library(tidyverse)
+library(here)
+
+voles <- read_csv(here::here("data", "voles_metabolism.csv"))
+
+glimpse(voles)
+```
+
+The reference fixture `tests/fixtures/metabolic_summary.rds` is deliberately **not** shipped. Participants generate it by running `tests/fixtures/make_reference.R` in Part 6, Step 0, which is the point at which they take ownership of the trust anchor. The capture script itself is listed in Part 6.
+
+`.github/skills/characterisation-test/SKILL.md` ships with the content shown in Part 6, "What the template provides". It is the only skill bundled in this template; the general-purpose course skills are distributed separately.
+
+The two GitHub Actions workflows live in `.github/workflows/`. Their contents are project-specific: they set up R, restore `renv`, and run `testthat`. Paste your prepared versions into the placeholders below. The job in `copilot-setup-steps.yml` must be named exactly `copilot-setup-steps`, or the cloud agent will not pick it up.
+
+```yaml
+# .github/workflows/copilot-setup-steps.yml
+# <paste your copilot-setup-steps.yml here>
+# Reminder: the job MUST be named `copilot-setup-steps`.
+```
+
+```yaml
+# .github/workflows/r-checks.yml
+# <paste your r-checks.yml here>
+# Runs on push to main and on every pull request; restores renv and runs testthat.
+```
+
+The template uses `renv`. Commit `renv.lock`, `.Rprofile`, and `renv/activate.R`, but not `renv/library/`. Participants run `renv::restore()` once after forking (see Materials), so their local environment matches the lockfile that both workflows restore.
+
+The `.gitignore` should exclude `.Rhistory`, `.RData`, `.Rproj.user/`, `renv/library/`, and the standard temporary files.
+
+The `README.md` should be brief: what the workshop is, how to fork, that the first step after forking is `renv::restore()`, and who to contact if access fails. Participants do not need a long README to do the exercises.

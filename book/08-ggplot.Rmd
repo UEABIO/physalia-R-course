@@ -1,4 +1,4 @@
-# (PART\*) Day 3 
+# (PART\*) Day 3: Data Visualisation
 
 # Day 3 Block 1: Foundations and graph crimes {.unnumbered}
 

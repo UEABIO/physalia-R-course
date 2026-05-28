@@ -236,6 +236,8 @@ script’s own names below.</p>
 <li>What does this script try to do?</li>
 <li>What is the intended analysis?</li>
 <li>What immediately strikes you as wrong?</li>
+<li>Could the style be improved (e.g. would using Air or styler help,
+see Extra Material, intro to R)</li>
 </ul>
 <p>Then move to the checklist.</p>
 </div>
