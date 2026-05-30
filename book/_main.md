@@ -7266,7 +7266,7 @@ want them printed next to each other (pair with out-width = c(“33%”,
 </div>
 
 
-**Question.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value=''>echo = FALSE, eval = FALSE</option><option value='answer'>echo = TRUE, eval = FALSE</option><option value=''>echo = TRUE, eval = TRUE</option><option value=''>echo = FALSE, eval = TRUE</option></select>
+**Question.** If we wanted to see the R code, but **not** its output we need to select what combo of code chunk options? <select class='webex-select'><option value='blank'></option><option value=''>echo = TRUE, eval = TRUE</option><option value='answer'>echo = TRUE, eval = FALSE</option><option value=''>echo = FALSE, eval = TRUE</option><option value=''>echo = FALSE, eval = FALSE</option></select>
 
 Default options for showing code, charts, and other elements in the rendered versions of the document. In Quarto, these options are set in the execute field of the YAML. For example, the following would provide the outputs of code, but hide the code itself, as well as all warnings and messages, from the rendered document:
 
@@ -9749,7 +9749,7 @@ The point of the discussion is not to reach consensus. It is to surface the crit
 
 **Which statement best describes the difference between in-IDE Agent mode and the GitHub cloud coding agent?**
 
-<div class='webex-radiogroup' id='radio_THAEJZPATW'><label><input type="radio" autocomplete="off" name="radio_THAEJZPATW" value=""></input> <span>They are the same tool with different names</span></label><label><input type="radio" autocomplete="off" name="radio_THAEJZPATW" value="answer"></input> <span>In-IDE Agent mode runs synchronously in your editor while you watch; the cloud agent runs asynchronously on GitHub&apos;s servers and produces a pull request</span></label><label><input type="radio" autocomplete="off" name="radio_THAEJZPATW" value=""></input> <span>In-IDE Agent mode is paid and the cloud agent is free</span></label><label><input type="radio" autocomplete="off" name="radio_THAEJZPATW" value=""></input> <span>The cloud agent runs in your editor and the in-IDE agent runs on GitHub&apos;s servers</span></label></div>
+<div class='webex-radiogroup' id='radio_FWYXZWQEKD'><label><input type="radio" autocomplete="off" name="radio_FWYXZWQEKD" value=""></input> <span>They are the same tool with different names</span></label><label><input type="radio" autocomplete="off" name="radio_FWYXZWQEKD" value="answer"></input> <span>In-IDE Agent mode runs synchronously in your editor while you watch; the cloud agent runs asynchronously on GitHub&apos;s servers and produces a pull request</span></label><label><input type="radio" autocomplete="off" name="radio_FWYXZWQEKD" value=""></input> <span>In-IDE Agent mode is paid and the cloud agent is free</span></label><label><input type="radio" autocomplete="off" name="radio_FWYXZWQEKD" value=""></input> <span>The cloud agent runs in your editor and the in-IDE agent runs on GitHub&apos;s servers</span></label></div>
 
 
 **True or false: a large language model has no memory between calls, so each interaction starts with only the context you supply.** <select class='webex-select'><option value='blank'></option><option value='answer'>TRUE</option><option value=''>FALSE</option></select>
@@ -36324,8 +36324,7 @@ Consult the following resources to learn about table design principles and how t
 
 <!--chapter:end:12b-ggplot-principles.Rmd-->
 
-
-# SQL and Data.Table
+# SQL and DataTable {.unnumbered}
 
 
 
@@ -36361,7 +36360,7 @@ independently.</p>
 session:</p>
 <pre><code>install.packages(c(&quot;readr&quot;, &quot;data.table&quot;, &quot;dtplyr&quot;, &quot;arrow&quot;,
                    &quot;duckdb&quot;, &quot;dbplyr&quot;, &quot;dplyr&quot;, &quot;bench&quot;))</code></pre>
-<p><strong>Data.</strong> The test files are distributed in advance. You
+<p><strong>Data</strong> The test files are distributed in advance. You
 do <strong>not</strong> generate them during the session. Confirm they
 load using the setup-check script below before you arrive.</p>
 </div>

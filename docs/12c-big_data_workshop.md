@@ -1,5 +1,4 @@
-
-# SQL and Data.Table
+# SQL and DataTable {.unnumbered}
 
 
 
@@ -35,7 +34,7 @@ independently.</p>
 session:</p>
 <pre><code>install.packages(c(&quot;readr&quot;, &quot;data.table&quot;, &quot;dtplyr&quot;, &quot;arrow&quot;,
                    &quot;duckdb&quot;, &quot;dbplyr&quot;, &quot;dplyr&quot;, &quot;bench&quot;))</code></pre>
-<p><strong>Data.</strong> The test files are distributed in advance. You
+<p><strong>Data</strong> The test files are distributed in advance. You
 do <strong>not</strong> generate them during the session. Confirm they
 load using the setup-check script below before you arrive.</p>
 </div>
