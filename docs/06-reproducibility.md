@@ -680,92 +680,57 @@ below — the hardest is the data dictionary, so focus there: can you
 complete every row?</p>
 <p>If you cannot get the app running, fill in the template by hand — the
 fields are identical.</p>
-<h1 id="c.-elegans-strain-diet-reproduction-experiment">C. elegans
-strain × diet reproduction experiment</h1>
-<h2 id="authors">Authors</h2>
-<ul>
-<li>[Name] ([ORCID]), [Affiliation]</li>
-</ul>
-<p><strong>OSF project:</strong> https://osf.io/jgeq9/</p>
-<h2 id="overview">Overview</h2>
-<p>[2–3 sentences: what is the experiment, what question does it
-address, what does this archive contain]</p>
-<h2 id="repository-contents">Repository contents</h2>
-<p>. ├── data/ │ ├── raw/ # Original unmodified data │ └── processed/ #
-Cleaned data (produced by 01_data_cleaning.R) ├── analysis/ │ ├──
-01_data_cleaning.R │ └── 02_analysis.R ├── results/ ├── figures/ └──
-README.md</p>
-<h2 id="data-dictionary-datarawcelegans_repro_raw.csv">Data dictionary —
-<code>data/raw/celegans_repro_raw.csv</code></h2>
-<table>
-<colgroup>
-<col width="20%" />
-<col width="20%" />
-<col width="20%" />
-<col width="20%" />
-<col width="20%" />
-</colgroup>
-<thead>
-<tr>
-<th>Variable</th>
-<th>Type</th>
-<th>Units</th>
-<th>Description</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>worm_id</td>
-<td>integer</td>
-<td>—</td>
-<td></td>
-<td>Some NAs in batch 1</td>
-</tr>
-<tr>
-<td>B</td>
-<td>integer</td>
-<td>—</td>
-<td>Batch number (1–6)</td>
-<td>Should be treated as random effect</td>
-</tr>
-<tr>
-<td>strain</td>
-<td>character</td>
-<td>—</td>
-<td></td>
-<td>“DAF” = capitalisation error for “daf”</td>
-</tr>
-<tr>
-<td>diet</td>
-<td>character</td>
-<td>—</td>
-<td></td>
-<td>“eodf” = capitalisation error for “EODF”</td>
-</tr>
-<tr>
-<td>TO</td>
-<td>integer</td>
-<td>offspring</td>
-<td></td>
-<td>9999 = undocumented code for “not recorded”</td>
-</tr>
-</tbody>
-</table>
-<h2 id="known-data-quality-issues-raw-file">Known data quality issues
-(raw file)</h2>
-<p>[List the issues you found in the audit]</p>
-<h2 id="how-to-reproduce">How to reproduce</h2>
-<p>source(“analysis/01_data_cleaning.R”)
-source(“analysis/02_analysis.R”)</p>
-<h2 id="licence">Licence</h2>
-<p>Data: CC BY 4.0 Code: MIT</p>
-<p>Export the <code>README.md</code> from READMEBuilder into your
-project root, then paste your “Overview” paragraph and your completed
-data dictionary into the chat.</p>
 </div>
 
----
+````md
+##### C. elegans strain × diet reproduction experiment
+
+## Authors
+- [Name] ([ORCID]), [Affiliation]
+
+**OSF project:** https://osf.io/jgeq9/
+
+## Overview
+[2–3 sentences: what is the experiment, what question does it address,
+what does this archive contain]
+
+## Repository contents
+.
+├── data/
+│   ├── raw/                      # Original unmodified data
+│   └── processed/                # Cleaned data (produced by 01_data_cleaning.R)
+├── analysis/
+│   ├── 01_data_cleaning.R
+│   └── 02_analysis.R
+├── results/
+├── figures/
+└── README.md
+
+## Data dictionary — `data/raw/celegans_repro_raw.csv`
+
+| Variable | Type | Units | Description | Notes |
+|---|---|---|---|---|
+| worm_id | integer | — | | Some NAs in batch 1 |
+| B | integer | — | Batch number (1–6) | Should be treated as random effect |
+| strain | character | — | | "DAF" = capitalisation error for "daf" |
+| diet | character | — | | "eodf" = capitalisation error for "EODF" |
+| TO | integer | offspring | | 9999 = undocumented code for "not recorded" |
+
+## Known data quality issues (raw file)
+[List the issues you found in the audit]
+
+## How to reproduce
+source("analysis/01_data_cleaning.R")
+source("analysis/02_analysis.R")
+
+## Licence
+Data: CC BY 4.0   Code: MIT
+
+Export the `README.md` from READMEBuilder into your project root, then paste your "Overview" paragraph and your completed data dictionary into the chat.
+
+````
+
+
 
 ## Part 5 — The SORTEE Guidelines and archiving {#repro-sortee}
 

@@ -264,46 +264,46 @@ they are the least replaceable content in the session.
 synthetic survey dataset and writes it in three forms. Distribute the resulting
 <code>bird_survey.csv</code>, <code>bird_survey.parquet</code>, and <code>bird_survey_partitioned/</code> so that
 no participant regenerates a million rows live.</p>
-<div class="sourceCode" id="cb403"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb403-1"><a href="sql-and-data.html#cb403-1" tabindex="-1"></a><span class="fu">library</span>(readr);   <span class="fu">library</span>(data.table); <span class="fu">library</span>(dtplyr)</span>
-<span id="cb403-2"><a href="sql-and-data.html#cb403-2" tabindex="-1"></a><span class="fu">library</span>(arrow);   <span class="fu">library</span>(duckdb);     <span class="fu">library</span>(dbplyr)</span>
-<span id="cb403-3"><a href="sql-and-data.html#cb403-3" tabindex="-1"></a><span class="fu">library</span>(dplyr);   <span class="fu">library</span>(bench)</span>
-<span id="cb403-4"><a href="sql-and-data.html#cb403-4" tabindex="-1"></a></span>
-<span id="cb403-5"><a href="sql-and-data.html#cb403-5" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
-<span id="cb403-6"><a href="sql-and-data.html#cb403-6" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fl">1e6</span></span>
-<span id="cb403-7"><a href="sql-and-data.html#cb403-7" tabindex="-1"></a></span>
-<span id="cb403-8"><a href="sql-and-data.html#cb403-8" tabindex="-1"></a>species_names <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb403-9"><a href="sql-and-data.html#cb403-9" tabindex="-1"></a>  <span class="st">&quot;Parus major&quot;</span>, <span class="st">&quot;Turdus merula&quot;</span>, <span class="st">&quot;Erithacus rubecula&quot;</span>,</span>
-<span id="cb403-10"><a href="sql-and-data.html#cb403-10" tabindex="-1"></a>  <span class="st">&quot;Fringilla coelebs&quot;</span>, <span class="st">&quot;Passer domesticus&quot;</span>, <span class="st">&quot;Columba palumbus&quot;</span>,</span>
-<span id="cb403-11"><a href="sql-and-data.html#cb403-11" tabindex="-1"></a>  <span class="st">&quot;Corvus corone&quot;</span>, <span class="st">&quot;Sturnus vulgaris&quot;</span>, <span class="st">&quot;Sylvia atricapilla&quot;</span>,</span>
-<span id="cb403-12"><a href="sql-and-data.html#cb403-12" tabindex="-1"></a>  <span class="st">&quot;Phylloscopus collybita&quot;</span></span>
-<span id="cb403-13"><a href="sql-and-data.html#cb403-13" tabindex="-1"></a>)</span>
-<span id="cb403-14"><a href="sql-and-data.html#cb403-14" tabindex="-1"></a></span>
-<span id="cb403-15"><a href="sql-and-data.html#cb403-15" tabindex="-1"></a>survey_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb403-16"><a href="sql-and-data.html#cb403-16" tabindex="-1"></a>  <span class="at">observation_id      =</span> <span class="dv">1</span><span class="sc">:</span>n,</span>
-<span id="cb403-17"><a href="sql-and-data.html#cb403-17" tabindex="-1"></a>  <span class="at">species             =</span> <span class="fu">sample</span>(species_names, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb403-18"><a href="sql-and-data.html#cb403-18" tabindex="-1"></a>  <span class="at">site_id             =</span> <span class="fu">sample</span>(<span class="fu">paste0</span>(<span class="st">&quot;SITE_&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%04d&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">500</span>)),</span>
-<span id="cb403-19"><a href="sql-and-data.html#cb403-19" tabindex="-1"></a>                               n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb403-20"><a href="sql-and-data.html#cb403-20" tabindex="-1"></a>  <span class="at">habitat             =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;woodland&quot;</span>, <span class="st">&quot;grassland&quot;</span>, <span class="st">&quot;wetland&quot;</span>,</span>
-<span id="cb403-21"><a href="sql-and-data.html#cb403-21" tabindex="-1"></a>                                 <span class="st">&quot;urban&quot;</span>, <span class="st">&quot;heathland&quot;</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb403-22"><a href="sql-and-data.html#cb403-22" tabindex="-1"></a>  <span class="at">year                =</span> <span class="fu">sample</span>(<span class="dv">2000</span><span class="sc">:</span><span class="dv">2023</span>, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb403-23"><a href="sql-and-data.html#cb403-23" tabindex="-1"></a>  <span class="at">month               =</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb403-24"><a href="sql-and-data.html#cb403-24" tabindex="-1"></a>  <span class="at">day                 =</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">28</span>, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb403-25"><a href="sql-and-data.html#cb403-25" tabindex="-1"></a>  <span class="at">observer_id         =</span> <span class="fu">sample</span>(<span class="fu">paste0</span>(<span class="st">&quot;OBS_&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%03d&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>)),</span>
-<span id="cb403-26"><a href="sql-and-data.html#cb403-26" tabindex="-1"></a>                               n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb403-27"><a href="sql-and-data.html#cb403-27" tabindex="-1"></a>  <span class="at">count               =</span> <span class="fu">rpois</span>(n, <span class="at">lambda =</span> <span class="dv">3</span>),</span>
-<span id="cb403-28"><a href="sql-and-data.html#cb403-28" tabindex="-1"></a>  <span class="at">temperature_c       =</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">12</span>, <span class="at">sd =</span> <span class="dv">5</span>),</span>
-<span id="cb403-29"><a href="sql-and-data.html#cb403-29" tabindex="-1"></a>  <span class="at">wind_speed_ms       =</span> <span class="fu">rgamma</span>(n, <span class="at">shape =</span> <span class="dv">2</span>, <span class="at">rate =</span> <span class="fl">0.5</span>),</span>
-<span id="cb403-30"><a href="sql-and-data.html#cb403-30" tabindex="-1"></a>  <span class="at">precipitation_mm    =</span> <span class="fu">rgamma</span>(n, <span class="at">shape =</span> <span class="fl">0.5</span>, <span class="at">rate =</span> <span class="dv">1</span>),</span>
-<span id="cb403-31"><a href="sql-and-data.html#cb403-31" tabindex="-1"></a>  <span class="at">visibility_m        =</span> <span class="fu">pmax</span>(<span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">5000</span>, <span class="at">sd =</span> <span class="dv">1500</span>), <span class="dv">100</span>),</span>
-<span id="cb403-32"><a href="sql-and-data.html#cb403-32" tabindex="-1"></a>  <span class="at">canopy_cover_pct    =</span> <span class="fu">runif</span>(n, <span class="dv">0</span>, <span class="dv">100</span>),</span>
-<span id="cb403-33"><a href="sql-and-data.html#cb403-33" tabindex="-1"></a>  <span class="at">survey_duration_min =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">5</span><span class="dt">L</span>, <span class="dv">10</span><span class="dt">L</span>, <span class="dv">15</span><span class="dt">L</span>, <span class="dv">20</span><span class="dt">L</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb403-34"><a href="sql-and-data.html#cb403-34" tabindex="-1"></a>)</span>
-<span id="cb403-35"><a href="sql-and-data.html#cb403-35" tabindex="-1"></a></span>
-<span id="cb403-36"><a href="sql-and-data.html#cb403-36" tabindex="-1"></a><span class="fu">write_csv</span>(survey_data,     <span class="st">&quot;bird_survey.csv&quot;</span>)</span>
-<span id="cb403-37"><a href="sql-and-data.html#cb403-37" tabindex="-1"></a><span class="fu">write_parquet</span>(survey_data, <span class="st">&quot;bird_survey.parquet&quot;</span>)</span>
-<span id="cb403-38"><a href="sql-and-data.html#cb403-38" tabindex="-1"></a><span class="fu">write_dataset</span>(survey_data,</span>
-<span id="cb403-39"><a href="sql-and-data.html#cb403-39" tabindex="-1"></a>              <span class="at">path         =</span> <span class="st">&quot;bird_survey_partitioned&quot;</span>,</span>
-<span id="cb403-40"><a href="sql-and-data.html#cb403-40" tabindex="-1"></a>              <span class="at">partitioning =</span> <span class="st">&quot;year&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb404"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb404-1"><a href="sql-and-data.html#cb404-1" tabindex="-1"></a><span class="fu">library</span>(readr);   <span class="fu">library</span>(data.table); <span class="fu">library</span>(dtplyr)</span>
+<span id="cb404-2"><a href="sql-and-data.html#cb404-2" tabindex="-1"></a><span class="fu">library</span>(arrow);   <span class="fu">library</span>(duckdb);     <span class="fu">library</span>(dbplyr)</span>
+<span id="cb404-3"><a href="sql-and-data.html#cb404-3" tabindex="-1"></a><span class="fu">library</span>(dplyr);   <span class="fu">library</span>(bench)</span>
+<span id="cb404-4"><a href="sql-and-data.html#cb404-4" tabindex="-1"></a></span>
+<span id="cb404-5"><a href="sql-and-data.html#cb404-5" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb404-6"><a href="sql-and-data.html#cb404-6" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fl">1e6</span></span>
+<span id="cb404-7"><a href="sql-and-data.html#cb404-7" tabindex="-1"></a></span>
+<span id="cb404-8"><a href="sql-and-data.html#cb404-8" tabindex="-1"></a>species_names <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb404-9"><a href="sql-and-data.html#cb404-9" tabindex="-1"></a>  <span class="st">&quot;Parus major&quot;</span>, <span class="st">&quot;Turdus merula&quot;</span>, <span class="st">&quot;Erithacus rubecula&quot;</span>,</span>
+<span id="cb404-10"><a href="sql-and-data.html#cb404-10" tabindex="-1"></a>  <span class="st">&quot;Fringilla coelebs&quot;</span>, <span class="st">&quot;Passer domesticus&quot;</span>, <span class="st">&quot;Columba palumbus&quot;</span>,</span>
+<span id="cb404-11"><a href="sql-and-data.html#cb404-11" tabindex="-1"></a>  <span class="st">&quot;Corvus corone&quot;</span>, <span class="st">&quot;Sturnus vulgaris&quot;</span>, <span class="st">&quot;Sylvia atricapilla&quot;</span>,</span>
+<span id="cb404-12"><a href="sql-and-data.html#cb404-12" tabindex="-1"></a>  <span class="st">&quot;Phylloscopus collybita&quot;</span></span>
+<span id="cb404-13"><a href="sql-and-data.html#cb404-13" tabindex="-1"></a>)</span>
+<span id="cb404-14"><a href="sql-and-data.html#cb404-14" tabindex="-1"></a></span>
+<span id="cb404-15"><a href="sql-and-data.html#cb404-15" tabindex="-1"></a>survey_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb404-16"><a href="sql-and-data.html#cb404-16" tabindex="-1"></a>  <span class="at">observation_id      =</span> <span class="dv">1</span><span class="sc">:</span>n,</span>
+<span id="cb404-17"><a href="sql-and-data.html#cb404-17" tabindex="-1"></a>  <span class="at">species             =</span> <span class="fu">sample</span>(species_names, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb404-18"><a href="sql-and-data.html#cb404-18" tabindex="-1"></a>  <span class="at">site_id             =</span> <span class="fu">sample</span>(<span class="fu">paste0</span>(<span class="st">&quot;SITE_&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%04d&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">500</span>)),</span>
+<span id="cb404-19"><a href="sql-and-data.html#cb404-19" tabindex="-1"></a>                               n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb404-20"><a href="sql-and-data.html#cb404-20" tabindex="-1"></a>  <span class="at">habitat             =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;woodland&quot;</span>, <span class="st">&quot;grassland&quot;</span>, <span class="st">&quot;wetland&quot;</span>,</span>
+<span id="cb404-21"><a href="sql-and-data.html#cb404-21" tabindex="-1"></a>                                 <span class="st">&quot;urban&quot;</span>, <span class="st">&quot;heathland&quot;</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb404-22"><a href="sql-and-data.html#cb404-22" tabindex="-1"></a>  <span class="at">year                =</span> <span class="fu">sample</span>(<span class="dv">2000</span><span class="sc">:</span><span class="dv">2023</span>, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb404-23"><a href="sql-and-data.html#cb404-23" tabindex="-1"></a>  <span class="at">month               =</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb404-24"><a href="sql-and-data.html#cb404-24" tabindex="-1"></a>  <span class="at">day                 =</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">28</span>, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb404-25"><a href="sql-and-data.html#cb404-25" tabindex="-1"></a>  <span class="at">observer_id         =</span> <span class="fu">sample</span>(<span class="fu">paste0</span>(<span class="st">&quot;OBS_&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%03d&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>)),</span>
+<span id="cb404-26"><a href="sql-and-data.html#cb404-26" tabindex="-1"></a>                               n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb404-27"><a href="sql-and-data.html#cb404-27" tabindex="-1"></a>  <span class="at">count               =</span> <span class="fu">rpois</span>(n, <span class="at">lambda =</span> <span class="dv">3</span>),</span>
+<span id="cb404-28"><a href="sql-and-data.html#cb404-28" tabindex="-1"></a>  <span class="at">temperature_c       =</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">12</span>, <span class="at">sd =</span> <span class="dv">5</span>),</span>
+<span id="cb404-29"><a href="sql-and-data.html#cb404-29" tabindex="-1"></a>  <span class="at">wind_speed_ms       =</span> <span class="fu">rgamma</span>(n, <span class="at">shape =</span> <span class="dv">2</span>, <span class="at">rate =</span> <span class="fl">0.5</span>),</span>
+<span id="cb404-30"><a href="sql-and-data.html#cb404-30" tabindex="-1"></a>  <span class="at">precipitation_mm    =</span> <span class="fu">rgamma</span>(n, <span class="at">shape =</span> <span class="fl">0.5</span>, <span class="at">rate =</span> <span class="dv">1</span>),</span>
+<span id="cb404-31"><a href="sql-and-data.html#cb404-31" tabindex="-1"></a>  <span class="at">visibility_m        =</span> <span class="fu">pmax</span>(<span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">5000</span>, <span class="at">sd =</span> <span class="dv">1500</span>), <span class="dv">100</span>),</span>
+<span id="cb404-32"><a href="sql-and-data.html#cb404-32" tabindex="-1"></a>  <span class="at">canopy_cover_pct    =</span> <span class="fu">runif</span>(n, <span class="dv">0</span>, <span class="dv">100</span>),</span>
+<span id="cb404-33"><a href="sql-and-data.html#cb404-33" tabindex="-1"></a>  <span class="at">survey_duration_min =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">5</span><span class="dt">L</span>, <span class="dv">10</span><span class="dt">L</span>, <span class="dv">15</span><span class="dt">L</span>, <span class="dv">20</span><span class="dt">L</span>), n, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb404-34"><a href="sql-and-data.html#cb404-34" tabindex="-1"></a>)</span>
+<span id="cb404-35"><a href="sql-and-data.html#cb404-35" tabindex="-1"></a></span>
+<span id="cb404-36"><a href="sql-and-data.html#cb404-36" tabindex="-1"></a><span class="fu">write_csv</span>(survey_data,     <span class="st">&quot;bird_survey.csv&quot;</span>)</span>
+<span id="cb404-37"><a href="sql-and-data.html#cb404-37" tabindex="-1"></a><span class="fu">write_parquet</span>(survey_data, <span class="st">&quot;bird_survey.parquet&quot;</span>)</span>
+<span id="cb404-38"><a href="sql-and-data.html#cb404-38" tabindex="-1"></a><span class="fu">write_dataset</span>(survey_data,</span>
+<span id="cb404-39"><a href="sql-and-data.html#cb404-39" tabindex="-1"></a>              <span class="at">path         =</span> <span class="st">&quot;bird_survey_partitioned&quot;</span>,</span>
+<span id="cb404-40"><a href="sql-and-data.html#cb404-40" tabindex="-1"></a>              <span class="at">partitioning =</span> <span class="st">&quot;year&quot;</span>)</span></code></pre></div>
 </div>
 <div id="participant-confirm-the-files-load-run-before-the-session" class="section level3 unnumbered">
 <h3>Participant: confirm the files load (run before the session)</h3>
@@ -311,22 +311,22 @@ no participant regenerates a million rows live.</p>
 instructor before the session so anyone whose installation failed can be helped in
 advance. The likely failure points are the <code>arrow</code> and <code>duckdb</code> binary installs;
 if either errors, reply rather than waiting for the day.</p>
-<div class="sourceCode" id="cb404"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb404-1"><a href="sql-and-data.html#cb404-1" tabindex="-1"></a><span class="fu">library</span>(readr) </span>
-<span id="cb404-2"><a href="sql-and-data.html#cb404-2" tabindex="-1"></a><span class="fu">library</span>(arrow) </span>
-<span id="cb404-3"><a href="sql-and-data.html#cb404-3" tabindex="-1"></a><span class="fu">library</span>(duckdb)</span>
-<span id="cb404-4"><a href="sql-and-data.html#cb404-4" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb404-5"><a href="sql-and-data.html#cb404-5" tabindex="-1"></a></span>
-<span id="cb404-6"><a href="sql-and-data.html#cb404-6" tabindex="-1"></a><span class="fu">stopifnot</span>(</span>
-<span id="cb404-7"><a href="sql-and-data.html#cb404-7" tabindex="-1"></a>  <span class="fu">file.exists</span>(<span class="st">&quot;bird_survey.csv&quot;</span>),</span>
-<span id="cb404-8"><a href="sql-and-data.html#cb404-8" tabindex="-1"></a>  <span class="fu">file.exists</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
-<span id="cb404-9"><a href="sql-and-data.html#cb404-9" tabindex="-1"></a>  <span class="fu">dir.exists</span>(<span class="st">&quot;bird_survey_partitioned&quot;</span>)</span>
-<span id="cb404-10"><a href="sql-and-data.html#cb404-10" tabindex="-1"></a>)</span>
-<span id="cb404-11"><a href="sql-and-data.html#cb404-11" tabindex="-1"></a></span>
-<span id="cb404-12"><a href="sql-and-data.html#cb404-12" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;R       &quot;</span>, <span class="fu">as.character</span>(<span class="fu">getRversion</span>()), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb404-13"><a href="sql-and-data.html#cb404-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;arrow   &quot;</span>, <span class="fu">as.character</span>(<span class="fu">packageVersion</span>(<span class="st">&quot;arrow&quot;</span>)),  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb404-14"><a href="sql-and-data.html#cb404-14" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;duckdb  &quot;</span>, <span class="fu">as.character</span>(<span class="fu">packageVersion</span>(<span class="st">&quot;duckdb&quot;</span>)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb404-15"><a href="sql-and-data.html#cb404-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;CSV:     &quot;</span>, <span class="fu">round</span>(<span class="fu">file.size</span>(<span class="st">&quot;bird_survey.csv&quot;</span>)     <span class="sc">/</span> <span class="fl">1e6</span>, <span class="dv">1</span>), <span class="st">&quot;MB</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb404-16"><a href="sql-and-data.html#cb404-16" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Parquet: &quot;</span>, <span class="fu">round</span>(<span class="fu">file.size</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">/</span> <span class="fl">1e6</span>, <span class="dv">1</span>), <span class="st">&quot;MB</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb405"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb405-1"><a href="sql-and-data.html#cb405-1" tabindex="-1"></a><span class="fu">library</span>(readr) </span>
+<span id="cb405-2"><a href="sql-and-data.html#cb405-2" tabindex="-1"></a><span class="fu">library</span>(arrow) </span>
+<span id="cb405-3"><a href="sql-and-data.html#cb405-3" tabindex="-1"></a><span class="fu">library</span>(duckdb)</span>
+<span id="cb405-4"><a href="sql-and-data.html#cb405-4" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb405-5"><a href="sql-and-data.html#cb405-5" tabindex="-1"></a></span>
+<span id="cb405-6"><a href="sql-and-data.html#cb405-6" tabindex="-1"></a><span class="fu">stopifnot</span>(</span>
+<span id="cb405-7"><a href="sql-and-data.html#cb405-7" tabindex="-1"></a>  <span class="fu">file.exists</span>(<span class="st">&quot;bird_survey.csv&quot;</span>),</span>
+<span id="cb405-8"><a href="sql-and-data.html#cb405-8" tabindex="-1"></a>  <span class="fu">file.exists</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
+<span id="cb405-9"><a href="sql-and-data.html#cb405-9" tabindex="-1"></a>  <span class="fu">dir.exists</span>(<span class="st">&quot;bird_survey_partitioned&quot;</span>)</span>
+<span id="cb405-10"><a href="sql-and-data.html#cb405-10" tabindex="-1"></a>)</span>
+<span id="cb405-11"><a href="sql-and-data.html#cb405-11" tabindex="-1"></a></span>
+<span id="cb405-12"><a href="sql-and-data.html#cb405-12" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;R       &quot;</span>, <span class="fu">as.character</span>(<span class="fu">getRversion</span>()), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb405-13"><a href="sql-and-data.html#cb405-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;arrow   &quot;</span>, <span class="fu">as.character</span>(<span class="fu">packageVersion</span>(<span class="st">&quot;arrow&quot;</span>)),  <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb405-14"><a href="sql-and-data.html#cb405-14" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;duckdb  &quot;</span>, <span class="fu">as.character</span>(<span class="fu">packageVersion</span>(<span class="st">&quot;duckdb&quot;</span>)), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb405-15"><a href="sql-and-data.html#cb405-15" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;CSV:     &quot;</span>, <span class="fu">round</span>(<span class="fu">file.size</span>(<span class="st">&quot;bird_survey.csv&quot;</span>)     <span class="sc">/</span> <span class="fl">1e6</span>, <span class="dv">1</span>), <span class="st">&quot;MB</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb405-16"><a href="sql-and-data.html#cb405-16" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Parquet: &quot;</span>, <span class="fu">round</span>(<span class="fu">file.size</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">/</span> <span class="fl">1e6</span>, <span class="dv">1</span>), <span class="st">&quot;MB</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
 <div class="info">
 <p>
 <strong>Instructor.</strong> The CSV-versus-Parquet size ratio in the
@@ -405,24 +405,24 @@ types in the footer, so the reader never guesses types.</p>
 fast to compress and decompress, with a moderate ratio. Gzip compresses more
 aggressively but decompresses more slowly. Zstandard (zstd) typically matches or
 improves on Snappy's ratio at comparable speed.</p>
-<div class="sourceCode" id="cb407"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb407-1"><a href="sql-and-data.html#cb407-1" tabindex="-1"></a><span class="fu">tibble</span>(</span>
-<span id="cb407-2"><a href="sql-and-data.html#cb407-2" tabindex="-1"></a>  <span class="at">format  =</span> <span class="fu">c</span>(<span class="st">&quot;CSV&quot;</span>, <span class="st">&quot;Snappy&quot;</span>, <span class="st">&quot;Gzip&quot;</span>, <span class="st">&quot;Zstd&quot;</span>),</span>
-<span id="cb407-3"><a href="sql-and-data.html#cb407-3" tabindex="-1"></a>  <span class="at">size_mb =</span> <span class="fu">c</span>(</span>
-<span id="cb407-4"><a href="sql-and-data.html#cb407-4" tabindex="-1"></a>    <span class="fu">file.size</span>(<span class="st">&quot;bird_survey.csv&quot;</span>),</span>
-<span id="cb407-5"><a href="sql-and-data.html#cb407-5" tabindex="-1"></a>    <span class="fu">file.size</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),                       <span class="co"># default Snappy</span></span>
-<span id="cb407-6"><a href="sql-and-data.html#cb407-6" tabindex="-1"></a>    {</span>
-<span id="cb407-7"><a href="sql-and-data.html#cb407-7" tabindex="-1"></a>      <span class="fu">write_parquet</span>(<span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
-<span id="cb407-8"><a href="sql-and-data.html#cb407-8" tabindex="-1"></a>                    <span class="st">&quot;bird_survey_gzip.parquet&quot;</span>, <span class="at">compression =</span> <span class="st">&quot;gzip&quot;</span>)</span>
-<span id="cb407-9"><a href="sql-and-data.html#cb407-9" tabindex="-1"></a>      <span class="fu">file.size</span>(<span class="st">&quot;bird_survey_gzip.parquet&quot;</span>)</span>
-<span id="cb407-10"><a href="sql-and-data.html#cb407-10" tabindex="-1"></a>    },</span>
-<span id="cb407-11"><a href="sql-and-data.html#cb407-11" tabindex="-1"></a>    {</span>
-<span id="cb407-12"><a href="sql-and-data.html#cb407-12" tabindex="-1"></a>      <span class="fu">write_parquet</span>(<span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
-<span id="cb407-13"><a href="sql-and-data.html#cb407-13" tabindex="-1"></a>                    <span class="st">&quot;bird_survey_zstd.parquet&quot;</span>, <span class="at">compression =</span> <span class="st">&quot;zstd&quot;</span>)</span>
-<span id="cb407-14"><a href="sql-and-data.html#cb407-14" tabindex="-1"></a>      <span class="fu">file.size</span>(<span class="st">&quot;bird_survey_zstd.parquet&quot;</span>)</span>
-<span id="cb407-15"><a href="sql-and-data.html#cb407-15" tabindex="-1"></a>    }</span>
-<span id="cb407-16"><a href="sql-and-data.html#cb407-16" tabindex="-1"></a>  ) <span class="sc">/</span> <span class="fl">1e6</span></span>
-<span id="cb407-17"><a href="sql-and-data.html#cb407-17" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb407-18"><a href="sql-and-data.html#cb407-18" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ratio_vs_csv =</span> <span class="fu">round</span>(size_mb[<span class="dv">1</span>] <span class="sc">/</span> size_mb, <span class="dv">1</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb408"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb408-1"><a href="sql-and-data.html#cb408-1" tabindex="-1"></a><span class="fu">tibble</span>(</span>
+<span id="cb408-2"><a href="sql-and-data.html#cb408-2" tabindex="-1"></a>  <span class="at">format  =</span> <span class="fu">c</span>(<span class="st">&quot;CSV&quot;</span>, <span class="st">&quot;Snappy&quot;</span>, <span class="st">&quot;Gzip&quot;</span>, <span class="st">&quot;Zstd&quot;</span>),</span>
+<span id="cb408-3"><a href="sql-and-data.html#cb408-3" tabindex="-1"></a>  <span class="at">size_mb =</span> <span class="fu">c</span>(</span>
+<span id="cb408-4"><a href="sql-and-data.html#cb408-4" tabindex="-1"></a>    <span class="fu">file.size</span>(<span class="st">&quot;bird_survey.csv&quot;</span>),</span>
+<span id="cb408-5"><a href="sql-and-data.html#cb408-5" tabindex="-1"></a>    <span class="fu">file.size</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),                       <span class="co"># default Snappy</span></span>
+<span id="cb408-6"><a href="sql-and-data.html#cb408-6" tabindex="-1"></a>    {</span>
+<span id="cb408-7"><a href="sql-and-data.html#cb408-7" tabindex="-1"></a>      <span class="fu">write_parquet</span>(<span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
+<span id="cb408-8"><a href="sql-and-data.html#cb408-8" tabindex="-1"></a>                    <span class="st">&quot;bird_survey_gzip.parquet&quot;</span>, <span class="at">compression =</span> <span class="st">&quot;gzip&quot;</span>)</span>
+<span id="cb408-9"><a href="sql-and-data.html#cb408-9" tabindex="-1"></a>      <span class="fu">file.size</span>(<span class="st">&quot;bird_survey_gzip.parquet&quot;</span>)</span>
+<span id="cb408-10"><a href="sql-and-data.html#cb408-10" tabindex="-1"></a>    },</span>
+<span id="cb408-11"><a href="sql-and-data.html#cb408-11" tabindex="-1"></a>    {</span>
+<span id="cb408-12"><a href="sql-and-data.html#cb408-12" tabindex="-1"></a>      <span class="fu">write_parquet</span>(<span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
+<span id="cb408-13"><a href="sql-and-data.html#cb408-13" tabindex="-1"></a>                    <span class="st">&quot;bird_survey_zstd.parquet&quot;</span>, <span class="at">compression =</span> <span class="st">&quot;zstd&quot;</span>)</span>
+<span id="cb408-14"><a href="sql-and-data.html#cb408-14" tabindex="-1"></a>      <span class="fu">file.size</span>(<span class="st">&quot;bird_survey_zstd.parquet&quot;</span>)</span>
+<span id="cb408-15"><a href="sql-and-data.html#cb408-15" tabindex="-1"></a>    }</span>
+<span id="cb408-16"><a href="sql-and-data.html#cb408-16" tabindex="-1"></a>  ) <span class="sc">/</span> <span class="fl">1e6</span></span>
+<span id="cb408-17"><a href="sql-and-data.html#cb408-17" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb408-18"><a href="sql-and-data.html#cb408-18" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ratio_vs_csv =</span> <span class="fu">round</span>(size_mb[<span class="dv">1</span>] <span class="sc">/</span> size_mb, <span class="dv">1</span>))</span></code></pre></div>
 </div>
 <div id="partitioned-datasets-and-pruning" class="section level3 unnumbered">
 <h3>Partitioned datasets and pruning</h3>
@@ -430,17 +430,17 @@ improves on Snappy's ratio at comparable speed.</p>
 of one or more columns: one subdirectory per year, for example. A query engine can
 skip entire subdirectories when a filter excludes those values. This is
 <strong>partition pruning</strong>, and it activates only when you filter on the partition key.</p>
-<div class="sourceCode" id="cb408"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb408-1"><a href="sql-and-data.html#cb408-1" tabindex="-1"></a><span class="co"># Filters on a non-partition column: every directory is scanned</span></span>
-<span id="cb408-2"><a href="sql-and-data.html#cb408-2" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey_partitioned&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb408-3"><a href="sql-and-data.html#cb408-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span>          <span class="co"># habitat is not the partition key</span></span>
-<span id="cb408-4"><a href="sql-and-data.html#cb408-4" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)) <span class="sc">|&gt;</span></span>
-<span id="cb408-5"><a href="sql-and-data.html#cb408-5" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
-<span id="cb408-6"><a href="sql-and-data.html#cb408-6" tabindex="-1"></a></span>
-<span id="cb408-7"><a href="sql-and-data.html#cb408-7" tabindex="-1"></a><span class="co"># Filters on the partition key: only the matching directory is read</span></span>
-<span id="cb408-8"><a href="sql-and-data.html#cb408-8" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey_partitioned&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb408-9"><a href="sql-and-data.html#cb408-9" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2020</span>) <span class="sc">|&gt;</span>                   <span class="co"># year IS the partition key</span></span>
-<span id="cb408-10"><a href="sql-and-data.html#cb408-10" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)) <span class="sc">|&gt;</span></span>
-<span id="cb408-11"><a href="sql-and-data.html#cb408-11" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb409"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb409-1"><a href="sql-and-data.html#cb409-1" tabindex="-1"></a><span class="co"># Filters on a non-partition column: every directory is scanned</span></span>
+<span id="cb409-2"><a href="sql-and-data.html#cb409-2" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey_partitioned&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb409-3"><a href="sql-and-data.html#cb409-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span>          <span class="co"># habitat is not the partition key</span></span>
+<span id="cb409-4"><a href="sql-and-data.html#cb409-4" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)) <span class="sc">|&gt;</span></span>
+<span id="cb409-5"><a href="sql-and-data.html#cb409-5" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
+<span id="cb409-6"><a href="sql-and-data.html#cb409-6" tabindex="-1"></a></span>
+<span id="cb409-7"><a href="sql-and-data.html#cb409-7" tabindex="-1"></a><span class="co"># Filters on the partition key: only the matching directory is read</span></span>
+<span id="cb409-8"><a href="sql-and-data.html#cb409-8" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey_partitioned&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb409-9"><a href="sql-and-data.html#cb409-9" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2020</span>) <span class="sc">|&gt;</span>                   <span class="co"># year IS the partition key</span></span>
+<span id="cb409-10"><a href="sql-and-data.html#cb409-10" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)) <span class="sc">|&gt;</span></span>
+<span id="cb409-11"><a href="sql-and-data.html#cb409-11" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code></pre></div>
 <div class="info">
 <p>
 <strong>Instructor (≈6 min).</strong> Show the file-size table, then
@@ -471,13 +471,13 @@ are eager, and they pull the whole file into memory. <strong>Lazy</strong> evalu
 <em>what you intend to do</em> without running it, then executes only when you ask. The
 boundary between the two is <code>collect()</code>. Before <code>collect()</code> you hold a query
 description and nothing is in R; after <code>collect()</code> you hold a tibble.</p>
-<div class="sourceCode" id="cb409"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb409-1"><a href="sql-and-data.html#cb409-1" tabindex="-1"></a>lazy_query <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb409-2"><a href="sql-and-data.html#cb409-2" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb409-3"><a href="sql-and-data.html#cb409-3" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count))</span>
-<span id="cb409-4"><a href="sql-and-data.html#cb409-4" tabindex="-1"></a></span>
-<span id="cb409-5"><a href="sql-and-data.html#cb409-5" tabindex="-1"></a><span class="fu">class</span>(lazy_query)         <span class="co"># a query description, NOT a tibble</span></span>
-<span id="cb409-6"><a href="sql-and-data.html#cb409-6" tabindex="-1"></a></span>
-<span id="cb409-7"><a href="sql-and-data.html#cb409-7" tabindex="-1"></a>lazy_query <span class="sc">|&gt;</span> <span class="fu">collect</span>()   <span class="co"># now it runs, and returns a tibble</span></span></code></pre></div>
+<div class="sourceCode" id="cb410"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb410-1"><a href="sql-and-data.html#cb410-1" tabindex="-1"></a>lazy_query <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb410-2"><a href="sql-and-data.html#cb410-2" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb410-3"><a href="sql-and-data.html#cb410-3" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count))</span>
+<span id="cb410-4"><a href="sql-and-data.html#cb410-4" tabindex="-1"></a></span>
+<span id="cb410-5"><a href="sql-and-data.html#cb410-5" tabindex="-1"></a><span class="fu">class</span>(lazy_query)         <span class="co"># a query description, NOT a tibble</span></span>
+<span id="cb410-6"><a href="sql-and-data.html#cb410-6" tabindex="-1"></a></span>
+<span id="cb410-7"><a href="sql-and-data.html#cb410-7" tabindex="-1"></a>lazy_query <span class="sc">|&gt;</span> <span class="fu">collect</span>()   <span class="co"># now it runs, and returns a tibble</span></span></code></pre></div>
 <p>Why this matters for the take-home: a lazy read combined with Parquet means the
 engine reads only the columns and row groups your query needs, and only the result
 enters memory. If your file approaches the RAM you have, the lazy path is the only
@@ -494,23 +494,23 @@ the engine runs inside your R session, with no separate database server to
 install or connect to, unlike PostgreSQL or MySQL. You reach it through <code>tbl()</code>,
 using <code>DBI</code>, R's standard database interface.</li>
 </ul>
-<div class="sourceCode" id="cb410"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb410-1"><a href="sql-and-data.html#cb410-1" tabindex="-1"></a><span class="co"># arrow back-end</span></span>
-<span id="cb410-2"><a href="sql-and-data.html#cb410-2" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb410-3"><a href="sql-and-data.html#cb410-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb410-4"><a href="sql-and-data.html#cb410-4" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb410-5"><a href="sql-and-data.html#cb410-5" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb410-6"><a href="sql-and-data.html#cb410-6" tabindex="-1"></a>  <span class="fu">collect</span>()                                            <span class="co"># execute -&gt; tibble</span></span>
-<span id="cb410-7"><a href="sql-and-data.html#cb410-7" tabindex="-1"></a></span>
-<span id="cb410-8"><a href="sql-and-data.html#cb410-8" tabindex="-1"></a><span class="co"># DuckDB back-end. Connect once, then expose the file as a view.</span></span>
-<span id="cb410-9"><a href="sql-and-data.html#cb410-9" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="fu">duckdb</span>())</span>
-<span id="cb410-10"><a href="sql-and-data.html#cb410-10" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW surveys_parquet AS</span></span>
-<span id="cb410-11"><a href="sql-and-data.html#cb410-11" tabindex="-1"></a><span class="st">                SELECT * FROM read_parquet(&#39;bird_survey.parquet&#39;)&quot;</span>)</span>
-<span id="cb410-12"><a href="sql-and-data.html#cb410-12" tabindex="-1"></a></span>
-<span id="cb410-13"><a href="sql-and-data.html#cb410-13" tabindex="-1"></a><span class="fu">tbl</span>(con, <span class="st">&quot;surveys_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb410-14"><a href="sql-and-data.html#cb410-14" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb410-15"><a href="sql-and-data.html#cb410-15" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb410-16"><a href="sql-and-data.html#cb410-16" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb410-17"><a href="sql-and-data.html#cb410-17" tabindex="-1"></a>  <span class="fu">collect</span>()                                            <span class="co"># execute -&gt; tibble</span></span></code></pre></div>
+<div class="sourceCode" id="cb411"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb411-1"><a href="sql-and-data.html#cb411-1" tabindex="-1"></a><span class="co"># arrow back-end</span></span>
+<span id="cb411-2"><a href="sql-and-data.html#cb411-2" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb411-3"><a href="sql-and-data.html#cb411-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb411-4"><a href="sql-and-data.html#cb411-4" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb411-5"><a href="sql-and-data.html#cb411-5" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb411-6"><a href="sql-and-data.html#cb411-6" tabindex="-1"></a>  <span class="fu">collect</span>()                                            <span class="co"># execute -&gt; tibble</span></span>
+<span id="cb411-7"><a href="sql-and-data.html#cb411-7" tabindex="-1"></a></span>
+<span id="cb411-8"><a href="sql-and-data.html#cb411-8" tabindex="-1"></a><span class="co"># DuckDB back-end. Connect once, then expose the file as a view.</span></span>
+<span id="cb411-9"><a href="sql-and-data.html#cb411-9" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="fu">duckdb</span>())</span>
+<span id="cb411-10"><a href="sql-and-data.html#cb411-10" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW surveys_parquet AS</span></span>
+<span id="cb411-11"><a href="sql-and-data.html#cb411-11" tabindex="-1"></a><span class="st">                SELECT * FROM read_parquet(&#39;bird_survey.parquet&#39;)&quot;</span>)</span>
+<span id="cb411-12"><a href="sql-and-data.html#cb411-12" tabindex="-1"></a></span>
+<span id="cb411-13"><a href="sql-and-data.html#cb411-13" tabindex="-1"></a><span class="fu">tbl</span>(con, <span class="st">&quot;surveys_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb411-14"><a href="sql-and-data.html#cb411-14" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb411-15"><a href="sql-and-data.html#cb411-15" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb411-16"><a href="sql-and-data.html#cb411-16" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb411-17"><a href="sql-and-data.html#cb411-17" tabindex="-1"></a>  <span class="fu">collect</span>()                                            <span class="co"># execute -&gt; tibble</span></span></code></pre></div>
 <div class="info">
 <p>
 <strong>Instructor.</strong> Spend two minutes on
@@ -552,17 +552,17 @@ a block and you will see the numbers move.
 <p>You are selecting 2 of 15 columns, roughly 13% of the data. If column selection
 reduces disk I/O, you would expect a speed improvement. If it only reduces memory,
 speed should be similar.</p>
-<div class="sourceCode" id="cb411"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb411-1"><a href="sql-and-data.html#cb411-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
-<span id="cb411-2"><a href="sql-and-data.html#cb411-2" tabindex="-1"></a>  <span class="at">csv_15_cols     =</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>),</span>
-<span id="cb411-3"><a href="sql-and-data.html#cb411-3" tabindex="-1"></a>  <span class="at">csv_2_cols      =</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>,</span>
-<span id="cb411-4"><a href="sql-and-data.html#cb411-4" tabindex="-1"></a>                             <span class="at">col_select     =</span> <span class="fu">c</span>(species, count),</span>
-<span id="cb411-5"><a href="sql-and-data.html#cb411-5" tabindex="-1"></a>                             <span class="at">show_col_types =</span> <span class="cn">FALSE</span>),</span>
-<span id="cb411-6"><a href="sql-and-data.html#cb411-6" tabindex="-1"></a>  <span class="at">parquet_15_cols =</span> <span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
-<span id="cb411-7"><a href="sql-and-data.html#cb411-7" tabindex="-1"></a>  <span class="at">parquet_2_cols  =</span> <span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>,</span>
-<span id="cb411-8"><a href="sql-and-data.html#cb411-8" tabindex="-1"></a>                                 <span class="at">col_select =</span> <span class="fu">c</span>(species, count)),</span>
-<span id="cb411-9"><a href="sql-and-data.html#cb411-9" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">5</span>,</span>
-<span id="cb411-10"><a href="sql-and-data.html#cb411-10" tabindex="-1"></a>  <span class="at">check      =</span> <span class="cn">FALSE</span></span>
-<span id="cb411-11"><a href="sql-and-data.html#cb411-11" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb412"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb412-1"><a href="sql-and-data.html#cb412-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
+<span id="cb412-2"><a href="sql-and-data.html#cb412-2" tabindex="-1"></a>  <span class="at">csv_15_cols     =</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb412-3"><a href="sql-and-data.html#cb412-3" tabindex="-1"></a>  <span class="at">csv_2_cols      =</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>,</span>
+<span id="cb412-4"><a href="sql-and-data.html#cb412-4" tabindex="-1"></a>                             <span class="at">col_select     =</span> <span class="fu">c</span>(species, count),</span>
+<span id="cb412-5"><a href="sql-and-data.html#cb412-5" tabindex="-1"></a>                             <span class="at">show_col_types =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb412-6"><a href="sql-and-data.html#cb412-6" tabindex="-1"></a>  <span class="at">parquet_15_cols =</span> <span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>),</span>
+<span id="cb412-7"><a href="sql-and-data.html#cb412-7" tabindex="-1"></a>  <span class="at">parquet_2_cols  =</span> <span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>,</span>
+<span id="cb412-8"><a href="sql-and-data.html#cb412-8" tabindex="-1"></a>                                 <span class="at">col_select =</span> <span class="fu">c</span>(species, count)),</span>
+<span id="cb412-9"><a href="sql-and-data.html#cb412-9" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">5</span>,</span>
+<span id="cb412-10"><a href="sql-and-data.html#cb412-10" tabindex="-1"></a>  <span class="at">check      =</span> <span class="cn">FALSE</span></span>
+<span id="cb412-11"><a href="sql-and-data.html#cb412-11" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
 <p><strong>Questions.</strong></p>
 <ol style="list-style-type: decimal">
 <li>For CSV, does <code>median</code> time fall with column selection, or does only
@@ -590,19 +590,19 @@ format-specific behaviour as a general rule.</p>
 </div>
 <div id="part-b-eager-versus-lazy-memory" class="section level3 unnumbered">
 <h3>Part B: eager versus lazy memory</h3>
-<div class="sourceCode" id="cb412"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb412-1"><a href="sql-and-data.html#cb412-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
-<span id="cb412-2"><a href="sql-and-data.html#cb412-2" tabindex="-1"></a>  <span class="at">eager =</span> <span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb412-3"><a href="sql-and-data.html#cb412-3" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb412-4"><a href="sql-and-data.html#cb412-4" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)),</span>
-<span id="cb412-5"><a href="sql-and-data.html#cb412-5" tabindex="-1"></a></span>
-<span id="cb412-6"><a href="sql-and-data.html#cb412-6" tabindex="-1"></a>  <span class="at">lazy  =</span> <span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb412-7"><a href="sql-and-data.html#cb412-7" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb412-8"><a href="sql-and-data.html#cb412-8" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)) <span class="sc">|&gt;</span></span>
-<span id="cb412-9"><a href="sql-and-data.html#cb412-9" tabindex="-1"></a>    <span class="fu">collect</span>(),</span>
-<span id="cb412-10"><a href="sql-and-data.html#cb412-10" tabindex="-1"></a></span>
-<span id="cb412-11"><a href="sql-and-data.html#cb412-11" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">5</span>,</span>
-<span id="cb412-12"><a href="sql-and-data.html#cb412-12" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
-<span id="cb412-13"><a href="sql-and-data.html#cb412-13" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb413"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb413-1"><a href="sql-and-data.html#cb413-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
+<span id="cb413-2"><a href="sql-and-data.html#cb413-2" tabindex="-1"></a>  <span class="at">eager =</span> <span class="fu">read_parquet</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb413-3"><a href="sql-and-data.html#cb413-3" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb413-4"><a href="sql-and-data.html#cb413-4" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)),</span>
+<span id="cb413-5"><a href="sql-and-data.html#cb413-5" tabindex="-1"></a></span>
+<span id="cb413-6"><a href="sql-and-data.html#cb413-6" tabindex="-1"></a>  <span class="at">lazy  =</span> <span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb413-7"><a href="sql-and-data.html#cb413-7" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb413-8"><a href="sql-and-data.html#cb413-8" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count)) <span class="sc">|&gt;</span></span>
+<span id="cb413-9"><a href="sql-and-data.html#cb413-9" tabindex="-1"></a>    <span class="fu">collect</span>(),</span>
+<span id="cb413-10"><a href="sql-and-data.html#cb413-10" tabindex="-1"></a></span>
+<span id="cb413-11"><a href="sql-and-data.html#cb413-11" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">5</span>,</span>
+<span id="cb413-12"><a href="sql-and-data.html#cb413-12" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
+<span id="cb413-13"><a href="sql-and-data.html#cb413-13" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
 <p><strong>Questions.</strong></p>
 <ol style="list-style-type: decimal">
 <li>Which approach allocates more R-heap memory, and why?</li>
@@ -635,22 +635,22 @@ principles carry most of the benefit.</p>
 <p>Applying a filter before an aggregation or join reduces the data flowing through
 every later step. Apply it afterwards and the expensive operation runs on the full
 dataset.</p>
-<div class="sourceCode" id="cb413"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb413-1"><a href="sql-and-data.html#cb413-1" tabindex="-1"></a>surveys <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb413-2"><a href="sql-and-data.html#cb413-2" tabindex="-1"></a></span>
-<span id="cb413-3"><a href="sql-and-data.html#cb413-3" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
-<span id="cb413-4"><a href="sql-and-data.html#cb413-4" tabindex="-1"></a>  <span class="at">filter_late  =</span> surveys <span class="sc">|&gt;</span></span>
-<span id="cb413-5"><a href="sql-and-data.html#cb413-5" tabindex="-1"></a>    <span class="fu">group_by</span>(species, habitat, year) <span class="sc">|&gt;</span></span>
-<span id="cb413-6"><a href="sql-and-data.html#cb413-6" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb413-7"><a href="sql-and-data.html#cb413-7" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>),         <span class="co"># filter AFTER aggregating all habitats</span></span>
-<span id="cb413-8"><a href="sql-and-data.html#cb413-8" tabindex="-1"></a></span>
-<span id="cb413-9"><a href="sql-and-data.html#cb413-9" tabindex="-1"></a>  <span class="at">filter_early =</span> surveys <span class="sc">|&gt;</span></span>
-<span id="cb413-10"><a href="sql-and-data.html#cb413-10" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span>       <span class="co"># filter BEFORE aggregating</span></span>
-<span id="cb413-11"><a href="sql-and-data.html#cb413-11" tabindex="-1"></a>    <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb413-12"><a href="sql-and-data.html#cb413-12" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
-<span id="cb413-13"><a href="sql-and-data.html#cb413-13" tabindex="-1"></a></span>
-<span id="cb413-14"><a href="sql-and-data.html#cb413-14" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">10</span>,</span>
-<span id="cb413-15"><a href="sql-and-data.html#cb413-15" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
-<span id="cb413-16"><a href="sql-and-data.html#cb413-16" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb414"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb414-1"><a href="sql-and-data.html#cb414-1" tabindex="-1"></a>surveys <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb414-2"><a href="sql-and-data.html#cb414-2" tabindex="-1"></a></span>
+<span id="cb414-3"><a href="sql-and-data.html#cb414-3" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
+<span id="cb414-4"><a href="sql-and-data.html#cb414-4" tabindex="-1"></a>  <span class="at">filter_late  =</span> surveys <span class="sc">|&gt;</span></span>
+<span id="cb414-5"><a href="sql-and-data.html#cb414-5" tabindex="-1"></a>    <span class="fu">group_by</span>(species, habitat, year) <span class="sc">|&gt;</span></span>
+<span id="cb414-6"><a href="sql-and-data.html#cb414-6" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb414-7"><a href="sql-and-data.html#cb414-7" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>),         <span class="co"># filter AFTER aggregating all habitats</span></span>
+<span id="cb414-8"><a href="sql-and-data.html#cb414-8" tabindex="-1"></a></span>
+<span id="cb414-9"><a href="sql-and-data.html#cb414-9" tabindex="-1"></a>  <span class="at">filter_early =</span> surveys <span class="sc">|&gt;</span></span>
+<span id="cb414-10"><a href="sql-and-data.html#cb414-10" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span>       <span class="co"># filter BEFORE aggregating</span></span>
+<span id="cb414-11"><a href="sql-and-data.html#cb414-11" tabindex="-1"></a>    <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb414-12"><a href="sql-and-data.html#cb414-12" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
+<span id="cb414-13"><a href="sql-and-data.html#cb414-13" tabindex="-1"></a></span>
+<span id="cb414-14"><a href="sql-and-data.html#cb414-14" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">10</span>,</span>
+<span id="cb414-15"><a href="sql-and-data.html#cb414-15" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
+<span id="cb414-16"><a href="sql-and-data.html#cb414-16" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
 <p>The point is the mechanism, not the precise ratio: <code>filter_late</code> aggregates all
 five habitats and then discards four fifths of the result, while <code>filter_early</code>
 discards them first. On a fast in-memory engine the gap can be modest and noisy, so
@@ -663,12 +663,12 @@ grouping); use <code>WHERE</code> whenever the condition does not depend on an a
 <p>Carrying unneeded columns through a pipeline costs memory and, for Parquet, disk
 I/O. Select the minimum columns before any heavy step. On a lazy Parquet or DuckDB
 source, an early <code>select()</code> becomes column projection at the point of reading.</p>
-<div class="sourceCode" id="cb414"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb414-1"><a href="sql-and-data.html#cb414-1" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb414-2"><a href="sql-and-data.html#cb414-2" tabindex="-1"></a>  <span class="fu">select</span>(species, habitat, year, count) <span class="sc">|&gt;</span>   <span class="co"># 4 columns read from disk, not 15</span></span>
-<span id="cb414-3"><a href="sql-and-data.html#cb414-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb414-4"><a href="sql-and-data.html#cb414-4" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb414-5"><a href="sql-and-data.html#cb414-5" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb414-6"><a href="sql-and-data.html#cb414-6" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb415"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb415-1"><a href="sql-and-data.html#cb415-1" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb415-2"><a href="sql-and-data.html#cb415-2" tabindex="-1"></a>  <span class="fu">select</span>(species, habitat, year, count) <span class="sc">|&gt;</span>   <span class="co"># 4 columns read from disk, not 15</span></span>
+<span id="cb415-3"><a href="sql-and-data.html#cb415-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb415-4"><a href="sql-and-data.html#cb415-4" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb415-5"><a href="sql-and-data.html#cb415-5" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb415-6"><a href="sql-and-data.html#cb415-6" tabindex="-1"></a>  <span class="fu">collect</span>()</span></code></pre></div>
 <hr />
 </div>
 </div>
@@ -681,17 +681,17 @@ query, and benchmark both versions to confirm the improvement. Diagnose
 it yourself before opening the solution.
 </p>
 </div>
-<div class="sourceCode" id="cb415"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb415-1"><a href="sql-and-data.html#cb415-1" tabindex="-1"></a>sites <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb415-2"><a href="sql-and-data.html#cb415-2" tabindex="-1"></a>  <span class="at">site_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;SITE_&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%04d&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">500</span>)),</span>
-<span id="cb415-3"><a href="sql-and-data.html#cb415-3" tabindex="-1"></a>  <span class="at">region  =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;North&quot;</span>, <span class="st">&quot;South&quot;</span>, <span class="st">&quot;East&quot;</span>, <span class="st">&quot;West&quot;</span>), <span class="dv">500</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb415-4"><a href="sql-and-data.html#cb415-4" tabindex="-1"></a>  <span class="at">area_ha =</span> <span class="fu">runif</span>(<span class="dv">500</span>, <span class="dv">10</span>, <span class="dv">500</span>)</span>
-<span id="cb415-5"><a href="sql-and-data.html#cb415-5" tabindex="-1"></a>)</span>
-<span id="cb415-6"><a href="sql-and-data.html#cb415-6" tabindex="-1"></a></span>
-<span id="cb415-7"><a href="sql-and-data.html#cb415-7" tabindex="-1"></a>surveys <span class="sc">|&gt;</span></span>
-<span id="cb415-8"><a href="sql-and-data.html#cb415-8" tabindex="-1"></a>  <span class="fu">left_join</span>(sites, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb415-9"><a href="sql-and-data.html#cb415-9" tabindex="-1"></a>  <span class="fu">filter</span>(region <span class="sc">==</span> <span class="st">&quot;North&quot;</span>, habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb415-10"><a href="sql-and-data.html#cb415-10" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
-<span id="cb415-11"><a href="sql-and-data.html#cb415-11" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb416"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb416-1"><a href="sql-and-data.html#cb416-1" tabindex="-1"></a>sites <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb416-2"><a href="sql-and-data.html#cb416-2" tabindex="-1"></a>  <span class="at">site_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;SITE_&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%04d&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">500</span>)),</span>
+<span id="cb416-3"><a href="sql-and-data.html#cb416-3" tabindex="-1"></a>  <span class="at">region  =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;North&quot;</span>, <span class="st">&quot;South&quot;</span>, <span class="st">&quot;East&quot;</span>, <span class="st">&quot;West&quot;</span>), <span class="dv">500</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb416-4"><a href="sql-and-data.html#cb416-4" tabindex="-1"></a>  <span class="at">area_ha =</span> <span class="fu">runif</span>(<span class="dv">500</span>, <span class="dv">10</span>, <span class="dv">500</span>)</span>
+<span id="cb416-5"><a href="sql-and-data.html#cb416-5" tabindex="-1"></a>)</span>
+<span id="cb416-6"><a href="sql-and-data.html#cb416-6" tabindex="-1"></a></span>
+<span id="cb416-7"><a href="sql-and-data.html#cb416-7" tabindex="-1"></a>surveys <span class="sc">|&gt;</span></span>
+<span id="cb416-8"><a href="sql-and-data.html#cb416-8" tabindex="-1"></a>  <span class="fu">left_join</span>(sites, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb416-9"><a href="sql-and-data.html#cb416-9" tabindex="-1"></a>  <span class="fu">filter</span>(region <span class="sc">==</span> <span class="st">&quot;North&quot;</span>, habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb416-10"><a href="sql-and-data.html#cb416-10" tabindex="-1"></a>  <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb416-11"><a href="sql-and-data.html#cb416-11" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span></code></pre></div>
 <div class="webex-solution">
 <button>
 Solution
@@ -700,23 +700,23 @@ Solution
 anything is discarded. <code>region</code> lives in <code>sites</code>, so it genuinely requires the
 join and cannot be filtered earlier. But <code>habitat</code> is already in <code>surveys</code> and can
 be applied first, shrinking the table that enters the join.</p>
-<div class="sourceCode" id="cb416"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb416-1"><a href="sql-and-data.html#cb416-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
-<span id="cb416-2"><a href="sql-and-data.html#cb416-2" tabindex="-1"></a>  <span class="at">original =</span> surveys <span class="sc">|&gt;</span></span>
-<span id="cb416-3"><a href="sql-and-data.html#cb416-3" tabindex="-1"></a>    <span class="fu">left_join</span>(sites, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb416-4"><a href="sql-and-data.html#cb416-4" tabindex="-1"></a>    <span class="fu">filter</span>(region <span class="sc">==</span> <span class="st">&quot;North&quot;</span>, habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb416-5"><a href="sql-and-data.html#cb416-5" tabindex="-1"></a>    <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
-<span id="cb416-6"><a href="sql-and-data.html#cb416-6" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
-<span id="cb416-7"><a href="sql-and-data.html#cb416-7" tabindex="-1"></a></span>
-<span id="cb416-8"><a href="sql-and-data.html#cb416-8" tabindex="-1"></a>  <span class="at">improved =</span> surveys <span class="sc">|&gt;</span></span>
-<span id="cb416-9"><a href="sql-and-data.html#cb416-9" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span>         <span class="co"># reduce surveys before the join</span></span>
-<span id="cb416-10"><a href="sql-and-data.html#cb416-10" tabindex="-1"></a>    <span class="fu">left_join</span>(sites, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb416-11"><a href="sql-and-data.html#cb416-11" tabindex="-1"></a>    <span class="fu">filter</span>(region <span class="sc">==</span> <span class="st">&quot;North&quot;</span>) <span class="sc">|&gt;</span>             <span class="co"># region needs the join, so filter here</span></span>
-<span id="cb416-12"><a href="sql-and-data.html#cb416-12" tabindex="-1"></a>    <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
-<span id="cb416-13"><a href="sql-and-data.html#cb416-13" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
-<span id="cb416-14"><a href="sql-and-data.html#cb416-14" tabindex="-1"></a></span>
-<span id="cb416-15"><a href="sql-and-data.html#cb416-15" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">10</span>,</span>
-<span id="cb416-16"><a href="sql-and-data.html#cb416-16" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
-<span id="cb416-17"><a href="sql-and-data.html#cb416-17" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
+<div class="sourceCode" id="cb417"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb417-1"><a href="sql-and-data.html#cb417-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
+<span id="cb417-2"><a href="sql-and-data.html#cb417-2" tabindex="-1"></a>  <span class="at">original =</span> surveys <span class="sc">|&gt;</span></span>
+<span id="cb417-3"><a href="sql-and-data.html#cb417-3" tabindex="-1"></a>    <span class="fu">left_join</span>(sites, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb417-4"><a href="sql-and-data.html#cb417-4" tabindex="-1"></a>    <span class="fu">filter</span>(region <span class="sc">==</span> <span class="st">&quot;North&quot;</span>, habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb417-5"><a href="sql-and-data.html#cb417-5" tabindex="-1"></a>    <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb417-6"><a href="sql-and-data.html#cb417-6" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
+<span id="cb417-7"><a href="sql-and-data.html#cb417-7" tabindex="-1"></a></span>
+<span id="cb417-8"><a href="sql-and-data.html#cb417-8" tabindex="-1"></a>  <span class="at">improved =</span> surveys <span class="sc">|&gt;</span></span>
+<span id="cb417-9"><a href="sql-and-data.html#cb417-9" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span>         <span class="co"># reduce surveys before the join</span></span>
+<span id="cb417-10"><a href="sql-and-data.html#cb417-10" tabindex="-1"></a>    <span class="fu">left_join</span>(sites, <span class="at">by =</span> <span class="st">&quot;site_id&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb417-11"><a href="sql-and-data.html#cb417-11" tabindex="-1"></a>    <span class="fu">filter</span>(region <span class="sc">==</span> <span class="st">&quot;North&quot;</span>) <span class="sc">|&gt;</span>             <span class="co"># region needs the join, so filter here</span></span>
+<span id="cb417-12"><a href="sql-and-data.html#cb417-12" tabindex="-1"></a>    <span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb417-13"><a href="sql-and-data.html#cb417-13" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
+<span id="cb417-14"><a href="sql-and-data.html#cb417-14" tabindex="-1"></a></span>
+<span id="cb417-15"><a href="sql-and-data.html#cb417-15" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">10</span>,</span>
+<span id="cb417-16"><a href="sql-and-data.html#cb417-16" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
+<span id="cb417-17"><a href="sql-and-data.html#cb417-17" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span></code></pre></div>
 </div>
 <hr />
 </div>
@@ -726,19 +726,19 @@ be applied first, shrinking the table that enters the join.</p>
 <code>show_query()</code> lets you read that translation. This is the practical way to meet
 <code>data.table</code> and SQL: recognise them when they appear, rather than write them from
 memory. Full writing references are in Appendices C and D.</p>
-<div class="sourceCode" id="cb417"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb417-1"><a href="sql-and-data.html#cb417-1" tabindex="-1"></a><span class="co"># dtplyr translates dplyr to data.table</span></span>
-<span id="cb417-2"><a href="sql-and-data.html#cb417-2" tabindex="-1"></a><span class="fu">lazy_dt</span>(<span class="fu">as.data.table</span>(surveys)) <span class="sc">|&gt;</span></span>
-<span id="cb417-3"><a href="sql-and-data.html#cb417-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb417-4"><a href="sql-and-data.html#cb417-4" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb417-5"><a href="sql-and-data.html#cb417-5" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb417-6"><a href="sql-and-data.html#cb417-6" tabindex="-1"></a>  <span class="fu">show_query</span>()</span>
-<span id="cb417-7"><a href="sql-and-data.html#cb417-7" tabindex="-1"></a></span>
-<span id="cb417-8"><a href="sql-and-data.html#cb417-8" tabindex="-1"></a><span class="co"># dbplyr translates dplyr to SQL (here, DuckDB&#39;s dialect)</span></span>
-<span id="cb417-9"><a href="sql-and-data.html#cb417-9" tabindex="-1"></a><span class="fu">tbl</span>(con, <span class="st">&quot;surveys_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb417-10"><a href="sql-and-data.html#cb417-10" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb417-11"><a href="sql-and-data.html#cb417-11" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb417-12"><a href="sql-and-data.html#cb417-12" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb417-13"><a href="sql-and-data.html#cb417-13" tabindex="-1"></a>  <span class="fu">show_query</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb418"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb418-1"><a href="sql-and-data.html#cb418-1" tabindex="-1"></a><span class="co"># dtplyr translates dplyr to data.table</span></span>
+<span id="cb418-2"><a href="sql-and-data.html#cb418-2" tabindex="-1"></a><span class="fu">lazy_dt</span>(<span class="fu">as.data.table</span>(surveys)) <span class="sc">|&gt;</span></span>
+<span id="cb418-3"><a href="sql-and-data.html#cb418-3" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb418-4"><a href="sql-and-data.html#cb418-4" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb418-5"><a href="sql-and-data.html#cb418-5" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb418-6"><a href="sql-and-data.html#cb418-6" tabindex="-1"></a>  <span class="fu">show_query</span>()</span>
+<span id="cb418-7"><a href="sql-and-data.html#cb418-7" tabindex="-1"></a></span>
+<span id="cb418-8"><a href="sql-and-data.html#cb418-8" tabindex="-1"></a><span class="co"># dbplyr translates dplyr to SQL (here, DuckDB&#39;s dialect)</span></span>
+<span id="cb418-9"><a href="sql-and-data.html#cb418-9" tabindex="-1"></a><span class="fu">tbl</span>(con, <span class="st">&quot;surveys_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb418-10"><a href="sql-and-data.html#cb418-10" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb418-11"><a href="sql-and-data.html#cb418-11" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb418-12"><a href="sql-and-data.html#cb418-12" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb418-13"><a href="sql-and-data.html#cb418-13" tabindex="-1"></a>  <span class="fu">show_query</span>()</span></code></pre></div>
 <p>The same operation in all three syntaxes:</p>
 <table>
 <colgroup>
@@ -805,11 +805,11 @@ participants return to the table on their own.
 They apply to any code you are adopting rather than authoring, whatever its source.</p>
 <p><strong>Check 1: the output class.</strong> Confirm the result is the type your downstream code
 expects.</p>
-<div class="sourceCode" id="cb418"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb418-1"><a href="sql-and-data.html#cb418-1" tabindex="-1"></a><span class="fu">class</span>(<span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>))</span>
-<span id="cb418-2"><a href="sql-and-data.html#cb418-2" tabindex="-1"></a><span class="co"># &quot;tbl_df&quot; &quot;tbl&quot; &quot;data.frame&quot;           a tibble, in memory</span></span>
-<span id="cb418-3"><a href="sql-and-data.html#cb418-3" tabindex="-1"></a></span>
-<span id="cb418-4"><a href="sql-and-data.html#cb418-4" tabindex="-1"></a><span class="fu">class</span>(<span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>))</span>
-<span id="cb418-5"><a href="sql-and-data.html#cb418-5" tabindex="-1"></a><span class="co"># &quot;FileSystemDataset&quot; ...               a query description, NOT in memory</span></span></code></pre></div>
+<div class="sourceCode" id="cb419"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb419-1"><a href="sql-and-data.html#cb419-1" tabindex="-1"></a><span class="fu">class</span>(<span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>))</span>
+<span id="cb419-2"><a href="sql-and-data.html#cb419-2" tabindex="-1"></a><span class="co"># &quot;tbl_df&quot; &quot;tbl&quot; &quot;data.frame&quot;           a tibble, in memory</span></span>
+<span id="cb419-3"><a href="sql-and-data.html#cb419-3" tabindex="-1"></a></span>
+<span id="cb419-4"><a href="sql-and-data.html#cb419-4" tabindex="-1"></a><span class="fu">class</span>(<span class="fu">open_dataset</span>(<span class="st">&quot;bird_survey.parquet&quot;</span>))</span>
+<span id="cb419-5"><a href="sql-and-data.html#cb419-5" tabindex="-1"></a><span class="co"># &quot;FileSystemDataset&quot; ...               a query description, NOT in memory</span></span></code></pre></div>
 <p><strong>Check 2: the translation.</strong> Run <code>show_query()</code> before <code>collect()</code> on any
 <code>dtplyr</code> or <code>dbplyr</code> pipeline, and check the filter conditions, grouping variables,
 and aggregations against your intent.</p>
@@ -818,23 +818,23 @@ common surprise is missing values: <code>dplyr</code>'s <code>sum()</code> retur
 <code>NA</code>, whereas SQL aggregation functions, DuckDB included, drop <code>NULL</code> by default.
 For a dataset with no missing counts the two agree, but that coincidence is not a
 check. Verify on a small subset.</p>
-<div class="sourceCode" id="cb419"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb419-1"><a href="sql-and-data.html#cb419-1" tabindex="-1"></a>small <span class="ot">&lt;-</span> <span class="fu">slice_head</span>(surveys, <span class="at">n =</span> <span class="dv">50000</span>)</span>
-<span id="cb419-2"><a href="sql-and-data.html#cb419-2" tabindex="-1"></a><span class="fu">duckdb_register</span>(con, <span class="st">&quot;small&quot;</span>, small)         <span class="co"># an in-memory data frame: register is correct here</span></span>
-<span id="cb419-3"><a href="sql-and-data.html#cb419-3" tabindex="-1"></a></span>
-<span id="cb419-4"><a href="sql-and-data.html#cb419-4" tabindex="-1"></a>reference <span class="ot">&lt;-</span> small <span class="sc">|&gt;</span></span>
-<span id="cb419-5"><a href="sql-and-data.html#cb419-5" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb419-6"><a href="sql-and-data.html#cb419-6" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb419-7"><a href="sql-and-data.html#cb419-7" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb419-8"><a href="sql-and-data.html#cb419-8" tabindex="-1"></a>  <span class="fu">arrange</span>(species, year)</span>
-<span id="cb419-9"><a href="sql-and-data.html#cb419-9" tabindex="-1"></a></span>
-<span id="cb419-10"><a href="sql-and-data.html#cb419-10" tabindex="-1"></a>candidate <span class="ot">&lt;-</span> <span class="fu">tbl</span>(con, <span class="st">&quot;small&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb419-11"><a href="sql-and-data.html#cb419-11" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb419-12"><a href="sql-and-data.html#cb419-12" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb419-13"><a href="sql-and-data.html#cb419-13" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb419-14"><a href="sql-and-data.html#cb419-14" tabindex="-1"></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
-<span id="cb419-15"><a href="sql-and-data.html#cb419-15" tabindex="-1"></a>  <span class="fu">arrange</span>(species, year)</span>
-<span id="cb419-16"><a href="sql-and-data.html#cb419-16" tabindex="-1"></a></span>
-<span id="cb419-17"><a href="sql-and-data.html#cb419-17" tabindex="-1"></a><span class="fu">all.equal</span>(reference<span class="sc">$</span>total, candidate<span class="sc">$</span>total)</span></code></pre></div>
+<div class="sourceCode" id="cb420"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb420-1"><a href="sql-and-data.html#cb420-1" tabindex="-1"></a>small <span class="ot">&lt;-</span> <span class="fu">slice_head</span>(surveys, <span class="at">n =</span> <span class="dv">50000</span>)</span>
+<span id="cb420-2"><a href="sql-and-data.html#cb420-2" tabindex="-1"></a><span class="fu">duckdb_register</span>(con, <span class="st">&quot;small&quot;</span>, small)         <span class="co"># an in-memory data frame: register is correct here</span></span>
+<span id="cb420-3"><a href="sql-and-data.html#cb420-3" tabindex="-1"></a></span>
+<span id="cb420-4"><a href="sql-and-data.html#cb420-4" tabindex="-1"></a>reference <span class="ot">&lt;-</span> small <span class="sc">|&gt;</span></span>
+<span id="cb420-5"><a href="sql-and-data.html#cb420-5" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb420-6"><a href="sql-and-data.html#cb420-6" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb420-7"><a href="sql-and-data.html#cb420-7" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb420-8"><a href="sql-and-data.html#cb420-8" tabindex="-1"></a>  <span class="fu">arrange</span>(species, year)</span>
+<span id="cb420-9"><a href="sql-and-data.html#cb420-9" tabindex="-1"></a></span>
+<span id="cb420-10"><a href="sql-and-data.html#cb420-10" tabindex="-1"></a>candidate <span class="ot">&lt;-</span> <span class="fu">tbl</span>(con, <span class="st">&quot;small&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb420-11"><a href="sql-and-data.html#cb420-11" tabindex="-1"></a>  <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb420-12"><a href="sql-and-data.html#cb420-12" tabindex="-1"></a>  <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb420-13"><a href="sql-and-data.html#cb420-13" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb420-14"><a href="sql-and-data.html#cb420-14" tabindex="-1"></a>  <span class="fu">collect</span>() <span class="sc">|&gt;</span></span>
+<span id="cb420-15"><a href="sql-and-data.html#cb420-15" tabindex="-1"></a>  <span class="fu">arrange</span>(species, year)</span>
+<span id="cb420-16"><a href="sql-and-data.html#cb420-16" tabindex="-1"></a></span>
+<span id="cb420-17"><a href="sql-and-data.html#cb420-17" tabindex="-1"></a><span class="fu">all.equal</span>(reference<span class="sc">$</span>total, candidate<span class="sc">$</span>total)</span></code></pre></div>
 <div class="warning">
 <p>
 The <code>na.rm = TRUE</code> in the DuckDB version is not cosmetic.
@@ -845,23 +845,23 @@ Always verify on a subset before assuming agreement.
 </div>
 <p><strong>Check 4: performance on your data.</strong> General claims are approximations. Measure
 on your file and your machine before committing.</p>
-<div class="sourceCode" id="cb420"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb420-1"><a href="sql-and-data.html#cb420-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
-<span id="cb420-2"><a href="sql-and-data.html#cb420-2" tabindex="-1"></a>  <span class="at">current  =</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb420-3"><a href="sql-and-data.html#cb420-3" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb420-4"><a href="sql-and-data.html#cb420-4" tabindex="-1"></a>    <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb420-5"><a href="sql-and-data.html#cb420-5" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
-<span id="cb420-6"><a href="sql-and-data.html#cb420-6" tabindex="-1"></a></span>
-<span id="cb420-7"><a href="sql-and-data.html#cb420-7" tabindex="-1"></a>  <span class="at">proposed =</span> <span class="fu">tbl</span>(con, <span class="st">&quot;surveys_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb420-8"><a href="sql-and-data.html#cb420-8" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb420-9"><a href="sql-and-data.html#cb420-9" tabindex="-1"></a>    <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
-<span id="cb420-10"><a href="sql-and-data.html#cb420-10" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb420-11"><a href="sql-and-data.html#cb420-11" tabindex="-1"></a>    <span class="fu">collect</span>(),</span>
-<span id="cb420-12"><a href="sql-and-data.html#cb420-12" tabindex="-1"></a></span>
-<span id="cb420-13"><a href="sql-and-data.html#cb420-13" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">5</span>,</span>
-<span id="cb420-14"><a href="sql-and-data.html#cb420-14" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
-<span id="cb420-15"><a href="sql-and-data.html#cb420-15" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span>
-<span id="cb420-16"><a href="sql-and-data.html#cb420-16" tabindex="-1"></a></span>
-<span id="cb420-17"><a href="sql-and-data.html#cb420-17" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con, <span class="at">shutdown =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb421"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb421-1"><a href="sql-and-data.html#cb421-1" tabindex="-1"></a>bench<span class="sc">::</span><span class="fu">mark</span>(</span>
+<span id="cb421-2"><a href="sql-and-data.html#cb421-2" tabindex="-1"></a>  <span class="at">current  =</span> <span class="fu">read_csv</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb421-3"><a href="sql-and-data.html#cb421-3" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb421-4"><a href="sql-and-data.html#cb421-4" tabindex="-1"></a>    <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb421-5"><a href="sql-and-data.html#cb421-5" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>),</span>
+<span id="cb421-6"><a href="sql-and-data.html#cb421-6" tabindex="-1"></a></span>
+<span id="cb421-7"><a href="sql-and-data.html#cb421-7" tabindex="-1"></a>  <span class="at">proposed =</span> <span class="fu">tbl</span>(con, <span class="st">&quot;surveys_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb421-8"><a href="sql-and-data.html#cb421-8" tabindex="-1"></a>    <span class="fu">filter</span>(habitat <span class="sc">==</span> <span class="st">&quot;woodland&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb421-9"><a href="sql-and-data.html#cb421-9" tabindex="-1"></a>    <span class="fu">group_by</span>(species, year) <span class="sc">|&gt;</span></span>
+<span id="cb421-10"><a href="sql-and-data.html#cb421-10" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb421-11"><a href="sql-and-data.html#cb421-11" tabindex="-1"></a>    <span class="fu">collect</span>(),</span>
+<span id="cb421-12"><a href="sql-and-data.html#cb421-12" tabindex="-1"></a></span>
+<span id="cb421-13"><a href="sql-and-data.html#cb421-13" tabindex="-1"></a>  <span class="at">iterations =</span> <span class="dv">5</span>,</span>
+<span id="cb421-14"><a href="sql-and-data.html#cb421-14" tabindex="-1"></a>  <span class="at">check =</span> <span class="cn">FALSE</span></span>
+<span id="cb421-15"><a href="sql-and-data.html#cb421-15" tabindex="-1"></a>)[, <span class="fu">c</span>(<span class="st">&quot;expression&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;mem_alloc&quot;</span>)]</span>
+<span id="cb421-16"><a href="sql-and-data.html#cb421-16" tabindex="-1"></a></span>
+<span id="cb421-17"><a href="sql-and-data.html#cb421-17" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con, <span class="at">shutdown =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>If the proposed approach is not faster on your data, the general recommendation
 does not apply to your situation. Understand why before you adopt it.</p>
 <hr />
@@ -942,55 +942,55 @@ together. CSV is row-oriented; column selection does not reduce its disk I/O.</p
 </div>
 <div id="appendix-b-tool-syntax-reference" class="section level2 unnumbered">
 <h2>Appendix B: Tool syntax reference</h2>
-<div class="sourceCode" id="cb421"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb421-1"><a href="sql-and-data.html#cb421-1" tabindex="-1"></a><span class="co"># readr</span></span>
-<span id="cb421-2"><a href="sql-and-data.html#cb421-2" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="st">&quot;f.csv&quot;</span>,</span>
-<span id="cb421-3"><a href="sql-and-data.html#cb421-3" tabindex="-1"></a>         <span class="at">col_types      =</span> <span class="fu">cols</span>(<span class="at">year =</span> <span class="fu">col_integer</span>(), <span class="at">count =</span> <span class="fu">col_integer</span>()),</span>
-<span id="cb421-4"><a href="sql-and-data.html#cb421-4" tabindex="-1"></a>         <span class="at">col_select     =</span> <span class="fu">c</span>(species, habitat, year, count),</span>
-<span id="cb421-5"><a href="sql-and-data.html#cb421-5" tabindex="-1"></a>         <span class="at">n_max          =</span> <span class="dv">10000</span>,</span>
-<span id="cb421-6"><a href="sql-and-data.html#cb421-6" tabindex="-1"></a>         <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb422"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb422-1"><a href="sql-and-data.html#cb422-1" tabindex="-1"></a><span class="co"># data.table::fread</span></span>
-<span id="cb422-2"><a href="sql-and-data.html#cb422-2" tabindex="-1"></a><span class="fu">fread</span>(<span class="st">&quot;f.csv&quot;</span>,</span>
-<span id="cb422-3"><a href="sql-and-data.html#cb422-3" tabindex="-1"></a>      <span class="at">select       =</span> <span class="fu">c</span>(<span class="st">&quot;species&quot;</span>, <span class="st">&quot;habitat&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;count&quot;</span>),</span>
-<span id="cb422-4"><a href="sql-and-data.html#cb422-4" tabindex="-1"></a>      <span class="at">nrows        =</span> <span class="dv">10000</span>,</span>
-<span id="cb422-5"><a href="sql-and-data.html#cb422-5" tabindex="-1"></a>      <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb423"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb423-1"><a href="sql-and-data.html#cb423-1" tabindex="-1"></a><span class="co"># arrow</span></span>
-<span id="cb423-2"><a href="sql-and-data.html#cb423-2" tabindex="-1"></a><span class="fu">read_parquet</span>(<span class="st">&quot;f.parquet&quot;</span>)</span>
-<span id="cb423-3"><a href="sql-and-data.html#cb423-3" tabindex="-1"></a><span class="fu">read_parquet</span>(<span class="st">&quot;f.parquet&quot;</span>, <span class="at">col_select =</span> <span class="fu">c</span>(species, count))</span>
-<span id="cb423-4"><a href="sql-and-data.html#cb423-4" tabindex="-1"></a></span>
-<span id="cb423-5"><a href="sql-and-data.html#cb423-5" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;f.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb423-6"><a href="sql-and-data.html#cb423-6" tabindex="-1"></a>  <span class="fu">filter</span>(...) <span class="sc">|&gt;</span></span>
-<span id="cb423-7"><a href="sql-and-data.html#cb423-7" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
-<span id="cb423-8"><a href="sql-and-data.html#cb423-8" tabindex="-1"></a></span>
-<span id="cb423-9"><a href="sql-and-data.html#cb423-9" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;dir/&quot;</span>) <span class="sc">|&gt;</span>            <span class="co"># partitioned dataset</span></span>
-<span id="cb423-10"><a href="sql-and-data.html#cb423-10" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2020</span>) <span class="sc">|&gt;</span>          <span class="co"># partition pruning activates</span></span>
-<span id="cb423-11"><a href="sql-and-data.html#cb423-11" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
-<span id="cb423-12"><a href="sql-and-data.html#cb423-12" tabindex="-1"></a></span>
-<span id="cb423-13"><a href="sql-and-data.html#cb423-13" tabindex="-1"></a><span class="fu">write_parquet</span>(data, <span class="st">&quot;f.parquet&quot;</span>, <span class="at">compression =</span> <span class="st">&quot;zstd&quot;</span>)</span>
-<span id="cb423-14"><a href="sql-and-data.html#cb423-14" tabindex="-1"></a><span class="fu">write_dataset</span>(data, <span class="at">path =</span> <span class="st">&quot;dir/&quot;</span>, <span class="at">partitioning =</span> <span class="st">&quot;year&quot;</span>)</span></code></pre></div>
-<div class="sourceCode" id="cb424"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb424-1"><a href="sql-and-data.html#cb424-1" tabindex="-1"></a><span class="co"># duckdb</span></span>
-<span id="cb424-2"><a href="sql-and-data.html#cb424-2" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="fu">duckdb</span>())</span>
-<span id="cb424-3"><a href="sql-and-data.html#cb424-3" tabindex="-1"></a></span>
-<span id="cb424-4"><a href="sql-and-data.html#cb424-4" tabindex="-1"></a><span class="co"># Files: expose them as views, then query by name.</span></span>
-<span id="cb424-5"><a href="sql-and-data.html#cb424-5" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW t_csv     AS SELECT * FROM read_csv_auto(&#39;file.csv&#39;)&quot;</span>)</span>
-<span id="cb424-6"><a href="sql-and-data.html#cb424-6" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW t_parquet AS SELECT * FROM read_parquet(&#39;file.parquet&#39;)&quot;</span>)</span>
-<span id="cb424-7"><a href="sql-and-data.html#cb424-7" tabindex="-1"></a></span>
-<span id="cb424-8"><a href="sql-and-data.html#cb424-8" tabindex="-1"></a><span class="co"># In-memory data frames: register directly (no file involved).</span></span>
-<span id="cb424-9"><a href="sql-and-data.html#cb424-9" tabindex="-1"></a><span class="fu">duckdb_register</span>(con, <span class="st">&quot;t_mem&quot;</span>, in_memory_tibble)</span>
-<span id="cb424-10"><a href="sql-and-data.html#cb424-10" tabindex="-1"></a></span>
-<span id="cb424-11"><a href="sql-and-data.html#cb424-11" tabindex="-1"></a><span class="fu">tbl</span>(con, <span class="st">&quot;t_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb424-12"><a href="sql-and-data.html#cb424-12" tabindex="-1"></a>  <span class="fu">filter</span>(...) <span class="sc">|&gt;</span></span>
-<span id="cb424-13"><a href="sql-and-data.html#cb424-13" tabindex="-1"></a>  <span class="fu">show_query</span>() <span class="sc">|&gt;</span>    <span class="co"># inspect the SQL</span></span>
-<span id="cb424-14"><a href="sql-and-data.html#cb424-14" tabindex="-1"></a>  <span class="fu">collect</span>()          <span class="co"># execute -&gt; tibble</span></span>
-<span id="cb424-15"><a href="sql-and-data.html#cb424-15" tabindex="-1"></a></span>
-<span id="cb424-16"><a href="sql-and-data.html#cb424-16" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;SELECT ... FROM t_parquet WHERE ...&quot;</span>)</span>
-<span id="cb424-17"><a href="sql-and-data.html#cb424-17" tabindex="-1"></a></span>
-<span id="cb424-18"><a href="sql-and-data.html#cb424-18" tabindex="-1"></a><span class="co"># Partitioned Parquet directly in SQL</span></span>
-<span id="cb424-19"><a href="sql-and-data.html#cb424-19" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;</span></span>
-<span id="cb424-20"><a href="sql-and-data.html#cb424-20" tabindex="-1"></a><span class="st">  SELECT * FROM read_parquet(&#39;dir/*/*.parquet&#39;, hive_partitioning = true)</span></span>
-<span id="cb424-21"><a href="sql-and-data.html#cb424-21" tabindex="-1"></a><span class="st">  WHERE year = 2020</span></span>
-<span id="cb424-22"><a href="sql-and-data.html#cb424-22" tabindex="-1"></a><span class="st">&quot;</span>)</span>
-<span id="cb424-23"><a href="sql-and-data.html#cb424-23" tabindex="-1"></a></span>
-<span id="cb424-24"><a href="sql-and-data.html#cb424-24" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con, <span class="at">shutdown =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb422"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb422-1"><a href="sql-and-data.html#cb422-1" tabindex="-1"></a><span class="co"># readr</span></span>
+<span id="cb422-2"><a href="sql-and-data.html#cb422-2" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="st">&quot;f.csv&quot;</span>,</span>
+<span id="cb422-3"><a href="sql-and-data.html#cb422-3" tabindex="-1"></a>         <span class="at">col_types      =</span> <span class="fu">cols</span>(<span class="at">year =</span> <span class="fu">col_integer</span>(), <span class="at">count =</span> <span class="fu">col_integer</span>()),</span>
+<span id="cb422-4"><a href="sql-and-data.html#cb422-4" tabindex="-1"></a>         <span class="at">col_select     =</span> <span class="fu">c</span>(species, habitat, year, count),</span>
+<span id="cb422-5"><a href="sql-and-data.html#cb422-5" tabindex="-1"></a>         <span class="at">n_max          =</span> <span class="dv">10000</span>,</span>
+<span id="cb422-6"><a href="sql-and-data.html#cb422-6" tabindex="-1"></a>         <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb423"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb423-1"><a href="sql-and-data.html#cb423-1" tabindex="-1"></a><span class="co"># data.table::fread</span></span>
+<span id="cb423-2"><a href="sql-and-data.html#cb423-2" tabindex="-1"></a><span class="fu">fread</span>(<span class="st">&quot;f.csv&quot;</span>,</span>
+<span id="cb423-3"><a href="sql-and-data.html#cb423-3" tabindex="-1"></a>      <span class="at">select       =</span> <span class="fu">c</span>(<span class="st">&quot;species&quot;</span>, <span class="st">&quot;habitat&quot;</span>, <span class="st">&quot;year&quot;</span>, <span class="st">&quot;count&quot;</span>),</span>
+<span id="cb423-4"><a href="sql-and-data.html#cb423-4" tabindex="-1"></a>      <span class="at">nrows        =</span> <span class="dv">10000</span>,</span>
+<span id="cb423-5"><a href="sql-and-data.html#cb423-5" tabindex="-1"></a>      <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb424"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb424-1"><a href="sql-and-data.html#cb424-1" tabindex="-1"></a><span class="co"># arrow</span></span>
+<span id="cb424-2"><a href="sql-and-data.html#cb424-2" tabindex="-1"></a><span class="fu">read_parquet</span>(<span class="st">&quot;f.parquet&quot;</span>)</span>
+<span id="cb424-3"><a href="sql-and-data.html#cb424-3" tabindex="-1"></a><span class="fu">read_parquet</span>(<span class="st">&quot;f.parquet&quot;</span>, <span class="at">col_select =</span> <span class="fu">c</span>(species, count))</span>
+<span id="cb424-4"><a href="sql-and-data.html#cb424-4" tabindex="-1"></a></span>
+<span id="cb424-5"><a href="sql-and-data.html#cb424-5" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;f.parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb424-6"><a href="sql-and-data.html#cb424-6" tabindex="-1"></a>  <span class="fu">filter</span>(...) <span class="sc">|&gt;</span></span>
+<span id="cb424-7"><a href="sql-and-data.html#cb424-7" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
+<span id="cb424-8"><a href="sql-and-data.html#cb424-8" tabindex="-1"></a></span>
+<span id="cb424-9"><a href="sql-and-data.html#cb424-9" tabindex="-1"></a><span class="fu">open_dataset</span>(<span class="st">&quot;dir/&quot;</span>) <span class="sc">|&gt;</span>            <span class="co"># partitioned dataset</span></span>
+<span id="cb424-10"><a href="sql-and-data.html#cb424-10" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2020</span>) <span class="sc">|&gt;</span>          <span class="co"># partition pruning activates</span></span>
+<span id="cb424-11"><a href="sql-and-data.html#cb424-11" tabindex="-1"></a>  <span class="fu">collect</span>()</span>
+<span id="cb424-12"><a href="sql-and-data.html#cb424-12" tabindex="-1"></a></span>
+<span id="cb424-13"><a href="sql-and-data.html#cb424-13" tabindex="-1"></a><span class="fu">write_parquet</span>(data, <span class="st">&quot;f.parquet&quot;</span>, <span class="at">compression =</span> <span class="st">&quot;zstd&quot;</span>)</span>
+<span id="cb424-14"><a href="sql-and-data.html#cb424-14" tabindex="-1"></a><span class="fu">write_dataset</span>(data, <span class="at">path =</span> <span class="st">&quot;dir/&quot;</span>, <span class="at">partitioning =</span> <span class="st">&quot;year&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb425"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb425-1"><a href="sql-and-data.html#cb425-1" tabindex="-1"></a><span class="co"># duckdb</span></span>
+<span id="cb425-2"><a href="sql-and-data.html#cb425-2" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="fu">duckdb</span>())</span>
+<span id="cb425-3"><a href="sql-and-data.html#cb425-3" tabindex="-1"></a></span>
+<span id="cb425-4"><a href="sql-and-data.html#cb425-4" tabindex="-1"></a><span class="co"># Files: expose them as views, then query by name.</span></span>
+<span id="cb425-5"><a href="sql-and-data.html#cb425-5" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW t_csv     AS SELECT * FROM read_csv_auto(&#39;file.csv&#39;)&quot;</span>)</span>
+<span id="cb425-6"><a href="sql-and-data.html#cb425-6" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW t_parquet AS SELECT * FROM read_parquet(&#39;file.parquet&#39;)&quot;</span>)</span>
+<span id="cb425-7"><a href="sql-and-data.html#cb425-7" tabindex="-1"></a></span>
+<span id="cb425-8"><a href="sql-and-data.html#cb425-8" tabindex="-1"></a><span class="co"># In-memory data frames: register directly (no file involved).</span></span>
+<span id="cb425-9"><a href="sql-and-data.html#cb425-9" tabindex="-1"></a><span class="fu">duckdb_register</span>(con, <span class="st">&quot;t_mem&quot;</span>, in_memory_tibble)</span>
+<span id="cb425-10"><a href="sql-and-data.html#cb425-10" tabindex="-1"></a></span>
+<span id="cb425-11"><a href="sql-and-data.html#cb425-11" tabindex="-1"></a><span class="fu">tbl</span>(con, <span class="st">&quot;t_parquet&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb425-12"><a href="sql-and-data.html#cb425-12" tabindex="-1"></a>  <span class="fu">filter</span>(...) <span class="sc">|&gt;</span></span>
+<span id="cb425-13"><a href="sql-and-data.html#cb425-13" tabindex="-1"></a>  <span class="fu">show_query</span>() <span class="sc">|&gt;</span>    <span class="co"># inspect the SQL</span></span>
+<span id="cb425-14"><a href="sql-and-data.html#cb425-14" tabindex="-1"></a>  <span class="fu">collect</span>()          <span class="co"># execute -&gt; tibble</span></span>
+<span id="cb425-15"><a href="sql-and-data.html#cb425-15" tabindex="-1"></a></span>
+<span id="cb425-16"><a href="sql-and-data.html#cb425-16" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;SELECT ... FROM t_parquet WHERE ...&quot;</span>)</span>
+<span id="cb425-17"><a href="sql-and-data.html#cb425-17" tabindex="-1"></a></span>
+<span id="cb425-18"><a href="sql-and-data.html#cb425-18" tabindex="-1"></a><span class="co"># Partitioned Parquet directly in SQL</span></span>
+<span id="cb425-19"><a href="sql-and-data.html#cb425-19" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;</span></span>
+<span id="cb425-20"><a href="sql-and-data.html#cb425-20" tabindex="-1"></a><span class="st">  SELECT * FROM read_parquet(&#39;dir/*/*.parquet&#39;, hive_partitioning = true)</span></span>
+<span id="cb425-21"><a href="sql-and-data.html#cb425-21" tabindex="-1"></a><span class="st">  WHERE year = 2020</span></span>
+<span id="cb425-22"><a href="sql-and-data.html#cb425-22" tabindex="-1"></a><span class="st">&quot;</span>)</span>
+<span id="cb425-23"><a href="sql-and-data.html#cb425-23" tabindex="-1"></a></span>
+<span id="cb425-24"><a href="sql-and-data.html#cb425-24" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con, <span class="at">shutdown =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <div class="warning">
 <p>
 <code>duckdb_register()</code> registers an in-memory R data frame as
@@ -1009,28 +1009,28 @@ files, use a view over <code>read_csv_auto()</code> or
     by = group            (like group_by())</code></pre>
 <p>Special symbols: <code>.N</code> is <code>n()</code>, <code>.()</code> is shorthand for a list of columns, <code>:=</code>
 assigns in place, <code>uniqueN()</code> is <code>n_distinct()</code>, <code>shift()</code> is <code>lag()</code>/<code>lead()</code>.</p>
-<div class="sourceCode" id="cb426"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb426-1"><a href="sql-and-data.html#cb426-1" tabindex="-1"></a>surveys_dt <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb426-2"><a href="sql-and-data.html#cb426-2" tabindex="-1"></a></span>
-<span id="cb426-3"><a href="sql-and-data.html#cb426-3" tabindex="-1"></a><span class="co"># group and summarise</span></span>
-<span id="cb426-4"><a href="sql-and-data.html#cb426-4" tabindex="-1"></a>surveys_dt[, .(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">n =</span> .N), by <span class="ot">=</span> .(species, habitat)]</span>
-<span id="cb426-5"><a href="sql-and-data.html#cb426-5" tabindex="-1"></a></span>
-<span id="cb426-6"><a href="sql-and-data.html#cb426-6" tabindex="-1"></a><span class="co"># filter, then summarise, then sort</span></span>
-<span id="cb426-7"><a href="sql-and-data.html#cb426-7" tabindex="-1"></a>surveys_dt[year <span class="sc">&gt;=</span> <span class="dv">2015</span> <span class="sc">&amp;</span> count <span class="sc">&gt;</span> <span class="dv">0</span>,</span>
-<span id="cb426-8"><a href="sql-and-data.html#cb426-8" tabindex="-1"></a>           .(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">n_sites =</span> <span class="fu">uniqueN</span>(site_id)),</span>
-<span id="cb426-9"><a href="sql-and-data.html#cb426-9" tabindex="-1"></a>           by <span class="ot">=</span> .(species, habitat)][<span class="fu">order</span>(<span class="sc">-</span>total)]</span>
-<span id="cb426-10"><a href="sql-and-data.html#cb426-10" tabindex="-1"></a></span>
-<span id="cb426-11"><a href="sql-and-data.html#cb426-11" tabindex="-1"></a><span class="co"># lag within group (note: shift() respects existing row order)</span></span>
-<span id="cb426-12"><a href="sql-and-data.html#cb426-12" tabindex="-1"></a>surveys_dt[<span class="fu">order</span>(year),</span>
-<span id="cb426-13"><a href="sql-and-data.html#cb426-13" tabindex="-1"></a>           prev_count <span class="sc">:=</span> <span class="fu">shift</span>(count, <span class="at">type =</span> <span class="st">&quot;lag&quot;</span>),</span>
-<span id="cb426-14"><a href="sql-and-data.html#cb426-14" tabindex="-1"></a>           by <span class="ot">=</span> .(species, site_id)]</span></code></pre></div>
+<div class="sourceCode" id="cb427"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb427-1"><a href="sql-and-data.html#cb427-1" tabindex="-1"></a>surveys_dt <span class="ot">&lt;-</span> <span class="fu">fread</span>(<span class="st">&quot;bird_survey.csv&quot;</span>, <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb427-2"><a href="sql-and-data.html#cb427-2" tabindex="-1"></a></span>
+<span id="cb427-3"><a href="sql-and-data.html#cb427-3" tabindex="-1"></a><span class="co"># group and summarise</span></span>
+<span id="cb427-4"><a href="sql-and-data.html#cb427-4" tabindex="-1"></a>surveys_dt[, .(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">n =</span> .N), by <span class="ot">=</span> .(species, habitat)]</span>
+<span id="cb427-5"><a href="sql-and-data.html#cb427-5" tabindex="-1"></a></span>
+<span id="cb427-6"><a href="sql-and-data.html#cb427-6" tabindex="-1"></a><span class="co"># filter, then summarise, then sort</span></span>
+<span id="cb427-7"><a href="sql-and-data.html#cb427-7" tabindex="-1"></a>surveys_dt[year <span class="sc">&gt;=</span> <span class="dv">2015</span> <span class="sc">&amp;</span> count <span class="sc">&gt;</span> <span class="dv">0</span>,</span>
+<span id="cb427-8"><a href="sql-and-data.html#cb427-8" tabindex="-1"></a>           .(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">n_sites =</span> <span class="fu">uniqueN</span>(site_id)),</span>
+<span id="cb427-9"><a href="sql-and-data.html#cb427-9" tabindex="-1"></a>           by <span class="ot">=</span> .(species, habitat)][<span class="fu">order</span>(<span class="sc">-</span>total)]</span>
+<span id="cb427-10"><a href="sql-and-data.html#cb427-10" tabindex="-1"></a></span>
+<span id="cb427-11"><a href="sql-and-data.html#cb427-11" tabindex="-1"></a><span class="co"># lag within group (note: shift() respects existing row order)</span></span>
+<span id="cb427-12"><a href="sql-and-data.html#cb427-12" tabindex="-1"></a>surveys_dt[<span class="fu">order</span>(year),</span>
+<span id="cb427-13"><a href="sql-and-data.html#cb427-13" tabindex="-1"></a>           prev_count <span class="sc">:=</span> <span class="fu">shift</span>(count, <span class="at">type =</span> <span class="st">&quot;lag&quot;</span>),</span>
+<span id="cb427-14"><a href="sql-and-data.html#cb427-14" tabindex="-1"></a>           by <span class="ot">=</span> .(species, site_id)]</span></code></pre></div>
 <p>Verify any hand-written <code>data.table</code> against the <code>dtplyr</code> translation of the
 equivalent <code>dplyr</code>:</p>
-<div class="sourceCode" id="cb427"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb427-1"><a href="sql-and-data.html#cb427-1" tabindex="-1"></a><span class="fu">lazy_dt</span>(surveys_dt) <span class="sc">|&gt;</span></span>
-<span id="cb427-2"><a href="sql-and-data.html#cb427-2" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> <span class="dv">2015</span>, count <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
-<span id="cb427-3"><a href="sql-and-data.html#cb427-3" tabindex="-1"></a>  <span class="fu">group_by</span>(species, habitat) <span class="sc">|&gt;</span></span>
-<span id="cb427-4"><a href="sql-and-data.html#cb427-4" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">n_sites =</span> <span class="fu">n_distinct</span>(site_id), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb427-5"><a href="sql-and-data.html#cb427-5" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total)) <span class="sc">|&gt;</span></span>
-<span id="cb427-6"><a href="sql-and-data.html#cb427-6" tabindex="-1"></a>  <span class="fu">show_query</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb428"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb428-1"><a href="sql-and-data.html#cb428-1" tabindex="-1"></a><span class="fu">lazy_dt</span>(surveys_dt) <span class="sc">|&gt;</span></span>
+<span id="cb428-2"><a href="sql-and-data.html#cb428-2" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">&gt;=</span> <span class="dv">2015</span>, count <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
+<span id="cb428-3"><a href="sql-and-data.html#cb428-3" tabindex="-1"></a>  <span class="fu">group_by</span>(species, habitat) <span class="sc">|&gt;</span></span>
+<span id="cb428-4"><a href="sql-and-data.html#cb428-4" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(count), <span class="at">n_sites =</span> <span class="fu">n_distinct</span>(site_id), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb428-5"><a href="sql-and-data.html#cb428-5" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(total)) <span class="sc">|&gt;</span></span>
+<span id="cb428-6"><a href="sql-and-data.html#cb428-6" tabindex="-1"></a>  <span class="fu">show_query</span>()</span></code></pre></div>
 <hr />
 </div>
 <div id="appendix-d-sql-window-functions-and-ctes" class="section level2 unnumbered">
@@ -1038,43 +1038,43 @@ equivalent <code>dplyr</code>:</p>
 <p>A <strong>Common Table Expression (CTE)</strong> names an intermediate result so the query below
 can refer to it. It makes multi-step SQL readable, much as a named intermediate
 object does in an R pipeline.</p>
-<div class="sourceCode" id="cb428"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb428-1"><a href="sql-and-data.html#cb428-1" tabindex="-1"></a><span class="kw">WITH</span> step_one <span class="kw">AS</span> ( <span class="kw">SELECT</span> <span class="op">..</span>. ),</span>
-<span id="cb428-2"><a href="sql-and-data.html#cb428-2" tabindex="-1"></a>     step_two <span class="kw">AS</span> ( <span class="kw">SELECT</span> <span class="op">..</span>. <span class="kw">FROM</span> step_one )</span>
-<span id="cb428-3"><a href="sql-and-data.html#cb428-3" tabindex="-1"></a><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> step_two</span></code></pre></div>
+<div class="sourceCode" id="cb429"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb429-1"><a href="sql-and-data.html#cb429-1" tabindex="-1"></a><span class="kw">WITH</span> step_one <span class="kw">AS</span> ( <span class="kw">SELECT</span> <span class="op">..</span>. ),</span>
+<span id="cb429-2"><a href="sql-and-data.html#cb429-2" tabindex="-1"></a>     step_two <span class="kw">AS</span> ( <span class="kw">SELECT</span> <span class="op">..</span>. <span class="kw">FROM</span> step_one )</span>
+<span id="cb429-3"><a href="sql-and-data.html#cb429-3" tabindex="-1"></a><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> step_two</span></code></pre></div>
 <p><strong>Window functions</strong> compute across a set of related rows without collapsing them.
 They are essential for time series: lags, rankings, and running totals.</p>
-<div class="sourceCode" id="cb429"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb429-1"><a href="sql-and-data.html#cb429-1" tabindex="-1"></a><span class="kw">function</span>() <span class="kw">OVER</span> (</span>
-<span id="cb429-2"><a href="sql-and-data.html#cb429-2" tabindex="-1"></a>  <span class="kw">PARTITION</span> <span class="kw">BY</span> grouping_column    <span class="co">-- like group_by()</span></span>
-<span id="cb429-3"><a href="sql-and-data.html#cb429-3" tabindex="-1"></a>  <span class="kw">ORDER</span> <span class="kw">BY</span> ordering_column        <span class="co">-- sequence within the group</span></span>
-<span id="cb429-4"><a href="sql-and-data.html#cb429-4" tabindex="-1"></a>)</span></code></pre></div>
-<div class="sourceCode" id="cb430"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb430-1"><a href="sql-and-data.html#cb430-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="fu">duckdb</span>())</span>
-<span id="cb430-2"><a href="sql-and-data.html#cb430-2" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW surveys AS</span></span>
-<span id="cb430-3"><a href="sql-and-data.html#cb430-3" tabindex="-1"></a><span class="st">                SELECT * FROM read_parquet(&#39;bird_survey.parquet&#39;)&quot;</span>)</span>
-<span id="cb430-4"><a href="sql-and-data.html#cb430-4" tabindex="-1"></a></span>
-<span id="cb430-5"><a href="sql-and-data.html#cb430-5" tabindex="-1"></a><span class="co"># LAG / LEAD: previous and next value within a group</span></span>
-<span id="cb430-6"><a href="sql-and-data.html#cb430-6" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;</span></span>
-<span id="cb430-7"><a href="sql-and-data.html#cb430-7" tabindex="-1"></a><span class="st">  SELECT species, site_id, year, count,</span></span>
-<span id="cb430-8"><a href="sql-and-data.html#cb430-8" tabindex="-1"></a><span class="st">    LAG(count)  OVER (PARTITION BY species, site_id ORDER BY year) AS prev_count,</span></span>
-<span id="cb430-9"><a href="sql-and-data.html#cb430-9" tabindex="-1"></a><span class="st">    LEAD(count) OVER (PARTITION BY species, site_id ORDER BY year) AS next_count</span></span>
-<span id="cb430-10"><a href="sql-and-data.html#cb430-10" tabindex="-1"></a><span class="st">  FROM surveys</span></span>
-<span id="cb430-11"><a href="sql-and-data.html#cb430-11" tabindex="-1"></a><span class="st">  ORDER BY species, site_id, year</span></span>
-<span id="cb430-12"><a href="sql-and-data.html#cb430-12" tabindex="-1"></a><span class="st">&quot;</span>)</span>
-<span id="cb430-13"><a href="sql-and-data.html#cb430-13" tabindex="-1"></a></span>
-<span id="cb430-14"><a href="sql-and-data.html#cb430-14" tabindex="-1"></a><span class="co"># Top-n per group via a CTE plus RANK()</span></span>
-<span id="cb430-15"><a href="sql-and-data.html#cb430-15" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;</span></span>
-<span id="cb430-16"><a href="sql-and-data.html#cb430-16" tabindex="-1"></a><span class="st">  WITH annual_totals AS (</span></span>
-<span id="cb430-17"><a href="sql-and-data.html#cb430-17" tabindex="-1"></a><span class="st">    SELECT species, year, SUM(count) AS total</span></span>
-<span id="cb430-18"><a href="sql-and-data.html#cb430-18" tabindex="-1"></a><span class="st">    FROM surveys</span></span>
-<span id="cb430-19"><a href="sql-and-data.html#cb430-19" tabindex="-1"></a><span class="st">    GROUP BY species, year</span></span>
-<span id="cb430-20"><a href="sql-and-data.html#cb430-20" tabindex="-1"></a><span class="st">  )</span></span>
-<span id="cb430-21"><a href="sql-and-data.html#cb430-21" tabindex="-1"></a><span class="st">  SELECT species, year, total,</span></span>
-<span id="cb430-22"><a href="sql-and-data.html#cb430-22" tabindex="-1"></a><span class="st">    RANK() OVER (PARTITION BY year ORDER BY total DESC) AS rnk</span></span>
-<span id="cb430-23"><a href="sql-and-data.html#cb430-23" tabindex="-1"></a><span class="st">  FROM annual_totals</span></span>
-<span id="cb430-24"><a href="sql-and-data.html#cb430-24" tabindex="-1"></a><span class="st">  QUALIFY rnk &lt;= 3</span></span>
-<span id="cb430-25"><a href="sql-and-data.html#cb430-25" tabindex="-1"></a><span class="st">  ORDER BY year, rnk</span></span>
-<span id="cb430-26"><a href="sql-and-data.html#cb430-26" tabindex="-1"></a><span class="st">&quot;</span>)</span>
-<span id="cb430-27"><a href="sql-and-data.html#cb430-27" tabindex="-1"></a></span>
-<span id="cb430-28"><a href="sql-and-data.html#cb430-28" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con, <span class="at">shutdown =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb430"><pre class="sourceCode sql"><code class="sourceCode sql"><span id="cb430-1"><a href="sql-and-data.html#cb430-1" tabindex="-1"></a><span class="kw">function</span>() <span class="kw">OVER</span> (</span>
+<span id="cb430-2"><a href="sql-and-data.html#cb430-2" tabindex="-1"></a>  <span class="kw">PARTITION</span> <span class="kw">BY</span> grouping_column    <span class="co">-- like group_by()</span></span>
+<span id="cb430-3"><a href="sql-and-data.html#cb430-3" tabindex="-1"></a>  <span class="kw">ORDER</span> <span class="kw">BY</span> ordering_column        <span class="co">-- sequence within the group</span></span>
+<span id="cb430-4"><a href="sql-and-data.html#cb430-4" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb431"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb431-1"><a href="sql-and-data.html#cb431-1" tabindex="-1"></a>con <span class="ot">&lt;-</span> <span class="fu">dbConnect</span>(<span class="fu">duckdb</span>())</span>
+<span id="cb431-2"><a href="sql-and-data.html#cb431-2" tabindex="-1"></a><span class="fu">dbExecute</span>(con, <span class="st">&quot;CREATE VIEW surveys AS</span></span>
+<span id="cb431-3"><a href="sql-and-data.html#cb431-3" tabindex="-1"></a><span class="st">                SELECT * FROM read_parquet(&#39;bird_survey.parquet&#39;)&quot;</span>)</span>
+<span id="cb431-4"><a href="sql-and-data.html#cb431-4" tabindex="-1"></a></span>
+<span id="cb431-5"><a href="sql-and-data.html#cb431-5" tabindex="-1"></a><span class="co"># LAG / LEAD: previous and next value within a group</span></span>
+<span id="cb431-6"><a href="sql-and-data.html#cb431-6" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;</span></span>
+<span id="cb431-7"><a href="sql-and-data.html#cb431-7" tabindex="-1"></a><span class="st">  SELECT species, site_id, year, count,</span></span>
+<span id="cb431-8"><a href="sql-and-data.html#cb431-8" tabindex="-1"></a><span class="st">    LAG(count)  OVER (PARTITION BY species, site_id ORDER BY year) AS prev_count,</span></span>
+<span id="cb431-9"><a href="sql-and-data.html#cb431-9" tabindex="-1"></a><span class="st">    LEAD(count) OVER (PARTITION BY species, site_id ORDER BY year) AS next_count</span></span>
+<span id="cb431-10"><a href="sql-and-data.html#cb431-10" tabindex="-1"></a><span class="st">  FROM surveys</span></span>
+<span id="cb431-11"><a href="sql-and-data.html#cb431-11" tabindex="-1"></a><span class="st">  ORDER BY species, site_id, year</span></span>
+<span id="cb431-12"><a href="sql-and-data.html#cb431-12" tabindex="-1"></a><span class="st">&quot;</span>)</span>
+<span id="cb431-13"><a href="sql-and-data.html#cb431-13" tabindex="-1"></a></span>
+<span id="cb431-14"><a href="sql-and-data.html#cb431-14" tabindex="-1"></a><span class="co"># Top-n per group via a CTE plus RANK()</span></span>
+<span id="cb431-15"><a href="sql-and-data.html#cb431-15" tabindex="-1"></a><span class="fu">dbGetQuery</span>(con, <span class="st">&quot;</span></span>
+<span id="cb431-16"><a href="sql-and-data.html#cb431-16" tabindex="-1"></a><span class="st">  WITH annual_totals AS (</span></span>
+<span id="cb431-17"><a href="sql-and-data.html#cb431-17" tabindex="-1"></a><span class="st">    SELECT species, year, SUM(count) AS total</span></span>
+<span id="cb431-18"><a href="sql-and-data.html#cb431-18" tabindex="-1"></a><span class="st">    FROM surveys</span></span>
+<span id="cb431-19"><a href="sql-and-data.html#cb431-19" tabindex="-1"></a><span class="st">    GROUP BY species, year</span></span>
+<span id="cb431-20"><a href="sql-and-data.html#cb431-20" tabindex="-1"></a><span class="st">  )</span></span>
+<span id="cb431-21"><a href="sql-and-data.html#cb431-21" tabindex="-1"></a><span class="st">  SELECT species, year, total,</span></span>
+<span id="cb431-22"><a href="sql-and-data.html#cb431-22" tabindex="-1"></a><span class="st">    RANK() OVER (PARTITION BY year ORDER BY total DESC) AS rnk</span></span>
+<span id="cb431-23"><a href="sql-and-data.html#cb431-23" tabindex="-1"></a><span class="st">  FROM annual_totals</span></span>
+<span id="cb431-24"><a href="sql-and-data.html#cb431-24" tabindex="-1"></a><span class="st">  QUALIFY rnk &lt;= 3</span></span>
+<span id="cb431-25"><a href="sql-and-data.html#cb431-25" tabindex="-1"></a><span class="st">  ORDER BY year, rnk</span></span>
+<span id="cb431-26"><a href="sql-and-data.html#cb431-26" tabindex="-1"></a><span class="st">&quot;</span>)</span>
+<span id="cb431-27"><a href="sql-and-data.html#cb431-27" tabindex="-1"></a></span>
+<span id="cb431-28"><a href="sql-and-data.html#cb431-28" tabindex="-1"></a><span class="fu">dbDisconnect</span>(con, <span class="at">shutdown =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p><code>RANK()</code> gives ties the same rank and then skips positions (1, 2, 2, 4);
 <code>ROW_NUMBER()</code> gives unique positions regardless of ties (1, 2, 3, 4). The <code>dplyr</code>
 equivalent of <code>RANK()</code> is <code>min_rank()</code>, not <code>rank()</code>: base <code>rank()</code> averages ties
