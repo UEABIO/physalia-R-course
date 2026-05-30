@@ -1,0 +1,156 @@
+# Scripts
+
+```{r, include = FALSE}
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+penguins_raw <- read_csv(here("files", "penguins_raw.csv"))
+```
+
+To ensure clarity and understanding, begin your script with a brief description of its purpose. This description will serve as a reference point for anyone who accesses your script. Even if you make updates later on, having this initial description will help maintain clarity and context, preventing confusion when revisiting the code in the future.
+
+## Organised scripts
+
+Load all necessary packages at the beginning of your script.
+It's common to start with basic packages and then add more specialized libraries as your analysis progresses. However, it's crucial to load all required packages at the beginning of your script. This practice ensures that when you or someone else needs to run the script again, all necessary libraries are readily available, preventing issues in the middle of execution due to unrecognized functions. Small coding details matter.
+
+Name your code sections and use them for quick navigation.
+As your code grows, it may become extensive and challenging to manage. To keep it organized, divide your code into sections, each with a specific name, which can be folded or unfolded for easy navigation. You can also use the 'drop-up' menu at the bottom of the script screen to move between sections.
+
+To create a new code section, insert "####" or "----" at the end of a comment that marks the beginning of a new section.
+
+```{r, eval=TRUE, echo=FALSE, out.width="80%"}
+knitr::include_graphics("images/organised script.png")
+```
+
+I understand, we all have good intentions, but we often neglect the task of thoroughly commenting our code. I've made that promise to myself many times, but even now, I struggle to do it consistently. Why, you ask? Here are a few reasons:
+
+1. I often tell myself that the analysis itself is more crucial.
+2. I believe I understand my own code.
+3. I usually don't have immediate collaborators who need to use my code.
+
+However, these arguments are somewhat shortsighted. The reality is that:
+
+- The most valuable and relevant analysis loses its value if neither you nor others can understand it. (More on this below)
+- While you may know what you're doing at the moment, it won't feel the same way in a month or two when you've moved on to another project, and someone innocently asks you about how you defined a critical variable. Our memory is unreliable. It's important not to rely on it for every piece of code you produce.
+- Even if you don't have active collaborators at the time of your analysis, someone will eventually need to use your code. You won't be in the same position forever. You're creating a legacy that, someday, someone will rely on, no matter how distant that day may seem right now.
+
+So, what makes code good and reproducible?
+
+1. Thoughtful and clear comments.
+2. Code that is logical and efficient.
+3. Code that has been appropriately timed and tested.
+
+## Use style guides
+
+Consider using a style guide, such as the [tidyverse style guide](https://style.tidyverse.org/), is a beneficial practice for several reasons:
+
+Consistency: A style guide enforces consistent code formatting and naming conventions throughout your project. This consistency improves code readability and makes it easier for you and others to understand the code. When you have multiple people working on a project, a shared style guide ensures that everyone's code looks similar, reducing confusion and errors.
+
+Readability: Following a style guide leads to more readable code. Code is often read more frequently than it is written, so making it easy to understand is crucial. The tidyverse style guide, for example, emphasizes clear and self-explanatory code, improving comprehension for both current and future users. Good coding style is like correct punctuation: you can manage without it, butitsuremakesthingseasiertoread
+
+Collaboration: When working with a team, adhering to a common style guide makes it easier to collaborate. It reduces the friction associated with different team members using varying coding styles and preferences. This streamlines code reviews and simplifies the process of maintaining and extending the codebase.
+
+Error Reduction: A style guide can help identify and prevent common coding errors. It promotes best practices and can include guidelines for avoiding pitfalls and potential issues. This reduces the likelihood of bugs and enhances the overall quality of the code.
+
+## Separate your scripts
+
+Separating your analysis into distinct scripts for different steps is a sound practice in data analysis. Each script can focus on a specific task or step, making your work more organized and understandable.
+
+You can use the `source` function in R to run previous dependencies, ensuring that you can reproduce your work easily. Additionally, for computationally intensive processes or when dealing with large datasets, you can save and load intermediate results in RDS format. This approach not only conserves memory but also saves time when re-running your analysis.
+
+```
+project_folder/
+│
+├── data/
+│   ├── data.csv
+│   ├── processed_data.rds
+│
+├── scripts/
+│   ├── data_preparation.R
+│   ├── data_analysis.R
+│   ├── visualization.R
+│   ├── helper_functions.R
+│
+├── output/
+│   ├── result.csv
+│
+├── README.md
+│
+├── project.Rproj
+
+```
+
+> Try making a scraps.R file, for all the bits of code that you think you might need, but are messy and disorganised!
+
+## Activity
+
+Using the [Tidyverse style guide](https://style.tidyverse.org/index.html) for help, how could you improve the layout and readability of this script?
+
+```{r, eval = F}
+
+# Install and load necessary packages
+library(dplyr)
+library(ggplot2)
+library(palmerpenguins)
+
+penguins_clean <- janitor::clean_names(penguins_raw)
+
+
+## Data is selected by species, island, culmen length and depth and flipper, then NAs are dropped and a new column is made of length/depth and the mean is summaries for flipper length and length/depth ratio
+penguins_clean |> select(species, island, culmen_length_mm, culmen_depth_mm, flipper_length_mm)  |> drop_na(culmen_length_mm, culmen_depth_mm, flipper_length_mm) |> mutate(culmen_ratio = culmen_length_mm / culmen_depth_mm) |> group_by(species, island) |> summarise(mean_flipper_length = mean(flipper_length_mm), mean_culmen_ratio = mean(culmen_ratio)) |> arrange(species, island) -> penguins_culmen_ratio
+
+## View summary table
+print(penguins_culmen_ratio)
+
+
+### Data visualization 
+penguins_clean |>
+  ggplot(aes(x = culmen_length_mm, y = culmen_depth_mm, color = species)) +
+          geom_point() +
+                labs(x = "Culmen Length (mm)", y = "Culmen Depth (mm)") +
+                      theme_minimal()
+
+```
+
+
+`r hide("Check your script")`
+
+```{r, eval = F, echo = T, fig.height=6, fig.width=6, out.width = "60%"}
+# Packages ----
+# Install and load necessary packages
+library(tidyverse)
+library(janitor)
+# Loads the penguins dataset
+library(palmerpenguins)
+
+
+# Clean the data ----
+penguins_raw <- janitor::clean_names(penguins_raw)
+
+# Analysis----
+# Data exploration and manipulation to make culmen ratio
+penguins_culmen_ratio <- penguins_raw |> 
+  select(species, island, culmen_length_mm, culmen_depth_mm, flipper_length_mm)  |> 
+  drop_na(culmen_length_mm, culmen_depth_mm, flipper_length_mm) |> 
+  mutate(culmen_ratio = culmen_length_mm / culmen_depth_mm) |>
+  group_by(species, island) |>
+  summarise(mean_flipper_length = mean(flipper_length_mm), 
+            mean_culmen_ratio = mean(culmen_ratio)) |>
+  arrange(species, island)
+
+# View summary table
+print(penguins_culmen_ratio)
+
+# Plots----
+# Data visualization using ggplot2
+penguins_clean |>
+  ggplot(aes(x = culmen_length_mm, y = culmen_depth_mm, color = species)) +
+  geom_point() +
+  labs(x = "Culmen Length (mm)", y = "Culmen Depth (mm)") +
+  theme_minimal()
+```
+
+`r unhide()`
+

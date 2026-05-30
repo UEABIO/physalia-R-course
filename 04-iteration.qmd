@@ -1,0 +1,376 @@
+# Day 1 Block 4: Iterations with `map` {.unnumbered}
+
+
+```{r}
+#| include: false
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+```
+
+
+*Roughly 55 minutes. First the `map` toolkit, then the same tools applied to the
+running example so that the three function calls from Block 3 become one pipeline.*
+
+The refactored script still has three explicit calls, one per species. A fourth
+species means a fourth call. Iteration removes the per-group calls entirely: the
+function is applied to each group automatically.
+
+## Part A: the `map` toolkit
+
+`purrr::map(.x, .f)` applies the function `.f` to each element of `.x` and returns
+a list. It is the tidyverse counterpart of base R's `lapply()`.
+
+```{r}
+#| eval: false
+df_list <- list(a = 1:10, b = 11:20, c = 21:30)
+
+purrr::map(df_list, mean)   # a list of three means
+```
+
+`map()` always returns a list, which is maximally general but often more than you
+want. The typed variants return an atomic vector and *fail* if the result is not
+of that type, which is a feature: it catches mistakes early.
+
+| Function | Returns |
+|---|---|
+| `map()` | a list |
+| `map_lgl()` | a logical vector |
+| `map_int()` | an integer vector |
+| `map_dbl()` | a double vector |
+| `map_chr()` | a character vector |
+
+```{r}
+#| eval: false
+purrr::map_dbl(df_list, mean)   # a named numeric vector, not a list
+```
+
+:::{.callout-note}
+
+This type-safety is the reason to prefer `map_*()` over base `sapply()`.
+`sapply()` guesses the output type and can return a vector, a matrix or a list
+depending on the input, so a function that worked on Tuesday can silently return
+a different shape on Wednesday. `map_dbl()` either returns a double vector or
+errors. Predictability beats convenience.
+
+:::
+
+### Anonymous functions: `\(x)`, and the `~` you will still see
+
+When the callback is not already a named function, write it inline. The modern
+form is the R 4.1 shorthand `\(x)`:
+
+```{r}
+#| eval: false
+purrr::map_dbl(df_list, \(x) sum(x) / length(x))
+```
+
+You will frequently meet the older purrr formula-lambda, `~ sum(.x) / length(.x)`,
+where `.x` (or `.`) stands for the current element. It still works, but `\(x)` is
+clearer because the argument has a real name, and it is ordinary R rather than
+purrr-specific syntax. We use `\(x)` throughout.
+
+Extra arguments can be passed either inside the lambda or as trailing arguments to
+`map()`:
+
+```{r}
+#| eval: false
+purrr::map_dbl(df_list, \(x) mean(x, na.rm = TRUE))   # inside the lambda
+purrr::map_dbl(df_list, mean, na.rm = TRUE)           # forwarded by map()
+```
+
+### Returning a data frame: `map() |> list_rbind()`
+
+To stack per-element tibbles into one tibble, run `map()` and then `list_rbind()`.
+
+```{r}
+#| eval: false
+files <- list.files(here::here("data", "many_files"),
+                    pattern = "\\.csv$", full.names = TRUE)
+
+all_data <- files |>
+  purrr::map(\(f) readr::read_csv(f, show_col_types = FALSE)) |>
+  purrr::list_rbind()
+```
+
+:::{.callout-warning}
+
+You will see `map_dfr()` and `map_dfc()` in older code and tutorials. These are
+**superseded**: the current idiom is `map() |> list_rbind()` for row-binding and
+`map() |> list_cbind()` for column-binding. They are clearer about the two
+separate steps (apply, then combine) and are the forms the tidyverse now
+recommends.
+
+:::
+
+### The base R family, in one paragraph
+
+You will encounter `lapply()`, `sapply()`, `vapply()` and `apply()` in existing
+code, and parallel iteration via `foreach` or `furrr`. The translation is direct:
+`lapply(x, f)` is `map(x, f)`; `sapply(x, f)` is one of the typed `map_*()`
+variants depending on the return type. Parallel back-ends such as `furrr::future_map()`
+mirror `map()`'s interface for when a computation is genuinely slow and
+embarrassingly parallel. We mention these so you recognise them; for new code,
+`purrr` is the consistent default and parallelism is a later optimisation, applied
+only after profiling shows it is needed.
+
+### `map2` and `pmap`: iterating over more than one input
+
+`map2(.x, .y, .f)` walks two collections in parallel, passing one element from
+each to the function. `pmap(.l, .f)` generalises to any number of inputs, taking a
+list (or a data frame, treating each column as an input).
+
+```{r}
+#| eval: false
+sizes  <- c(2, 3, 4)
+widths <- c(5, 6, 7)
+
+purrr::map2_dbl(sizes, widths, \(s, w) s * w)   # 10 18 28
+```
+
+### `walk`: iteration for side effects
+
+When you iterate to *do* something (write files, print plots) rather than to
+*return* a value, use `walk()`/`walk2()`. They run the function for its side
+effect and return their input invisibly, so the console is not flooded with output.
+
+```{r}
+#| eval: false
+# Write each split of the data to its own file, silently
+peng_split <- penguins_clean |> 
+  dplyr::group_by(species) |> 
+  dplyr::group_split()
+
+names(peng_split) <- c("Adelie", "Chinstrap", "Gentoo")
+
+
+purrr::walk2(
+  peng_split, names(peng_split),
+  \(data, nm) readr::write_csv(data, here::here("data", paste0(nm, ".csv")))
+)
+
+```
+
+## Part B: iteration on the running example 
+
+Recall the list-column from Block 2: `group_by(species) |> nest()` puts each
+species' tibble into one cell of a `data` column.
+
+```{r}
+#| eval: false
+
+species_data <- penguins_clean |>
+  dplyr::group_by(species) |>
+  tidyr::nest()
+
+species_data
+# # A tibble: 3 x 2
+#   species   data
+#   <fct>     <list>
+# 1 Adelie    <tibble [146 x 7]>
+# 2 Gentoo    <tibble [119 x 7]>
+# 3 Chinstrap <tibble [68 x 7]>
+
+```
+
+:::{.callout-note}
+
+We use the classic `group_by() |> nest()` rather than the newer
+`nest(.by = species)`. Both give the same result; the explicit grouping step is
+clearer and backward-compatible.
+
+:::
+
+### Applying a function to each cell
+
+Used inside `mutate()`, `map()` applies a function to each cell of a list-column
+and stores the result as a new list-column:
+
+```{r}
+#| eval: false
+species_models <- species_data |>
+  dplyr::mutate(
+    model = purrr::map(data, \(d) lm(body_mass_g ~ flipper_length_mm, data = d)),
+    coefs = purrr::map(model, \(m) broom::tidy(m, conf.int = TRUE)),
+    n_obs = purrr::map_int(data, nrow)
+  )
+
+species_models
+# # A tibble: 3 x 5
+#   species   data              model  coefs            n_obs
+#   <fct>     <list>            <list> <list>           <int>
+# 1 Adelie    <tibble [146x7]>  <lm>   <tibble [2x7]>     146
+# 2 Gentoo    <tibble [119x7]>  <lm>   <tibble [2x7]>     119
+# 3 Chinstrap <tibble [68x7]>   <lm>   <tibble [2x7]>      68
+```
+
+Three things to notice. The `model` cell holds a fitted `lm` per species; the
+`coefs` cell holds a tidied tibble per species; and `n_obs` is an ordinary integer
+column, not a list-column, because `map_int()` returns an atomic vector. The typed
+variants slot straight into a tibble.
+
+### Unnesting back to a flat table
+
+For a manuscript coefficient table, expand the `coefs` list-column back into rows.
+`unnest()` is the dual of `nest()`: each cell's tibble becomes rows, with the
+surrounding columns repeated.
+
+```{r}
+#| eval: false
+coefficient_table <- species_models |>
+  dplyr::ungroup() |>
+  dplyr::select(species, coefs) |>
+  tidyr::unnest(coefs)
+```
+
+### A real refactor: decompose the function
+
+There is a tension. `fit_species_model()` filters *and* fits, but `nest()` has
+already done the filtering. Calling it inside the iteration would filter twice.
+That tension is information: the function is doing two jobs. Split them.
+
+```{r}
+#| eval: false
+# R/functions/modelling_functions.R -- revised
+
+#' Fit body mass ~ flipper length on pre-filtered data
+#' @param data A data frame, assumed to be one species' worth.
+#' @return A fitted lm object.
+fit_model <- function(data) {
+  lm(body_mass_g ~ flipper_length_mm, data = data)
+}
+
+#' Tidy a fitted lm with confidence intervals
+#' @param model A fitted lm object.
+#' @param conf_level Confidence level. Default 0.95.
+#' @return A tibble of tidied coefficients.
+tidy_model <- function(model, conf_level = 0.95) {
+  broom::tidy(model, conf.int = TRUE, conf.level = conf_level)
+}
+
+#' Fit for one species (wrapper preserving the old interface)
+#' @param data A data frame with a `species` column.
+#' @param sp Character of length 1. Species to filter to.
+#' @param conf_level Confidence level. Default 0.95.
+fit_species_model <- function(data, sp, conf_level = 0.95) {
+  if (!sp %in% unique(data$species)) {
+    stop("Species '", sp, "' is not in the data. ",
+         "Available species: ",
+         paste(sort(unique(data$species)), collapse = ", "))
+  }
+  data |>
+    dplyr::filter(species == sp) |>
+    fit_model() |>
+    tidy_model(conf_level = conf_level) |>
+    dplyr::mutate(species = sp, .before = 1)
+}
+```
+
+`fit_model()` and `tidy_model()` now exist independently and compose. The old
+public interface survives as a wrapper, so existing callers and the tests from
+Block 3 still pass with no edits. That is what a good refactor looks like:
+behaviour preserved, internals improved, tests green.
+
+### The iteration, rewritten
+
+With single-responsibility functions, the iteration uses them directly and reads
+cleanly:
+
+```{r}
+#| eval: false
+species_models <- penguins_clean |>
+  dplyr::group_by(species) |>
+  tidyr::nest() |>
+  dplyr::mutate(
+    model = purrr::map(data, fit_model),
+    coefs = purrr::map(model, tidy_model)
+  )
+
+coefficient_table <- species_models |>
+  dplyr::ungroup() |>
+  dplyr::select(species, coefs) |>
+  tidyr::unnest(coefs)
+```
+
+This is the destination. The modelling logic that was three copy-pasted blocks in
+Block 1, then three function calls in Block 3, is now one pipeline that applies the
+same function to every group.
+
+### Activity: iterate over a different grouping
+
+:::{.callout-important}
+## Task
+
+The penguins data has an `island` column ("Biscoe", "Dream", "Torgersen"). Fit a
+separate `body_mass_g ~ flipper_length_mm` model for each island and produce a
+tidied coefficient table, using the nest pattern.
+
+:::
+
+:::{.callout-tip}
+## Solution
+
+```{r, eval = FALSE}
+island_coefs <- penguins_clean |>
+  dplyr::group_by(island) |>
+  tidyr::nest() |>
+  dplyr::mutate(
+    model = purrr::map(data, fit_model),
+    coefs = purrr::map(model, tidy_model)
+  ) |>
+  dplyr::ungroup() |>
+  dplyr::select(island, coefs) |>
+  tidyr::unnest(coefs)
+```
+
+`fit_model()` and `tidy_model()` are reused unchanged. They never knew they would
+iterate over species; they work for islands too, because each has a single
+responsibility and no hidden assumption about the grouping.
+
+:::
+
+### Extension exercise: plots in a list-column
+
+:::{.callout-important}
+## Task
+
+A list-column can hold plots as readily as models. Using the nested data, add a
+`plot` column made with `map()` that holds one scatter plot per species, then draw
+them together with `patchwork::wrap_plots()`. Hint: build each plot inside
+`\(d) ggplot(d, ...)`.
+
+:::
+
+:::{.callout-tip}
+## Solution
+
+```{r, eval = FALSE}
+species_plots <- penguins_clean |>
+  dplyr::group_by(species) |>
+  tidyr::nest() |>
+  dplyr::mutate(
+    plot = purrr::map(data, \(d)
+      ggplot2::ggplot(d, ggplot2::aes(flipper_length_mm, body_mass_g)) +
+        ggplot2::geom_point(alpha = 0.6) +
+        ggplot2::geom_smooth(method = "lm") +
+        ggplot2::theme_minimal())
+  )
+
+patchwork::wrap_plots(species_plots$plot)
+```
+
+The same `nest |> mutate(map(...))` pattern that fits models also builds figures.
+Once you see a cell as "any R object", models, plots and tables are all just
+list-columns.
+
+:::
+
+:::{.callout-note}
+
+**Where this leaves us.** Copy-paste is gone. One pipeline fits a model per group,
+whatever the group is. But `fit_model()` still hardcodes the response and
+predictor: it only ever fits body mass on flipper length. Block 5 removes that last
+limitation.
+
+:::

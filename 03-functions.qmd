@@ -1,0 +1,699 @@
+# Day 1 Block 3: Writing functions {.unnumbered}
+
+
+```{r}
+#| include: false
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+```
+
+
+*Roughly 75 minutes. The first 25 teach what a function is; the rest apply it to
+the running example, turning a messy script into organised, tested code. The
+testing coda at the end is the part to shorten if time is short.*
+
+## Part A: the anatomy of a function
+
+R lets you define your own functions with `function()`. The shape is always the
+same: a name, some arguments, a body, and a returned value.
+
+```{r}
+#| eval: false
+my_function <- function(arg1, arg2) {
+  # what the function does, in a comment
+  result <- arg1 + arg2
+  return(result)
+}
+```
+
+- Give the function a name and assign `function(...)` to it.
+- Name the inputs in the parentheses.
+- Put the work inside the braces.
+- Use `return()` to say what comes out (R also returns the last expression
+  implicitly, but an explicit `return()` is clearer while learning).
+
+A minimal example:
+
+```{r}
+#| eval: false
+add_one <- function(x) {
+  return(x + 1)
+}
+
+add_one(10)   # 11
+add_one(c(1, 5, 10))   # 2 6 11 -- it vectorises, because R does
+```
+
+:::{.callout-note}
+
+R 4.1 added a shorthand for short functions: `\(x) x + 1` is the same as
+`function(x) x + 1`, with no braces and no `return()`. We use `\(x)` throughout
+the day for one-line callbacks, and the full `function()` form for anything longer.
+
+:::
+
+### A note on environments
+
+When a function runs, it makes its own environment. Arguments and any variables
+created inside live there and vanish when the function returns. The function can
+*see* the global environment, but assignments inside it do not leak out:
+
+```{r}
+#| eval: false
+x <- 1
+
+fn <- function(y) {
+  x <- x * 2   # a local copy; the global x is untouched
+  x + y
+}
+
+fn(2)   # 4
+x       # still 1
+```
+
+This isolation is a feature: a function's behaviour depends only on its arguments,
+not on whatever happens to be lying around in your session. That is precisely why
+functions are more reproducible than loose script lines.
+
+### Arguments and defaults
+
+An argument can have a default, used when the caller does not supply one:
+
+```{r}
+#| eval: false
+greet <- function(name = "you") {
+  paste("Good morning,", name)
+}
+
+greet()         # "Good morning, you"
+greet("Phil")    # "Good morning, Sam"
+```
+
+:::{.callout-important}
+## Task
+
+Write a function `fahr_to_celsius()` that converts Fahrenheit to Celsius. The
+conversion is `(fahr - 32) * 5 / 9`.
+
+:::
+
+:::{.callout-tip}
+## Solution
+
+```{r, eval = FALSE}
+fahr_to_celsius <- function(fahr) {
+  (fahr - 32) * 5 / 9
+}
+```
+
+:::
+
+### Documenting a function
+
+A function with no documentation is a puzzle for your future self. The
+lightweight habit is a comment block stating what the function does, what each
+argument is, and what it returns. The fuller habit, which we adopt for functions
+that live in `R/functions/`, is **roxygen2** format: documentation lines beginning
+`#'`, placed directly above the function.
+
+```{r}
+#| eval: false
+#' Convert Fahrenheit to Celsius
+#'
+#'  # a roxygen2 comment line (note the apostrophe)
+#' @param fahr Numeric. Temperature in degrees Fahrenheit.   # documents one argument
+#' @return Numeric. Temperature in degrees Celsius.          # documents what comes back
+#' @examples                                                 # starts an examples block
+#' fahr_to_celsius(32)   # 0
+fahr_to_celsius <- function(fahr) {
+  (fahr - 32) * 5 / 9
+}
+```
+
+You do not need to build a package or run `roxygenise()` to benefit from this. The
+block is readable as plain text, and writing it forces you to state the function's
+contract: what it expects and what it promises. 
+
+### Flow control, and a vectorisation trap
+
+Functions often need to choose between values. The base tools are `if`/`else` for
+a single condition and `ifelse()` (or the tidyverse `dplyr::if_else()`) for a
+vectorised one.
+
+```{r}
+#| eval: false
+a <- 4
+
+b <- 5
+
+if (a > b) 20 else 10      # 10 -- a single TRUE/FALSE only
+```
+
+The trap: `if` evaluates only the first element of a vector and, in current R,
+errors if given a longer one. For element-wise choices use `ifelse()`:
+
+```{r}
+#| eval: false
+if_else(c(1, 2, 4) > c(3, 1, 0), "yes", "no")   # "no" "yes" "yes"
+```
+
+For several conditions, `dplyr::case_when()` is far clearer than nested `ifelse()`:
+
+```{r}
+#| eval: false
+temperature <- c(10, 25, 5, 30, 15)
+
+dplyr::case_when(
+  temperature <  10                      ~ "Cold",
+  temperature >= 10 & temperature < 25   ~ "Moderate",
+  temperature >= 25                      ~ "Hot",
+  .default = "Unknown"
+)
+```
+
+A worked conditional function: report a p-value in the conventional style, "p <
+0.001" below the threshold and "p = 0.XXX" otherwise. The naive version uses `if`
+and breaks on a vector; the fix is the vectorised `if_else()`.
+
+```{r}
+#| eval: false
+#' Format a p-value for reporting
+#'
+#' @param p Numeric. P-value(s) to format.
+#' @param digits Integer. Decimal places. Default 3.
+#' @return Character. "p < 0.001" or "p = X.XXX".
+report_p <- function(p, digits = 3) {
+  dplyr::if_else(
+    p < 0.001,
+    "p < 0.001",
+    paste("p =", round(p, digits))
+  )
+}
+
+report_p(c(0.0005, 0.045))   # "p < 0.001"  "p = 0.045"
+```
+
+:::{.callout-note}
+
+**Rule of thumb.** If you have copied a line and changed one small thing in it
+more than about three times, write a function instead. Fewer lines, less
+repetition, and one place to make a change. And keep function definitions in a
+separate script (`R/functions/`), sourced into the analysis. This sets up the
+refactor we do next.
+
+:::
+
+## Part B: the starting point
+
+We now meet the analysis the rest of the day improves. Set up the data file once:
+
+```{r}
+#| eval: false
+if (!dir.exists(here::here("data"))) dir.create(here::here("data"))
+
+readr::write_csv(
+  palmerpenguins::penguins,
+  here::here("data", "penguins.csv")
+)
+```
+
+The goal, restated: fit `body_mass_g ~ flipper_length_mm` for each species, with a
+coefficient table and a multi-panel figure. Here is how that analysis is often
+written, by copy-paste:
+
+```{r}
+#| eval: false
+# analysis.R -- pre-refactor
+
+library(tidyverse)
+library(broom)
+library(here)
+
+penguins_raw <- readr::read_csv(here("data", "penguins.csv"),
+                                show_col_types = FALSE)
+
+penguins_clean <- penguins_raw |>
+  tidyr::drop_na(body_mass_g, flipper_length_mm, species)
+
+# Adelie ----
+adelie <- penguins_clean |> dplyr::filter(species == "Adelie")
+mod_adelie <- lm(body_mass_g ~ flipper_length_mm, data = adelie)
+coefs_adelie <- broom::tidy(mod_adelie, conf.int = TRUE, conf.level = 0.95)
+coefs_adelie$species <- "Adelie"
+p_adelie <- ggplot(adelie,
+                            aes(flipper_length_mm, body_mass_g)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm") +
+  labs(title = "Adelie", x = "Flipper length (mm)", y = "Body mass (g)")
+
+# Gentoo ----
+gentoo <- penguins_clean |> dplyr::filter(species == "gentoo")
+mod_gentoo <- lm(body_mass_g ~ flipper_length_mm, data = gentoo)
+coefs_gentoo <- broom::tidy(mod_gentoo, conf.int = TRUE, conf.level = 0.90)
+coefs_gentoo$species <- "Gentoo"
+p_gentoo <- ggplot(gentoo,
+                            aes(flipper_length_mm, body_mass_g)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm") +
+  labs(title = "Gentoo", x = "Flipper length (mm)", y = "Body mass (g)")
+
+# Chinstrap ----
+chinstrap <- penguins_clean |> dplyr::filter(species == "Chinstrap")
+mod_chinstrap <- lm(body_mass_g ~ flipper_length_mm, data = chinstrap)
+coefs_chinstrap <- broom::tidy(mod_chinstrap, conf.int = TRUE, conf.level = 0.95)
+coefs_chinstrap$species <- "Chinstrap"
+p_chinstrap <- ggplot(chinstrap,
+                               aes(flipper_length_mm, body_mass_g)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm") +
+  labs(title = "Chinstrap", x = "Flipper length (mm)")
+
+all_coefs <- rbind(coefs_adelie, coefs_gentoo, coefs_chinstrap)
+```
+
+### Activity: find the bugs
+
+:::{.callout-important}
+## Task
+
+There are three bugs in the script above. Find them. Hint: they were all
+introduced by copy-paste.
+
+:::
+
+:::{.callout-tip}
+## Solution
+
+1. The Gentoo filter uses lowercase `"gentoo"`. This produces a zero-row tibble,
+   and `lm()` fails with the cryptic `0 (non-NA) cases`. If you do not run the
+   Gentoo block immediately after pasting it, you discover the bug days later.
+2. The Gentoo `tidy()` call uses `conf.level = 0.90` instead of `0.95`. It
+   produces a table with mixed confidence intervals, does not error, and may never
+   be noticed.
+3. The Chinstrap plot has no y-axis label: the `labs()` call is missing `y =`. The
+   bug survives until the figure is in a manuscript proof.
+
+Every one of these is a copy-paste error, and every one would have been impossible
+if the operation lived in a single function.
+
+:::
+
+### What is actually wrong
+
+The bugs are symptoms. The structural problems are the disease:
+
+- **Three near-identical blocks.** The species blocks share more than 90 per cent
+  of their code. Every change must be made in three places.
+- **Object names by suffix.** `adelie`, `mod_adelie`, `coefs_adelie`, `p_adelie`,
+  four objects per species, filling the namespace with pairs a human must track.
+- **Implicit ordering.** The script must run top to bottom. Change
+  `penguins_clean` and rerun only the modelling block, and the figures fall out of
+  sync with the coefficients.
+- **No verification.** The filter typo and the CI mismatch both pass silently.
+
+:::{.callout-note}
+
+Filazzola and Lortie (2022), writing on clean code in ecology, frame this as a
+*scientific communication* problem rather than a matter of taste: unclear code
+miscommunicates what the analysis did. Small, named functions both communicate
+intent and constrain what the code can do wrong.
+
+:::
+
+## Part C: from script to function
+
+The principled refactor: find what *varies* across the repeated blocks and make it
+an argument; everything that *stays the same* becomes the function body. Across the
+three species blocks, only the species name truly varies. The formula, the
+confidence level and the tidying are constant.
+
+### Stage 1: extract what varies
+
+```{r}
+#| eval: false
+# R/functions/modelling_functions.R
+
+fit_species_model <- function(data, sp) {
+  data_sp <- dplyr::filter(data, species == sp)
+  model   <- lm(body_mass_g ~ flipper_length_mm, data = data_sp)
+  broom::tidy(model, conf.int = TRUE)
+}
+```
+
+Check it reproduces the original before trusting it:
+
+```{r}
+#| eval: false
+source(here::here("R", "functions", "modelling_functions.R"))
+
+new_coefs_adelie <- fit_species_model(penguins_clean, "Adelie")
+
+all.equal(
+  new_coefs_adelie,
+  broom::tidy(mod_adelie, conf.int = TRUE)
+)
+# [1] TRUE
+```
+
+`all.equal()` returns `TRUE` on a match (within numerical tolerance) or a
+description of the differences otherwise. It is the right quick interactive check
+when refactoring.
+
+### Stage 2: handle the obvious failure
+
+The Gentoo typo (`"gentoo"` instead of `"Gentoo"`) silently filtered to zero rows. `lm()` then failed with:
+
+```
+Error in `lm.fit()`:
+! 0 (non-NA) cases
+```
+
+This error points at the model, not the filter where the real problem was. Without input validation, you are left hunting backwards through the code to find why the data is empty.
+
+A well-designed function catches this *before* anything goes wrong, using `stop()` to abort immediately with a message that names the actual problem:
+
+```{r}
+#| eval: false
+fit_species_model <- function(data, sp) {
+# Validate sp before doing any work -- fail fast with a useful messag
+  if (!sp %in% unique(data$species)) {
+    stop(
+      "Species '", sp, "' is not in the data. ",
+      "Available species: ",
+      paste(sort(unique(data$species)), collapse = ", ")
+    )
+  }
+
+  data_sp <- dplyr::filter(data, species == sp)
+  model   <- lm(body_mass_g ~ flipper_length_mm, data = data_sp)
+  broom::tidy(model, conf.int = TRUE) |>
+    dplyr::mutate(species = sp, .before = 1)
+}
+```
+
+Now the same typo produces:
+
+```
+Error in `fit_species_model()`:
+! Species 'gentoo' is not in the data. Available species: Adelie, Chinstrap, Gentoo
+```
+
+Three things make this a good error message:
+
+1. **It says what went wrong** — the species name was not recognised.
+2. **It shows what was received** — `'gentoo'`, so you can see the typo immediately.
+3. **It says how to fix it** — lists the valid options.
+
+```{r}
+#| eval: false
+fit_species_model(penguins_clean, "gentoo")
+# Error in fit_species_model(penguins_clean, "gentoo"):
+#   Species 'gentoo' is not in the data.
+#   Available species: Adelie, Chinstrap, Gentoo
+```
+
+The error arrives immediately, names the problem, and lists the valid options.
+
+
+### Stage 3: document and add a default
+
+Documentation describes a thing that exists, so we write it last, once the
+function has settled:
+
+```{r}
+#| eval: false
+# R/functions/modelling_functions.R
+
+#' Fit body mass ~ flipper length for one species
+#'
+#' @param data A data frame with `species`, `body_mass_g` and
+#'   `flipper_length_mm`. NA rows on these should be removed first.
+#' @param sp Character of length 1. Species name, spelled exactly as in
+#'   `data$species`.
+#' @param conf_level Numeric in (0, 1). Confidence level for the
+#'   coefficient intervals. Default 0.95.
+#' @return A tibble of tidied coefficients with a `species` column prepended.
+#' @examples
+#' fit_species_model(penguins_clean, "Adelie")
+fit_species_model <- function(data, sp, conf_level = 0.95) {
+
+  if (!sp %in% unique(data$species)) {
+    stop(
+      "Species '", sp, "' is not in the data. ",
+      "Available species: ",
+      paste(sort(unique(data$species)), collapse = ", ")
+    )
+  }
+
+  data_sp <- dplyr::filter(data, species == sp)
+  model   <- lm(body_mass_g ~ flipper_length_mm, data = data_sp)
+  broom::tidy(model, conf.int = TRUE, conf.level = conf_level) |>
+    dplyr::mutate(species = sp, .before = 1)
+}
+```
+
+This is the mature function: one job, validated input, a sensible default, a
+predictable output shape, and documentation a reader can use without running it.
+
+### Extract the plot too
+
+The missing-y-label bug was a plotting bug, so extract the plot the same way and
+write its labels once:
+
+```{r}
+#| eval: false
+# R/functions/plotting_functions.R
+
+#' Scatter of body mass against flipper length for one species
+#'
+#' @param data A data frame with `species`, `body_mass_g`, `flipper_length_mm`.
+#' @param sp Character of length 1. Species to plot.
+#' @return A ggplot object.
+make_scatter_plot <- function(data, sp) {
+  data |>
+    dplyr::filter(species == sp) |>
+    ggplot2::ggplot(aes(flipper_length_mm, body_mass_g)) +
+    ggplot2::geom_point(alpha = 0.6) +
+    ggplot2::geom_smooth(method = "lm") +
+    ggplot2::labs(title = sp, x = "Flipper length (mm)", y = "Body mass (g)") +
+    ggplot2::theme_minimal()
+}
+```
+
+### The refactored script
+
+The three near-identical blocks collapse to three calls each:
+
+```{r}
+#| eval: false
+# analysis.R -- refactored
+source(here::here("R", "functions", "modelling_functions.R"))
+source(here::here("R", "functions", "plotting_functions.R"))
+
+coefs_adelie    <- fit_species_model(penguins_clean, "Adelie")
+coefs_gentoo    <- fit_species_model(penguins_clean, "Gentoo")
+coefs_chinstrap <- fit_species_model(penguins_clean, "Chinstrap")
+all_coefs <- dplyr::bind_rows(coefs_adelie, coefs_gentoo, coefs_chinstrap)
+
+p_adelie    <- make_scatter_plot(penguins_clean, "Adelie")
+p_gentoo    <- make_scatter_plot(penguins_clean, "Gentoo")
+p_chinstrap <- make_scatter_plot(penguins_clean, "Chinstrap")
+```
+
+The repetition is not gone (there are still three calls each), but every operation
+now lives in one named, validated, documented place. Block 4 removes the remaining
+repetition with iteration.
+
+### Activity: when *not* to write a function
+
+:::{.callout-important}
+## Task
+
+Should this be turned into a function? Justify your answer.
+
+```{r, eval = FALSE}
+penguins |> dplyr::filter(species == "Adelie") |> dplyr::summarise(n = dplyr::n())
+```
+
+:::
+
+:::{.callout-tip}
+## Solution
+
+No. A one-line pipeline used once has no name that improves on the literal code;
+abstracting it would *remove* information from the reader. A function
+`count_adelie()` forces the next reader to look up what it does, whereas the
+pipeline already says it.
+
+Premature abstraction is a real cost. Functions earn their keep when they are
+called more than once, when they bundle several lines into a named operation, or
+when they impose a useful constraint (input checks, defaults). A good rule:
+extract a function when the inline code is *harder* to read than a named function
+would be. For one short pipeline, it is not.
+
+:::
+
+### Where functions live
+
+Three conventions we follow for the rest of the day:
+
+- Function definitions live in `R/functions/`, grouped thematically
+  (`modelling_functions.R`, `plotting_functions.R`), not one file per function.
+- Function files contain *only* definitions: no `library()`, no `source()`, no
+  top-level executable code. A function file should be sourceable with no side
+  effects.
+- Analysis scripts `source()` the function files and call the functions. Scripts
+  orchestrate; they do not define.
+
+:::{.callout-note}
+
+The principle is **separation of definition from invocation**. Functions are
+defined once and called from many places. This is the prerequisite for both
+testing and, eventually, pipelining.
+
+:::
+
+## Part D: The function factory
+
+It's functions all the way down...
+
+A function factory is a function that builds and returns other functions. You give the factory some configuration, and it hands back a new function with that configuration baked in and ready to use. If you have ever written nearly identical unit converters, threshold checkers, or formatters and felt that the repetition was unnecessary, function factories are the tool for collapsing those variants into a single recipe.
+
+The mechanism rests on lexical scoping. When a function is defined inside another function, it keeps a reference to the environment in which it was born. So if the outer function had a variable called factor, the inner function can still see it long after the outer call has finished. That preserved environment is called a closure, and it is what allows the manufactured functions to remember the settings you gave them. In practice, you write the factory once and produce as many specialised functions as you need:
+
+```{r}
+#| eval: false
+
+# The factory: takes a multiplier, returns a function configured with it
+make_converter <- function(factor) {
+  function(x) x * factor
+}
+
+# Manufacture two specialised converters from the same factory
+g_to_kg  <- make_converter(1 / 1000)
+mm_to_cm <- make_converter(1 / 10)
+
+penguins |>
+  drop_na(body_mass_g, culmen_length_mm) |>
+  mutate(
+    body_mass_kg   = g_to_kg(body_mass_g),
+    culmen_length_cm = mm_to_cm(culmen_length_mm)
+  ) |>
+  select(species, body_mass_kg, culmen_length_cm)
+
+```
+
+The point to internalise is that g_to_kg and mm_to_cm are distinct functions, each carrying its own value of factor bound at the moment the factory was called. That persistent enclosing environment is the closure, and a function factory is simply a function that exploits it to produce configured functions on demand, which is useful when you want to avoid repeating yourself across many similar transformations or to pre-configure behaviour (a threshold, a unit, a reference mean) once and reuse it.
+
+
+## Part E: testing functions
+
+When you refactor, you check once that the new code matches the old, then move on.
+Six weeks later you change the function and have no way to know whether you broke
+something. **Tests pin down behaviour**: they record what the function does today
+so you can change it tomorrow with confidence.
+
+A small, committed **fixture** keeps tests fast and reproducible:
+
+```{r}
+#| eval: false
+# Run once to create the fixture, then never again
+penguins_test_subset <- palmerpenguins::penguins |>
+  tidyr::drop_na(body_mass_g, flipper_length_mm, species) |>
+  dplyr::slice_head(n = 20, by = species)
+
+dir.create(here::here("tests", "fixtures"), recursive = TRUE,
+           showWarnings = FALSE)
+saveRDS(penguins_test_subset,
+        here::here("tests", "fixtures", "penguins_test_subset.rds"))
+```
+
+Twenty rows per species: small enough to read and reason about, large enough to
+fit a regression. The test file:
+
+```{r}
+#| eval: false
+# tests/test_modelling_functions.R
+library(testthat)
+source(here::here("R", "functions", "modelling_functions.R"))
+test_data <- readRDS(here::here("tests", "fixtures",
+                                "penguins_test_subset.rds"))
+
+test_that("fit_species_model has the expected columns", {
+  out <- fit_species_model(test_data, "Adelie")
+  expect_named(out, c("species", "term", "estimate", "std.error",
+                      "statistic", "p.value", "conf.low", "conf.high"))
+})
+
+test_that("fit_species_model rejects unknown species", {
+  expect_error(fit_species_model(test_data, "gentoo"),
+               regexp = "not in the data")
+})
+
+test_that("conf_level controls interval width", {
+  out_95 <- fit_species_model(test_data, "Adelie", conf_level = 0.95)
+  out_99 <- fit_species_model(test_data, "Adelie", conf_level = 0.99)
+  expect_true(all((out_99$conf.high - out_99$conf.low) >
+                  (out_95$conf.high - out_95$conf.low)))
+})
+```
+
+Run them with `testthat::test_file()`. No package infrastructure is needed:
+
+```{r}
+#| eval: false
+testthat::test_file(here::here("tests", "test_modelling_functions.R"))
+# [ FAIL 0 | WARN 0 | SKIP 0 | PASS 3 ]
+```
+
+Three principles carry most of the value:
+
+- **Test behaviour, not implementation.** The tests check what the function
+  returns and what it does on bad input, never that it uses `dplyr::filter()`
+  inside. The implementation is free to change; the promise is not.
+- **Test properties, not exact numbers, where possible.** The `conf_level` test
+  asserts that 99% intervals are wider than 95% ones, not that some coefficient
+  equals 4521.3. The property survives changes in the numerical machinery.
+- **Keep fixtures small and obvious.** A reader can predict the right answers from
+  20 rows; a 100,000-row fixture is opaque.
+
+### Activity: write a test
+
+::: {.task}
+
+`make_scatter_plot()` returns a ggplot object. Write two tests:
+
+1. That the function returns a ggplot object. Hint: `ggplot2::is.ggplot()` returns
+   `TRUE` for any ggplot.
+2. That the plot only contains data for the requested species. Hint: the data
+   passed to a ggplot is stored at `p$data`; check the `species` column.
+
+:::
+
+:::{.callout-tip}
+## Solution
+
+```{r, eval = FALSE}
+test_that("make_scatter_plot returns a ggplot", {
+  expect_true(ggplot2::is.ggplot(make_scatter_plot(test_data, "Adelie")))
+})
+
+test_that("make_scatter_plot only plots the requested species", {
+  p <- make_scatter_plot(test_data, "Adelie")
+  expect_equal(unique(p$data$species), "Adelie")
+})
+```
+
+
+:::
+
+:::{.callout-note}
+
+**When to write tests in analysis projects.** Realistically: every function that
+takes more than one argument or returns more than a scalar. Skip thin wrappers
+around well-tested base functions and one-off exploratory plots. Test discipline
+should scale with the importance of the function.
+
+:::

@@ -1,0 +1,68 @@
+# Summary tables {#sec-tables}
+
+```{r, include = FALSE}
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+
+
+
+pollution <- read_csv(here::here("files", "pollution.csv"))
+
+William_ls2 <- lm(William ~ O3 + Stress, data = pollution)
+
+```
+
+
+While we need to report the parameters and statistics of our models in text with any reports, it can also be extremely useful to provide a model summary table, especially when reporting complex analyses. Below I present examples from two of my favourite packages for model reporting.
+
+Both packages come with lots of options for customisation to produce presentation ready tables
+
+## sjPlot
+
+`sjPlot` A really nice package that helps produce model summaries for you automatically, currently it will only output in HTML format
+
+```{r}
+library(sjPlot)
+tab_model(William_ls2)
+```
+
+
+```{r}
+tab_model(
+  William_ls2, 
+  pred.labels = c("Intercept", "O³", "Stress[Well-watered]"),
+  dv.labels = "Biomass",
+  string.pred = "Coefficient",
+  string.ci = "Conf. Int (95%)",
+  string.p = "P-Value"
+)
+
+
+```
+
+`gtsummary` Is an extension of the `gt` package and provides even greater levels of flexibility and customisation. It is also compatible with HTML, word or pdf. Perhaps the only downside is the level of options and customisability can be slightly overwhelming. In addition the `gt` package has been undergoing a lot of active development, so sometimes older code examples are now defunct.
+
+
+```{r}
+library(gtsummary)
+tbl_regression(William_ls2)
+
+```
+
+```{r}
+
+
+tbl_regression(William_ls2,
+               intercept = TRUE,
+               label = list(O3 ~ "O³", Stress ~ "Stress"),
+               pvalue_fun = ~ style_pvalue(.x, digits = 2)) %>% 
+  modify_header(label = "Coefficient",
+                estimate = "Estimate") %>% 
+  bold_labels() %>% 
+  bold_p(t = 0.05) %>% 
+  as_gt () %>% 
+   gt::tab_source_note(gt::md("*This is an ordinary least squares model*"))
+
+```

@@ -1,0 +1,287 @@
+# Building a Logistic Classifier: From Regression to Classification
+
+In this exercise, we'll extend what you've learned about regression models in tidymodels to classification problems. We'll use genetic data to predict cleft lip in dogs, helping you understand how the tidymodels workflow adapts to classification tasks.
+
+## Introduction to Classification
+
+While regression predicts continuous values (like age from methylation data), classification predicts categorical outcomes (like presence/absence of cleft lip). The fundamental tidymodels workflow remains similar, but with some important differences we'll explore.
+
+## The Dataset: Dog Cleft Lip and SNP Genotypes
+
+We'll use a dataset containing SNP (Single Nucleotide Polymorphism) genotypes from Nova Scotia Duck Tolling Retrievers, with some dogs affected by cleft lip and others unaffected.
+
+```{r}
+# Load required libraries
+library(tidymodels)  # Loads the entire tidymodels framework
+library(data.table)  # For reading the data
+library(dplyr)       # For data manipulation
+library(ggplot2)     # For visualization
+
+# Set seed for reproducibility
+set.seed(121)
+
+# Read the dataset
+dogs <- fread("../data/dogs_imputed_reduced.raw")
+dogs <- dogs %>%
+  select(-c(IID, FID, PAT, MAT, SEX))
+
+# Convert phenotype from 1/2 coding to 0/1 coding for logistic regression
+dogs$PHENOTYPE <- dogs$PHENOTYPE - 1
+
+# Look at the first few rows
+head(dogs, 3)
+
+# Check dataset dimensions
+print(paste("Number of dogs:", nrow(dogs)))
+print(paste("Number of SNP features:", ncol(dogs)-1))
+
+# Examine class distribution
+dogs %>%
+  count(PHENOTYPE) %>%
+  mutate(proportion = n/sum(n))
+```
+
+Notice that our dataset is imbalanced - only a small proportion of dogs have cleft lip (PHENOTYPE = 1). This is an important consideration for classification problems.
+
+## Part 1: From Linear to Logistic Regression
+
+Logistic regression is one of the most common classification algorithms. It's similar to linear regression, but uses a logit transformation to predict probabilities between 0 and 1.
+
+### Task 1: Creating a Train/Test Split
+
+Just like with regression, we should evaluate our model on data it hasn't seen during training. But for classification, especially with imbalanced classes, we need to ensure both training and testing sets contain examples of both classes.
+
+```{r}
+# Create a stratified split to preserve class proportions
+# Fill in the missing parameter
+dogs_split <- initial_split(dogs, prop = 0.7, strata = PHENOTYPE)
+
+# Extract the training and testing sets
+dogs_train <- training(dogs_split)
+dogs_test <- testing(dogs_split)
+
+# Check that both sets contain examples of both classes
+dogs_train %>% count(PHENOTYPE)
+dogs_test %>% count(PHENOTYPE)
+```
+
+### Task 2: Creating a Logistic Regression Model
+
+In tidymodels, specifying a logistic regression model is similar to linear regression, but we use `logistic_reg()` and set the mode to "classification".
+
+```{r}
+# Create a logistic regression model specification
+# Fill in the blanks based on what you know about model specification in tidymodels
+log_reg_spec <- logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode("classification")  # This is new compared to regression!
+
+# Create a simple recipe (we'll just use the raw predictors for now)
+log_recipe <- recipe(PHENOTYPE ~ ., data = dogs_train)
+
+# Create a workflow combining the model and recipe
+log_workflow <- workflow() %>%
+  add_model(log_reg_spec) %>%
+  add_recipe(log_recipe)
+
+# Fit the model to the training data
+log_fit <- fit(log_workflow, data = dogs_train)
+
+# Take a peek at the fitted model
+log_fit
+```
+
+## Part 2: Making Predictions
+
+In classification, we predict both class labels and probabilities, which is slightly different from regression.
+
+### Task 3: Generating Predictions
+
+```{r}
+# Generate predictions on test data
+# There are two types of predictions we care about:
+# 1. Class predictions (which category each sample belongs to)
+# 2. Probability predictions (probability of belonging to each category)
+
+# Generate class predictions
+class_preds <- predict(log_fit, new_data = dogs_test)
+class_preds
+
+# Generate probability predictions 
+# Fill in the missing parameter
+prob_preds <- predict(log_fit, new_data = dogs_test, type = "prob")
+prob_preds
+
+# Combine the predictions with the actual outcomes
+results <- dogs_test %>%
+  select(PHENOTYPE) %>%
+  bind_cols(class_preds, prob_preds)
+
+# Look at the first few results
+head(results)
+```
+
+### Task 4: Creating a Confusion Matrix
+
+The confusion matrix is a fundamental tool for evaluating classification models. It shows:
+- True Positives (TP): Correctly predicted positive cases
+- False Positives (FP): Incorrectly predicted positive cases (Type I error)
+- True Negatives (TN): Correctly predicted negative cases
+- False Negatives (FN): Incorrectly predicted negative cases (Type II error)
+
+```{r}
+# Create a confusion matrix
+# Note how this differs from regression metrics
+conf_mat <- conf_mat(results, truth = PHENOTYPE, estimate = .pred_class)
+conf_mat
+
+# Visualize the confusion matrix
+autoplot(conf_mat, type = "heatmap")
+```
+
+## Part 3: Evaluating Classification Performance
+
+In regression, we used metrics like RMSE and R². For classification, we use different metrics.
+
+### Task 5: Calculating Classification Metrics
+
+```{r}
+# Calculate accuracy - proportion of correct predictions
+accuracy(results, truth = PHENOTYPE, estimate = .pred_class)
+
+# Calculate sensitivity (recall) - proportion of actual positives correctly identified
+# Fill in the missing parameters
+sens(results, truth = PHENOTYPE, estimate = .pred_class)
+
+# Calculate specificity - proportion of actual negatives correctly identified
+spec(results, truth = PHENOTYPE, estimate = .pred_class)
+
+# Calculate precision - proportion of predicted positives that are actually positive
+precision(results, truth = PHENOTYPE, estimate = .pred_class)
+
+# Put all metrics together
+classification_metrics <- metric_set(accuracy, sens, spec, precision)
+classification_metrics(results, truth = PHENOTYPE, estimate = .pred_class)
+```
+
+### Task 6: Interpreting Classification Metrics
+
+When working with imbalanced data (like our dataset with few cleft lip cases), accuracy can be misleading. Consider these questions:
+
+1. If we predicted "no cleft lip" for all dogs, what would our accuracy be? 
+2. Why would that be problematic despite high accuracy?
+3. Which metrics are more informative for the minority class?
+
+## Part 4: Implementing Cross-Validation
+
+Just as with regression, we can use cross-validation to get a more robust estimate of model performance.
+
+### Task 7: Stratified Cross-Validation
+
+```{r}
+# Create cross-validation folds, stratified by outcome
+# Fill in the blank
+dogs_folds <- vfold_cv(dogs_train, v = 5, strata = PHENOTYPE)
+
+# Define a set of classification metrics to calculate
+cv_metrics <- metric_set(accuracy, sens, spec, precision)
+
+# Perform cross-validation
+cv_results <- fit_resamples(
+  log_workflow,
+  resamples = dogs_folds,
+  metrics = cv_metrics
+)
+
+# Collect and examine the results
+collect_metrics(cv_results)
+```
+
+## Part 5: Finding Important Predictors
+
+Just like with regression models, we can examine which predictors (SNPs) are most strongly associated with cleft lip.
+
+### Task 8: Examining Model Coefficients
+
+```{r}
+# Extract model coefficients
+log_coefs <- tidy(log_fit)
+
+# Look at the coefficients
+head(log_coefs)
+
+# Visualize the top 10 most important SNPs by absolute coefficient size
+log_coefs %>%
+  filter(term != "(Intercept)") %>%
+  mutate(abs_estimate = abs(estimate)) %>%
+  arrange(desc(abs_estimate)) %>%
+  slice_head(n = 10) %>%
+  mutate(term = fct_reorder(term, abs_estimate)) %>%
+  ggplot(aes(x = term, y = estimate, fill = estimate > 0)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Top 10 SNPs by Importance",
+       x = "SNP", 
+       y = "Coefficient Value",
+       fill = "Positive Association") +
+  theme_minimal()
+```
+
+## Extending Your Knowledge
+
+Here are some suggestions for extending this exercise if you're interested:
+
+1. **Preprocessing**: Create a more complex recipe that scales the predictors or handles multicollinearity.
+
+2. **Adjust the threshold**: By default, logistic regression classifies cases as positive if the predicted probability is ≥ 0.5. Try different thresholds:
+
+```r
+# Example of adjusting threshold (0.3 instead of 0.5)
+results %>%
+  mutate(pred_class_30 = if_else(.pred_1 >= 0.3, 1, 0)) %>%
+  accuracy(truth = PHENOTYPE, estimate = pred_class_30)
+```
+
+3. **Try a different model**: Replace logistic regression with K-nearest neighbors classification:
+
+```r
+# Example of KNN classification model
+# This builds on the KNN regression you saw earlier, but now for classification
+knn_spec <- nearest_neighbor(neighbors = 5) %>%
+  set_engine("kknn") %>%
+  set_mode("classification")  # Note: we set mode to "classification" instead of "regression"
+
+# Create a workflow with KNN
+knn_workflow <- workflow() %>%
+  add_model(knn_spec) %>%
+  add_recipe(log_recipe)
+
+# Fit the KNN model
+knn_fit <- fit(knn_workflow, data = dogs_train)
+
+# Generate predictions and evaluate
+knn_results <- dogs_test %>%
+  select(PHENOTYPE) %>%
+  bind_cols(predict(knn_fit, new_data = dogs_test),
+            predict(knn_fit, new_data = dogs_test, type = "prob"))
+
+# Compare KNN performance with logistic regression
+classification_metrics(knn_results, truth = PHENOTYPE, estimate = .pred_class)
+```
+
+Other classifiers like random forest could also be used with a similar workflow structure.
+
+## Discussion Questions
+
+1. How does the tidymodels workflow for classification compare to regression? What elements stay the same, and what changes?
+
+2. For a rare condition like cleft lip, why might metrics like sensitivity and specificity be more informative than overall accuracy?
+
+3. What genetic insights could we gain from the most important SNPs identified by our model?
+
+4. How might a breeder or veterinarian use this model in practice?
+
+5. How does KNN classification differ from logistic regression in terms of:
+   - Interpretability of the model
+   - Handling of the decision boundary between classes
+   - Computational requirements as the dataset grows

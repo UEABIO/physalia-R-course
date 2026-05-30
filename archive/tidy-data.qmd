@@ -1,0 +1,124 @@
+# Tidy data {#sec-tidy}
+
+```{r, include = FALSE}
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+```
+
+
+We are going to learn how to organise data using the *tidy* format. This is because we are using the `tidyverse` packages @R-tidyverse. This is an opinionated, but highly effective method for generating reproducible analyses with a wide-range of data manipulation tools. Tidy data is an easy format for computers to read. It is also the required data structure for our **statistical tests** that we will work with later.
+
+Here 'tidy' refers to a specific structure that lets us manipulate and visualise data with ease. In a tidy dataset each *variable* is in one column and each row contains one *observation*. Each cell of the table/spreadsheet contains the *values*. One observation you might make about tidy data is it is quite long - it generates a lot of rows of data - you might remember then that *tidy* data can be referred to as *long*-format data (as opposed to *wide* data). 
+
+```{r, eval=TRUE, echo=FALSE, out.width="80%", fig.alt= "tidy data overview"}
+knitr::include_graphics("images/tidy-1.png")
+```
+
+
+## Why tidy data?
+
+- The data cleaning and analysis tools in R work best with data that is "tidy"
+
+- "Tidy" data has a clear and consistent structure, untidy data can be "messy" in lots of different ways
+
+
+## Using `pivot` functions
+
+What do we do if the data we are working with in R isn't "tidy"?
+
+There are functions found as part of the `tidyverse` that can help us to reshape data. 
+
+* `tidyr::pivot_wider()` - from *long* to *wide* format
+
+* `tidyr::pivot_longer()` - from *wide* to *long* format
+
+
+```{r img-pivot-gif, echo=FALSE, fig.cap="Reshaping data with pivot"}
+
+knitr::include_graphics("images/tidyr-longer-wider.gif")
+
+```
+
+
+```{r, eval = T}
+ country <- c("x", "y", "z")
+ yr1960 <-  c(10, 20, 30)
+ yr1970 <-  c(13, 23, 33)
+ yr2010 <-  c(15, 25, 35)
+
+country_data <- tibble(country, yr1960, yr1970, yr2010)
+country_data
+```
+
+
+### Pivot longer
+
+```{r pivot-data, eval = F}
+
+pivot_longer(data = country_data,
+             cols = yr1960:yr2010,
+             names_to = "year",
+             names_prefix = "yr",
+             values_to = "metric")
+
+```
+
+```{r img-pivot, echo=FALSE, fig.cap="Reshaping data with pivot"}
+
+knitr::include_graphics("images/tidyr_pivot.png")
+
+```
+
+
+To *save* these changes to your data format, you must assign this to an object, and you have two options
+
+* Use the same name as the original R object, this will *overwrite* the original with the new format
+
+* Use a *new* name for the reformatted data both R objects will exist in your Environment
+
+Neither is more *correct* than the other but be aware of what you are doing.
+
+
+### Overwrite the original object 
+
+```{r, eval = F}
+country_data <- pivot_longer(data = country_data,
+             cols = yr1960:yr2010,
+             names_to = "year",
+             names_prefix = "yr",
+             values_to = "metric")
+
+```
+
+### Create a new r object
+
+```{r, eval = F}
+
+long_country_data <- pivot_longer(data = country_data,
+             cols = yr1960:yr2010,
+             names_to = "year",
+             names_prefix = "yr", # optional
+             values_to = "metric")
+
+```
+
+
+### Pivot wider
+
+Let's use the long country data we have just generated as an example of how we *could* use the `pivot_wider()` function and reverse the process:
+
+```{r, eval = F}
+
+pivot_wider(data = long_country_data,
+            names_from = year,
+            names_prefix = "yr",
+            values_from = "metric")
+
+
+```
+
+## Reading
+
+- [Tidy data](https://vita.had.co.nz/papers/tidy-data.pdf)

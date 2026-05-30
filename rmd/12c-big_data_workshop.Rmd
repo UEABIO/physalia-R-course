@@ -1,0 +1,995 @@
+
+# SQL and Data.Table
+
+```{r, child = '_setup.Rmd', warning = FALSE, message = FALSE}
+
+```
+
+```{r workshop-setup, include = FALSE}
+knitr::opts_chunk$set(echo      = TRUE,
+                      eval      = FALSE,
+                      message   = FALSE,
+                      warning   = FALSE,
+                      fig.align = "center")
+```
+
+This chapter is both a teaching script for a two-hour session and a self-study
+handout. It rests on one premise: correct syntax and a tool suggestion are cheap.
+You can get them from documentation, a colleague, a forum answer, or a generated
+snippet. What none of those sources can do is run a benchmark on *your* data on
+*your* machine, or tell you whether a general recommendation holds for your file
+and your most common query. Those answers require measurement, and measurement
+requires understanding the mechanism well enough to design the right test.
+
+The session therefore leads with the parts you cannot delegate. By the end you
+should be able to do one thing reliably: decide between CSV and Parquet for a
+given task, and read large data lazily so that only the result enters memory
+rather than the whole file. Everything else in the session serves that single
+capability.
+
+It assumes familiarity with `dplyr` and the native pipe (`|>`). No prior
+experience with `data.table`, Arrow, or DuckDB is assumed. Where `data.table` and
+SQL appear, the aim is that you can *read* them, not write them fluently; writing
+references are provided as take-home appendices.
+
+```{block, type = "info"}
+**How to use this document.**
+
+The numbered blocks below are written to be delivered live. Each exercise
+contains complete, copyable code and a worked solution in a collapsible box, so
+you can return afterwards and repeat it independently.
+
+**Dependencies.** Install the following before the session:
+
+    install.packages(c("readr", "data.table", "dtplyr", "arrow",
+                       "duckdb", "dbplyr", "dplyr", "bench"))
+
+**Data.** The test files are distributed in advance. You do **not** generate them
+during the session. Confirm they load using the setup-check script below before
+you arrive.
+```
+
+## Running order {-}
+
+| Block | Content | Time |
+|---|---|---|
+| 0 | Setup confirmation | ≈2 min |
+| 1 | Framing: what you can delegate and what you must check | ≈3 min |
+| 2 | Data formats: mechanisms on disk | ≈18 min |
+| 3 | Lazy versus eager, and the `collect()` pattern | ≈12 min |
+| 4 | Exercise 1: column selectivity and lazy memory, measured | ≈20 min |
+| — | Break | ≈10 min |
+| 5 | Query optimisation: filter early, select early | ≈12 min |
+| 6 | Exercise 2: finding and fixing an inefficient query | ≈14 min |
+| 7 | Reading the other syntaxes through `show_query()` | ≈12 min |
+| 8 | Verifying code you did not write line by line | ≈10 min |
+| 9 | Close: the one capability, and the checklist | ≈7 min |
+
+```{block, type = "warning"}
+**If you run over, cut in this order.** Compress block 7 to a single worked
+example and let the syntax reference survive as a take-home appendix. If still
+over, drop principle two from block 5. Protect blocks 2, 3, and 4: the format
+mechanisms, the lazy/eager distinction, and the measured exercise are the
+take-home capability, and they are the least replaceable content in the session.
+```
+
+---
+
+## Setup: preparing and confirming the data {-}
+
+### Instructor: build the files once, ahead of time {-}
+
+Run this script once before distributing the files. It generates a one-million-row
+synthetic survey dataset and writes it in three forms. Distribute the resulting
+`bird_survey.csv`, `bird_survey.parquet`, and `bird_survey_partitioned/` so that
+no participant regenerates a million rows live.
+
+```{r generate-data, eval = FALSE}
+library(readr);   library(data.table); library(dtplyr)
+library(arrow);   library(duckdb);     library(dbplyr)
+library(dplyr);   library(bench)
+
+set.seed(42)
+n <- 1e6
+
+species_names <- c(
+  "Parus major", "Turdus merula", "Erithacus rubecula",
+  "Fringilla coelebs", "Passer domesticus", "Columba palumbus",
+  "Corvus corone", "Sturnus vulgaris", "Sylvia atricapilla",
+  "Phylloscopus collybita"
+)
+
+survey_data <- tibble(
+  observation_id      = 1:n,
+  species             = sample(species_names, n, replace = TRUE),
+  site_id             = sample(paste0("SITE_", sprintf("%04d", 1:500)),
+                               n, replace = TRUE),
+  habitat             = sample(c("woodland", "grassland", "wetland",
+                                 "urban", "heathland"), n, replace = TRUE),
+  year                = sample(2000:2023, n, replace = TRUE),
+  month               = sample(1:12, n, replace = TRUE),
+  day                 = sample(1:28, n, replace = TRUE),
+  observer_id         = sample(paste0("OBS_", sprintf("%03d", 1:100)),
+                               n, replace = TRUE),
+  count               = rpois(n, lambda = 3),
+  temperature_c       = rnorm(n, mean = 12, sd = 5),
+  wind_speed_ms       = rgamma(n, shape = 2, rate = 0.5),
+  precipitation_mm    = rgamma(n, shape = 0.5, rate = 1),
+  visibility_m        = pmax(rnorm(n, mean = 5000, sd = 1500), 100),
+  canopy_cover_pct    = runif(n, 0, 100),
+  survey_duration_min = sample(c(5L, 10L, 15L, 20L), n, replace = TRUE)
+)
+
+write_csv(survey_data,     "bird_survey.csv")
+write_parquet(survey_data, "bird_survey.parquet")
+write_dataset(survey_data,
+              path         = "bird_survey_partitioned",
+              partitioning = "year")
+```
+
+### Participant: confirm the files load (run before the session) {-}
+
+This prints package versions and the file sizes. Send the printed line back to the
+instructor before the session so anyone whose installation failed can be helped in
+advance. The likely failure points are the `arrow` and `duckdb` binary installs;
+if either errors, reply rather than waiting for the day.
+
+```{r setup-check, eval = FALSE}
+library(readr) 
+library(arrow) 
+library(duckdb)
+library(dplyr)
+
+stopifnot(
+  file.exists("bird_survey.csv"),
+  file.exists("bird_survey.parquet"),
+  dir.exists("bird_survey_partitioned")
+)
+
+cat("R       ", as.character(getRversion()), "\n")
+cat("arrow   ", as.character(packageVersion("arrow")),  "\n")
+cat("duckdb  ", as.character(packageVersion("duckdb")), "\n")
+cat("CSV:     ", round(file.size("bird_survey.csv")     / 1e6, 1), "MB\n")
+cat("Parquet: ", round(file.size("bird_survey.parquet") / 1e6, 1), "MB\n")
+```
+
+```{block, type = "info"}
+**Instructor.** The CSV-versus-Parquet size ratio in the final two lines is the
+first concrete illustration of columnar compression, before any benchmarking.
+Draw attention to the ratio at the start of block 2.
+```
+
+---
+
+## 1. Framing: what you can delegate and what you must check (≈3 min) {-}
+
+Generating syntactically correct code to read a Parquet file, or producing a
+decision table that maps file size to a recommended tool, is routine. It is also
+not where this session spends its time, because it is handled. Treat any code you
+did not write and check line by line the same way, whether it came from a
+colleague, a forum, your own past self, or a generated suggestion.
+
+What no source of code can do for you is run a benchmark on your data on your
+machine. It cannot tell you whether `fread` is four times or seven times faster
+than `read_csv` on your specific file, whether the partition structure you chose
+prunes effectively for your most common filter, or whether a general performance
+claim survives contact with your dataset. Those answers require measurement, and
+measurement requires understanding the mechanism well enough to design the right
+test.
+
+The reasoning and the checking are the content of this session. The syntax you
+can look up.
+
+---
+
+## 2. Data formats: mechanisms on disk (≈18 min) {-}
+
+Performance differences between tools are not arbitrary. They follow from how each
+format stores data on disk. Understanding the mechanism is what lets you evaluate
+a recommendation rather than accept it.
+
+A note on a term used throughout: **I/O** is short for input/output, meaning the
+work of reading from and writing to disk. Disk I/O is usually far slower than
+computation in memory, so a format that reads fewer bytes from disk is often the
+faster one.
+
+### CSV: row-oriented text {-}
+
+Open a CSV file in a text editor and you see exactly what R reads. Each line is
+one observation; all columns for that observation appear on the same line,
+separated by commas.
+
+```
+Row 1: observation_id, species, site_id, habitat, year, ..., all 15 columns
+Row 2: observation_id, species, site_id, habitat, year, ..., all 15 columns
+```
+
+This **row-oriented** layout has one important consequence. To retrieve `species`
+and `count` from row 1, the parser reads all 15 values, extracts 2, and discards
+13. It does this for every row. Requesting fewer columns reduces what is stored in
+R memory, but the parser still reads the full file from disk. Column selection is
+a memory optimisation, not a speed optimisation, for CSV.
+
+CSV also has no type system. Every value is text. The reader scans the first
+thousand rows and infers whether a column holds numbers or characters. If unusual
+values appear only after row one thousand, the inference may be wrong.
+
+### Parquet: columnar binary {-}
+
+Parquet uses a fundamentally different arrangement. Each column occupies a
+separate contiguous block on disk:
+
+```
+[all 1M values of species] [all 1M values of habitat] [all 1M values of count] ...
+[footer: column names, types, and min/max statistics per row group]
+```
+
+Requesting `species` and `count` touches only those two blocks. The other 13
+columns are never read from disk. This is called **column projection**: reading
+only the columns you ask for. Column selection therefore reduces both disk I/O and
+memory for Parquet. This is the central structural difference from CSV, and it is
+the take-home of the session.
+
+The footer stores the minimum and maximum value of each column within each **row
+group**, which is a horizontal batch of rows (a few tens of thousands by default).
+A query engine can read the footer and skip any row group whose range cannot
+satisfy a filter. If you filter `year == 2020` and a row group spans years 2000 to
+2019, that group is skipped without reading its data. Parquet also stores column
+types in the footer, so the reader never guesses types.
+
+### Compression {-}
+
+Parquet compresses each column block independently. The `arrow` default is Snappy:
+fast to compress and decompress, with a moderate ratio. Gzip compresses more
+aggressively but decompresses more slowly. Zstandard (zstd) typically matches or
+improves on Snappy's ratio at comparable speed.
+
+```{r compression-comparison, eval = FALSE}
+tibble(
+  format  = c("CSV", "Snappy", "Gzip", "Zstd"),
+  size_mb = c(
+    file.size("bird_survey.csv"),
+    file.size("bird_survey.parquet"),                       # default Snappy
+    {
+      write_parquet(read_parquet("bird_survey.parquet"),
+                    "bird_survey_gzip.parquet", compression = "gzip")
+      file.size("bird_survey_gzip.parquet")
+    },
+    {
+      write_parquet(read_parquet("bird_survey.parquet"),
+                    "bird_survey_zstd.parquet", compression = "zstd")
+      file.size("bird_survey_zstd.parquet")
+    }
+  ) / 1e6
+) |>
+  mutate(ratio_vs_csv = round(size_mb[1] / size_mb, 1))
+```
+
+### Partitioned datasets and pruning {-}
+
+A **partitioned dataset** is a directory of Parquet files organised by the values
+of one or more columns: one subdirectory per year, for example. A query engine can
+skip entire subdirectories when a filter excludes those values. This is
+**partition pruning**, and it activates only when you filter on the partition key.
+
+```{r partition-demo, eval = FALSE}
+# Filters on a non-partition column: every directory is scanned
+open_dataset("bird_survey_partitioned") |>
+  filter(habitat == "woodland") |>          # habitat is not the partition key
+  summarise(total = sum(count)) |>
+  collect()
+
+# Filters on the partition key: only the matching directory is read
+open_dataset("bird_survey_partitioned") |>
+  filter(year == 2020) |>                   # year IS the partition key
+  summarise(total = sum(count)) |>
+  collect()
+```
+
+```{block, type = "info"}
+**Instructor (≈6 min).** Show the file-size table, then the
+`bird_survey_partitioned/` directory: the `year=2000` ... `year=2023`
+subdirectories make the partition key visible. Connect this to the code above:
+filtering `year == 2020` opens only the `year=2020/` directory.
+```
+
+```{block, type = "warning"}
+Partition pruning works only on the partition key. Filtering on any other column
+still scans all partitions. Partition around the variable you filter most often.
+For longitudinal monitoring data that is usually `year`; if you almost always
+filter by region, partition by region instead.
+```
+
+---
+
+## 3. Lazy versus eager, and the `collect()` pattern (≈12 min) {-}
+
+There are two ways to bring data into a query. **Eager** evaluation runs
+immediately and returns a result you can see: `read_csv()` and `read_parquet()`
+are eager, and they pull the whole file into memory. **Lazy** evaluation records
+*what you intend to do* without running it, then executes only when you ask. The
+boundary between the two is `collect()`. Before `collect()` you hold a query
+description and nothing is in R; after `collect()` you hold a tibble.
+
+```{r lazy-class-check, eval = FALSE}
+lazy_query <- open_dataset("bird_survey.parquet") |>
+  filter(habitat == "woodland") |>
+  summarise(total = sum(count))
+
+class(lazy_query)         # a query description, NOT a tibble
+
+lazy_query |> collect()   # now it runs, and returns a tibble
+```
+
+Why this matters for the take-home: a lazy read combined with Parquet means the
+engine reads only the columns and row groups your query needs, and only the result
+enters memory. If your file approaches the RAM you have, the lazy path is the only
+one that fits, and a benchmark on a small test file will not reveal that. You have
+to understand the mechanism to anticipate it.
+
+Three tools share this lazy pattern. You write `dplyr` verbs to describe the
+query, then call `collect()`.
+
+- **`dtplyr`** runs the query on a `data.table` back-end. Wrap an in-memory table
+  with `lazy_dt()`.
+- **`arrow`** runs it on the Arrow engine over Parquet files, via `open_dataset()`.
+- **`duckdb`** runs it inside an in-process database engine. "In-process" means
+  the engine runs inside your R session, with no separate database server to
+  install or connect to, unlike PostgreSQL or MySQL. You reach it through `tbl()`,
+  using `DBI`, R's standard database interface.
+
+```{r collect-pattern, eval = FALSE}
+# arrow back-end
+open_dataset("bird_survey.parquet") |>
+  filter(habitat == "woodland") |>
+  group_by(species, year) |>
+  summarise(total = sum(count), .groups = "drop") |>
+  collect()                                            # execute -> tibble
+
+# DuckDB back-end. Connect once, then expose the file as a view.
+con <- dbConnect(duckdb())
+dbExecute(con, "CREATE VIEW surveys_parquet AS
+                SELECT * FROM read_parquet('bird_survey.parquet')")
+
+tbl(con, "surveys_parquet") |>
+  filter(habitat == "woodland") |>
+  group_by(species, year) |>
+  summarise(total = sum(count, na.rm = TRUE), .groups = "drop") |>
+  collect()                                            # execute -> tibble
+```
+
+```{block, type = "info"}
+**Instructor.** Spend two minutes on `collect()` explicitly. Participants who grasp
+that everything before `collect()` is a description, not a result, will read the
+Exercise 1 memory benchmark correctly. Note the DuckDB pattern: a file is exposed
+with `CREATE VIEW ... read_parquet(...)`, then queried by name. We register
+in-memory data frames differently, in block 8.
+```
+
+---
+
+## 4. Exercise 1: column selectivity and lazy memory, measured (≈20 min) {-}
+
+```{block, type = "task"}
+Before running any code, write down your prediction for each benchmark. The
+prediction is the exercise: comparing what you expected to what you measured is
+where the understanding forms.
+```
+
+```{block, type = "warning"}
+**Two things to know about the measurements.** `bench::mark()` reports `mem_alloc`
+as memory allocated **on the R heap only**. Engines that do work outside R, such as
+Arrow and DuckDB, may show deceptively small `mem_alloc` because the real
+allocation happens in their own memory, not R's. Treat `mem_alloc` as indicative
+for these engines and watch your system memory if memory pressure is the question.
+Second, three to ten iterations give noisy figures. The lesson is the direction and
+rough magnitude of an effect, not the exact ratio. Re-run a block and you will see
+the numbers move.
+```
+
+### Part A: does column selection reduce speed, or only memory? {-}
+
+You are selecting 2 of 15 columns, roughly 13% of the data. If column selection
+reduces disk I/O, you would expect a speed improvement. If it only reduces memory,
+speed should be similar.
+
+```{r ex1-part-a, eval = FALSE}
+bench::mark(
+  csv_15_cols     = read_csv("bird_survey.csv", show_col_types = FALSE),
+  csv_2_cols      = read_csv("bird_survey.csv",
+                             col_select     = c(species, count),
+                             show_col_types = FALSE),
+  parquet_15_cols = read_parquet("bird_survey.parquet"),
+  parquet_2_cols  = read_parquet("bird_survey.parquet",
+                                 col_select = c(species, count)),
+  iterations = 5,
+  check      = FALSE
+)[, c("expression", "median", "mem_alloc")]
+```
+
+**Questions.**
+
+1. For CSV, does `median` time fall with column selection, or does only
+   `mem_alloc` fall?
+2. For Parquet, do both `median` and `mem_alloc` fall? What does that confirm about
+   columnar storage?
+3. Someone recommends `col_select` on a CSV file "for speed". Based on this
+   benchmark, is that correct?
+
+`r hide("Solution")`
+
+For CSV, `mem_alloc` should fall substantially, from roughly 15 columns' worth to
+2, but `median` time should change little. The parser still reads all 15 columns
+from disk for every row and discards 13 before storing the result. Column selection
+is a memory optimisation for row-oriented formats.
+
+For Parquet, both `median` and `mem_alloc` should fall. The Arrow reader touches
+only the two requested column blocks; the other 13 are never read from disk. This
+is column projection, and the speed improvement reflects a genuine reduction in
+disk I/O, not just less copying into R.
+
+The recommendation is wrong for CSV and right for Parquet. The error is treating a
+format-specific behaviour as a general rule.
+
+`r unhide()`
+
+### Part B: eager versus lazy memory {-}
+
+```{r ex1-part-b, eval = FALSE}
+bench::mark(
+  eager = read_parquet("bird_survey.parquet") |>
+    filter(habitat == "woodland") |>
+    summarise(total = sum(count)),
+
+  lazy  = open_dataset("bird_survey.parquet") |>
+    filter(habitat == "woodland") |>
+    summarise(total = sum(count)) |>
+    collect(),
+
+  iterations = 5,
+  check = FALSE
+)[, c("expression", "median", "mem_alloc")]
+```
+
+**Questions.**
+
+1. Which approach allocates more R-heap memory, and why?
+2. The test file is about 90 MB. Suppose your real file is 40 GB on a 16 GB
+   machine. Which approach can run at all? Could this benchmark have told you that?
+
+`r hide("Solution")`
+
+`eager` reads the entire file into R, then filters and summarises, so its
+`mem_alloc` reflects the full file. `lazy` pushes the filter and the summary into
+the Arrow engine and brings back only the one-row result, so its R-heap allocation
+is small (subject to the off-heap caveat above).
+
+For the 40 GB file, only the lazy approach can run, because the eager read would
+require the whole file in 16 GB of RAM. The 90 MB benchmark cannot reveal this:
+both approaches succeed at 90 MB. This is exactly the case where you must reason
+from the mechanism rather than from a small-file measurement.
+
+`r unhide()`
+
+---
+
+## 5. Query optimisation: filter early, select early (≈12 min) {-}
+
+Query structure affects performance independently of the tool. A poorly structured
+query on a fast engine can lose to a well-structured query on plain `dplyr`. Two
+principles carry most of the benefit.
+
+### Principle 1: filter early {-}
+
+Applying a filter before an aggregation or join reduces the data flowing through
+every later step. Apply it afterwards and the expensive operation runs on the full
+dataset.
+
+```{r filter-early, eval = FALSE}
+surveys <- read_csv("bird_survey.csv", show_col_types = FALSE)
+
+bench::mark(
+  filter_late  = surveys |>
+    group_by(species, habitat, year) |>
+    summarise(total = sum(count), .groups = "drop") |>
+    filter(habitat == "woodland"),         # filter AFTER aggregating all habitats
+
+  filter_early = surveys |>
+    filter(habitat == "woodland") |>       # filter BEFORE aggregating
+    group_by(species, year) |>
+    summarise(total = sum(count), .groups = "drop"),
+
+  iterations = 10,
+  check = FALSE
+)[, c("expression", "median", "mem_alloc")]
+```
+
+The point is the mechanism, not the precise ratio: `filter_late` aggregates all
+five habitats and then discards four fifths of the result, while `filter_early`
+discards them first. On a fast in-memory engine the gap can be modest and noisy, so
+read the direction across re-runs rather than trusting a single figure. In SQL the
+same idea is the distinction between `WHERE` (before grouping) and `HAVING` (after
+grouping); use `WHERE` whenever the condition does not depend on an aggregate.
+
+### Principle 2: select early {-}
+
+Carrying unneeded columns through a pipeline costs memory and, for Parquet, disk
+I/O. Select the minimum columns before any heavy step. On a lazy Parquet or DuckDB
+source, an early `select()` becomes column projection at the point of reading.
+
+```{r select-early, eval = FALSE}
+open_dataset("bird_survey.parquet") |>
+  select(species, habitat, year, count) |>   # 4 columns read from disk, not 15
+  filter(habitat == "woodland") |>
+  group_by(species, year) |>
+  summarise(total = sum(count), .groups = "drop") |>
+  collect()
+```
+
+---
+
+## 6. Exercise 2: finding and fixing an inefficient query (≈14 min) {-}
+
+```{block, type = "task"}
+The query below has a structural problem. Identify it, rewrite the query, and
+benchmark both versions to confirm the improvement. Diagnose it yourself before
+opening the solution.
+```
+
+```{r ex2-query, eval = FALSE}
+sites <- tibble(
+  site_id = paste0("SITE_", sprintf("%04d", 1:500)),
+  region  = sample(c("North", "South", "East", "West"), 500, replace = TRUE),
+  area_ha = runif(500, 10, 500)
+)
+
+surveys |>
+  left_join(sites, by = "site_id") |>
+  filter(region == "North", habitat == "woodland") |>
+  group_by(species) |>
+  summarise(total = sum(count), .groups = "drop")
+```
+
+`r hide("Solution")`
+
+The join precedes the filter, so `left_join` runs on all one million rows before
+anything is discarded. `region` lives in `sites`, so it genuinely requires the
+join and cannot be filtered earlier. But `habitat` is already in `surveys` and can
+be applied first, shrinking the table that enters the join.
+
+```{r ex2-solution, eval = FALSE}
+bench::mark(
+  original = surveys |>
+    left_join(sites, by = "site_id") |>
+    filter(region == "North", habitat == "woodland") |>
+    group_by(species) |>
+    summarise(total = sum(count), .groups = "drop"),
+
+  improved = surveys |>
+    filter(habitat == "woodland") |>         # reduce surveys before the join
+    left_join(sites, by = "site_id") |>
+    filter(region == "North") |>             # region needs the join, so filter here
+    group_by(species) |>
+    summarise(total = sum(count), .groups = "drop"),
+
+  iterations = 10,
+  check = FALSE
+)[, c("expression", "median", "mem_alloc")]
+```
+
+`r unhide()`
+
+---
+
+## 7. Reading the other syntaxes through `show_query()` (≈12 min) {-}
+
+You will write `dplyr`. The lazy back-ends translate it for you, and
+`show_query()` lets you read that translation. This is the practical way to meet
+`data.table` and SQL: recognise them when they appear, rather than write them from
+memory. Full writing references are in Appendices C and D.
+
+```{r show-query, eval = FALSE}
+# dtplyr translates dplyr to data.table
+lazy_dt(as.data.table(surveys)) |>
+  filter(habitat == "woodland") |>
+  group_by(species, year) |>
+  summarise(total = sum(count), .groups = "drop") |>
+  show_query()
+
+# dbplyr translates dplyr to SQL (here, DuckDB's dialect)
+tbl(con, "surveys_parquet") |>
+  filter(habitat == "woodland") |>
+  group_by(species, year) |>
+  summarise(total = sum(count, na.rm = TRUE), .groups = "drop") |>
+  show_query()
+```
+
+The same operation in all three syntaxes:
+
+| `dplyr` | `data.table` | SQL |
+|---|---|---|
+| `filter(habitat == "woodland")` | `DT[habitat == "woodland"]` | `WHERE habitat = 'woodland'` |
+| `select(species, count)` | `DT[, .(species, count)]` | `SELECT species, count` |
+| `group_by(a) \|> summarise(n = n())` | `DT[, .(n = .N), by = a]` | `GROUP BY a ... COUNT(*) AS n` |
+| `arrange(desc(x))` | `DT[order(-x)]` | `ORDER BY x DESC` |
+
+In `data.table`, the template is `DT[i, j, by]`: `i` filters rows, `j` selects or
+computes, `by` groups. In SQL, `WHERE` filters before grouping and `HAVING` filters
+after it.
+
+```{block, type = "try"}
+**Quick read.** What does each line below do? Say it in words before moving on; you
+are practising reading, not writing.
+
+    surveys_dt[year >= 2015 & count > 0, .(total = sum(count)), by = species]
+
+    SELECT species, SUM(count) AS total FROM surveys
+    WHERE year >= 2015 AND count > 0 GROUP BY species
+```
+
+```{block, type = "info"}
+**Instructor.** Show one operation in all three forms, run `show_query()` to confirm
+the translation matches, then hand out the reference table and move on. Do not work
+through every row; participants return to the table on their own.
+```
+
+---
+
+## 8. Verifying code you did not write line by line (≈10 min) {-}
+
+Four quick checks catch most problems before you run anything on a full dataset.
+They apply to any code you are adopting rather than authoring, whatever its source.
+
+**Check 1: the output class.** Confirm the result is the type your downstream code
+expects.
+
+```{r check-class, eval = FALSE}
+class(read_csv("bird_survey.csv", show_col_types = FALSE))
+# "tbl_df" "tbl" "data.frame"           a tibble, in memory
+
+class(open_dataset("bird_survey.parquet"))
+# "FileSystemDataset" ...               a query description, NOT in memory
+```
+
+**Check 2: the translation.** Run `show_query()` before `collect()` on any
+`dtplyr` or `dbplyr` pipeline, and check the filter conditions, grouping variables,
+and aggregations against your intent.
+
+**Check 3: results agree across engines.** Engines differ on edge cases. The most
+common surprise is missing values: `dplyr`'s `sum()` returns `NA` if any input is
+`NA`, whereas SQL aggregation functions, DuckDB included, drop `NULL` by default.
+For a dataset with no missing counts the two agree, but that coincidence is not a
+check. Verify on a small subset.
+
+```{r check-agreement, eval = FALSE}
+small <- slice_head(surveys, n = 50000)
+duckdb_register(con, "small", small)         # an in-memory data frame: register is correct here
+
+reference <- small |>
+  filter(habitat == "woodland") |>
+  group_by(species, year) |>
+  summarise(total = sum(count), .groups = "drop") |>
+  arrange(species, year)
+
+candidate <- tbl(con, "small") |>
+  filter(habitat == "woodland") |>
+  group_by(species, year) |>
+  summarise(total = sum(count, na.rm = TRUE), .groups = "drop") |>
+  collect() |>
+  arrange(species, year)
+
+all.equal(reference$total, candidate$total)
+```
+
+```{block, type = "warning"}
+The `na.rm = TRUE` in the DuckDB version is not cosmetic. It makes the R side match
+SQL's default of dropping missing values. Without it, a single `NA` would diverge
+the two results. Always verify on a subset before assuming agreement.
+```
+
+**Check 4: performance on your data.** General claims are approximations. Measure
+on your file and your machine before committing.
+
+```{r check-performance, eval = FALSE}
+bench::mark(
+  current  = read_csv("bird_survey.csv", show_col_types = FALSE) |>
+    filter(habitat == "woodland") |>
+    group_by(species, year) |>
+    summarise(total = sum(count), .groups = "drop"),
+
+  proposed = tbl(con, "surveys_parquet") |>
+    filter(habitat == "woodland") |>
+    group_by(species, year) |>
+    summarise(total = sum(count, na.rm = TRUE), .groups = "drop") |>
+    collect(),
+
+  iterations = 5,
+  check = FALSE
+)[, c("expression", "median", "mem_alloc")]
+
+dbDisconnect(con, shutdown = TRUE)
+```
+
+If the proposed approach is not faster on your data, the general recommendation
+does not apply to your situation. Understand why before you adopt it.
+
+---
+
+## 9. Close: the one capability, and the checklist (≈7 min) {-}
+
+If you take one thing away, take this: choose the format and the evaluation
+strategy deliberately. Parquet plus a lazy read with `collect()` lets the engine
+read only the columns and row groups your query needs, and brings only the result
+into memory. CSV plus an eager read does neither. Everything else in the session,
+the optimisation principles, the three syntaxes, the verification checks, exists to
+support or to confirm that decision.
+
+### Closing checklist {-}
+
+- [ ] Format chosen on the mechanism: columnar (Parquet) when queries are
+      column-selective or filtered; row-oriented (CSV) only when required by an
+      external constraint.
+- [ ] Reads are **lazy** with `collect()` when the file is large relative to RAM,
+      so only the result enters memory.
+- [ ] Filters and column selection appear **early**, before joins and aggregations.
+- [ ] Partition key matches the most frequently filtered variable, if partitioning.
+- [ ] `class()` confirms the output type matches downstream code.
+- [ ] `show_query()` checked on any `dtplyr` or `dbplyr` pipeline before `collect()`.
+- [ ] Results verified with `all.equal()` on a small subset before scaling.
+- [ ] Performance benchmarked on the actual file, not accepted on a general claim.
+
+---
+
+## Appendix A: Key terms {-}
+
+**Column projection**: reading only the requested columns from disk. Works for
+columnar formats such as Parquet; not for row-oriented CSV.
+
+**Columnar storage**: a layout in which each column occupies a contiguous block,
+independent of other columns. Parquet is columnar.
+
+**`collect()`**: triggers a lazy query and returns a tibble. Before it, a query
+description; after it, an in-memory object.
+
+**Common Table Expression (CTE)**: the `WITH name AS (...)` form in SQL. It names an
+intermediate query so you can refer to it below, like an inline temporary table.
+See Appendix D.
+
+**Copy-on-modify**: R's default behaviour of copying an object when you change it.
+`data.table` instead modifies **in place** (the `:=` operator), avoiding copies,
+which is part of why it is fast and memory-light on large tables.
+
+**`data.table`**: a high-performance data structure and query engine. Uses several
+processor cores at once (multithreading) and in-place modification. Template:
+`DT[i, j, by]`.
+
+**`DBI`**: R's standard database interface. `dbConnect()`, `dbExecute()`, and
+`dbGetQuery()` are DBI functions; DuckDB implements them.
+
+**`dbplyr`**: translates `dplyr` verbs to SQL for DBI-compatible databases,
+DuckDB included. `show_query()` exposes the translation.
+
+**`dtplyr`**: translates `dplyr` verbs to `data.table`. Requires `lazy_dt()`.
+`show_query()` exposes the translation.
+
+**DuckDB**: an in-process analytical database engine. No server required; it runs
+inside your R session. Reads CSV and Parquet directly.
+
+**Eager evaluation**: computation happens immediately. `read_csv()` and
+`read_parquet()` are eager.
+
+**Hive partitioning**: a directory-naming convention, `year=2020/`, that encodes a
+column's value in the path. Query engines read the value from the directory name.
+
+**I/O**: input/output, the work of reading from and writing to disk. Usually much
+slower than in-memory computation.
+
+**In-process engine**: a database engine that runs inside your program, with no
+separate server to install or connect to. Contrast with PostgreSQL or MySQL.
+
+**Lazy evaluation**: computation deferred until `collect()`. `open_dataset()` and
+`tbl()` are lazy.
+
+**Multithreading**: using several of the processor's cores at once. `fread()` and
+`data.table` are multithreaded; `read_csv()` is single-threaded.
+
+**Partition pruning**: skipping partition directories that cannot satisfy a filter
+on the partition key. Activates only on the partition key.
+
+**Peak memory allocation**: the maximum RAM used at any point in an operation. Eager
+reads hold the whole file; lazy reads hold only the result. Note that
+`bench::mark()`'s `mem_alloc` counts R-heap allocation only.
+
+**Row group**: a horizontal batch of rows within a Parquet file. Per-group min/max
+statistics enable row-group skipping during filtered reads.
+
+**Row-oriented storage**: a layout in which all columns for a row are stored
+together. CSV is row-oriented; column selection does not reduce its disk I/O.
+
+---
+
+## Appendix B: Tool syntax reference {-}
+
+```{r appendix-readr, eval = FALSE}
+# readr
+read_csv("f.csv",
+         col_types      = cols(year = col_integer(), count = col_integer()),
+         col_select     = c(species, habitat, year, count),
+         n_max          = 10000,
+         show_col_types = FALSE)
+```
+
+```{r appendix-fread, eval = FALSE}
+# data.table::fread
+fread("f.csv",
+      select       = c("species", "habitat", "year", "count"),
+      nrows        = 10000,
+      showProgress = FALSE)
+```
+
+```{r appendix-arrow, eval = FALSE}
+# arrow
+read_parquet("f.parquet")
+read_parquet("f.parquet", col_select = c(species, count))
+
+open_dataset("f.parquet") |>
+  filter(...) |>
+  collect()
+
+open_dataset("dir/") |>            # partitioned dataset
+  filter(year == 2020) |>          # partition pruning activates
+  collect()
+
+write_parquet(data, "f.parquet", compression = "zstd")
+write_dataset(data, path = "dir/", partitioning = "year")
+```
+
+```{r appendix-duckdb, eval = FALSE}
+# duckdb
+con <- dbConnect(duckdb())
+
+# Files: expose them as views, then query by name.
+dbExecute(con, "CREATE VIEW t_csv     AS SELECT * FROM read_csv_auto('file.csv')")
+dbExecute(con, "CREATE VIEW t_parquet AS SELECT * FROM read_parquet('file.parquet')")
+
+# In-memory data frames: register directly (no file involved).
+duckdb_register(con, "t_mem", in_memory_tibble)
+
+tbl(con, "t_parquet") |>
+  filter(...) |>
+  show_query() |>    # inspect the SQL
+  collect()          # execute -> tibble
+
+dbGetQuery(con, "SELECT ... FROM t_parquet WHERE ...")
+
+# Partitioned Parquet directly in SQL
+dbGetQuery(con, "
+  SELECT * FROM read_parquet('dir/*/*.parquet', hive_partitioning = true)
+  WHERE year = 2020
+")
+
+dbDisconnect(con, shutdown = TRUE)
+```
+
+```{block, type = "warning"}
+`duckdb_register()` registers an in-memory R data frame as a view; its third
+argument is a data frame, not a file path. To read files, use a view over
+`read_csv_auto()` or `read_parquet()`, as above.
+```
+
+---
+
+## Appendix C: writing `data.table` {-}
+
+```
+DT[i, j, by]
+    i  = filter rows      (like filter())
+    j  = select / compute (like select(), mutate(), summarise())
+    by = group            (like group_by())
+```
+
+Special symbols: `.N` is `n()`, `.()` is shorthand for a list of columns, `:=`
+assigns in place, `uniqueN()` is `n_distinct()`, `shift()` is `lag()`/`lead()`.
+
+```{r appendix-dt-examples, eval = FALSE}
+surveys_dt <- fread("bird_survey.csv", showProgress = FALSE)
+
+# group and summarise
+surveys_dt[, .(total = sum(count), n = .N), by = .(species, habitat)]
+
+# filter, then summarise, then sort
+surveys_dt[year >= 2015 & count > 0,
+           .(total = sum(count), n_sites = uniqueN(site_id)),
+           by = .(species, habitat)][order(-total)]
+
+# lag within group (note: shift() respects existing row order)
+surveys_dt[order(year),
+           prev_count := shift(count, type = "lag"),
+           by = .(species, site_id)]
+```
+
+Verify any hand-written `data.table` against the `dtplyr` translation of the
+equivalent `dplyr`:
+
+```{r appendix-dt-verify, eval = FALSE}
+lazy_dt(surveys_dt) |>
+  filter(year >= 2015, count > 0) |>
+  group_by(species, habitat) |>
+  summarise(total = sum(count), n_sites = n_distinct(site_id), .groups = "drop") |>
+  arrange(desc(total)) |>
+  show_query()
+```
+
+---
+
+## Appendix D: SQL window functions and CTEs {-}
+
+A **Common Table Expression (CTE)** names an intermediate result so the query below
+can refer to it. It makes multi-step SQL readable, much as a named intermediate
+object does in an R pipeline.
+
+```sql
+WITH step_one AS ( SELECT ... ),
+     step_two AS ( SELECT ... FROM step_one )
+SELECT * FROM step_two
+```
+
+**Window functions** compute across a set of related rows without collapsing them.
+They are essential for time series: lags, rankings, and running totals.
+
+```sql
+function() OVER (
+  PARTITION BY grouping_column    -- like group_by()
+  ORDER BY ordering_column        -- sequence within the group
+)
+```
+
+```{r appendix-window, eval = FALSE}
+con <- dbConnect(duckdb())
+dbExecute(con, "CREATE VIEW surveys AS
+                SELECT * FROM read_parquet('bird_survey.parquet')")
+
+# LAG / LEAD: previous and next value within a group
+dbGetQuery(con, "
+  SELECT species, site_id, year, count,
+    LAG(count)  OVER (PARTITION BY species, site_id ORDER BY year) AS prev_count,
+    LEAD(count) OVER (PARTITION BY species, site_id ORDER BY year) AS next_count
+  FROM surveys
+  ORDER BY species, site_id, year
+")
+
+# Top-n per group via a CTE plus RANK()
+dbGetQuery(con, "
+  WITH annual_totals AS (
+    SELECT species, year, SUM(count) AS total
+    FROM surveys
+    GROUP BY species, year
+  )
+  SELECT species, year, total,
+    RANK() OVER (PARTITION BY year ORDER BY total DESC) AS rnk
+  FROM annual_totals
+  QUALIFY rnk <= 3
+  ORDER BY year, rnk
+")
+
+dbDisconnect(con, shutdown = TRUE)
+```
+
+`RANK()` gives ties the same rank and then skips positions (1, 2, 2, 4);
+`ROW_NUMBER()` gives unique positions regardless of ties (1, 2, 3, 4). The `dplyr`
+equivalent of `RANK()` is `min_rank()`, not `rank()`: base `rank()` averages ties
+and returns fractional ranks, which disagrees with SQL on tied values.
+
+---
+
+## References {-}
+
+* Trisovic, A., Lau, M. K., Pasquier, T., & Crosas, M. (2022). A large-scale study
+  on research code quality and execution. *Scientific Data*, 9, 60.
+* Kellner, K. F., Doser, J. W., & Belant, J. L. (2025). Functional R code is rare
+  in species distribution and abundance papers. *Ecology*, 106, e4475.
+* Apache Arrow R documentation: <https://arrow.apache.org/docs/r/>
+* DuckDB R API: <https://duckdb.org/docs/stable/clients/r>
+* `dtplyr` documentation: <https://dtplyr.tidyverse.org>
+* `dbplyr` SQL translation: <https://dbplyr.tidyverse.org/articles/sql-translation.html>
+* `bench` package: <https://bench.r-lib.org>

@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.39">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="description" content="Statistical skills for Biologists">
+<title>9&nbsp; ANOVA – 5023B</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./13-interaction.html" rel="next">
+<link href="./11-regression.html" rel="prev">
+<link href="./images/logos/logo.png" rel="icon" type="image/png">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-3e476e15ae565c222d94875412ae43a1.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-d3043699f4f525e226433170f63674df.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-966f60e3bc60cc6f7c6c3c8d3b3a508b.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-e0b3d8e73f4d1716c2cfb9b6011ce545.min.css" rel="prefetch" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark"><script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script><script src="site_libs/font-awesome-6.5.2/js/script.js"></script><script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script><script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+<link rel="stylesheet" href="include/booktem.css">
+<link rel="stylesheet" href="include/webex.css">
+<link rel="stylesheet" href="include/glossary.css">
+<link rel="stylesheet" href="include/style.css">
+</head>
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top"><nav class="quarto-secondary-nav"><div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./12-ANOVA.html"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">ANOVA</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav></header><!-- content --><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto"><div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">5023B</a> 
+        <div class="sidebar-tools-main">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-penguin-project.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Meet the Penguins</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-dplyr.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Data cleaning</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06-data-bias.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Data bias</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-data-insights.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Data insights</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08-inferential-statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Inferential statistics</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./09-linear-models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">Linear models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10-paired-design.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">Paired tests</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11-regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Regression</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./12-ANOVA.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">ANOVA</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./13-interaction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Multi factor ANOVA</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Summary tables</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./summary-table.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">11</span>&nbsp; <span class="chapter-title">Summary tables</span></span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Data Visualisation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">12</span>&nbsp; <span class="chapter-title">ggplot</span></span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true">
+ <span class="menu-text">Reproducible Reports</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./quarto.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">13</span>&nbsp; <span class="chapter-title">Quarto</span></span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true">
+ <span class="menu-text">Appendices</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./projects.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Project workflows</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tidy-data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Tidy data</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./advanced_ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">ggplot extras</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./references.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">References</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+    </ul>
+</div>
+</nav><div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active"><h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+<li>
+<a href="#analysis-of-variance-anova" id="toc-analysis-of-variance-anova" class="nav-link active" data-scroll-target="#analysis-of-variance-anova"><span class="header-section-number">9.1</span> Analysis of Variance (ANOVA)</a>
+  <ul class="collapse">
+<li><a href="#anova-and-the-t-test-share-a-common-foundation" id="toc-anova-and-the-t-test-share-a-common-foundation" class="nav-link" data-scroll-target="#anova-and-the-t-test-share-a-common-foundation"><span class="header-section-number">9.1.1</span> ANOVA and the t-test Share a Common Foundation</a></li>
+  <li><a href="#anova-is-useful-when-we-have-more-than-two-groups" id="toc-anova-is-useful-when-we-have-more-than-two-groups" class="nav-link" data-scroll-target="#anova-is-useful-when-we-have-more-than-two-groups"><span class="header-section-number">9.1.2</span> ANOVA is Useful When We Have More Than Two Groups</a></li>
+  </ul>
+</li>
+  <li>
+<a href="#maize-data" id="toc-maize-data" class="nav-link" data-scroll-target="#maize-data"><span class="header-section-number">9.2</span> Maize data</a>
+  <ul class="collapse">
+<li><a href="#the-anova-table" id="toc-the-anova-table" class="nav-link" data-scroll-target="#the-anova-table"><span class="header-section-number">9.2.1</span> The ANOVA table</a></li>
+  </ul>
+</li>
+  <li><a href="#two-way-anova" id="toc-two-way-anova" class="nav-link" data-scroll-target="#two-way-anova"><span class="header-section-number">9.3</span> Two-way ANOVA</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">9.4</span> Summary</a></li>
+  <li>
+<a href="#anova-for-frogspawning" id="toc-anova-for-frogspawning" class="nav-link" data-scroll-target="#anova-for-frogspawning"><span class="header-section-number">9.5</span> ANOVA for frogspawning</a>
+  <ul class="collapse">
+<li><a href="#activity-1.-make-a-hypothesis" id="toc-activity-1.-make-a-hypothesis" class="nav-link" data-scroll-target="#activity-1.-make-a-hypothesis"><span class="header-section-number">9.5.1</span> Activity 1. Make a Hypothesis</a></li>
+  <li><a href="#activity-2.-import-and-clean-data" id="toc-activity-2.-import-and-clean-data" class="nav-link" data-scroll-target="#activity-2.-import-and-clean-data"><span class="header-section-number">9.5.2</span> Activity 2. Import and clean data</a></li>
+  <li><a href="#activity-3.-design-a-linear-model" id="toc-activity-3.-design-a-linear-model" class="nav-link" data-scroll-target="#activity-3.-design-a-linear-model"><span class="header-section-number">9.5.3</span> Activity 3. Design a linear model</a></li>
+  </ul>
+</li>
+  <li>
+<a href="#sec-fit" id="toc-sec-fit" class="nav-link" data-scroll-target="#sec-fit"><span class="header-section-number">9.6</span> Checking the fit of a model</a>
+  <ul class="collapse">
+<li><a href="#assumption-1-normality-of-residuals" id="toc-assumption-1-normality-of-residuals" class="nav-link" data-scroll-target="#assumption-1-normality-of-residuals"><span class="header-section-number">9.6.1</span> Assumption 1: Normality of Residuals</a></li>
+  <li><a href="#assumption-2-homogeneity-of-variance" id="toc-assumption-2-homogeneity-of-variance" class="nav-link" data-scroll-target="#assumption-2-homogeneity-of-variance"><span class="header-section-number">9.6.2</span> Assumption 2: Homogeneity of Variance</a></li>
+  <li><a href="#assumption-3-linearity" id="toc-assumption-3-linearity" class="nav-link" data-scroll-target="#assumption-3-linearity"><span class="header-section-number">9.6.3</span> Assumption 3: Linearity</a></li>
+  <li><a href="#outliers-and-their-impact" id="toc-outliers-and-their-impact" class="nav-link" data-scroll-target="#outliers-and-their-impact"><span class="header-section-number">9.6.4</span> Outliers and Their Impact</a></li>
+  <li><a href="#quick-model-checks" id="toc-quick-model-checks" class="nav-link" data-scroll-target="#quick-model-checks"><span class="header-section-number">9.6.5</span> Quick model checks</a></li>
+  </ul>
+</li>
+  <li>
+<a href="#making-figures" id="toc-making-figures" class="nav-link" data-scroll-target="#making-figures"><span class="header-section-number">9.7</span> Making Figures</a>
+  <ul class="collapse">
+<li><a href="#activity-4.-design-a-figure" id="toc-activity-4.-design-a-figure" class="nav-link" data-scroll-target="#activity-4.-design-a-figure"><span class="header-section-number">9.7.1</span> Activity 4. Design a figure</a></li>
+  </ul>
+</li>
+  </ul></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><div class="quarto-title">
+<h1 class="title"><span id="sec-anova" class="quarto-section-identifier"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">ANOVA</span></span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header><div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="fu">library</span>(janitor)</span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="fu">library</span>(here)</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="fu">library</span>(skimr)</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="fu">library</span>(ggridges)</span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="fu">library</span>(performance)</span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="fu">library</span>(ggridges)</span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="fu">library</span>(qqplotr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Set this up as a new R project, with organised folders.</p>
+<p>Make sure to include some data checking in your script.</p>
+</div>
+</div>
+<section id="analysis-of-variance-anova" class="level2" data-number="9.1"><h2 data-number="9.1" class="anchored" data-anchor-id="analysis-of-variance-anova">
+<span class="header-section-number">9.1</span> Analysis of Variance (ANOVA)</h2>
+<p>So far we have used linear models for analyses between <em>two</em> ‘categorical’ explanatory variables e.g.&nbsp;<em>t</em>-tests, and for regression with <em>two</em> ‘continuous’ variables. However, as designs become more complicated, the number of comparisons can quickly become overwhelming, working with estimates and intervals alone can become harder.</p>
+<section id="anova-and-the-t-test-share-a-common-foundation" class="level3" data-number="9.1.1"><h3 data-number="9.1.1" class="anchored" data-anchor-id="anova-and-the-t-test-share-a-common-foundation">
+<span class="header-section-number">9.1.1</span> ANOVA and the t-test Share a Common Foundation</h3>
+<p>Both ANOVA and the t-test work by decomposing variance into different sources. In a t-test, we examine whether the difference between two group means is greater than what we would expect by chance, given the within-group variance. Similarly, ANOVA compares the variability between group means to the variability within the groups. For a t-test comparing two groups, the F-ratio calculated in a one-way ANOVA (variance between groups/variance within groups) will produce an equivalent result to the t-statistic (squared) because they both essentially use the same ratio of variance components. In this case, an ANOVA with two groups and one degree of freedom in the denominator yields the same conclusion as a t-test.</p>
+</section><section id="anova-is-useful-when-we-have-more-than-two-groups" class="level3" data-number="9.1.2"><h3 data-number="9.1.2" class="anchored" data-anchor-id="anova-is-useful-when-we-have-more-than-two-groups">
+<span class="header-section-number">9.1.2</span> ANOVA is Useful When We Have More Than Two Groups</h3>
+<p>When we have more than two groups (i.e., more than two levels of a categorical factor), a t-test would require multiple pairwise comparisons, each introducing an additional chance for Type I errors. If we conducted multiple t-tests (e.g., three comparisons for three groups), the probability of finding at least one significant result by chance (when there is no true effect) increases. ANOVA mitigates this problem by testing an overall hypothesis: it asks if there is a statistically significant difference among the group means without specifying which groups are different. By conducting a single F-test, ANOVA controls the Type I error rate across all group comparisons, maintaining a consistent significance threshold.</p>
+</section></section><section id="maize-data" class="level2" data-number="9.2"><h2 data-number="9.2" class="anchored" data-anchor-id="maize-data">
+<span class="header-section-number">9.2</span> Maize data</h2>
+<p>Our simple linear model for the maize data was:</p>
+<pre><code>lsmodel1 &lt;- lm(height ~ type, data = darwin)</code></pre>
+<p>A one-way ANOVA is a way of fitting a linear model with a single explanatory variable. Its main goal is to measure the total variability in the data and split it into two parts: the variability between groups (signal) and the variability within groups (noise). This “signal-to-noise” ratio helps us understand how much of the total variation is explained by our model (the signal) versus what remains unexplained (the noise).</p>
+<p>The method for fitting this model is called ordinary least squares (OLS). Here’s how it works:</p>
+<p>Total Variation (SST): First, the model calculates the total variation (or total sum of squares, SST) by measuring how far each data point is from the overall mean.</p>
+<p>Explained Variation (SSR): Then, the model fits a line (slope) that minimizes the squared distances between the data points and this line, capturing the variability explained by the groups (sum of squares for regression, SSR).</p>
+<p>Unexplained Variation (SSE): Finally, the leftover variation, or what the model can’t explain, is measured as the sum of squares for error (SSE).</p>
+<p>In this way, the total variability (SST) is divided into explained (SSR) and unexplained (SSE) parts, allowing us to see if the differences between group means are likely due to a real effect.</p>
+<p><span class="math display">\[ SST = SSR + SSE \]</span></p>
+<p>Remember:</p>
+<ul>
+<li><p>SST = the sum of squared differences between the data points and the grand mean</p></li>
+<li><p>SSR = the sum of the squared differences between the grand mean and the predicted position on the linear model</p></li>
+<li><p>SSE = the sum of the squared differences between the predicted position and the observed position</p></li>
+</ul>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-4-1.png" class="quarto-figure quarto-figure-center figure-img" style="width:100.0%;height:200.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="callout-info">
+<p>Least squares quantifies A) total least squares, B) treatment least squares, C) error sum of squares (SST, SSR, SSE). The vertical lines measure the distances, which are then squared and summed. SST is calculated by measuring to the intercept, SSR is calculated by measuring the distance of the estimates to the intercept, SSE is calculated by measuring the distance to the estimates</p>
+</div>
+<section id="the-anova-table" class="level3" data-number="9.2.1"><h3 data-number="9.2.1" class="anchored" data-anchor-id="the-anova-table">
+<span class="header-section-number">9.2.1</span> The ANOVA table</h3>
+<p>If we want to get the ANOVA table for a linear model we can use the <code><a href="https://rdrr.io/r/stats/anova.html">anova()</a></code> function:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="fu">anova</span>(lsmodel1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead><tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">Df</th>
+<th style="text-align: right;">Sum Sq</th>
+<th style="text-align: right;">Mean Sq</th>
+<th style="text-align: right;">F value</th>
+<th style="text-align: right;">Pr(&gt;F)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">type</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">51.35208</td>
+<td style="text-align: right;">51.352083</td>
+<td style="text-align: right;">5.939518</td>
+<td style="text-align: right;">0.0214145</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Residuals</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">242.08333</td>
+<td style="text-align: right;">8.645833</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>When you compare this with the output from the summary() function, you’ll see that the F-value, P-value, and degrees of freedom (df) match exactly. However, the ANOVA table itself is fairly minimal—it doesn’t give us biological context, such as differences in means or uncertainties (like standard errors). Despite this, ANOVA tables are commonly reported, though they provide only a basic part of the analysis.</p>
+<p>ANOVA tables help simplify effects when there are more than two levels, and understanding their structure is key:</p>
+<ul>
+<li><p><strong>Source (Column 1)</strong>: Lists the variance source—signal (regression) in the first row and noise (error) in the second.</p></li>
+<li><p><strong>Degrees of Freedom (Column 2)</strong>: Shows df for treatments (k - 1) in the first row and residual df (N - k) in the second.</p></li>
+<li><p><strong>Sum of Squares (Column 3)</strong>: The total explained variance (SSR) in the first row, and unexplained variance (SSE) in the second.</p></li>
+<li><p><strong>Mean Sum of Squares (Column 4)</strong>: The average variance per group, MSR = SSR/(k - 1) for treatments, and MSE = SSE/(N - k) for residuals. This is pooled from all treatments, enhancing power with smaller samples but requiring equal variances across groups (homogeneity).</p></li>
+<li><p><strong>F-Statistic (Column 5)</strong>: Our signal-to-noise ratio, calculated as the treatment variance divided by the residual error variance.</p></li>
+</ul>
+<p><span class="math display">\[ F =\frac{SSR/(k-1)}{SSE/(N-k)} =  \frac{MSR}{MSE} \]</span></p>
+<p>In our example, with an F value of 5.9, the “signal” (or effect of the treatment) is almost six times greater than the “noise” (within-group variation). To determine if this is significant, we use the F value, along with sample size and treatment levels, to calculate the probability of seeing this ratio if there were actually no treatment effect (null hypothesis).</p>
+<p>This probability (the P-value) is found using an F-distribution (see below), which takes into account the degrees of freedom for both the signal (mean squared regression value) and noise (mean squared error value). You can verify this in R with the <code><a href="https://rdrr.io/r/stats/Fdist.html">pf()</a></code> function, using the F value, degrees of freedom for signal and noise, and setting the last argument to indicate a two-sided test. This should match the P-value in your ANOVA output exactly.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="fu">pf</span>(<span class="fl">5.9395</span>, <span class="at">df1 =</span> <span class="dv">1</span>, <span class="at">df2 =</span> <span class="dv">28</span>, <span class="at">lower.tail=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.02141466</code></pre>
+</div>
+</div>
+<div class="webex-solution">
+<button>
+F distribution
+</button>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<p>Lastly, it’s helpful to remember that F and t are related: for two groups, the F value is simply the square of the t value.</p>
+<p>It’s common to see P-values reported without context, but these “naked P-values” are hard to interpret without knowing:</p>
+<ol type="1">
+<li><p>Which test was used</p></li>
+<li><p>The observed test value</p></li>
+<li><p>The degrees of freedom.</p></li>
+</ol>
+<p>So the good (and conventional) way to report this result as an ANOVA would be:</p>
+<blockquote class="blockquote">
+<p>The height of the cross-pollinated plants was significantly taller than the height of the self-pollinated plants (<em>F</em><sub>1,28</sub> = 5.9, <em>P</em> = 0.02).</p>
+</blockquote>
+<p>However, this approach focuses on the statistical test rather than the biological meaning. It doesn’t tell us the actual heights, the estimated difference, or the uncertainty around this estimate.</p>
+<blockquote class="blockquote">
+<p>The self pollinated maize plants measured an average of 17.6 [16-19.1] (mean[95% CI]) inches high, while the cross-pollinated plants had a mean height of 20.2 [18.6-21.7] inches - a difference of 2.6 [-0.4-4.8] inches (one-way ANOVA: <em>F</em><sub>1,28</sub> = 5.9, <em>P</em> = 0.02).</p>
+</blockquote>
+<div class="{callout-tip}">
+<p>Lastly, it’s helpful to remember that F and t are related: for two groups, the F value is simply the square of the t value.</p>
+<p>The F value is the square of the t value when comparing two groups because both tests measure the same thing: the ratio of between-group to within-group variance. In a two-group case, squaring the t statistic (which compares means) matches the variance ratio approach of F, making F = t² and thus equivalent for two groups.</p>
+<p><span class="math display">\[
+F= \frac{within~group~variance}{between~group~variance}
+\]</span></p>
+<p>and in a two-sample t-test:</p>
+<p><span class="math display">\[
+t^2= \frac{difference~in~means^2}{SE^2}
+\]</span></p>
+</div>
+</section></section><section id="two-way-anova" class="level2" data-number="9.3"><h2 data-number="9.3" class="anchored" data-anchor-id="two-way-anova">
+<span class="header-section-number">9.3</span> Two-way ANOVA</h2>
+<p>Two way ANOVA (as you might guess) includes <strong>two</strong> explanatory variables. Usually these are treatments of interest, but for this example we will stick with including the pair variable.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>lsmodel2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(height <span class="sc">~</span> type <span class="sc">+</span> <span class="fu">as.factor</span>(pair), <span class="at">data =</span> darwin)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And we can look at this table using the <code><a href="https://rdrr.io/r/stats/anova.html">anova()</a></code> function again</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="fu">anova</span>(lsmodel2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="caption-top table table-sm table-striped small">
+<thead><tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">Df</th>
+<th style="text-align: right;">Sum Sq</th>
+<th style="text-align: right;">Mean Sq</th>
+<th style="text-align: right;">F value</th>
+<th style="text-align: right;">Pr(&gt;F)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">type</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">51.35208</td>
+<td style="text-align: right;">51.352083</td>
+<td style="text-align: right;">4.6138501</td>
+<td style="text-align: right;">0.0497029</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">as.factor(pair)</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">86.26354</td>
+<td style="text-align: right;">6.161682</td>
+<td style="text-align: right;">0.5536109</td>
+<td style="text-align: right;">0.8597119</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Residuals</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">155.81979</td>
+<td style="text-align: right;">11.129985</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>Note how some of the degrees of freedom which were initially in the residuals, have now been ‘used’ by the new term in the more complex model. And that some of the SSE has now been used by SSR explained by the pair term.</p>
+<div class="{callout-warning}">
+<p>Comparing F-values between different predictors is often a good way of comparing how important they are (what share of variance explained do they have).</p>
+<p>When we see an F value less than 1, it suggests that pairing in the experiment isn’t adding useful information—essentially, it’s doing “nothing.” If pairing had no effect, we’d expect an F value around 1, but seeing an F much lower than 1 implies a “negative variance component.” In other words, pairing has actually increased the noise (SSE) relative to the signal (SSR).</p>
+<p>When the mean squares for the treatment (MSR) are smaller than for the residuals (MSE), it usually points to a design issue. This could mean there wasn’t enough sampling (more pairs may be needed) or that the pairs weren’t randomly selected.</p>
+</div>
+</section><section id="summary" class="level2" data-number="9.4"><h2 data-number="9.4" class="anchored" data-anchor-id="summary">
+<span class="header-section-number">9.4</span> Summary</h2>
+<p>ANOVA tables can be built for any linear model. The tables partition the variance into signal(s) and noise, which can be compared using an <em>F</em>-test. For complex analyses where many pairwise comparisons could be performed, an initial <em>F</em>-test can provide the initial evidence for whether there are any differences at all, reducing the risk of overtesting and the false positives that can be generated.</p>
+</section><section id="anova-for-frogspawning" class="level2" data-number="9.5"><h2 data-number="9.5" class="anchored" data-anchor-id="anova-for-frogspawning">
+<span class="header-section-number">9.5</span> ANOVA for frogspawning</h2>
+<p><strong>Q. How does frogspawn hatching time vary with temperature?</strong></p>
+<p>Imagine we ran a manipulative experiment.</p>
+<blockquote class="blockquote">
+<p>A manipulative study is one in which the experimenter changes something about the experimental study system and studies the effect of this change.</p>
+</blockquote>
+<p>We collected newly-layed frogspawn from a pond in the Italian Alps and we brought them back to the lab, where we divided them into 60 water containers. 20 of the containers’ water temperature was kept to 13°C, 20 containers were kept to 18°C and the remaining 20 containers were kept to 25°C. Having a high number of replicates increases our confidence that the expected difference between groups is due to the factor we are interested in. Here, temperature.</p>
+<p>We monitored each water container and we recorded hatching times (days until hatching of eggs) in a spreadsheet (here called <code>frogs_messy_data.csv</code>).</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<a href="https://raw.githubusercontent.com/UEABIO/5027A/refs/heads/dev/files/frogs_messy_data.csv">
+<button class="btn btn-success"><i class="fa fa-save"></i> Download frogs_messy_data as csv</button>
+</a>
+</div>
+</div>
+<ul>
+<li><p>Our response variable is Hatching_time.</p></li>
+<li><p>Our explanatory variable is Temperature, with 3 levels: 13°C, 18°C and 25°C.</p></li>
+</ul>
+<p>We want to compare the means of 3 independent groups (13°C, 18°C and 25°C temperature groups) and we have one continuous response variable (Hatching time in days) and one categorical explanatory variable (Temperature). One-way ANOVA is the appropriate analysis!</p>
+<section id="activity-1.-make-a-hypothesis" class="level3" data-number="9.5.1"><h3 data-number="9.5.1" class="anchored" data-anchor-id="activity-1.-make-a-hypothesis">
+<span class="header-section-number">9.5.1</span> Activity 1. Make a Hypothesis</h3>
+<p>Always make a hypothesis and prediction, before you delve into the data analysis.</p>
+<p>A hypothesis is a tentative answer to a well-framed question, referring to a mechanistic explanation of the expected pattern. It can be verified via predictions, which can be tested by making additional observations and performing experiments.</p>
+<p>This should be backed up by some level of knowledge about your study system.</p>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<p>In our case, knowing that frogspawn takes around 2-3 weeks to hatch under optimal temperatures (15-20°C), we can hypothesize that the lower the temperature, the longer it will take for frogspawn to hatch. Our hypothesis can therefore be:</p>
+<p><strong>Mean frogspawn hatching time will vary with temperature level. Higher temperatures will lead to shorter hatching times. Specifically, at the highest temperature in our study (25°C), we predict that hatching time will be reduced compared to lower temperatures</strong></p>
+</div>
+</section><section id="activity-2.-import-and-clean-data" class="level3" data-number="9.5.2"><h3 data-number="9.5.2" class="anchored" data-anchor-id="activity-2.-import-and-clean-data">
+<span class="header-section-number">9.5.2</span> Activity 2. Import and clean data</h3>
+<p>After setting up your R project, import and tidy your dataset.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Remember to organise your analysis script - use the document outline feature to help you.</p>
+</div>
+</div>
+<p>Check the data for:</p>
+<ul>
+<li>improper formatting</li>
+<li>impossible values</li>
+<li>missingness</li>
+<li>duplications</li>
+</ul>
+<p>Refer to {<a href="#sec-data-cleaning" class="quarto-xref"><span class="quarto-unresolved-ref">sec-data-cleaning</span></a>} for help</p>
+<p>Check your data is in a tidy format according to {<a href="#sec-tidy" class="quarto-xref"><span class="quarto-unresolved-ref">sec-tidy</span></a>}</p>
+<div class="webex-solution">
+<button>
+Hints
+</button>
+<p>Start by using functions such as <code><a href="https://docs.ropensci.org/skimr/reference/skim.html">skimr::skim()</a></code> or <code>glimpse()</code> or simple inspecting the tibble to look at data formats</p>
+</div>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">#___________________________----</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="co"># SET UP ----</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="do">## An analysis of the development time of frogspawn in response to water temperature ----</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="co">#___________________________----</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co"># PACKAGES ----</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="fu">library</span>(here)</span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="fu">library</span>(skimr)</span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="fu">library</span>(ggridges)</span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="co">#___________________________----</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="co"># IMPORT DATA ----</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a>frogs <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"frogs_messy_data.csv"</span>))</span>
+<span id="cb8-18"><a href="#cb8-18"></a><span class="co">#___________________________----</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a><span class="co"># CHECK DATA ----</span></span>
+<span id="cb8-20"><a href="#cb8-20"></a></span>
+<span id="cb8-21"><a href="#cb8-21"></a><span class="co"># A data skim indicates that the column Temperature18 is not in numerical format</span></span>
+<span id="cb8-22"><a href="#cb8-22"></a><span class="co"># Temperature15 has at least one impossible value of 999 days for egg hatching</span></span>
+<span id="cb8-23"><a href="#cb8-23"></a><span class="co"># There ARE lots of NAs but this is because data is in a wide format</span></span>
+<span id="cb8-24"><a href="#cb8-24"></a></span>
+<span id="cb8-25"><a href="#cb8-25"></a>skimr<span class="sc">::</span><span class="fu">skim</span>(frogs)</span>
+<span id="cb8-26"><a href="#cb8-26"></a></span>
+<span id="cb8-27"><a href="#cb8-27"></a><span class="do">## Incorrect data format----</span></span>
+<span id="cb8-28"><a href="#cb8-28"></a><span class="co"># using distinct allows us to identify the values causing this column to be treated as a character string</span></span>
+<span id="cb8-29"><a href="#cb8-29"></a>frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-30"><a href="#cb8-30"></a>  <span class="fu">distinct</span>(Temperature18)</span>
+<span id="cb8-31"><a href="#cb8-31"></a></span>
+<span id="cb8-32"><a href="#cb8-32"></a><span class="co"># Fixing incorrect values</span></span>
+<span id="cb8-33"><a href="#cb8-33"></a>frogs <span class="ot">&lt;-</span> frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-34"><a href="#cb8-34"></a>  <span class="fu">mutate</span>(<span class="at">Temperature18 =</span> <span class="fu">ifelse</span>(Temperature18 <span class="sc">==</span> <span class="st">"twentytwo"</span>,</span>
+<span id="cb8-35"><a href="#cb8-35"></a>                                <span class="dv">22</span>, Temperature18)) <span class="sc">|&gt;</span> </span>
+<span id="cb8-36"><a href="#cb8-36"></a>  <span class="fu">mutate</span>(<span class="at">Temperature18 =</span> <span class="fu">as.numeric</span>(Temperature18))</span>
+<span id="cb8-37"><a href="#cb8-37"></a></span>
+<span id="cb8-38"><a href="#cb8-38"></a><span class="do">## Data duplication----</span></span>
+<span id="cb8-39"><a href="#cb8-39"></a><span class="co"># Checking for duplicated rows</span></span>
+<span id="cb8-40"><a href="#cb8-40"></a>frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-41"><a href="#cb8-41"></a>  <span class="fu">duplicated</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb8-42"><a href="#cb8-42"></a>  <span class="fu">sum</span>()</span>
+<span id="cb8-43"><a href="#cb8-43"></a></span>
+<span id="cb8-44"><a href="#cb8-44"></a><span class="co"># Pull out rows of data included more than once</span></span>
+<span id="cb8-45"><a href="#cb8-45"></a>frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-46"><a href="#cb8-46"></a>  <span class="fu">filter</span>(<span class="fu">duplicated</span>(frogs))</span>
+<span id="cb8-47"><a href="#cb8-47"></a></span>
+<span id="cb8-48"><a href="#cb8-48"></a><span class="co"># Keep only unique rows </span></span>
+<span id="cb8-49"><a href="#cb8-49"></a>frogs <span class="ot">&lt;-</span> frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-50"><a href="#cb8-50"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">duplicated</span>(frogs))</span>
+<span id="cb8-51"><a href="#cb8-51"></a><span class="co">#___________________________----</span></span>
+<span id="cb8-52"><a href="#cb8-52"></a></span>
+<span id="cb8-53"><a href="#cb8-53"></a><span class="co"># TIDY DATA ----</span></span>
+<span id="cb8-54"><a href="#cb8-54"></a></span>
+<span id="cb8-55"><a href="#cb8-55"></a>frogs <span class="ot">&lt;-</span> frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-56"><a href="#cb8-56"></a>  <span class="co">#make snake_case names and remove redundant Temperature label</span></span>
+<span id="cb8-57"><a href="#cb8-57"></a>  <span class="fu">rename</span>(<span class="st">"13"</span> <span class="ot">=</span> Temperature13,</span>
+<span id="cb8-58"><a href="#cb8-58"></a>         <span class="st">"18"</span> <span class="ot">=</span> Temperature18,</span>
+<span id="cb8-59"><a href="#cb8-59"></a>         <span class="st">"25"</span> <span class="ot">=</span> Temperature25,</span>
+<span id="cb8-60"><a href="#cb8-60"></a>         <span class="at">frogspawn_id =</span> <span class="st">`</span><span class="at">Frogspawn sample id</span><span class="st">`</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb8-61"><a href="#cb8-61"></a>  <span class="fu">pivot_longer</span>(<span class="st">`</span><span class="at">13</span><span class="st">`</span><span class="sc">:</span><span class="st">`</span><span class="at">25</span><span class="st">`</span>, <span class="at">names_to=</span><span class="st">"temperature"</span>, <span class="at">values_to=</span><span class="st">"days"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb8-62"><a href="#cb8-62"></a>  <span class="co"># make sure analysis is on factors not a continuous variable</span></span>
+<span id="cb8-63"><a href="#cb8-63"></a>  <span class="fu">mutate</span>(<span class="at">temperature =</span> <span class="fu">factor</span>(temperature)) <span class="sc">|&gt;</span> </span>
+<span id="cb8-64"><a href="#cb8-64"></a>  <span class="co"># remove NAs generated by making data long</span></span>
+<span id="cb8-65"><a href="#cb8-65"></a>  <span class="fu">drop_na</span>(days)</span>
+<span id="cb8-66"><a href="#cb8-66"></a></span>
+<span id="cb8-67"><a href="#cb8-67"></a><span class="co">#___________________________----</span></span>
+<span id="cb8-68"><a href="#cb8-68"></a></span>
+<span id="cb8-69"><a href="#cb8-69"></a><span class="co"># CHECK FOR OUTLIERS ----</span></span>
+<span id="cb8-70"><a href="#cb8-70"></a><span class="co"># histograms, dotplots or density plots works here</span></span>
+<span id="cb8-71"><a href="#cb8-71"></a>frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-72"><a href="#cb8-72"></a><span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> days, </span>
+<span id="cb8-73"><a href="#cb8-73"></a>           <span class="at">y =</span> temperature)) <span class="sc">+</span> </span>
+<span id="cb8-74"><a href="#cb8-74"></a>  ggridges<span class="sc">::</span><span class="fu">geom_density_ridges</span>()</span>
+<span id="cb8-75"><a href="#cb8-75"></a></span>
+<span id="cb8-76"><a href="#cb8-76"></a><span class="co"># Remove impossible days values</span></span>
+<span id="cb8-77"><a href="#cb8-77"></a>frogs <span class="ot">&lt;-</span> frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-78"><a href="#cb8-78"></a>  <span class="fu">filter</span>(days <span class="sc">&lt;</span> <span class="dv">900</span>)</span>
+<span id="cb8-79"><a href="#cb8-79"></a><span class="co">#___________________________----</span></span>
+<span id="cb8-80"><a href="#cb8-80"></a><span class="co"># CHECK NORMALITY----</span></span>
+<span id="cb8-81"><a href="#cb8-81"></a></span>
+<span id="cb8-82"><a href="#cb8-82"></a><span class="co"># recheck distributions and assess normality  </span></span>
+<span id="cb8-83"><a href="#cb8-83"></a>frogs <span class="sc">|&gt;</span> </span>
+<span id="cb8-84"><a href="#cb8-84"></a><span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> days, </span>
+<span id="cb8-85"><a href="#cb8-85"></a>                     <span class="at">y =</span> temperature)) <span class="sc">+</span> </span>
+<span id="cb8-86"><a href="#cb8-86"></a>  ggridges<span class="sc">::</span><span class="fu">geom_density_ridges</span>()</span>
+<span id="cb8-87"><a href="#cb8-87"></a></span>
+<span id="cb8-88"><a href="#cb8-88"></a><span class="fu">library</span>(qqplotr)</span>
+<span id="cb8-89"><a href="#cb8-89"></a><span class="fu">ggplot</span>(frogs, <span class="fu">aes</span>(<span class="at">sample =</span> days))<span class="sc">+</span></span>
+<span id="cb8-90"><a href="#cb8-90"></a>  <span class="co"># stat_qq_band requires qqplotr and the latest version of ggplot2</span></span>
+<span id="cb8-91"><a href="#cb8-91"></a>    <span class="fu">stat_qq_band</span>() <span class="sc">+</span></span>
+<span id="cb8-92"><a href="#cb8-92"></a>    <span class="fu">stat_qq_line</span>() <span class="sc">+</span></span>
+<span id="cb8-93"><a href="#cb8-93"></a>    <span class="fu">stat_qq_point</span>() <span class="sc">+</span></span>
+<span id="cb8-94"><a href="#cb8-94"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>temperature)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</section><section id="activity-3.-design-a-linear-model" class="level3" data-number="9.5.3"><h3 data-number="9.5.3" class="anchored" data-anchor-id="activity-3.-design-a-linear-model">
+<span class="header-section-number">9.5.3</span> Activity 3. Design a linear model</h3>
+<p>With the data tidied can you produce a <strong>linear model</strong>, check its assumptions and interpret its findings?</p>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># ANALYSIS ----</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>lsmodel_frogs1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(days <span class="sc">~</span> temperature, <span class="at">data =</span> frogs)</span>
+<span id="cb9-3"><a href="#cb9-3"></a></span>
+<span id="cb9-4"><a href="#cb9-4"></a> <span class="fu">summary</span>(lsmodel_frogs1)</span>
+<span id="cb9-5"><a href="#cb9-5"></a></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="co"># anova(lsmodel_frogs1)</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="co"># broom::tidy(lsmodel_frogs1, conf.int = T)</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="co">#___________________________----</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = days ~ temperature, data = frogs)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.20000 -0.61905 -0.04762  0.80000  1.95238 
+
+Coefficients:
+              Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)    26.6190     0.2292  116.12   &lt;2e-16 ***
+temperature18  -5.5714     0.3242  -17.19   &lt;2e-16 ***
+temperature25 -10.4190     0.3282  -31.75   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1.05 on 59 degrees of freedom
+Multiple R-squared:  0.9448,    Adjusted R-squared:  0.943 
+F-statistic: 505.4 on 2 and 59 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>The summary of the model tells us lots of things:</p>
+<ul>
+<li>The mean days to development is 26.62 ±0.23 ( mean SE) days at 13 degrees celsius.</li>
+<li>The time to development is 5.57 (± 0.32) days less than the intercept at 18 degrees</li>
+<li>The time to development is 10.42 (± 0.32) days less than the intercept at 25 degrees</li>
+</ul>
+<p>The ANOVA shows that temperature does explain a significant amount of the variance in time to hatching <em>F</em><sub>2,59</sub> = 505.4, <em>P</em> &lt; 0.001</p>
+<p>The R squared shows that 94% of the variance in time to hatching is explained by temperature</p>
+</div>
+</section></section><section id="sec-fit" class="level2" data-number="9.6"><h2 data-number="9.6" class="anchored" data-anchor-id="sec-fit">
+<span class="header-section-number">9.6</span> Checking the fit of a model</h2>
+<p>After conducting a linear model analysis, we often find ourselves with results and inferences. However, before we can fully trust our analysis, it’s essential to check whether the model fits our data well. This is often described as whether our model meets certain “Assumptions” about the data. If our model deviates from these assumptions, the results are not to be trusted! More on this later</p>
+<p>We can use base R commands like <code><a href="https://rdrr.io/r/graphics/plot.default.html">plot()</a></code> or the <code>performance</code> package to inspect our models.</p>
+<p>In linear models these are as follows:</p>
+<section id="assumption-1-normality-of-residuals" class="level3" data-number="9.6.1"><h3 data-number="9.6.1" class="anchored" data-anchor-id="assumption-1-normality-of-residuals">
+<span class="header-section-number">9.6.1</span> Assumption 1: Normality of Residuals</h3>
+<p>Residuals are the differences between observed values and the fitted values produced by the model. In our case, this involves analyzing plant heights against treatment means. The normality of residuals is crucial because the linear model relies on this assumption to compute standard errors, which in turn affects confidence intervals and p-values.</p>
+<section id="graphical-checks-for-normality" class="level4" data-number="9.6.1.1"><h4 data-number="9.6.1.1" class="anchored" data-anchor-id="graphical-checks-for-normality">
+<span class="header-section-number">9.6.1.1</span> Graphical Checks for Normality</h4>
+<p>To visually assess the normality of residuals, we can utilize various plotting functions in R. Two effective methods are:</p>
+<p>Quantile-Quantile (QQ) Plot: This plot compares the distribution of residuals to a theoretical normal distribution. If the residuals follow a normal distribution, they should approximately align along a diagonal line.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" aria-current="page">Base R</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Performance</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="fu">plot</span>(lsmodel_frogs1, <span class="at">which=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>performance<span class="sc">::</span><span class="fu">check_model</span>(lsmodel_frogs1, <span class="at">check=</span><span class="fu">c</span>(<span class="st">"normality"</span>,<span class="st">"qq"</span>),</span>
+<span id="cb12-2"><a href="#cb12-2"></a>                         <span class="at">detrend =</span> F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section><section id="formal-test-of-normality" class="level4" data-number="9.6.1.2"><h4 data-number="9.6.1.2" class="anchored" data-anchor-id="formal-test-of-normality">
+<span class="header-section-number">9.6.1.2</span> Formal test of Normality</h4>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Formal tests (like Shapiro-Wilk) are sensitive to sample size:</p>
+<p>With small samples, these tests often lack power, failing to detect real departures from normality.</p>
+<p>With large samples, even minor deviations from normality can yield a significant p-value, suggesting non-normality even when it’s not practically concerning. Graphs, on the other hand, allow you to visually assess how much any deviation might matter in practical terms</p>
+</div>
+</div>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true">Base R</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false">Performance</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="fu">shapiro.test</span>(<span class="fu">residuals</span>(lsmodel_frogs1))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Shapiro-Wilk normality test
+
+data:  residuals(lsmodel_frogs1)
+W = 0.97044, p-value = 0.1398</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-2-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-2-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a>performance<span class="sc">::</span><span class="fu">check_normality</span>(lsmodel_frogs1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>OK: residuals appear as normally distributed (p = 0.140).</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section></section><section id="assumption-2-homogeneity-of-variance" class="level3" data-number="9.6.2"><h3 data-number="9.6.2" class="anchored" data-anchor-id="assumption-2-homogeneity-of-variance">
+<span class="header-section-number">9.6.2</span> Assumption 2: Homogeneity of Variance</h3>
+<p>The assumption of homogeneity of variance (or homoscedasticity) states that the residual variance should be constant across all levels of the independent variable(s). This is important because linear models often pool variance across groups to make inferences.</p>
+<section id="graphical-checks-for-homogeneity" class="level4" data-number="9.6.2.1"><h4 data-number="9.6.2.1" class="anchored" data-anchor-id="graphical-checks-for-homogeneity">
+<span class="header-section-number">9.6.2.1</span> Graphical Checks for Homogeneity</h4>
+<p>To assess this assumption, we can plot the residuals against the fitted values:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-3-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-1" role="tab" aria-controls="tabset-3-1" aria-selected="true">Base R</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-3-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-3-2" role="tab" aria-controls="tabset-3-2" aria-selected="false">Performance</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-3-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-3-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a><span class="fu">plot</span>(lsmodel_frogs1, <span class="at">which=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-18-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-3-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-3-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>performance<span class="sc">::</span><span class="fu">check_model</span>(lsmodel_frogs1, <span class="at">check=</span><span class="fu">c</span>(<span class="st">"homogeneity"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section><section id="formal-tests-for-homogeneity-of-variance" class="level4" data-number="9.6.2.2"><h4 data-number="9.6.2.2" class="anchored" data-anchor-id="formal-tests-for-homogeneity-of-variance">
+<span class="header-section-number">9.6.2.2</span> Formal Tests for Homogeneity of Variance</h4>
+<p>To formally test for homogeneity of variance, we can use:</p>
+<p>Breusch-Pagan Test: This test evaluates whether the variance of residuals is constant.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-4-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-1" role="tab" aria-controls="tabset-4-1" aria-selected="true">Base R</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-4-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-4-2" role="tab" aria-controls="tabset-4-2" aria-selected="false">Performance</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-4-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-4-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="fu">bptest</span>(lsmodel1, <span class="at">varformula =</span> <span class="sc">~</span><span class="fu">fitted.values</span>(lsmodel_frogs1), <span class="at">studentize =</span> F )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Breusch-Pagan test
+
+data:  lsmodel1
+BP = 0.3423, df = 1, p-value = 0.5585</code></pre>
+</div>
+</div>
+</div>
+<div id="tabset-4-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-4-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a>performance<span class="sc">::</span><span class="fu">check_heteroscedasticity</span>(lsmodel_frogs1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>OK: Error variance appears to be homoscedastic (p = 0.161).</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section></section><section id="assumption-3-linearity" class="level3" data-number="9.6.3"><h3 data-number="9.6.3" class="anchored" data-anchor-id="assumption-3-linearity">
+<span class="header-section-number">9.6.3</span> Assumption 3: Linearity</h3>
+<p>Linear regression assumes a linear relationship between the predictor(s) and the response variable. If this assumption is violated, the model may produce biased or inaccurate predictions.</p>
+<section id="graphical-checks-for-linearity" class="level4" data-number="9.6.3.1"><h4 data-number="9.6.3.1" class="anchored" data-anchor-id="graphical-checks-for-linearity">
+<span class="header-section-number">9.6.3.1</span> Graphical checks for linearity</h4>
+<p>To assess this assumption, we can plot the residuals against the fitted values:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-5-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-1" role="tab" aria-controls="tabset-5-1" aria-selected="true">Base R</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-5-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-5-2" role="tab" aria-controls="tabset-5-2" aria-selected="false">Performance</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-5-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-5-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a><span class="fu">plot</span>(lsmodel_frogs1, <span class="at">which=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-22-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-5-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-5-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>performance<span class="sc">::</span><span class="fu">check_model</span>(lsmodel_frogs1, <span class="at">check=</span><span class="fu">c</span>(<span class="st">"linearity"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Checking for linearity is less relevant when we <strong>only</strong> have categorical predictors:</p>
+<ul>
+<li>
+<strong>No Intermediate Values</strong>: Fixed level predictors means there are no intermediate values to examine. This means we should always be able to fit a straight line</li>
+</ul></section></section><section id="outliers-and-their-impact" class="level3" data-number="9.6.4"><h3 data-number="9.6.4" class="anchored" data-anchor-id="outliers-and-their-impact">
+<span class="header-section-number">9.6.4</span> Outliers and Their Impact</h3>
+<p>Outliers can significantly affect the estimates of a model, influencing both residuals and overall model fit. Therefore, it’s essential to assess the presence and impact of outliers on our analysis.</p>
+<section id="identifying-outliers" class="level4" data-number="9.6.4.1"><h4 data-number="9.6.4.1" class="anchored" data-anchor-id="identifying-outliers">
+<span class="header-section-number">9.6.4.1</span> Identifying Outliers</h4>
+<p>To identify outliers, we can employ Cook’s Distance, which measures the influence of each data point on the model fit. Large values of Cook’s Distance suggest that a point may be having an outsized effect.</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-6-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-1" role="tab" aria-controls="tabset-6-1" aria-selected="true">Base R</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-6-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-6-2" role="tab" aria-controls="tabset-6-2" aria-selected="false">Performance</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-6-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-6-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a><span class="fu">plot</span>(lsmodel_frogs1, <span class="at">which=</span><span class="fu">c</span>(<span class="dv">4</span>,<span class="dv">4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-6-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-6-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>performance<span class="sc">::</span><span class="fu">check_model</span>(lsmodel_frogs1, <span class="at">check=</span><span class="fu">c</span>(<span class="st">"outliers"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section><section id="formal-tests-for-outliers" class="level4" data-number="9.6.4.2"><h4 data-number="9.6.4.2" class="anchored" data-anchor-id="formal-tests-for-outliers">
+<span class="header-section-number">9.6.4.2</span> Formal Tests for Outliers</h4>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a>performance<span class="sc">::</span><span class="fu">check_outliers</span>(lsmodel_frogs1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>OK: No outliers detected.
+- Based on the following method and threshold: cook (0.5).
+- For variable: (Whole model)</code></pre>
+</div>
+</div>
+</section></section><section id="quick-model-checks" class="level3" data-number="9.6.5"><h3 data-number="9.6.5" class="anchored" data-anchor-id="quick-model-checks">
+<span class="header-section-number">9.6.5</span> Quick model checks</h3>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-7-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-1" role="tab" aria-controls="tabset-7-1" aria-selected="true">Base R</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-7-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-7-2" role="tab" aria-controls="tabset-7-2" aria-selected="false">Performance</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-7-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-7-1-tab">
+<p>Hit Enter in the console to cycle through plots</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a><span class="fu">plot</span>(lsmodel_frogs1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-27-2.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-27-3.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-27-4.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-7-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-7-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>performance<span class="sc">::</span><span class="fu">check_model</span>(lsmodel_frogs1,</span>
+<span id="cb30-2"><a href="#cb30-2"></a>                         <span class="at">detrend =</span> F)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section></section><section id="making-figures" class="level2" data-number="9.7"><h2 data-number="9.7" class="anchored" data-anchor-id="making-figures">
+<span class="header-section-number">9.7</span> Making Figures</h2>
+<section id="activity-4.-design-a-figure" class="level3" data-number="9.7.1"><h3 data-number="9.7.1" class="anchored" data-anchor-id="activity-4.-design-a-figure">
+<span class="header-section-number">9.7.1</span> Activity 4. Design a figure</h3>
+<p>Can you produce a suitable Figure for this dataset?</p>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<p>There are multiple ways to present the same data, equally valid, but emphasising different concepts. For example this first figure uses a boxplot and data points to illustrate the differences. Remember the median and IQR are essentially descriptive statistics, not inferential.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption>Frogspawn hatching times at 13, 18 and 25 degrees Celsius. Boxplot displays median, hinges are first and third quartiles, whiskers extend from the hinge to 1.5X the interquartile range. Points represent individual frogspawns.</figcaption></figure>
+</div>
+</div>
+</div>
+<p>Whereas the next figure, uses the <code>emmeans()</code> package to produce estimate means and confidence intervals from the <code><a href="https://rdrr.io/r/stats/lm.html">lm()</a></code> and therefore is the produce of inferential statistics, this figure illustrates the estimates of our model rather than the parameters of our sample.</p>
+<p>Neither method is ‘best’.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure"><p><img src="12-ANOVA_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<figcaption>Time to hatching is inversely related to temperature in frogspawn. Circles represent estimated mean hatching times with 95% confidence intervals from a one-way ANOVA (F<sub>1,28</sub> = 385.9, P &lt; 0.001). Dashed lines indicate the slope of the mean difference between 13-18 degrees and 13-25 degrees Celsius. Faded points represent individual data points.</figcaption></figure>
+</div>
+</div>
+</div>
+</div>
+<section id="task" class="level4" data-number="9.7.1.1"><h4 data-number="9.7.1.1" class="anchored" data-anchor-id="task">
+<span class="header-section-number">9.7.1.1</span> Task</h4>
+<p>Can you write a summary of the <strong>Results</strong>?</p>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<p>Increasing temperatures had a clear effect on reducing the time taken for frogspawn to hatch (one-way ANOVA: <em>F</em><sub>2,59</sub> = 505.4, <em>P</em> &lt; 0.001). At 13<span class="math inline">\(^\circ\)</span> C the mean time to hatching was 26.62 days [26.16-27 95% CI], this reduced by an average of 5.57 days [4.92 - 6.22] at 18<span class="math inline">\(^\circ\)</span> C and by 10.42 days [9.76 - 11.08] at 25<span class="math inline">\(^\circ\)</span> C.</p>
+</div>
+
+
+</section></section></section></main><!-- /main --><script>
+
+/* update total correct if #webex-total_correct exists */
+update_total_correct = function() {
+  console.log("webex: update total_correct");
+
+  var t = document.getElementsByClassName("webex-total_correct");
+  for (var i = 0; i < t.length; i++) {
+    p = t[i].parentElement;
+    var correct = p.getElementsByClassName("webex-correct").length;
+    var solvemes = p.getElementsByClassName("webex-solveme").length;
+    var radiogroups = p.getElementsByClassName("webex-radiogroup").length;
+    var selects = p.getElementsByClassName("webex-select").length;
+
+    t[i].innerHTML = correct + " of " + (solvemes + radiogroups + selects) + " correct";
+  }
+}
+
+/* webex-solution button toggling function */
+b_func = function() {
+  console.log("webex: toggle hide");
+
+  var cl = this.parentElement.classList;
+  if (cl.contains('open')) {
+    cl.remove("open");
+  } else {
+    cl.add("open");
+  }
+}
+
+/* check answers */
+check_func = function() {
+  console.log("webex: check answers");
+
+  var cl = this.parentElement.classList;
+  if (cl.contains('unchecked')) {
+    cl.remove("unchecked");
+    this.innerHTML = "Hide Answers";
+  } else {
+    cl.add("unchecked");
+    this.innerHTML = "Show Answers";
+  }
+}
+
+/* function for checking solveme answers */
+solveme_func = function(e) {
+  console.log("webex: check solveme");
+
+  var real_answers = JSON.parse(this.dataset.answer);
+  var my_answer = this.value;
+  var cl = this.classList;
+  if (cl.contains("ignorecase")) {
+    my_answer = my_answer.toLowerCase();
+  }
+  if (cl.contains("nospaces")) {
+    my_answer = my_answer.replace(/ /g, "")
+  }
+
+  if (my_answer == "") {
+    cl.remove("webex-correct");
+    cl.remove("webex-incorrect");
+  } else if (real_answers.includes(my_answer)) {
+    cl.add("webex-correct");
+    cl.remove("webex-incorrect");
+  } else {
+    cl.add("webex-incorrect");
+    cl.remove("webex-correct");
+  }
+
+  // match numeric answers within a specified tolerance
+  if(this.dataset.tol > 0){
+    var tol = JSON.parse(this.dataset.tol);
+    var matches = real_answers.map(x => Math.abs(x - my_answer) < tol)
+    if (matches.reduce((a, b) => a + b, 0) > 0) {
+      cl.add("webex-correct");
+    } else {
+      cl.remove("webex-correct");
+    }
+  }
+
+  // added regex bit
+  if (cl.contains("regex")){
+    answer_regex = RegExp(real_answers.join("|"))
+    if (answer_regex.test(my_answer)) {
+      cl.add("webex-correct");
+    }
+  }
+
+  update_total_correct();
+}
+
+/* function for checking select answers */
+select_func = function(e) {
+  console.log("webex: check select");
+
+  var cl = this.classList
+
+  /* add style */
+  cl.remove("webex-incorrect");
+  cl.remove("webex-correct");
+  if (this.value == "answer") {
+    cl.add("webex-correct");
+  } else if (this.value != "blank") {
+    cl.add("webex-incorrect");
+  }
+
+  update_total_correct();
+}
+
+/* function for checking radiogroups answers */
+radiogroups_func = function(e) {
+  console.log("webex: check radiogroups");
+
+  var checked_button = document.querySelector('input[name=' + this.id + ']:checked');
+  var cl = checked_button.parentElement.classList;
+  var labels = checked_button.parentElement.parentElement.children;
+
+  /* get rid of styles */
+  for (i = 0; i < labels.length; i++) {
+    labels[i].classList.remove("webex-incorrect");
+    labels[i].classList.remove("webex-correct");
+  }
+
+  /* add style */
+  if (checked_button.value == "answer") {
+    cl.add("webex-correct");
+  } else {
+    cl.add("webex-incorrect");
+  }
+
+  update_total_correct();
+}
+
+window.onload = function() {
+  console.log("webex onload");
+  /* set up solution buttons */
+  var buttons = document.getElementsByTagName("button");
+
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].parentElement.classList.contains('webex-solution')) {
+      buttons[i].onclick = b_func;
+    }
+  }
+
+  var check_sections = document.getElementsByClassName("webex-check");
+  console.log("check:", check_sections.length);
+  for (var i = 0; i < check_sections.length; i++) {
+    check_sections[i].classList.add("unchecked");
+
+    let btn = document.createElement("button");
+    btn.innerHTML = "Show Answers";
+    btn.classList.add("webex-check-button");
+    btn.onclick = check_func;
+    check_sections[i].appendChild(btn);
+
+    let spn = document.createElement("span");
+    spn.classList.add("webex-total_correct");
+    check_sections[i].appendChild(spn);
+  }
+
+  /* set up webex-solveme inputs */
+  var solveme = document.getElementsByClassName("webex-solveme");
+
+  for (var i = 0; i < solveme.length; i++) {
+    /* make sure input boxes don't auto-anything */
+    solveme[i].setAttribute("autocomplete","off");
+    solveme[i].setAttribute("autocorrect", "off");
+    solveme[i].setAttribute("autocapitalize", "off");
+    solveme[i].setAttribute("spellcheck", "false");
+    solveme[i].value = "";
+
+    /* adjust answer for ignorecase or nospaces */
+    var cl = solveme[i].classList;
+    var real_answer = solveme[i].dataset.answer;
+    if (cl.contains("ignorecase")) {
+      real_answer = real_answer.toLowerCase();
+    }
+    if (cl.contains("nospaces")) {
+      real_answer = real_answer.replace(/ /g, "");
+    }
+    solveme[i].dataset.answer = real_answer;
+
+    /* attach checking function */
+    solveme[i].onkeyup = solveme_func;
+    solveme[i].onchange = solveme_func;
+
+    solveme[i].insertAdjacentHTML("afterend", " <span class='webex-icon'></span>")
+  }
+
+  /* set up radiogroups */
+  var radiogroups = document.getElementsByClassName("webex-radiogroup");
+  for (var i = 0; i < radiogroups.length; i++) {
+    radiogroups[i].onchange = radiogroups_func;
+  }
+
+  /* set up selects */
+  var selects = document.getElementsByClassName("webex-select");
+  for (var i = 0; i < selects.length; i++) {
+    selects[i].onchange = select_func;
+    selects[i].insertAdjacentHTML("afterend", " <span class='webex-icon'></span>")
+  }
+
+  update_total_correct();
+}
+
+</script><script>
+// open rdrr links externally ----
+
+var exlinks = document.querySelectorAll("a[href^='https://rdrr.io']");
+var exlink_func = function(){
+  window.open(this.href);
+  return false;
+};
+for (var i = 0; i < exlinks.length; i++) {
+    exlinks[i].addEventListener('click', exlink_func, false);
+}
+
+// visible second sidebar in mobile ----
+
+function move_sidebar() {
+  var toc = document.getElementById("TOC");
+  var small_sidebar = document.querySelector("#quarto-sidebar .sidebar-menu-container");
+  var right_sidebar = document.getElementById("quarto-margin-sidebar");
+
+  if (window.innerWidth < 768) {
+    small_sidebar.append(toc);
+  } else {
+    right_sidebar.append(toc);
+  }
+}
+move_sidebar();
+window.onresize = move_sidebar;
+</script><script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const disableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'prefetch';
+    }
+  }
+  const enableStylesheet = (stylesheets) => {
+    for (let i=0; i < stylesheets.length; i++) {
+      const stylesheet = stylesheets[i];
+      stylesheet.rel = 'stylesheet';
+    }
+  }
+  const manageTransitions = (selector, allowTransitions) => {
+    const els = window.document.querySelectorAll(selector);
+    for (let i=0; i < els.length; i++) {
+      const el = els[i];
+      if (allowTransitions) {
+        el.classList.remove('notransition');
+      } else {
+        el.classList.add('notransition');
+      }
+    }
+  }
+  const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+    const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+    const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+    let newTheme = '';
+    if(darkModeDefault) {
+      newTheme = isAlternate ? baseTheme : alternateTheme;
+    } else {
+      newTheme = isAlternate ? alternateTheme : baseTheme;
+    }
+    const changeGiscusTheme = () => {
+      // From: https://github.com/giscus/giscus/issues/336
+      const sendMessage = (message) => {
+        const iframe = document.querySelector('iframe.giscus-frame');
+        if (!iframe) return;
+        iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+      }
+      sendMessage({
+        setConfig: {
+          theme: newTheme
+        }
+      });
+    }
+    const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+    if (isGiscussLoaded) {
+      changeGiscusTheme();
+    }
+  }
+  const toggleColorMode = (alternate) => {
+    // Switch the stylesheets
+    const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+    manageTransitions('#quarto-margin-sidebar .nav-link', false);
+    if (alternate) {
+      enableStylesheet(alternateStylesheets);
+      for (const sheetNode of alternateStylesheets) {
+        if (sheetNode.id === "quarto-bootstrap") {
+          toggleBodyColorMode(sheetNode);
+        }
+      }
+    } else {
+      disableStylesheet(alternateStylesheets);
+      toggleBodyColorPrimary();
+    }
+    manageTransitions('#quarto-margin-sidebar .nav-link', true);
+    // Switch the toggles
+    const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+    for (let i=0; i < toggles.length; i++) {
+      const toggle = toggles[i];
+      if (toggle) {
+        if (alternate) {
+          toggle.classList.add("alternate");     
+        } else {
+          toggle.classList.remove("alternate");
+        }
+      }
+    }
+    // Hack to workaround the fact that safari doesn't
+    // properly recolor the scrollbar when toggling (#1455)
+    if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+      manageTransitions("body", false);
+      window.scrollTo(0, 1);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        manageTransitions("body", true);
+      }, 40);  
+    }
+  }
+  const isFileUrl = () => { 
+    return window.location.protocol === 'file:';
+  }
+  const hasAlternateSentinel = () => {  
+    let styleSentinel = getColorSchemeSentinel();
+    if (styleSentinel !== null) {
+      return styleSentinel === "alternate";
+    } else {
+      return false;
+    }
+  }
+  const setStyleSentinel = (alternate) => {
+    const value = alternate ? "alternate" : "default";
+    if (!isFileUrl()) {
+      window.localStorage.setItem("quarto-color-scheme", value);
+    } else {
+      localAlternateSentinel = value;
+    }
+  }
+  const getColorSchemeSentinel = () => {
+    if (!isFileUrl()) {
+      const storageValue = window.localStorage.getItem("quarto-color-scheme");
+      return storageValue != null ? storageValue : localAlternateSentinel;
+    } else {
+      return localAlternateSentinel;
+    }
+  }
+  const darkModeDefault = false;
+  let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+  // Dark / light mode switch
+  window.quartoToggleColorScheme = () => {
+    // Read the current dark / light value 
+    let toAlternate = !hasAlternateSentinel();
+    toggleColorMode(toAlternate);
+    setStyleSentinel(toAlternate);
+    toggleGiscusIfUsed(toAlternate, darkModeDefault);
+  };
+  // Ensure there is a toggle, if there isn't float one in the top right
+  if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+    const a = window.document.createElement('a');
+    a.classList.add('top-right');
+    a.classList.add('quarto-color-scheme-toggle');
+    a.href = "";
+    a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+    const i = window.document.createElement("i");
+    i.classList.add('bi');
+    a.appendChild(i);
+    window.document.body.appendChild(a);
+  }
+  // Switch to dark mode if need be
+  if (hasAlternateSentinel()) {
+    toggleColorMode(true);
+  } else {
+    toggleColorMode(false);
+  }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script><nav class="page-navigation"><div class="nav-page nav-page-previous">
+      <a href="./11-regression.html" class="pagination-link" aria-label="Regression">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">Regression</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./13-interaction.html" class="pagination-link" aria-label="Multi factor ANOVA">
+        <span class="nav-page-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">Multi factor ANOVA</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer"><div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>CC-BY (2024) Philip Leftwich</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+</body></html>

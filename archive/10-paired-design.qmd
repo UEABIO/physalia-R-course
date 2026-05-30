@@ -1,0 +1,188 @@
+# Paired tests {#sec-pair}
+
+
+```{r, echo = F, warning = F, message = F}
+library(tidyverse)
+library(janitor)
+library(here)
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+
+```
+
+### Packages
+
+```{r}
+library(tidyverse)
+library(GGally)
+library(emmeans)
+library(performance)
+library(broom.helpers)
+```
+
+```{r, eval=TRUE, echo=FALSE}
+
+library(tidyverse)
+
+library(here)
+
+darwin <- read_csv(here("files", "darwin.csv"))
+
+```
+
+
+The structure of our linear model so far has produced the output for a standard two-sample Student's *t*-test. However, when we *first* [calculated our estimates by hand](#differences-between-groups) - we started by making an average of the paired differences in height. To generate the equivalent of a paired *t*-test, we simply have to add the factor for pairs to our linear model formula:
+
+::: {.panel-tabset}
+
+## Base T
+
+```{r}
+lsmodel_darwin <- lm(height ~ type + factor(pair), data = darwin)
+summary(lsmodel_darwin)
+```
+
+## Tidyverse
+
+```{r}
+darwin |>  
+  mutate(pair = as_factor(pair)) |>  
+  lm(height ~ type + pair, data = _) |>  
+  broom::tidy()
+```
+
+:::
+
+> Note that I have made pair a factor - pair 2 is not greater than pair 1 - so it does not make sense to treat these as number values.
+
+
+The table of coefficients suddenly looks a lot more complicated! This is because **now** the intercept is the height of the crossed plant from pair 1:
+
+* The second row now compares the average heights difference of Crossed and Selfed plants **when they are in the same pair** 
+
+* rows three to 16 compare the average difference of each pair (Crossed and Selfed combined) against pair 1
+
+Again the linear model computes every possible combination of *t*-statistic and *P*-value, however the only one we care about is the difference in Cross and Self-pollinated plant heights. If we ignore the pair comparisons the second row gives us a *paired t*-test. 'What is the difference in height between Cross and Self-pollinated plants when we hold pairs constant.'
+
+Q. By including pairs we are making sure we deal with `r mcq(c("Missing data bias", answer = "Omitted variable bias", "Survivorship bias"))`
+
+## Activity 1: Compare paired model designs
+
+We previously compared the difference in plant heights by subtracting the difference between each pair of plants. Check our reasoning on the model design above by making another linear model based on the difference between pairs and check whether this is significantly different from 0, `lm(difference ~ 1)`
+
+`r hide("Solution")`
+
+```{r}
+
+darwin_wide <- darwin |>  
+  # pivot/reshape the data from long to wide format
+  pivot_wider(names_from = type, values_from = height) |>  
+  # Calculate the difference between 'Cross' and 'Self' heights for each pair
+  mutate(difference = Cross - Self)
+
+wide_model <- lm(difference ~ 1, data = darwin_wide)
+
+summary(wide_model)
+```
+
+`r unhide()`
+
+For completeness let's generate the confidence intervals for the *paired t*-test and compare them to our *unpaired t*-test. 
+
+::: {.panel-tabset}
+
+## Unpaired
+
+```{r}
+
+lm(height ~ type, data = darwin) |> 
+   broom::tidy(conf.int=T) |> 
+    slice(1:2) 
+```
+
+## Paired
+
+```{r}
+lm(height ~ type + factor(pair), data = darwin) |>  
+  broom::tidy(conf.int=T) |> 
+  slice(1:2) # just show first two rows
+```
+
+:::
+
+We can see that estimate of the mean difference is identical but the 95% confidence intervals are now slightly different. So in this particular version we have actually increased our level of uncertainty by including the pair parameter. 
+
+```{r}
+
+m1 <- lm(height ~ type, data = darwin) |>  
+  broom::tidy( conf.int=T) |>  
+  slice(2:2) |>  
+  mutate(model="unpaired")
+
+m2 <- lm(height ~ type + factor(pair), data = darwin) |>  
+  broom::tidy(conf.int=T) |>  
+  slice(2:2) |>  
+  mutate(model="paired")
+
+rbind(m1,m2) |>  
+  ggplot(aes(model, estimate))+
+  geom_pointrange(aes(ymin=conf.high, ymax=conf.low))+
+  geom_hline(aes(yintercept=0), linetype="dashed")+
+  theme_minimal()+
+  coord_flip()
+
+```
+
+```{block, type = "info"}
+Choosing the right model
+
+In this case we had a good *a priori* reason to include pair in our model, so I would argue that it should stay - alternative approaches are model simplification and stepwise removal. We will discuss these later. 
+```
+
+## Effect sizes
+
+We have discussed the importance of using confidence intervals to talk about effect sizes. When our 95% confidence intervals do not overlap the intercept, this indicates we have difference in our means which is significant at $\alpha$ = 0.05. More interestingly than this it allows us to talk about the 'amount of difference' between our treatments, the lower margin of our confidence intervals is the smallest/minimum effect size. On the response scale of our variables this is very useful, we can report for example that there is *at least* a 0.4 inch height difference between self and crossed fertilised plants at $\alpha$ = 0.05. 
+
+
+## Type 1 and Type 2 errors
+
+The repeatability of results is a key part of the scientific method. Unfortunately there is often an emphasis in the literature on 'novel findings', which means that unusual/interesting results that happen to reach statistical significance may be more likely to be published. The reality is that we know if we set an $\alpha$ = 0.05, that we run the risk of rejecting the null hypothesis incorrectly in 1 in 20 of our experiments (A Type 1 error). 
+
+Type 2 errors. Statistical tests provide you with the probability of making a Type 1 error (rejecting the null hypothesis incorrectly) in the form of *P*. But what about Type 2 errors? Keeping the null hypothesis, when we should be rejecting it? Or not finding an effect.
+
+The probability of making a Type 2 error is known as $1-\beta$, where $\beta$ refers to your statistical 'power'. 
+
+Power is the strength of your experiment to detect a statistical effect *when there is one*. A common threshold for power is 80%. That is you have an 80% chance of finding an effect **if it's there**. Which means our Type 2 error risk would be 20%. 
+
+We cannot know the power of our experiments unless we conduct a *power analysis* - therefore for now we have to accept that finding a non-significant result does not mean we have evidence *against* a hypothesis, just that we don't have evidence *for* it.
+
+
+:::{.callout-info}
+All experiments/statistical analyses will become *statistically significant* if you make the sample size large enough. In this respect it shows how misleading a significant result can be. It is not that interesting if a result is statistically significant, but the effect size is tiny. 
+:::
+
+
+
+## Activity 2: Write-up
+
+
+Q. Can you write a summary of the **Results**?
+
+
+
+`r hide("Solution")`
+
+We analysed the difference in heights between selfed and cross-pollinated maize plants using a paired analysis of 15 pairs of plants. On average we found plants that have been cross pollinated (20.2 inches [18.3, 22], (mean [95% CI])) were taller than the self-pollinated plants (t(14) = -2.148, p = 0.0497), with a mean difference in height of 2.62 [0.004, 5.23] inches .
+
+`r unhide()`
+
+
+## Summary
+
+This chapter finally allowed us to calculate *P*-values and test statistical significance for our experiments using linear models. We also compared the linear model structures for producing a paired vs. unpaired *t*-test. 
+
+However we also learned to appreciate the potential issues around making Type 1 and Type 2 errors, and how an appreciation of confidence intervals and standardised effect sizes can be used to assess these. 
+
+A single experiment is never definitive, and a reliance on reporting *P*-values is uninformative and can be misleading. Instead reporting estimates and confidence intervals allows us to report our levels of uncertainty, and provides results which are more informative for comparative studies. 
+
+

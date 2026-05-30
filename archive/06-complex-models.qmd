@@ -1,0 +1,500 @@
+# Linear Models
+
+```{r, include = FALSE}
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+dros_clean <- read_csv(here("files", "fruitfly.csv"))
+library(GGally)
+library(skimr)
+library(naniar)
+library(mice)
+library(GGally)
+library(ggridges)
+library(performance)
+library(patchwork)
+
+colours <- c("cyan", "darkorange", "purple")
+```
+
+
+```{r, eval = FALSE}
+# Required packages
+library(here)
+library(tidyverse)
+library(GGally)
+library(skimr)
+library(naniar)
+library(mice)
+library(GGally)
+library(ggridges)
+library(performance)
+library(patchwork)
+
+```
+
+
+## Designing a Model
+
+We are introduced to the fruitfly dataset Partridge and Farquhar (1981)^[https://nature.com/articles/294580a0]. From our understanding of sexual selection and reproductive biology in fruit flies, we know there is a well established 'cost' to reproduction in terms of reduced longevity for female fruitflies. The data from this experiment is designed to test whether increased sexual activity affects the lifespan of male fruitflies.
+
+The flies used were an outbred stock, sexual activity was manipulated by supplying males with either new virgin females each day, previously mated females ( Inseminated, so remating rates are lower), or provide no females at all (Control). All groups were otherwise treated identically.
+
+* **type**: type of female companion (virgin, inseminated, control(partners = 0))
+
+* **longevity**: lifespan in days
+
+* **thorax**: length of thorax in micrometres (a proxy for body size)
+
+* **sleep**: percentage of the day spent sleeping
+
+:::{.callout-important}
+
+In order to work through this assignment you should be in the Github Classroom assignment for Task 3. 
+
+You will first have to complete the data cleaning assignment. If you cannot complete this task please talk to me.
+
+Throughout you may have *slightly* different values - this is due to the process you will have used for imputing missing values.
+
+:::
+
+## Hypothesis
+
+Before you start any formal analysis you should think clearly about the sensible parameters to test. In this example, we are *most* interested in the effect of sexual activity on longevity. But it is possible that other factors may also affect longevity and we should include these in our model as well, and we should think **hard** about what terms might reasonably be expected to *interact* with sexual activity to affect longevity. 
+
+
+:::{.task}
+
+::::{.task-header}
+Which terms do you think we should include in our model?
+::::
+
+::::{.task-container}
+
+- Identify the dependent variable
+
+- Identify the independent variable(s)
+
+- Write out your hypotheses
+
+- Make sure your linear model reflects your written hypothesis
+
+- Discuss this with someone else in class before checking your answers
+
+::::
+
+:::
+
+
+`r hide("Solution")`
+
+In this exercise I have just asked you to try and think logically about suitable predictors. For a more formal investigation you should support this with evidence where possible: 
+
+
+* longevity - this is the **dependent** variable
+
+### Independent variables
+
+* type - should definitely be included. 
+
+* thorax - the size of the flies could determine longevity. Carreira et al (2009)^[https://www.nature.com/articles/hdy2008117]
+
+* sleep - sleep could easily help determine longevity. Thompson et al (2020)^[https://journals.biologists.com/bio/article/9/9/bio054361/225803/Sleep-length-differences-are-associated-with]
+
+### Hypotheses
+
+- Flies paired with non-virgin females do not live as long, they expend more energy trying to mate with previously mated females.
+
+- Larger male flies live longer than smaller flies.
+
+- Flies that sleep more live longer.
+
+```
+
+lm(longevity ~ type + thorax + sleep, data = dros_clean)
+
+```
+
+### Possible interactions
+
+* type:sleep - the amount that sleep (rest) helps promote longevity could change depending on how much activity the fly engages in when awake. Chen et al (2017)^[https://www.nature.com/articles/s41467-017-00087-5#:~:text=In%20this%20study%2C%20we%20show,but%20aroused%20females%20sleep%20more]
+
+### Hypothesis
+
+- Sleep reduces or offsets the reduction in lifespan experience by males paired with non-virgin females. (rest helps mitigate the stress).
+
+Other interactions *could* be included but you should have a strong reason for them. 
+
+```
+
+lm(longevity ~ type + thorax + sleep + type:sleep, data = dros_clean)
+
+```
+
+
+`r unhide()`
+
+
+## Checking the data
+
+You should have imported, cleaned and tidied your data. Making sure it is in tidy format, all variables have useful names, and there are no mistakes, missing data or typos.
+
+Based on the variables you have decided to test you should start with some simple visualisations, to understand the distribution of your data, and investigate visually the relationships you wish to test.
+
+This is a full two-by-two plot of the entire dataset, but you should try and follow this up with some specific plots. 
+
+```{r, eval = TRUE, warning = FALSE, message = FALSE}
+
+GGally::ggpairs(dros_clean)
+
+```
+
+## Activity 1: Think about your data
+
+Think carefully about the plots you should make to investigate the potential differences and relationships you wish to investigate - try and answer the questions first before checking the examples hidden behind dropdowns.
+
+:::{.task}
+::::{.task-header}
+
+::::
+::::{.task-container}
+
+- Make Density distributions of longevity split by the female type with which males have been paired
+
+- Make a scatterplot of size against longevity.
+
+- Make a scatterplot of sleep against longevity.
+
+- With someone in class - discuss which variables you think are most likely to be statistically significant.
+
+::::
+:::
+
+
+`r hide("Solution")`
+
+```{r, message = FALSE, eval = TRUE, fig.cap = "A density distribution of longevity across the three sexual activity treatments"}
+
+colours <- c("cyan", "darkorange", "purple")
+
+dros_clean |> 
+  ggplot(aes(x = longevity, y = type, fill = type))+
+  geom_density_ridges(alpha = 0.5)+
+  scale_fill_manual(values = colours)+
+  theme_minimal()+
+  theme(legend.position = "none")
+
+
+```
+
+```{r}
+
+dros_clean |> 
+  ggplot(aes(x = thorax, y = longevity, colour = type))+
+  geom_point()+
+  scale_colour_manual(values = colours)+
+  theme_minimal()+
+  theme(legend.position = "none")
+
+
+```
+
+```{r}
+dros_clean |> 
+  ggplot(aes(x=sleep, y = longevity, group = type, colour = type))+
+  geom_point( alpha = 0.6)+
+  scale_colour_manual(values = colours)+
+  theme_minimal()
+```
+
+`r unhide()`
+
+## Designing a model
+
+In this section, we explore how to construct a statistical model to analyze biological data. Specifically, we will build a linear model to examine the effects of mating type, body size, and sleep on longevity in Drosophila melanogaster. We will define our dependent variable (longevity) and include relevant predictor variables (mating type, thorax length, and sleep duration).
+
+Using the `lm()` function in R, we fit a model to our cleaned dataset, and generate a summary of the results. This approach allows us to assess the significance of each predictor and interpret how these factors influence longevity. By the end of this section, you will understand how to structure a model, choose appropriate variables, and interpret statistical outputs.
+
+```{r}
+# a full model
+flyls1 <- lm(longevity ~ type + thorax + sleep, data = dros_clean)
+
+summary(flyls1)
+```
+
+:::{.callout-important}
+
+Before we try to interpret the coefficients for a model, we must first check that the model is a good fit for our data. We do this by checking the residuals
+
+:::
+
+
+## Model checking & collinearity
+
+Before we start playing with the terms in our model, we should check to see if this is even a good way of fitting and measuring our data. We should check the assumptions of our model are being met.
+
+```{r, eval = TRUE, message = FALSE, warning = FALSE, fig.height=9}
+
+performance::check_model(flyls1,
+                         detrend = F)
+
+```
+
+- Posterior Predictive Check – Assesses whether the model’s predicted values align well with the observed data, indicating good model fit.
+
+- Linearity Check – Ensures that the relationship between predictor variables and the outcome is approximately linear, a key assumption of linear regression.
+
+- Homogeneity of Variance Check – Tests whether residuals (errors) have constant variance across all levels of predictors, known as homoscedasticity.
+
+- Influential Observation Check – Identifies individual data points that have a disproportionately large impact on the model’s estimates.
+
+- Collinearity Check – Detects whether predictor variables are highly correlated with each other, which can distort model estimates and reduce interpretability.
+
+- Normality Check – Examines whether the residuals of the model follow a normal distribution, an assumption necessary for reliable inference in linear regression.
+
+### Homogeneity of variance
+
+**Question - IS the assumption of homogeneity of variance met?** `r mcq(c( answer = "Yes", "No"))`
+
+`r hide("Solution")`
+
+* Mostly - the reference line is fairly flat (there is a slight curve).
+
+* It looks as though there might be some increasing heterogeneity with larger values, though very minor.
+
+VERDICT, pretty much ok, should be fine for making inferences. 
+
+With a slight curvature this could indicate that you *might* get a better fit with a transformation, or perhaps that there is a missing variable that if included in the model would improve the residuals. In this instance I wouldn't be overly concerned. See here for a great explainer on intepreting residuals^[https://www.qualtrics.com/support/stats-iq/analyses/regression-guides/interpreting-residual-plots-improve-regression/].
+
+```{r}
+# Runs a Breusch-Pagan Test for heteroscedasticity
+# Sensitive to outliers, non-normality and sample size
+performance::check_heteroscedasticity(flyls1)
+
+```
+
+`r unhide()`
+
+### Normality of residuals
+
+`r mcq(c(answer = "Yes", "No"))`
+
+`r hide("Solution")`
+Yes - the QQplot looks pretty good, a very minor indication of a right skew, but nothing to worry about. 
+
+[Interpreting QQ plots][What is a Quantile-Quantile (QQ) plot?]
+
+```{r}
+# Runs a Shapiro Wilk test of normality
+# Sensitive to outliers, sample size
+performance::check_normality(flyls1)
+```
+
+`r unhide()`
+
+
+
+### Collinearity
+
+**Question - IS their an issue with Collinearity?** `r mcq(c("Yes", answer ="No"))`
+
+:::{.callout-tip}
+
+What can you do about collinearity in main effects? 1) Nothing 2) Transform 3) Drop one of the terms. 
+
+The `check_performance()` function produces a visual summary of a Variance Inflation Factor produced from the `vif()` function. This is a measure of the standard error of each estimated coefficient. If this is very larger (greater than 5 or 10), this indicates the model has problems estimating the coefficient. This does not affect model predictions, but makes it more difficult to determine the estimate change from a predictor. 
+
+```{r}
+car::vif(flyls1)
+
+```
+
+:::
+
+
+### Model Interpretation
+
+The `drop1()` function helps assess whether a predictor (e.g. type) significantly improves the model. If removing a variable results in a large decrease in model fit (i.e., a significant drop in the F-statistic), it suggests that the variable is an important contributor to explaining the outcome.
+
+
+
+```{r}
+# use drop1 function to remove top-level terms
+drop1(flyls1, test = "F")
+
+```
+
+Based on this ANOVA table, we can conclude that type and thorax are both significant predictors of longevity, while sleep is not. We can go on now to look at directionality and effect size for each level of our predictors. 
+
+
+```{r}
+
+summary(flyls1)
+
+```
+
+
+#### Coefficients and Their Meaning
+Each row represents a predictor variable in the model:
+
+- Intercept (-56.05, t(120) = -5.013, p < 0.001): The expected longevity when all predictor variables are zero (not always biologically meaningful but serves as a reference point).
+
+- typeInseminated (3.63, t(120) = 1.31, p = 0.193): Males paired with inseminated females lived on average 3.63 days longer than the reference group (control), but this effect is not statistically significant (p > 0.05).
+
+- typeVirgin (-13.25, t(120) = -4.8,  p < 0.001): Males paired with virgin females lived significantly shorter lives, about 13.25 days less than the control group (p < 0.001, highly significant).
+
+- thorax (144.43, t(120) = 11.01,  p < 0.001): Body size (thorax length) has a strong positive effect on longevity—each 1 mm increase in thorax length is associated with an increase of ~144 days in lifespan (p < 0.001).
+
+- sleep (-0.05, t(120) = -0.83, p = 0.41): Sleep has a very small negative effect on longevity, but this effect is not statistically significant (p > 0.05).
+
+### Model Fit Metrics
+
+- Residual standard error (11.23): Measures how much the observed longevity values deviate from the model’s predictions on average.
+
+- R-squared (0.6046): About 60% of the variability in longevity is explained by this model, which suggests a reasonably strong fit.
+
+- F-statistic (45.88, p < 2.2e-16): Indicates that the model overall is statistically significant, meaning at least one predictor contributes significantly to explaining longevity.
+
+### Key Takeaways
+
+- Body size (thorax) has the strongest and most significant effect on longevity.
+
+- Being paired with virgin females significantly reduces male longevity.
+
+- Sleep and pairing with inseminated females do not have significant effects.
+
+- The model explains a substantial portion (60%) of the variation in longevity.
+
+## Reporting Uncertainty
+
+Reporting mean differences along with 95% confidence intervals (CIs) provides several important benefits in reporting:
+
+- Precision and Uncertainty:
+
+A 95% confidence interval tells you the range within which the true population mean difference likely falls, with 95% confidence. It provides more context than just reporting a single point estimate (the mean difference). This gives the reader a sense of how reliable your estimate is.
+
+- Statistical Significance:
+
+If the 95% CI for a mean difference does not include zero, it suggests that the difference is statistically significant at the 5% level. This is a quick way to interpret the results without solely relying on P-values.
+
+- Practical Significance:
+
+The confidence interval gives a sense of the magnitude of the effect and whether it’s large enough to be of practical significance. Even a statistically significant result might not have real-world relevance if the confidence interval is very narrow and the effect size is small.
+
+- Informed Decision-Making:
+
+Reporting both the point estimate and the confidence interval helps stakeholders, including researchers, practitioners, and policymakers, make better-informed decisions. It reflects both the strength of evidence and its precision.
+
+
+```{r}
+
+# confint(flyls1)
+
+broom::tidy(flyls1,conf.int = T)
+```
+
+
+## Posthoc
+
+Using the [emmeans](https://aosmith.rbind.io/2019/03/25/getting-started-with-emmeans/) package is a very easy way to produce the estimate mean values (rather than mean differences) for different categories `emmeans`. 
+
+```{r}
+
+emmeans::emmeans(flyls1, 
+                 specs = ~ type + thorax + sleep)
+
+```
+
+
+If the term `pairwise` is included then it will also include post-hoc pairwise comparisons between all levels with a tukey test (adjustment for multiple comparisons) `contrasts`.
+
+```{r}
+# add pairwise ~
+emmeans::emmeans(flyls1, 
+                 specs = pairwise ~ type + thorax + sleep)
+
+```
+
+:::{.callout-tip}
+
+For continuous variables (sleep and thorax) - `emmeans` has set these to the mean value within the dataset, so comparisons are constant between categories at the average value of all continuous variables. If we wish to model continuous predictions we need to specify these:
+
+```{r}
+
+emmeans::emmeans(flyls1, 
+                 specs = ~ type + thorax + sleep,
+                 at = list(thorax = seq(0.64,0.94, .1)))
+
+```
+
+:::
+
+## Tables
+
+`sjPlot` A really nice package that helps produce model summaries for you automatically
+
+```{r}
+library(sjPlot)
+tab_model(flyls1)
+```
+
+```{r}
+library(gtsummary)
+tbl_regression(flyls1)
+
+```
+
+
+```{r, include = FALSE}
+marginal1 <- dros_clean |> 
+  ggplot()+
+  geom_density(aes(x = thorax, fill = type),
+               alpha = 0.5)+
+  scale_fill_manual(values = colours)+
+  theme_void()+
+  theme(legend.position = "none")
+
+# density plot of longevity by treatment
+marginal2 <- dros_clean |> 
+  ggplot()+
+  geom_density(aes(x = longevity, fill = type),
+               alpha = 0.5)+
+  scale_fill_manual(values = colours)+
+  theme_void()+
+  coord_flip()
+
+
+# create a new dataset where all sleep values are set to a constant (mean) values - see the emmeans table
+
+means <- emmeans::emmeans(flyls1, 
+                 specs = ~ type + thorax + sleep,
+                 at = list(thorax = seq(0.64,0.94, .1))) |> 
+  as_tibble()
+
+# use the final model to produce model predictions set to the new constant sleep dataframe
+model_plot <- ggplot(means, aes(x=thorax, y = emmean, colour = type, fill = type))+
+  geom_ribbon(aes(ymin=lower.CL, ymax=upper.CL), alpha = 0.2)+
+    geom_line(linetype = "dashed", show.legend = FALSE)+
+  geom_point(data = dros_clean, aes(x = thorax, y = longevity),
+             show.legend = FALSE)+
+  scale_colour_manual(values = colours)+
+  scale_fill_manual(values = colours)+
+  labs(y = "Lifespan in days",
+       x = "Thorax length (mm)",
+       fill = "Type of female exposure")+
+  guides(colour = "none")+
+  theme_classic()+
+  theme(legend.position = "none")
+
+layout <- "
+AAA#
+BBBC
+BBBC
+BBBC"
+
+
+dros_plot <- marginal1+model_plot+marginal2 +plot_layout(design = layout)
+
+saveRDS(dros_plot, "dros_plot")
+```

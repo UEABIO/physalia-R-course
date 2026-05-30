@@ -1,0 +1,1047 @@
+# Data cleaning {#sec-dplyr}
+
+
+```{r, echo = F, warning = F, message = F}
+library(tidyverse)
+library(janitor)
+library(here)
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+penguins_raw <- read_csv(here("files", "penguins_raw.csv"))
+```
+
+In this chapter you will learn how to use tidyverse functions to data clean and wrangle `r glossary("tidy data")` introduced in @sec-tidy 
+
+## Introduction to dplyr
+
+In this section we will be introduced to some of the most commonly used data wrangling functions, these come from the `dplyr` package (part of the `tidyverse`). These are functions you are likely to become *very* familiar with. 
+
+::: {.callout-important}
+
+Try running the following functions directly in your `r glossary("console")` *or* make a `scraps.R` scrappy file to mess around in. 
+
+:::
+
+```{r, eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE}
+library(kableExtra)
+
+verb <- c( "select()","filter()", "arrange()", "summarise()", "group_by()", "mutate()")
+
+action <- c("choose columns by name","select rows based on conditions",  "reorder the rows", "reduce raw data to user defined summaries", "group the rows by a specified column", "create a new variable")
+
+box <- tibble(verb, action)
+box
+
+
+```
+
+### Select
+
+If we wanted to create a dataset that only includes certain variables, we can use the `dplyr::select()` function from the `dplyr` package. 
+
+For example I might wish to create a simplified dataset that only contains `species`, `sex`, `flipper_length_mm` and `body_mass_g`. 
+
+Run the below code to select only those columns
+
+```{r, eval = FALSE}
+select(
+   # the data object
+  .data = penguins_raw,
+   # the variables you want to select
+  `Species`, `Sex`, `Flipper Length (mm)`, `Body Mass (g)`)
+```
+
+
+
+Alternatively you could tell R the columns you **don't** want e.g. 
+
+
+```{r, eval = F}
+select(.data = penguins_raw,
+       -`studyName`, -`Sample Number`)
+
+```
+
+Note that `select()` does **not** change the original `penguins` tibble. It spits out the new tibble directly into your console. 
+
+If you don't **save** this new tibble, it won't be stored. If you want to keep it, then you must create a new object. 
+
+When you run this new code, you will not see anything in your console, but you will see a new object appear in your Environment pane.
+
+```{r, eval = F}
+new_penguins <- select(.data = penguins_raw, 
+       `Species`, `Sex`, `Flipper Length (mm)`, `Body Mass (g)`)
+```
+
+### Filter
+
+Having previously used `dplyr::select()` to select certain variables, we will now use `dplyr::filter()` to select only certain rows or observations. For example only Adelie penguins. 
+
+We can do this with the equivalence operator `==`
+
+```{r, eval = F}
+filter(.data = new_penguins, 
+       `Species` == "Adelie Penguin (Pygoscelis adeliae)")
+
+```
+
+We can use several different operators to assess the way in which we should filter our data that work the same in tidyverse or base R.
+
+```{r, eval = TRUE, echo = FALSE, warning = FALSE, message = FALSE}
+
+Operator <- c("A < B", "A <= B", "A > B", "A >= B", "A == B", "A != B", "A %in% B")
+
+Name <- c("less than", "less than or equal to", "greater than", "greater than or equal to", "equivalence", "not equal", "in")
+
+box <- tibble(Operator, Name)
+
+box |> 
+   kbl(caption = "Boolean expressions", 
+    booktabs = T) |> 
+   kable_styling(full_width = FALSE, font_size=16)
+
+```
+
+If you wanted to select all the Penguin species except Adelies, you use 'not equals'.
+
+```{r, eval = F}
+filter(.data = new_penguins, 
+       `Species` != "Adelie Penguin (Pygoscelis adeliae)")
+
+```
+
+This is the same as 
+
+```{r, eval = F}
+filter(.data = new_penguins, 
+       `Species` %in% c("Chinstrap penguin (Pygoscelis antarctica)",
+                      "Gentoo penguin (Pygoscelis papua)")
+       )
+```
+
+You can include multiple expressions within `filter()` and it will pull out only those rows that evaluate to `TRUE` for all of your conditions. 
+
+For example the below code will pull out only those observations of Adelie penguins where flipper length was measured as greater than 190mm. 
+
+```{r, eval =F}
+
+filter(.data = new_penguins, 
+       `Species` == "Adelie Penguin (Pygoscelis adeliae)", 
+       `Flipper Length (mm)` > 190)
+
+```
+
+### Arrange
+
+The function `arrange()` sorts the rows in the table according to the columns supplied. For example
+
+
+```{r, eval = F}
+arrange(.data = new_penguins, 
+        `Sex`)
+```
+
+
+
+The data is now arranged in alphabetical order by sex. So all of the observations of female penguins are listed before males. 
+
+You can also reverse this with `desc()`
+
+```{r, eval = F}
+
+arrange(.data = new_penguins, 
+        desc(`Sex`))
+
+```
+
+You can also sort by more than one column, what do you think the code below does?
+
+```{r, eval = F}
+arrange(.data = new_penguins,
+        `Sex`,
+        desc(`Species`),
+        desc(`Flipper Length (mm)`))
+```
+
+### Mutate
+
+Sometimes we need to create a new variable that doesn't exist in our dataset. For example we might want to figure out what the flipper length is when factoring in body mass. 
+
+To create new variables we use the function `mutate()`. 
+
+Note that as before, if you want to save your new column you must save it as an object. Here we are mutating a new column and attaching it to the `new_penguins` data oject.
+
+
+```{r, eval = F}
+new_penguins <- mutate(.data = new_penguins,
+                     body_mass_kg = `Body Mass (g)`/1000)
+```
+
+## Pipes
+
+```{r, eval=TRUE, echo=FALSE, out.width="80%", fig.alt= "Pipes make code more human readable"}
+knitr::include_graphics("images/pipe_order.jpg")
+```
+
+Pipes look like this: `|>` , a `r glossary("pipe")` allows you to send the output from one function straight into another function. Specifically, they send the result of the function before `|>` to be the **first** argument of the function after `|>`. As usual, it's easier to show, rather than tell so let's look at an example.
+
+```{r, eval = F}
+# this example uses brackets to nest and order functions
+arrange(.data = filter(
+  .data = select(
+  .data = penguins_raw, 
+  species, `Sex`, `Flipper Length (mm)`), 
+  `Sex` == "MALE"), 
+  desc(`Flipper Length (mm)`))
+
+```
+
+```{r, eval = F}
+# this example uses sequential R objects 
+object_1 <- select(.data = penguins_raw, 
+                   `Species`, `Sex`, `Flipper Length (mm)`)
+object_2 <- filter(.data = object_1, 
+                   `Sex` == "MALE")
+arrange(object_2, 
+        desc(`Flipper Length (mm)`))
+
+```
+
+```{r, eval = F}
+# this example is human readable without intermediate objects
+penguins_raw |>  
+  select(`Species`, `Sex`, `Flipper Length (mm)`) |>  
+  filter(`Sex` == "MALE") |>  
+  arrange(`Flipper Length (mm)`))
+```
+
+The reason that this function is called a pipe is because it 'pipes' the data through to the next function. When you wrote the code previously, the first argument of each function was the dataset you wanted to work on. When you use pipes it will automatically take the data from the previous line of code so you don't need to specify it again.
+
+### Task
+
+Try and write out as plain English what the |>  above is doing? You can read the |>  as THEN
+
+
+`r hide("Solution")`
+
+Take the penguins data AND THEN
+Select only the species, sex and flipper length columns AND THEN
+Filter to keep only those observations labelled as sex equals male AND THEN
+Arrange the data from HIGHEST to LOWEST flipper lengths.
+
+`r unhide()`
+
+```{block, type = "info"}
+
+From R version 4 onwards there is now a "native pipe" `|>`
+
+This doesn't require the tidyverse `magrittr` package and the "old pipe" ` %>% ` or any other packages to load and use. 
+
+You may be familiar with the magrittr pipe or see it in other tutorials, and website usages. The native pipe works equivalntly in most situations but if you want to read about some of the operational differences, [this site](https://www.infoworld.com/article/3621369/use-the-new-r-pipe-built-into-r-41.html) does a good job of explaining .
+
+
+```
+
+
+## Clean the Penguin Data {#sec-data-cleaning}
+
+::: {.callout-warning}
+
+Re-open your `01_import_penguins_data.R` started in @sec-penguins and start to add these commands to your data importing and cleaning script:
+
+:::
+
+### Activity 1: Explore data structure
+
+Before working with your data, it's essential to understand its underlying structure and content. In this section, we'll use powerful functions like `glimpse()`, `str()`, `summary()`, `head`()`, `tail()` and the add-on function `skimr::skim()` to thoroughly examine your dataset. These tools provide insights into data types, variable distributions, and sample records, helping you identify initial issues such as missing values or inconsistent data types. By gaining a clear understanding of your data's structure, you'll be better equipped to address any problems and proceed confidently with data cleaning and analysis.
+
+When we run `glimpse()` we get several lines of output. The number of observations "rows", the number of variables "columns". Check this against the csv file you have - they should be the same. In the next lines we see variable names and the type of data. 
+
+
+```{r, eval = T}
+
+glimpse(penguins_raw)
+
+```
+
+We can see a dataset with 345 rows (including the headers) and 17 variables
+It also provides information on the *type* of data in each column
+
+* `<chr>` - means character or text data
+
+* `<dbl>` - means numerical data
+
+
+When we run `summary()` we get similar information, in addition for any numerical values we get summary statistics such as mean, median, min, max, quartile ranges and any missing (`NA`) values
+
+```{r, eval = T}
+
+summary(penguins_raw)
+
+```
+
+Finally the add-on package `skimr` provides the function `skimr::skim()` provides an easy to view set of summaries including column types, completion rate, number of unique variables in each column and similar statistical summaries along with a small histogram for each numeric variable. 
+
+```{r}
+library(skimr)
+skim(penguins_raw)
+
+```
+
+
+**Q Based on our summary functions are any variables assigned to the wrong data type (should be character when numeric or vice versa)?**
+
+`r mcq(c("Yes", answer = "No"))`
+
+
+`r hide("Explanation")`
+
+Although some columns like date might not be correctly treated as character variables, they are not strictly numeric either, all other columns appear correct
+
+`r unhide()`
+
+
+**Q Based on our summary functions do we have complete data for all variables?**
+
+`r mcq(c("Yes", answer = "No"))`
+
+
+`r hide("Explanation")`
+
+No, they are 2 missing data points for body measurements (culmen, flipper, body mass), 11 missing data points for sex, 13/14 missing data points for blood isotopes (Delta N/C) and 290 missing data points for comments
+
+`r unhide()`
+
+
+### Activity 2: Clean column names
+
+
+```{r, eval = T}
+# CHECK DATA----
+# check the data
+colnames(penguins_raw)
+#__________________________----
+```
+
+When we run `colnames()` we get the identities of each column in our dataframe
+
+* **Study name**: an identifier for the year in which sets of observations were made
+
+* **Region**: the area in which the observation was recorded
+
+* **Island**: the specific island where the observation was recorded
+
+* **Stage**: Denotes reproductive stage of the penguin
+
+* **Individual** ID: the unique ID of the individual
+
+* **Clutch completion**: if the study nest observed with a full clutch e.g. 2 eggs
+
+* **Date egg**: the date at which the study nest observed with 1 egg
+
+* **Culmen length**: length of the dorsal ridge of the bird's bill (mm)
+
+* **Culmen depth**: depth of the dorsal ridge of the bird's bill (mm)
+
+* **Flipper Length**: length of bird's flipper (mm)
+
+* **Body Mass**: Bird's mass in (g)
+
+* **Sex**: Denotes the sex of the bird
+
+* **Delta 15N** : the ratio of stable Nitrogen isotopes 15N:14N from blood sample
+
+* **Delta 13C**: the ratio of stable Carbon isotopes 13C:12C from blood sample
+
+
+#### Clean column names
+
+Often we might want to change the names of our variables. They might be non-intuitive, or too long. Our data has a couple of issues:
+
+* Some of the names contain spaces
+
+* Some of the names have capitalised letters
+
+* Some of the names contain brackets
+
+
+R is case-sensitive and also doesn't like spaces or brackets in variable names, because of this we have been forced to use backticks \`Sample Number\` to prevent errors when using these column names
+
+```{r, eval = T, warning = F, message = F}
+# CLEAN DATA ----
+
+# clean all variable names to snake_case 
+# using the clean_names function from the janitor package
+# note we are using assign <- 
+# to overwrite the old version of penguins 
+# with a version that has updated names
+# this changes the data in our R workspace 
+# but NOT the original csv file
+
+# clean the column names
+# assign to new R object
+penguins_clean <- janitor::clean_names(penguins_raw) 
+
+# quickly check the new variable names
+colnames(penguins_clean) 
+
+
+```
+
+
+`r hide ("Import and clean names")`
+
+We can combine data import and name repair in a single step if we want to:
+
+```{r, eval = FALSE}
+penguins_clean <- read_csv ("data/penguins_raw.csv",
+                      name_repair = janitor::make_clean_names)
+
+```
+
+`r unhide()`
+
+
+#### Rename columns (manually)
+
+The `clean_names` function quickly converts all variable names into `r glossary("snake case")`. The N and C blood isotope ratio names are still quite long though, so let's clean those with `dplyr::rename()` where "new_name" = "old_name".
+
+
+```{r, eval = T, warning = F, message = F}
+
+# shorten the variable names for isotope blood samples
+# use rename from the dplyr package
+penguins_clean <- rename(penguins_clean,
+         "delta_15n"="delta_15_n_o_oo",  
+         "delta_13c"="delta_13_c_o_oo")
+
+```
+
+
+#### Rename text values manually
+
+Sometimes we may want to rename the values in our variables in order to make a shorthand that is easier to follow. This is changing the **values** in our columns, not the column names. 
+
+
+```{r, eval = T, warning = F, message = F}
+# use mutate and case_when 
+# for a statement that conditionally changes 
+# the names of the values in a variable
+penguins <- penguins_clean |> 
+  mutate(species = case_when(
+  species == "Adelie Penguin (Pygoscelis adeliae)" ~ "Adelie",
+  species == "Gentoo penguin (Pygoscelis papua)" ~ "Gentoo",
+  species == "Chinstrap penguin (Pygoscelis antarctica)" ~ "Chinstrap",
+  .default = as.character(species)
+  )
+  )
+
+```
+
+
+```{r}
+
+# use mutate and if_else
+# for a statement that conditionally changes 
+# the names of the values in a variable
+penguins <- penguins |> 
+  mutate(sex = if_else(
+    sex == "MALE", "Male", "Female"
+  )
+  )
+
+```
+
+
+::: {.callout-warning}
+
+Notice from here on out I am assigning the output of my code to the R object penguins, this means any new code "overwrites" the old penguins dataframe. This is because I ran out of new names I could think of, its also because my Environment is filling up with lots of data frame variants. 
+
+Be aware that when you run code in this way, it can cause errors if you try to run the same code twice e.g. in the example above once you have changed MALE to Male, running the code again could cause errors as MALE is no longer present! 
+
+If you make any mistakes running code in this way, re-start your R session and run the code from the start to where you went wrong.
+
+:::
+
+```{block, type = "warning"}
+
+Have you checked that the above code block worked? Inspect your new tibble and check the variables have been renamed as you wanted.
+
+```
+
+#### Rename text values with stringr
+
+Datasets often contain words, and we call these words "(character) strings".
+
+Often these aren't quite how we want them to be, but we can manipulate these as much as we like. Functions in the package `stringr`, are fantastic. And the number of different types of manipulations are endless!
+
+Below we repeat the outcomes above, but with string matching: 
+
+
+```{r, eval = T, warning = F, message = F}
+# use mutate and case_when 
+# for a statement that conditionally changes 
+# the names of the values in a variable
+penguins <- penguins_clean |> 
+  mutate(species = stringr::word(species, 1)
+  ) |> 
+  mutate(sex = stringr::str_to_title(sex))
+
+```
+
+
+Alternatively we could decide we want simpler species names but that we would like to keep the latin name information, but in a separate column. To do this we are using [regex](https://cran.r-project.org/web/packages/stringr/vignettes/regular-expressions.html). Regular expressions are a concise and flexible tool for describing patterns in strings
+
+```{r, eval = F}
+penguins_clean |> 
+    separate(
+        species,
+        into = c("species", "full_latin_name"),
+        sep = "(?=\\()"
+    ) 
+```
+
+```{r, eval = T, echo = F}
+penguins_clean |> 
+    separate(
+        species,
+        into = c("species", "full_latin_name"),
+        sep = "(?=\\()"
+    ) |> 
+  head()
+```
+
+
+### Activity 2: Checking for duplications
+
+It is very easy when inputting data to make mistakes, copy something in twice for example, or if someone did a lot of copy-pasting to assemble a spreadsheet (yikes!). We can check this pretty quickly
+
+```{r, eval = F}
+# check for whole duplicate 
+# rows in the data
+penguins |> 
+  duplicated() |>  
+  sum() 
+
+```
+
+```
+[1] 0
+```
+Great! 
+
+If I did have duplications I could investigate further and extract these exact rows: 
+
+```{r, eval = F}
+
+# Inspect duplicated rows
+penguins |> 
+    filter(duplicated(penguins))
+
+```
+```
+A tibble:0 × 17
+0 rows | 1-8 of 17 columns
+```
+
+```{r, eval = F}
+
+# Keep only unduplicated data
+penguins |> 
+    filter(!duplicated(penguins))
+
+```
+
+```{r, eval = T, echo = F}
+
+# Keep only unduplicated data
+penguins |> 
+    filter(!duplicated(penguins)) |> 
+  head()
+
+```
+
+
+### Activity 3: Checking for typos
+
+We can also look for typos by asking R to produce all of the distinct values in a variable. This is more useful for categorical data, where we expect there to be only a few distinct categories
+
+
+```{r, eval = T}
+# Print only unique character strings in this variable
+penguins |>  
+  distinct(sex)
+
+```
+
+Here if someone had mistyped e.g. 'FMALE' it would be obvious. We could do the same thing (and probably should have before we changed the names) for species. 
+
+We can also trim leading or trailing empty spaces with `stringr::str_trim`. These are often problematic and difficult to spot e.g.
+
+```{r, eval  = T}
+df2 <- tibble(label=c("penguin", " penguin", "penguin ")) 
+df2 # make a test dataframe
+```
+
+We can easily imagine a scenario where data is manually input, and trailing or leading spaces are left in. These are difficult to spot by eye - but problematic because as far as R is concerned these are different values. We can use the function `distinct` to return the names of all the different levels it can find in this dataframe.
+
+```{r, eval  = T}
+df2 |> 
+  distinct()
+```
+
+If we pipe the data throught the `str_trim` function to remove any gaps, then pipe this on to `distinct` again - by removing the whitespace, R now recognises just one level to this data. 
+
+```{r, eval  = T}
+df2 |> 
+  mutate(label=str_trim(label, side="both")) |> 
+  distinct()
+
+```
+
+
+## Working with dates
+
+Working with dates can be tricky, treating date as strictly numeric is problematic, it won't account for number of days in months or number of months in a year. 
+
+Additionally there's a lot of different ways to write the same date:
+
+* 13-10-2019
+
+* 10-13-2019
+
+* 13-10-19
+
+* 13th Oct 2019
+
+* 2019-10-13
+
+This variability makes it difficult to tell our software how to read the information, luckily we can use the functions in the `lubridate` package. 
+
+
+```{block, type = "warning"}
+If you get a warning that some dates could not be parsed, then you might find the date has been inconsistently entered into the dataset.
+
+Pay attention to warning and error messages
+```
+
+Depending on how we interpret the date ordering in a file, we can use `ymd()`, `ydm()`, `mdy()`, `dmy()` 
+
+* **Question** What is the appropriate function from the above to use on the `date_egg` variable?
+
+
+`r longmcq(c("ymd()", "ydm()", "mdy()", answer="dmy()"))`
+
+
+`r hide("Solution")`
+
+
+```{r, eval = T, warning = F, message = F}
+
+penguins <- penguins |>
+  mutate(date_egg = lubridate::dmy(date_egg))
+
+```
+
+`r unhide()`
+
+
+Here we use the `mutate` function from `dplyr` to create a *new variable* called `date_egg_proper` based on the output of converting the characters in `date_egg` to date format. The original variable is left intact, if we had specified the "new" variable was also called `date_egg` then it would have overwritten the original variable. 
+
+
+Once we have established our date data, we are able to perform calculations or extract information. Such as the date range across which our data was collected.  
+
+### Calculations with dates
+
+```{r, eval = F}
+penguins |> 
+  summarise(min_date=min(date_egg),
+            max_date=max(date_eggr))
+```
+
+We can also extract and make new columns from our date column - such as a simple column of the year when each observation was made:
+
+```{r, eval = F}
+penguins <- penguins |> 
+  mutate(year = lubridate::year(date_egg))
+
+```
+
+
+## Factors
+
+In R, factors are a class of data that allow for **ordered categories** with a fixed set of acceptable values. 
+
+Typically, you would convert a column from character or numeric class to a factor if you want to set an intrinsic order to the values (“levels”) so they can be displayed non-alphabetically in plots and tables, or for use in linear model analyses (more on this later). 
+
+Working with factors is easy with the `forcats` package:
+
+Using across - we can apply functions to columns based on selected criteria - here within mutate we are changing each column in the `.cols` argument and applying the function `forcats::as_factor()`
+
+```{r}
+
+penguins |> 
+  mutate(
+    across(.cols = c("species", "region", "island", "stage", "sex"),
+           .fns = forcats::as_factor)
+  ) |> 
+  select(where(is.factor)) |> 
+  glimpse()
+
+```
+
+::: {.callout-important}
+
+Unless we assign the output of this code to an R object it will just print into the console, in the above I am demonstrating how to change variables to factors but we aren't "saving" this change.
+
+:::
+
+### Setting factor levels
+
+If we want to specify the *correct* order for a factor we can use `forcats::fct_relevel`
+
+
+```{r, eval = T, warning = F, message = F}
+penguins <- penguins |> 
+  mutate(mass_range = case_when(
+    body_mass_g <= 3500 ~ "smol penguin",
+    body_mass_g >3500 & body_mass_g < 4500 ~ "mid penguin",
+    body_mass_g >= 4500 ~ "chonk penguin",
+    .default = NA)
+  )
+```
+
+If we make a barplot, the order of the values on the x axis will typically be in alphabetical order for any character data
+
+```{r, eval = T, warning = F, message = F}
+penguins |> 
+  drop_na(mass_range) |> 
+  ggplot(aes(x = mass_range))+
+  geom_bar()
+
+```
+
+
+To convert a character or numeric column to class factor, you can use any function from the `forcats` package. They will convert to class factor and then also perform or allow certain ordering of the levels - for example using `forcats::fct_relevel()` lets you manually specify the level order. 
+
+The function `as_factor()` simply converts the class without any further capabilities.
+
+```{r, eval = T, warning=FALSE, message = F}
+penguins <- penguins |> 
+  mutate(mass_range = as_factor(mass_range))
+
+```
+
+
+```{r}
+levels(penguins$mass_range)
+```
+
+Below we use `mutate()` and `as_factor()` to convert the column flipper_range from class character to class factor. 
+
+```{r}
+# Correct the code in your script with this version
+penguins <- penguins |> 
+  mutate(mass_range = fct_relevel(mass_range, 
+                                  "smol penguin", 
+                                  "mid penguin", 
+                                  "chonk penguin")
+         )
+
+levels(penguins$mass_range)
+```
+
+Now when we call a plot, we can see that the x axis categories match the intrinsic order we have specified with our factor levels. 
+
+```{r, eval = T, warning = F, message = F}
+penguins |> 
+  drop_na(mass_range) |>  
+  ggplot(aes(x = mass_range))+
+  geom_bar()
+
+```
+
+```{block, type = "info"}
+
+Factors will also be important when we build linear models a bit later. The reference or intercept for a categorical predictor variable when it is read as a `<chr>` is set by R as the first one when ordered alphabetically. This may not always be the most appropriate choice, and by changing this to an ordered `<fct>` we can manually set the intercept.
+
+```
+
+
+
+## Summary
+
+In this chapter we have successfully imported and checked our data for typos and small errors, we have also been introduce to some of the key functions in the `dplyr` package for data wrangling. Now that we have confidence in the format and integrity of our data, next time we will start to make insights and understand patterns. 
+
+### Save scripts {#sec-save-script}
+
+* Make sure you have **saved your script 💾**  and given it the filename `01_import_penguins_data.R` it should be saved in your **scripts folder**
+
+
+`r hide("Check your script")`
+
+```{r, eval = F, echo = T, fig.height=6, fig.width=6, out.width = "60%"}
+#___________________________----
+# SET UP ----
+## An analysis of the bill dimensions of male and female Adelie, Gentoo and Chinstrap penguins ----
+
+### Data first published in  Gorman, KB, TD Williams, and WR Fraser. 2014. “Ecological Sexual Dimorphism and Environmental Variability Within a Community of Antarctic Penguins (Genus Pygoscelis).” PLos One 9 (3): e90081. https://doi.org/10.1371/journal.pone.0090081. ----
+#__________________________----
+
+# PACKAGES ----
+library(tidyverse) # tidy data packages
+library(janitor) # cleans variable names
+#__________________________----
+# IMPORT DATA ----
+penguins_raw <- read_csv ("data/penguins_raw.csv")
+
+attributes(penguins_raw) # reads as tibble
+
+head(penguins_raw) # check the data has loaded, prints first 10 rows of dataframe
+
+# CLEAN DATA ----
+
+# clean all variable names to snake_case 
+# using the clean_names function from the janitor package
+# note we are using assign <- 
+# to overwrite the old version of penguins 
+# with a version that has updated names
+# this changes the data in our R workspace 
+# but NOT the original csv file
+
+# clean the column names
+# assign to new R object
+penguins_clean <- janitor::clean_names(penguins_raw) 
+
+# quickly check the new variable names
+colnames(penguins_clean) 
+
+# shorten the variable names for N and C isotope blood samples
+
+penguins <- rename(penguins_clean,
+         "delta_15n"="delta_15_n_o_oo",  # use rename from the dplyr package
+         "delta_13c"="delta_13_c_o_oo")
+
+# use mutate and case_when for a statement that conditionally changes the names of the values in a variable
+penguins <- penguins_clean |> 
+  mutate(species = case_when(species == "Adelie Penguin (Pygoscelis adeliae)" ~ "Adelie",
+                             species == "Gentoo penguin (Pygoscelis papua)" ~ "Gentoo",
+                             species == "Chinstrap penguin (Pygoscelis antarctica)" ~ "Chinstrap"))
+
+# use mutate and if_else
+# for a statement that conditionally changes 
+# the names of the values in a variable
+penguins <- penguins |> 
+  mutate(sex = if_else(
+    sex == "MALE", "Male", "Female"
+  )
+  )
+
+# use lubridate to format date and extract the year
+penguins <- penguins |>
+  mutate(date_egg = lubridate::dmy(date_egg))
+
+penguins <- penguins |> 
+  mutate(year = lubridate::year(date_egg))
+
+# Set body mass ranges
+penguins <- penguins |> 
+  mutate(mass_range = case_when(
+    body_mass_g <= 3500 ~ "smol penguin",
+    body_mass_g >3500 & body_mass_g < 4500 ~ "mid penguin",
+    body_mass_g >= 4500 ~ "chonk penguin",
+    .default = NA)
+  )
+
+# Assign these to an ordered factor
+
+penguins <- penguins |> 
+  mutate(mass_range = fct_relevel(mass_range, 
+                                  "smol penguin", 
+                                  "mid penguin", 
+                                  "chonk penguin")
+         )
+
+
+```
+
+`r unhide()`
+
+
+- Does your workspace look like the below? 
+
+```{r, eval=TRUE, echo=FALSE, out.width="100%",  fig.cap="My neat project layout"}
+knitr::include_graphics("images/project_penguin.png")
+```
+
+```{r, eval=TRUE, echo=FALSE, out.width="100%",  fig.cap="My scripts and file subdirectory"}
+knitr::include_graphics("images/r_script.png")
+```
+
+- Does your script run from a `r glossary("blank slate")` without errors as described in {#sec-workflow}
+
+### Checklist for data checking
+
+- Is our dataframe in a `r glossary("tidy data")` format?
+
+- Is each column assigned to the correct data type?
+    
+    - Are dates formatted correctly?
+    - Are factors set where needed, are the levels in the correct order?
+    
+- Are variables consistently named (e.g. using a naming convention such as snake_case)?
+
+- Are text values in an appropriate format?
+
+- Do we have any data duplication?
+
+- Are there any typos or mistakes in character strings?
+
+
+## Activity: Test yourself
+
+
+**Question 1.** In order to subset a data by **rows** I should use the function `r mcq(c("select()", answer = "filter()", "group_by()"))`
+
+**Question 2.** In order to subset a data by **columns** I should use the function `r mcq(c(answer = "select()", "filter()", "group_by()"))`
+
+**Question 3.** In order to make a new column I should use the function `r mcq(c("group_by()", "select()", answer = "mutate()", "arrange()")) `
+
+**Question 4.** Which operator should I use to send the output from line of code into the next line? `r mcq(c("+", "<-)", answer = "|>", "%in%"))`
+
+**Question 5.** What will be the outcome of the following line of code?
+
+```{r, eval = F}
+penguins |> 
+  filter(species == "Adelie")
+
+```
+
+
+`r mcq(c("The penguins dataframe object is reduced to include only Adelie penguins from now on", answer = "A new filtered dataframe of only Adelie penguins will be printed into the console"))`
+
+
+`r hide("Explain this answer")`
+
+Unless the output of a series of functions is "assigned" to an object using `<-` it will not be saved, the results will be immediately printed. This code would have to be modified to the below in order to create a new filtered object `penguins_filtered`
+
+```{r, eval = F}
+penguins_filtered <- penguins |> 
+  filter(species == "Adelie")
+
+```
+
+`r unhide()`
+
+<br>
+
+
+**Question 6.** What is the main point of a data "pipe"?
+
+`r mcq(c("The code runs faster", answer = "The code is easier to read"))`
+
+
+**Question 7.** The naming convention outputted by the function `janitor::clean_names() is 
+`r mcq(c(answer = "snake_case", "camelCase", "SCREAMING_SNAKE_CASE", "kebab-case"))`
+
+
+**Question 8.** Which package provides useful functions for manipulating character strings? 
+
+`r mcq(c(answer = "stringr", "ggplot2", "lubridate", "forcats"))`
+
+**Question 9.** Which package provides useful functions for manipulating dates? 
+
+`r mcq(c("stringr", "ggplot2", answer = "lubridate", "forcats"))`
+
+
+**Question 10.** If we do not specify a character variable as a factor, then ordering will default to what?
+
+`r mcq(c("numerical", answer = "alphabetical", "order in the dataframe"))`
+
+```{r, include = FALSE}
+penguins_raw <- read_csv(here("files", "penguins_raw.csv"))
+
+attributes(penguins_raw) # reads as tibble
+
+head(penguins_raw) # check the data has loaded, prints first 10 rows of dataframe
+
+# CLEAN DATA ----
+
+# clean all variable names to snake_case 
+# using the clean_names function from the janitor package
+# note we are using assign <- 
+# to overwrite the old version of penguins 
+# with a version that has updated names
+# this changes the data in our R workspace 
+# but NOT the original csv file
+
+# clean the column names
+# assign to new R object
+penguins_clean <- janitor::clean_names(penguins_raw) 
+
+# quickly check the new variable names
+colnames(penguins_clean) 
+
+# shorten the variable names for N and C isotope blood samples
+
+penguins <- rename(penguins_clean,
+         "delta_15n"="delta_15_n_o_oo",  # use rename from the dplyr package
+         "delta_13c"="delta_13_c_o_oo")
+
+# use mutate and case_when for a statement that conditionally changes the names of the values in a variable
+penguins <- penguins_clean |> 
+  mutate(species = case_when(species == "Adelie Penguin (Pygoscelis adeliae)" ~ "Adelie",
+                             species == "Gentoo penguin (Pygoscelis papua)" ~ "Gentoo",
+                             species == "Chinstrap penguin (Pygoscelis antarctica)" ~ "Chinstrap"))
+
+# use mutate and if_else
+# for a statement that conditionally changes 
+# the names of the values in a variable
+penguins <- penguins |> 
+  mutate(sex = if_else(
+    sex == "MALE", "Male", "Female"
+  )
+  )
+
+# use lubridate to format date and extract the year
+penguins <- penguins |>
+  mutate(date_egg = lubridate::dmy(date_egg))
+
+penguins <- penguins |> 
+  mutate(year = lubridate::year(date_egg))
+
+# Set body mass ranges
+penguins <- penguins |> 
+  mutate(mass_range = case_when(
+    body_mass_g <= 3500 ~ "smol penguin",
+    body_mass_g >3500 & body_mass_g < 4500 ~ "mid penguin",
+    body_mass_g >= 4500 ~ "chonk penguin",
+    .default = NA)
+  )
+
+# Assign these to an ordered factor
+
+penguins <- penguins |> 
+  mutate(mass_range = fct_relevel(mass_range, 
+                                  "smol penguin", 
+                                  "mid penguin", 
+                                  "chonk penguin")
+         )
+
+saveRDS(penguins, file = here("files", "chapter5.RDS"))
+```
+
+
+## Glossary
+
+```{r, echo = FALSE}
+glossary_table()
+```
+
+## Reading
+
+- [Dplyr](https://dplyr.tidyverse.org/index.html)
+
+- [Lubridate](https://lubridate.tidyverse.org/)
+
+- [Stringr](https://stringr.tidyverse.org/)

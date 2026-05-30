@@ -1,0 +1,167 @@
+# `renv`
+
+```{r, include = FALSE}
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+penguins_raw <- read_csv(here("files", "penguins_raw.csv"))
+```
+
+`renv` is an R package that provides tools for managing R package dependencies. It allows you to create isolated environments for your R projects. 
+
+By using `renv`, you can:
+
+- ensure that your projects are reproducible, with the same package versions used across different environments and collaborators.
+
+- update packages when working on new projects without causing conflicts or issues for older projects.
+
+This section will guide you through the basics of using renv to manage project dependencies and share your project with others via GitHub.
+
+```{r, eval=TRUE, echo=FALSE, out.width="80%",}
+knitr::include_graphics("images/renv.png")
+```
+
+## Step 1: Initialize renv
+
+First, initialize `renv` in your existing R project:
+
+```{r, eval = FALSE}
+
+renv::init()
+
+
+```
+
+This will:
+
+- Create an isolated environment for your project by setting up a project-specific library inside the `renv` folder.
+
+- Install the packages currently being used in your project into this local library.
+
+- Generate a `renv.lock` file, which records the versions of all the packages installed.
+
+## Install and manage packages
+
+When you want to install a new package within your project, use `renv::install()` **instead of** `install.packages()`:
+
+```{r, eval = FALSE}
+
+renv::install("dplyr")
+
+```
+
+This ensures that the package is installed in your project-specific library.
+
+To list all packages installed in your project's environment, use:
+
+```{r, eval = FALSE}
+
+renv::status()
+
+
+```
+
+## Step 3: Snapshot Your Project's State
+
+Whenever you make changes to your package environment (such as installing or removing packages), update the `renv.lock` file by taking a snapshot of your project’s state:
+
+```{r, eval = FALSE}
+
+renv::snapshot()
+
+
+```
+
+The `renv.lock` file captures the precise versions of all the packages used in the project. This is crucial for ensuring reproducibility.
+
+```{block, type = "info"}
+
+So we have a localised library of packages with our project. But the renv.lock file will only capture packages that are actually be loaded into our environment (so the packages we are using)
+
+```
+
+
+
+## Restore the Environment
+
+If you or a collaborator wants to set up the same environment on a different machine, use the `renv.lock` file to recreate the environment:
+
+```{r, eval =FALSE}
+
+renv::restore()
+
+
+```
+
+This will install all the packages listed in the `renv.lock` file **with the specified versions**, making sure the environment matches the original setup.
+
+## Installing more packages
+
+If you need to install more packages or update exisiting ones you can
+
+```{r, eval = FALSE}
+
+renv::update("dplyr")
+renv::install("mice")
+
+```
+
+After doing this, re-run the snapshot command:
+
+```{r, eval = FALSE}
+
+renv::snapshot()
+
+```
+
+This will update the `renv.lock` file with the new package versions.
+
+## Issues or errors
+
+If you encounter errors where an update or package is breaking your code you can rewind to the previous good state with:
+
+```{r, eval = FALSE}
+
+renv::restor()
+
+```
+
+If you need to roll back changes even further you can view your project states with:
+
+```{r, eval = FALSE}
+
+renv::history()
+
+```
+
+and select good states with:
+
+```{r, eval = FALSE}
+
+renv::revert()
+
+```
+
+## Ignore renv
+
+If you need to ever ignore or bypass `renv` you can. It can be temporarily disabled for a session with:
+
+```{r, eval = FALSE}
+
+renv::deactivate()
+
+```
+
+`renv` does not guarantee complete reproducibility. But it is a significant step in the right direction. What it will not do is directly help manage if you change the version of R you are using (though this is at least recorded in the `renv.lock` file). And if your packages get too old, they could in theory become incompatible with newer versions of R. 
+
+
+### Task
+
+Let's try an exercise of installing some packages into a renv environment! 
+
+
+## Greater Reproducibility
+
+So `renv` tracks but does not restore the R version you were using for the project. What other options do we have? There is the [rig](https://github.com/r-lib/rig) package that makes it easier to switch between R versions. Alternatively there is [Docker](https://www.docker.com/) - with docker you can package your application and all dependencies into a container. 
+

@@ -1,0 +1,191 @@
+# Clustering
+
+In this tutorial, we will introduce you to the tidymodels framework in R, using a real-world dataset on the relationship between bat age and DNA methylation at specific CpG sites. We’ll explore how to build and evaluate a linear regression model using tidymodels and demonstrate why centering predictors is a crucial preprocessing step for model performance.
+
+1. Introduction to Tidymodels
+The tidymodels package suite in R provides a standardized, efficient workflow for machine learning. It combines several packages that make the modeling process clear, consistent, and reproducible. The main goal of tidymodels is to unify the process of building, tuning, and evaluating models across different machine learning tasks.
+
+Key Concepts of Tidymodels:
+
+Data Preprocessing: Use the recipe package to prepare and transform the data (e.g., scaling, feature engineering).
+
+Model Specification: Define the type of model and the engine that will be used (e.g., linear regression with lm).
+
+Workflow: Combine preprocessing and modeling steps into one pipeline.
+
+Model Fitting: Fit the model to the data and evaluate its performance using various metric
+
+```{r, include = FALSE}
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+library(GGally)
+library(skimr)
+library(naniar)
+library(mice)
+library(GGally)
+library(ggridges)
+library(performance)
+library(patchwork)
+
+colours <- c("cyan", "darkorange", "purple")
+```
+
+
+```{r, eval = FALSE}
+# Required packages
+# Load the necessary libraries
+library(tidymodels)
+library(readxl)
+library(tidyverse)
+library(here)
+library(performance)
+
+# Read the dataset into R
+rna <- read_csv(here("files", "count_matrix.csv"))
+
+meta <- read_csv(here("files", "metadata_count.csv"))                
+                
+
+
+
+```
+
+```{r}
+
+rna <- rna |> 
+  mutate(
+    across(.cols = where(is.numeric),
+           .fns = ~log(.x+1))
+  )
+
+
+# Calculate the mean expression for each gene across all samples
+gene_means <- rowMeans(rna, na.rm = TRUE)
+
+# Order genes by mean expression in descending order and select the top 200
+top200_genes <- order(gene_means, decreasing = TRUE)[1:200]
+
+# Subset your original data to keep only these top 200 genes
+rna_top200 <- rna[top200_genes, ]
+
+rna <- as.data.frame(rna)
+rownames(rna) <- rna$Name
+
+# Remove the Name column
+rna <- rna[, -1]
+
+# Transpose the dataframe so that rows become samples and columns become features
+rna_transposed <- as.data.frame(t(rna))
+
+#rna <- rna |> pivot_longer(cols = !Name,
+#                    names_to = "id",
+#                    values_to = "Count")
+
+```
+
+```{r}
+# remove lowly abundant reads
+#full_rna <- full_join(rna, meta, by = "id")
+
+```
+
+
+
+```{r}
+
+komp_recipe <- recipe(~., data = rna) %>% 
+  step_zv(all_predictors()) |> 
+  step_impute_lower(all_predictors()) %>%
+  step_normalize(all_predictors()) %>%  
+  step_pca(all_predictors()) %>% 
+  prep()
+
+```
+
+
+```{r}
+
+tidy(komp_recipe,   
+     3,               
+     type = "variance") %>% 
+  filter(component < 20 ) %>% 
+  ggplot() + 
+  geom_col(aes(x = component, y = value), fill = "steelblue", alpha = 0.7) + 
+  facet_wrap(~terms, scales = "free_y") + 
+  theme_light()
+
+```
+
+```{r}
+
+komp_recipe %>% 
+    juice() %>% 
+    ggplot() + 
+    geom_point(aes(x = PC1, y = PC2), size = 2, alpha = 0.7) 
+
+```
+
+
+
+Let's look the the metabolites which are mostly contributiong to PC1
+
+
+
+```{r fig.height=10, fig.width=7}
+
+tidy(komp_recipe, 4) %>% 
+  filter(component %in% paste0("PC", 1)) %>% 
+  arrange(value) %>% 
+  mutate(terms = fct_inorder(terms)) %>% ## 
+  ggplot() +
+  geom_point(aes(x = value, y = terms)) + 
+  geom_segment(aes(xend = value, x = 0, y = terms, yend = terms)) + 
+  labs(y = NULL) + 
+  theme_light() 
+
+```
+
+
+
+### Heatmaps and hierarchical clustering
+
+```{r}
+library(ggalign)
+library(ggheatmap)
+
+ggheatmap(rna_top200) + scale_fill_viridis()+
+    # we set the active context to the top annotation
+    anno_top() +
+    align_dendro()
+
+
+```
+
+
+```{r}
+
+# For example, using Euclidean distance:
+d <- dist(rna_top200)
+
+# Alternatively, if you want to use a correlation-based measure:
+# d <- as.dist(1 - cor(t(rna_top200_scaled)))
+
+hc <- hclust(d, method = "complete")
+
+
+rna_top200_ordered <- rna_top200[hc$order, ]
+
+ggheatmap(rna_top200_ordered) + scale_fill_viridis()+
+    # we set the active context to the top annotation
+    anno_top() +
+    align_dendro()
+
+ggheatmap(rna_top200) + scale_fill_viridis()+
+  anno_top() +
+    # we set the active context to the top annotation
+    align_hclust()+
+    
+    align_dendro()
+```
