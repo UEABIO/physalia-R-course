@@ -105,7 +105,7 @@ The point of the discussion is not to reach consensus. It is to surface the crit
 
 **Which statement best describes the difference between in-IDE Agent mode and the GitHub cloud coding agent?**
 
-<div class='webex-radiogroup' id='radio_ZVOARBTHMF'><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value=""></input> <span>They are the same tool with different names</span></label><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value="answer"></input> <span>In-IDE Agent mode runs synchronously in your editor while you watch; the cloud agent runs asynchronously on GitHub&apos;s servers and produces a pull request</span></label><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value=""></input> <span>In-IDE Agent mode is paid and the cloud agent is free</span></label><label><input type="radio" autocomplete="off" name="radio_ZVOARBTHMF" value=""></input> <span>The cloud agent runs in your editor and the in-IDE agent runs on GitHub&apos;s servers</span></label></div>
+<div class='webex-radiogroup' id='radio_LNOSSTJABI'><label><input type="radio" autocomplete="off" name="radio_LNOSSTJABI" value=""></input> <span>They are the same tool with different names</span></label><label><input type="radio" autocomplete="off" name="radio_LNOSSTJABI" value="answer"></input> <span>In-IDE Agent mode runs synchronously in your editor while you watch; the cloud agent runs asynchronously on GitHub&apos;s servers and produces a pull request</span></label><label><input type="radio" autocomplete="off" name="radio_LNOSSTJABI" value=""></input> <span>In-IDE Agent mode is paid and the cloud agent is free</span></label><label><input type="radio" autocomplete="off" name="radio_LNOSSTJABI" value=""></input> <span>The cloud agent runs in your editor and the in-IDE agent runs on GitHub&apos;s servers</span></label></div>
 
 
 **True or false: a large language model has no memory between calls, so each interaction starts with only the context you supply.** <select class='webex-select'><option value='blank'></option><option value='answer'>TRUE</option><option value=''>FALSE</option></select>
@@ -399,24 +399,32 @@ The code runs. There is no error and no `NaN`. It returns something like:
 
 ```
 # A tibble: 3 × 2
-  treatment_arm mean_change
-  <chr>               <dbl>
-1 Control            -0.21 
-2 Low_dose           -1.49 
-3 High_dose          -3.19 
+#  treatment_arm mean_change
+#  <chr>               <dbl>
+# 1 Control            -0.21 
+# 2 Low_dose           -1.49 
+# 3 High_dose          -3.19 
 ```
 
 Every value is a small number of grams, which is entirely plausible for a vole, so nothing here looks wrong on its face. But the result is the reverse of the truth. The treatment was administered to increase body mass, and the dataset was built so that mass rises with dose. The table reports that mass falls, and falls most at the highest dose.
 
 This is the error class that neither your diagnostics nor an AI can catch for you. `glimpse()`, `distinct()`, and `count()` all report a clean dataset, because the data are clean; the fault is in the arithmetic, and the arithmetic produces a plausible number. The subtraction is the wrong way round. `mass_pre_g - mass_post_g` measures loss, when you wanted gain.
 
+<div class="info">
+<p>A chat window is more likely to catch this error because it uses
+patterns and conventions from training data to identify likely mistakes
+in logic or interpretation. Inline comments and code execution only
+check for syntax or runtime errors, not for whether the calculation
+matches common scientific practice.</p>
+</div>
+
 **1. Before you trust any result that runs cleanly, write down what a correct result should look like.** For this table: the sign should be positive, because the treatment adds mass, and the magnitude should increase from Control to High_dose. Only then compare. The mismatch between "should be positive and increasing" and "is negative and decreasing" is the diagnosis.
 
 **2. You may give the code to AI for a second opinion, but it can only help if you supply the expected direction.** A prompt that says "this should show increasing mass gain with dose, but it shows decreasing values; what is wrong?" will get the sign error named. A prompt that gives only the code and the output will get a description of what the code does, which is not the same as catching that it does the wrong thing.
 
-<button id="displayTextunnamed-chunk-18" onclick="javascript:toggle('unnamed-chunk-18');">Show Solution</button>
+<button id="displayTextunnamed-chunk-19" onclick="javascript:toggle('unnamed-chunk-19');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-18" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-19" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ``` r
 voles |>
@@ -462,19 +470,18 @@ Approximate duration: 40 minutes (after a fifteen-minute break).
 
 ## What Chat sees, and what it does not
 
-Here Copilot Chat differs fundamentally from a general chatbot such as ChatGPT, and the difference is easy to get wrong. ChatGPT sees only the text you paste; it has no connection to your files. Copilot is integrated with your editor and repository and can draw on context you did not paste. How much it draws on, and whether it can act on your machine, depends on the surface. Three matter for this workshop, and they are not equivalent.
+Here Githhub Copilot Chat differs fundamentally from a general chatbot such as ChatGPT, and the difference is easy to get wrong. ChatGPT sees *only the text you paste*; it has no connection to your files. Github Copilot is integrated with your editor and repository and can draw on context you did not paste. How much it draws on, and whether it can act on your machine can vary depending on set-up. Three matter for this workshop, and they are not equivalent.
 
-- Browser Chat on github.com (usable from any IDE, including RStudio): open your repository on github.com and select the Copilot icon. It works in the context of that repository and can reach its files, but it has no connection to your local machine, runs no code, and cannot see your R session. This is the one that behaves the same for everyone.
+- **Browser Chat on github.com**: open your repository on github.com and select the Copilot icon. It works in the context of that repository and can reach its files, but it has no connection to your local machine, runs no code, and cannot see your R session. This is the one that behaves the same for everyone.
 
-- The Copilot Chat extension in VS Code: by default it includes the active file, your current selection, and the file name as context and can index the workspace. You steer this with #editor for the open file, #<filename> for a named file, and #codebase (formerly @workspace) for a project-wide question. Ask and Edit modes reason over this context but run nothing; agent mode can run terminal commands and tests, so it can execute R itself, in a process it controls rather than your interactive console, and only if the data can be rebuilt from files it can read.
+- **The Copilot Chat extension in VS Code**: by default it includes the active file, your current selection, and the file name as context and can index the workspace. You steer this with #. Use #filename or #sectionname in your message to refer to a specific file or section you’ve shared. This tells it to use the content from that file or section as context for your question or request. 
 
-- Positron: Positron also uses GitHub Copilot, signed in with your GitHub account, unless you configure a different provider such as an Anthropic API key. It is delivered through a Positron-modified build of the Copilot Chat extension, and the difference that matters is the context it adds. Positron hands Copilot context about your interactive data science work, such as your loaded data, plots, and console history, and in agent mode it can execute code in the console and view the output. So although the model is Copilot, in Positron it is fed your session, and the "cannot see your data" assumption does not hold the way it does in browser Chat. PositronGitHub
+- **Positron**: Positron also uses GitHub Copilot, signed in with your GitHub account, unless you configure a different provider such as an Anthropic API key. It is delivered through a Positron-modified build of the Copilot Chat extension, and the difference that matters is the context it adds. Positron hands Copilot context about your interactive data science work, such as your loaded data, plots, *and console history*, and in agent mode it can execute code in the console and view the output. So although the model is Copilot, in Positron it is fed your session, and the "cannot see your data" assumption does not hold the way it does in browser Chat.
 
-- Your `copilot-instructions.md`, if present, is loaded automatically into every Copilot Chat request in that workspace. Exactly what is pulled in automatically has changed between versions and differs across surfaces, so the reliable habit is to set the context yourself with the references above rather than to assume (see Part 5).
+- Your `copilot-instructions.md`, if present, is loaded automatically into every Copilot Chat request in that workspace. Exactly what is pulled in automatically has changed between versions and differs across surfaces, so the reliable habit is to set the context yourself with the references above rather than to assume (*see Part 5*).
 
-One thing is constant: no memory between sessions, so a new chat starts blank. Two things people assume are constant are not. Whether Copilot runs your code, and whether it can see the objects in your R session, both depend on the surface. Browser Chat does neither. The VS Code extension sees your files but not your live session, and executes only in agent mode, in its own process. In Positron, Copilot is given your loaded data and console history and can run code in the Console. The durable point for browser Chat, where these exercises run, is this: a tibble that exists only in memory after a `read_csv()` and a few pipes is invisible to a tool that holds neither your session nor the file, so for anything about the contents of your data, the values, the result of a transformation, the levels of a factor, you supply it yourself.
 
-This is why the exercises below should be run in browser Chat, or in a session where the relevant file and environment are not already in context. If your script is open in the VS Code editor, Copilot may already hold the context an exercise asks you to add; in Positron, Copilot may already have your data frame in context, or be able to inspect it by running code, which removes the contrast entirely. Either is worth noticing. RStudio users should use browser Chat throughout. VS Code users may use either, subject to the caveat. Positron users should use browser Chat for these exercises specifically, because Positron's session context defeats the demonstration
+For these exercises we should run them either in browser Chat, *or* in a session where the relevant file and environment are not already in context. In Positron, Copilot may already have your data frame in context, or be able to inspect it by running code, which removes the contrast entirely. Either is worth noticing. RStudio users should use browser Chat throughout. 
 
 <div class="info">
 <p>An assistant can describe your data confidently for two different
@@ -497,9 +504,9 @@ values. Verify any data-specific claim against your real object.</p>
 </div>
 
 
-**Browser Chat** (all IDEs, including RStudio): navigate to your repository on github.com and click the Copilot icon in the top right. This is the one that works for everyone.
+**Browser Chat** (all IDEs, including RStudio): navigate to your repository on [github.com](github.com) and click the Copilot icon in the top right. This is the one that works for everyone.
 
-**In-IDE Chat panel** (Positron and VS Code only): open the Copilot panel in the sidebar, and use the `#` and `@workspace` references above to control what it sees.
+**In-IDE Chat panel** (Positron and VS Code only): open the Copilot panel in the sidebar, and use the `#` references above to control what it sees. Use  quick actions as slash commands. Type `/` in the chat pane or in inline chat to see the list, pick one, and optionally add instructions before sending. The commands shipped with the Assistant include `/fix` to propose a correction, `/explain` to describe what code does, `/doc` to add documentation, and `/exportQuarto` to turn a chat into a Quarto document. They are designed especially for inline chat, where they act on the code you have selected. The Assistant can also trigger them from plain language: asking "can you convert this to Quarto?" invokes the export without your typing the command. 
 
 RStudio users should use the browser Chat throughout this block. Positron and VS Code users may use either; the exercises work in both, subject to the context caveat above.
 
@@ -665,22 +672,23 @@ Approximate duration: 55 minutes.
 
 ## Three configuration mechanisms
 
-GitHub Copilot supports three distinct ways of injecting context into its responses. They are easy to confuse because they all live in `.github/` and all use markdown. Knowing what each does is the precondition for using any of them well.
+GitHub Copilot supports three distinct ways of injecting context into its responses. They are easy to confuse, because they all live in `.github/` and all use Markdown. Knowing what each one does is the precondition for using any of them well.
 
-**Workspace-level custom instructions** live in `.github/copilot-instructions.md`. Copilot loads this file automatically for every Chat interaction in the repository. Use it for things that are always true about your project: which packages you use, your naming conventions, your file structure, your statistical conventions. The file is short (a few hundred words) and broad in scope.
+**Workspace-level custom instructions** live in `.github/copilot-instructions.md`. Copilot loads this file automatically for every request made in the repository, whether in Chat, code review, or the cloud agent. Use it for things that are always true of your project: which packages you use, your naming conventions, your file structure, your statistical conventions. The file should be short and broad in scope; treat two pages as a ceiling, not a target.
 
-**Scoped instructions** live in `.github/instructions/*.instructions.md`, with a YAML front-matter `applyTo` glob that restricts the file to particular paths (for example `applyTo: "**/*.qmd"` to apply only to Quarto documents). Use these for instructions that apply to one type of file but not all. They load automatically when Copilot is working on a matching file.
+**Scoped instructions** live in `.github/instructions/*.instructions.md`, with a YAML front-matter `applyTo` glob that restricts the file to particular paths (for example `applyTo: "**/*.qmd"` to apply only to Quarto documents). Use them for rules that apply to one kind of file but not the rest. They load automatically when Copilot works on a matching file, with one important limitation: on GitHub.com they are currently honoured only by the cloud agent and by code review, not by Chat or inline completion. If your work is mainly in the editor, confirm your surface before relying on this mechanism.
 
-**Agent Skills** live in `.github/skills/<skill-name>/SKILL.md`, with a YAML front-matter `name` and `description`. Unlike the first two mechanisms, skills are not always loaded; they are invoked. Either you type `/skill-name` in Chat or the agent infers that the skill is relevant from its description. Skills are appropriate for procedures: how to make a publication figure, how to write a function, how to review code. They can contain extensive material because they are not loaded except when needed.
+**Agent Skills** live in `.github/skills/<skill-name>/SKILL.md`, with a YAML front-matter `name` and `description`. Unlike the first two mechanisms, skills are not always loaded; they are invoked. Either you type `/skill-name` in Chat or agent mode, or Copilot infers from the description that the skill is relevant to the task. Skills suit procedures: how to make a publication figure, how to write a function, how to review code. Because they load only when needed, they can carry more material than an always-on file, though it is still worth putting the most important rules first.
 
-A fourth, related mechanism is custom prompt files (`.github/prompts/*.prompt.md`), which are explicitly invoked as slash commands. These are not the focus of this workshop.
+A fourth, related mechanism is custom prompt files (`.github/prompts/*.prompt.md`), invoked explicitly as slash commands. These are outside the scope of this workshop.
 
-The three mechanisms answer different questions. Custom instructions answer "how should code in this project be written?" Scoped instructions answer "how should this kind of file be written?" Skills answer "how should this specific task be executed?" The visualisation skill you will see demonstrated shortly is an example of the third.
+The mechanisms answer different questions. Custom instructions answer "how should code in this project be written?" Scoped instructions answer "how should this kind of file be written?" Skills answer "how should this specific task be executed?" The visualisation skill demonstrated shortly is an example of the third.
 
 
 ## How to write effective instructions
 
 A `copilot-instructions.md` file is loaded into every Chat interaction in the repository and is read by the cloud agent before it starts work, so its length is a recurring cost and brevity is a virtue. A handful of accurate lines outperforms a long file.
+
 
 A few principles carry most of the value:
 
@@ -692,26 +700,30 @@ A few principles carry most of the value:
 
 - Avoid contradiction and overlap. When a workspace instruction and a scoped instruction conflict, Copilot's choice between them is not deterministic, so do not rely on one quietly overriding the other.
 
-- Tell the agent how to run the project, not only how to style it. For the cloud agent in Part 6, "tests are run with `testthat::test_file()`" matters as much as any naming rule, because the agent uses it to check its own work.
 
-You do not have to start from a blank file. In VS Code you can generate a first draft with `/init`, and the first time you open a cloud-agent pull request Copilot offers to generate an instructions file by inspecting the repository. Generate, then edit down to what is true.
+Some other set-up and principles can be found at the
+[Github documentation on onboarding an instruction file](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions)
+
+
 
 
 ## Exercise 1: Build your `copilot-instructions.md`
 
-In the workshop template repository (which you forked at the start of the day), create the file `.github/copilot-instructions.md`. The file should specify, at minimum:
+In the workshop template repository (which you forked at the start of the day), you will create `.github/copilot-instructions.md`. Rather than start from a blank file, generate a skeleton and then refine it. The refining is the real exercise.
 
-**1. Project context.** One sentence on what the project is for. Use your own work, not the workshop dataset. For example: "Longitudinal analysis of badger sett occupancy, 2015–2024, three counties, hierarchical model fit with brms."
+**Step 1: Generate a skeleton.** In the editor chat, prompt: "Create `.github/copilot-instructions.md` by reading the current workspace." (In VS Code you can instead run the Generate Instructions action from the Command Palette. In Positron, check whether that command exists in your build; if not, use the chat prompt.) Copilot reads the repository and drafts a file covering the structure, languages, and packages it can detect.
 
-**2. Package and syntax preferences.** Which packages you use by default; which pipe operator (`|>` or `%>%`); which assignment operator (`<-` or `=`); naming convention (snake_case is the tidyverse standard).
+**Step 2: Trim it hard.** Generated instructions run long and generic. Cut the draft down to what is always true of the project and broadly useful, treating two pages as a ceiling, not a target. Delete anything the model padded or guessed at.
 
-**3. File structure.** Where data live, where scripts live, where outputs live. The standard analysis-project layout (`data/raw/`, `data/processed/`, `R/`, `outputs/figures/`, `outputs/tables/`) is a reasonable default; adapt it to your conventions.
+**Step 3: Make it yours.** The generator read the workshop template, not your own work, and it cannot read your judgement. Edit the file so that it specifies, at minimum:
 
-**4. One statistical or coding convention you care about.** This is the most important entry, because it is the one that is specific to you. Examples: "Report effect sizes alongside p-values; never report a p-value alone." "Always use `na.rm = TRUE` in summary functions." "Models in `R/04_models.R`, figures in `R/05_figures.R`; never mix the two." "Use `set.seed(2026)` at the top of any script that uses random numbers."
+1. **Project context.** One sentence on what the project is for. Write this yourself about your own work, not the workshop dataset; the generator will have described the template instead. For example: "Longitudinal analysis of badger sett occupancy, 2015–2024, three counties, hierarchical model fit with brms."
+2. **Package and syntax preferences.** Which packages you use by default; which pipe (`|>` or `%>%`); which assignment operator (`<-` or `=`); naming convention (snake_case is the tidyverse standard). The generator usually drafts this; confirm it matches what you actually use.
+3. **File structure.** Where data, scripts, and outputs live. The standard layout (`data/raw/`, `data/processed/`, `R/`, `outputs/figures/`, `outputs/tables/`) is a reasonable default; adapt it to your conventions. The generator usually drafts this too.
+4. **One statistical or coding convention you care about.** This is the most important entry, because it is the one the generator could not infer. Examples: "Report effect sizes alongside p-values; never report a p-value alone." "Always use `na.rm = TRUE` in summary functions." "Models in `R/04_models.R`, figures in `R/05_figures.R`; never mix the two." "Use `set.seed(2026)` at the top of any script that uses random numbers."
+5. **One common mistake to avoid.** Pick an error from Part 3 that you have made before, or a different one from your own work, and instruct Copilot to flag or prevent it. The generator cannot know your mistakes; you must supply this.
 
-**5. One common mistake to avoid.** Pick one error from Part 3 that you have made before, or a different one from your own work, and instruct Copilot to flag or prevent it.
-
-The deliverable for this exercise is the committed `copilot-instructions.md` file in your forked repository. After committing, open a fresh Chat session in the browser and ask:
+The deliverable is the committed `copilot-instructions.md` in your forked repository. After committing, open a fresh chat session and ask:
 
 ```
 Following the conventions in #.github/copilot-instructions.md,
@@ -719,16 +731,15 @@ sketch a project structure for analysing the voles_metabolism.csv
 dataset.
 ```
 
-Compare the answer with what a partner gets from their own instructions file. The differences are the personality of your standards.
+The file loads automatically in a workspace chat, so the explicit `#` reference is belt-and-braces here: it confirms the file is being found. If the sketch follows your conventions, in particular the one you wrote for item 4, the instructions are working. If it ignores them, check that the file is at `.github/copilot-instructions.md` and that instruction files are enabled in your settings.
 
-Resist the temptation to write an exhaustive style guide on day one. A short, accurate file is more useful than a long file that includes rules you do not actually follow. Add entries when you find yourself correcting the same suggestion repeatedly.
+Compare the answer with what someone else gets from their own instructions file. The differences are the personality of your standards.
 
 
-## Demonstration: a skill in action
+## Exercise 2: a skill in action
 
-This is an instructor-driven demonstration. The skill being demonstrated is `pub-figures`, which governs the production of every figure in the project that a human will read. The skill encodes a chart-selection table, a list of unconditional prohibitions (no pie charts, no dual y-axes, no dynamite plots when raw data are available), an accessible colour scheme (Okabe-Ito via the `colorspace` package), audience-specific styling, a mandatory colour-vision-deficiency check, and a pre-flight checklist.
+The skill being demonstrated is `pub-figures`, which governs the production of every figure in the project that a human will read. The skill encodes a chart-selection table, a list of unconditional prohibitions (no pie charts, no dual y-axes, no dynamite plots when raw data are available), an accessible colour scheme, audience-specific styling, a mandatory colour-vision-deficiency check, and a checklist.
 
-The demonstration has three parts.
 
 **1. Default output.** In a fresh Chat session (with no skill loaded), ask:
 
@@ -1072,6 +1083,7 @@ in the diff at all. The fixture you committed in Step 0 is the trust anchor; if
 the agent has modified it, the verification is circular whatever the green tick
 says.
 
+
 ## Step 5 — Notice the limit
 
 You captured the reference; the agent could not, by design. That is the division
@@ -1094,6 +1106,9 @@ scientifically sensible, do not, and stay with you.
 
 
 **True or false: the reference fixture is captured by the investigator rather than the agent because a reference generated from the agent's own output would make the verification circular.** <select class='webex-select'><option value='blank'></option><option value='answer'>TRUE</option><option value=''>FALSE</option></select>
+
+
+# Part 7: Automated code review
 
 
 ## Wrap-up

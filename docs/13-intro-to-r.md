@@ -86,6 +86,11 @@ These are incredibly powerful code formatters (or linters) that automatically ed
 
 Both can be selected to reformat code on saving. 
 
+Another fantastic addin is ggannotate for ggplot2. Which allows you to interactively annotate ggplot graphs:
+
+https://github.com/MattCowgill/ggannotate
+
+
 ## Get Help!
 
 There are a lot of sources of information about using R out there. Here are a few helpful places to get help when you have an issue, or just to learn more

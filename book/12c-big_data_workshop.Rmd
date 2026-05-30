@@ -84,7 +84,7 @@ synthetic survey dataset and writes it in three forms. Distribute the resulting
 `bird_survey.csv`, `bird_survey.parquet`, and `bird_survey_partitioned/` so that
 no participant regenerates a million rows live.
 
-```{r generate-data}
+```{r generate-data, eval = FALSE}
 library(readr);   library(data.table); library(dtplyr)
 library(arrow);   library(duckdb);     library(dbplyr)
 library(dplyr);   library(bench)
@@ -134,7 +134,7 @@ instructor before the session so anyone whose installation failed can be helped 
 advance. The likely failure points are the `arrow` and `duckdb` binary installs;
 if either errors, reply rather than waiting for the day.
 
-```{r setup-check}
+```{r setup-check, eval = FALSE}
 library(readr) 
 library(arrow) 
 library(duckdb)
@@ -244,7 +244,7 @@ fast to compress and decompress, with a moderate ratio. Gzip compresses more
 aggressively but decompresses more slowly. Zstandard (zstd) typically matches or
 improves on Snappy's ratio at comparable speed.
 
-```{r compression-comparison}
+```{r compression-comparison, eval = FALSE}
 tibble(
   format  = c("CSV", "Snappy", "Gzip", "Zstd"),
   size_mb = c(
@@ -272,7 +272,7 @@ of one or more columns: one subdirectory per year, for example. A query engine c
 skip entire subdirectories when a filter excludes those values. This is
 **partition pruning**, and it activates only when you filter on the partition key.
 
-```{r partition-demo}
+```{r partition-demo, eval = FALSE}
 # Filters on a non-partition column: every directory is scanned
 open_dataset("bird_survey_partitioned") |>
   filter(habitat == "woodland") |>          # habitat is not the partition key
@@ -311,7 +311,7 @@ are eager, and they pull the whole file into memory. **Lazy** evaluation records
 boundary between the two is `collect()`. Before `collect()` you hold a query
 description and nothing is in R; after `collect()` you hold a tibble.
 
-```{r lazy-class-check}
+```{r lazy-class-check, eval = FALSE}
 lazy_query <- open_dataset("bird_survey.parquet") |>
   filter(habitat == "woodland") |>
   summarise(total = sum(count))
@@ -338,7 +338,7 @@ query, then call `collect()`.
   install or connect to, unlike PostgreSQL or MySQL. You reach it through `tbl()`,
   using `DBI`, R's standard database interface.
 
-```{r collect-pattern}
+```{r collect-pattern, eval = FALSE}
 # arrow back-end
 open_dataset("bird_survey.parquet") |>
   filter(habitat == "woodland") |>
@@ -393,7 +393,7 @@ You are selecting 2 of 15 columns, roughly 13% of the data. If column selection
 reduces disk I/O, you would expect a speed improvement. If it only reduces memory,
 speed should be similar.
 
-```{r ex1-part-a}
+```{r ex1-part-a, eval = FALSE}
 bench::mark(
   csv_15_cols     = read_csv("bird_survey.csv", show_col_types = FALSE),
   csv_2_cols      = read_csv("bird_survey.csv",
@@ -435,7 +435,7 @@ format-specific behaviour as a general rule.
 
 ### Part B: eager versus lazy memory {-}
 
-```{r ex1-part-b}
+```{r ex1-part-b, eval = FALSE}
 bench::mark(
   eager = read_parquet("bird_survey.parquet") |>
     filter(habitat == "woodland") |>
@@ -485,7 +485,7 @@ Applying a filter before an aggregation or join reduces the data flowing through
 every later step. Apply it afterwards and the expensive operation runs on the full
 dataset.
 
-```{r filter-early}
+```{r filter-early, eval = FALSE}
 surveys <- read_csv("bird_survey.csv", show_col_types = FALSE)
 
 bench::mark(
@@ -517,7 +517,7 @@ Carrying unneeded columns through a pipeline costs memory and, for Parquet, disk
 I/O. Select the minimum columns before any heavy step. On a lazy Parquet or DuckDB
 source, an early `select()` becomes column projection at the point of reading.
 
-```{r select-early}
+```{r select-early, eval = FALSE}
 open_dataset("bird_survey.parquet") |>
   select(species, habitat, year, count) |>   # 4 columns read from disk, not 15
   filter(habitat == "woodland") |>
@@ -536,7 +536,7 @@ benchmark both versions to confirm the improvement. Diagnose it yourself before
 opening the solution.
 ```
 
-```{r ex2-query}
+```{r ex2-query, eval = FALSE}
 sites <- tibble(
   site_id = paste0("SITE_", sprintf("%04d", 1:500)),
   region  = sample(c("North", "South", "East", "West"), 500, replace = TRUE),
@@ -557,7 +557,7 @@ anything is discarded. `region` lives in `sites`, so it genuinely requires the
 join and cannot be filtered earlier. But `habitat` is already in `surveys` and can
 be applied first, shrinking the table that enters the join.
 
-```{r ex2-solution}
+```{r ex2-solution, eval = FALSE}
 bench::mark(
   original = surveys |>
     left_join(sites, by = "site_id") |>
@@ -588,7 +588,7 @@ You will write `dplyr`. The lazy back-ends translate it for you, and
 `data.table` and SQL: recognise them when they appear, rather than write them from
 memory. Full writing references are in Appendices C and D.
 
-```{r show-query}
+```{r show-query, eval = FALSE}
 # dtplyr translates dplyr to data.table
 lazy_dt(as.data.table(surveys)) |>
   filter(habitat == "woodland") |>
@@ -643,7 +643,7 @@ They apply to any code you are adopting rather than authoring, whatever its sour
 **Check 1: the output class.** Confirm the result is the type your downstream code
 expects.
 
-```{r check-class}
+```{r check-class, eval = FALSE}
 class(read_csv("bird_survey.csv", show_col_types = FALSE))
 # "tbl_df" "tbl" "data.frame"           a tibble, in memory
 
@@ -661,7 +661,7 @@ common surprise is missing values: `dplyr`'s `sum()` returns `NA` if any input i
 For a dataset with no missing counts the two agree, but that coincidence is not a
 check. Verify on a small subset.
 
-```{r check-agreement}
+```{r check-agreement, eval = FALSE}
 small <- slice_head(surveys, n = 50000)
 duckdb_register(con, "small", small)         # an in-memory data frame: register is correct here
 
@@ -690,7 +690,7 @@ the two results. Always verify on a subset before assuming agreement.
 **Check 4: performance on your data.** General claims are approximations. Measure
 on your file and your machine before committing.
 
-```{r check-performance}
+```{r check-performance, eval = FALSE}
 bench::mark(
   current  = read_csv("bird_survey.csv", show_col_types = FALSE) |>
     filter(habitat == "woodland") |>
@@ -810,7 +810,7 @@ together. CSV is row-oriented; column selection does not reduce its disk I/O.
 
 ## Appendix B: Tool syntax reference {-}
 
-```{r appendix-readr}
+```{r appendix-readr, eval = FALSE}
 # readr
 read_csv("f.csv",
          col_types      = cols(year = col_integer(), count = col_integer()),
@@ -819,7 +819,7 @@ read_csv("f.csv",
          show_col_types = FALSE)
 ```
 
-```{r appendix-fread}
+```{r appendix-fread, eval = FALSE}
 # data.table::fread
 fread("f.csv",
       select       = c("species", "habitat", "year", "count"),
@@ -827,7 +827,7 @@ fread("f.csv",
       showProgress = FALSE)
 ```
 
-```{r appendix-arrow}
+```{r appendix-arrow, eval = FALSE}
 # arrow
 read_parquet("f.parquet")
 read_parquet("f.parquet", col_select = c(species, count))
@@ -844,7 +844,7 @@ write_parquet(data, "f.parquet", compression = "zstd")
 write_dataset(data, path = "dir/", partitioning = "year")
 ```
 
-```{r appendix-duckdb}
+```{r appendix-duckdb, eval = FALSE}
 # duckdb
 con <- dbConnect(duckdb())
 
@@ -891,7 +891,7 @@ DT[i, j, by]
 Special symbols: `.N` is `n()`, `.()` is shorthand for a list of columns, `:=`
 assigns in place, `uniqueN()` is `n_distinct()`, `shift()` is `lag()`/`lead()`.
 
-```{r appendix-dt-examples}
+```{r appendix-dt-examples, eval = FALSE}
 surveys_dt <- fread("bird_survey.csv", showProgress = FALSE)
 
 # group and summarise
@@ -911,7 +911,7 @@ surveys_dt[order(year),
 Verify any hand-written `data.table` against the `dtplyr` translation of the
 equivalent `dplyr`:
 
-```{r appendix-dt-verify}
+```{r appendix-dt-verify, eval = FALSE}
 lazy_dt(surveys_dt) |>
   filter(year >= 2015, count > 0) |>
   group_by(species, habitat) |>
@@ -944,7 +944,7 @@ function() OVER (
 )
 ```
 
-```{r appendix-window}
+```{r appendix-window, eval = FALSE}
 con <- dbConnect(duckdb())
 dbExecute(con, "CREATE VIEW surveys AS
                 SELECT * FROM read_parquet('bird_survey.parquet')")

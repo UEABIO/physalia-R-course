@@ -117,7 +117,7 @@ The table makes two failure points concrete.
 
 
 <div class="try">
-<p><strong>Opening activity — why dont <em>you</em> share?</strong>
+<p><strong>Opening activity — why don’t <em>you</em> share?</strong>
 <em>(type your answer in the chat)</em></p>
 <p>Think about your most recent or current project.</p>
 <ol style="list-style-type: decimal">
@@ -132,9 +132,9 @@ researchers and grouped the barriers people actually report — knowledge
 gaps, fear of scrutiny, time cost, misaligned career incentives. Keep
 your list; at the end of the session we will compare it with theirs.</p>
 <blockquote>
-<p><strong>Gomes, D.G.E., et al. (2022).</strong> Why dont we share data
-and code? Perceived barriers and benefits to public archiving practices.
-<em>Proceedings of the Royal Society B</em>, 289, 20221113.
+<p><strong>Gomes, D.G.E., et al. (2022).</strong> Why don’t we share
+data and code? Perceived barriers and benefits to public archiving
+practices. <em>Proceedings of the Royal Society B</em>, 289, 20221113.
 https://doi.org/10.1098/rspb.2022.1113</p>
 </blockquote>
 </div>
@@ -168,7 +168,7 @@ Now you experience this directly. You are given the *C. elegans* reproduction da
 |---|---|
 | `worm_id` | Individual worm identifier |
 | `B` | Batch (1–6) — worms run in separate cohorts |
-| `treatment` | `daf` = daf-2 RNAi (knocks down insulin/IGF-1 signalling; extends lifespan and alters reproduction); `empty_vector` = control RNAi |
+| `strain` | `daf` = daf-2 RNAi (knocks down insulin/IGF-1 signalling; extends lifespan and alters reproduction); `empty_vector` = control RNAi |
 | `diet` | `AL` = ad libitum (fed freely); `EODF` = every-other-day fasting (dietary restriction) |
 | `TO` | Total offspring — lifetime count of live progeny per worm |
 
@@ -192,7 +192,7 @@ count model such as a Poisson or negative-binomial GLMM?)</li>
 </ul>
 <p><strong>Before running anything</strong>, write down your three most
 important analytical decisions and why. Then run your analysis.</p>
-<p>Report into the shared document (link in chat):</p>
+<p>Write your estimates in chat.</p>
 <ol style="list-style-type: decimal">
 <li>Your estimate for the daf vs empty_vector effect (with units —
 e.g. offspring per worm)</li>
@@ -201,11 +201,43 @@ e.g. offspring per worm)</li>
 </ol>
 </div>
 
+### Reporting on the same scale: emmeans
 
-## The Results - Temporary graph to be updated when you send me your estimates
+Different analysts will pick different models e.g. a Gaussian linear (or mixed) model, a Poisson GLMM, a negative-binomial GLMM, or a log-transformed linear model. Each one reports the `daf` effect on a different scale:
+
+- A linear model on `TO` returns an **additive difference** — "daf reduces offspring by X per worm."
+- A Poisson or NB GLMM with a log link returns a **log-scale coefficient**, which back-transforms to a **rate ratio** — "daf has 0.7× the offspring of controls."
+- A linear model on `log(TO)` returns a log-scale difference, which back-transforms to a ratio.
+
+These numbers are not directly comparable across the room. **`emmeans`** puts them all on the response scale (offspring per worm) in two steps: compute the estimated marginal means, then take the pairwise contrast between `daf` and `empty_vector`. For log-link models we use `regrid()` first, which back-transforms the means to the response scale **before** the contrast — so the result is a *difference* in offspring, not the default rate ratio.
+
+
+``` r
+# install.packages("emmeans")
+library(emmeans)
+
+# Works for lm, lmer, glmer, glmer.nb. regrid() back-transforms to the
+# response scale BEFORE the contrast. For identity-link models (lm/lmer)
+# it is effectively null; for log-link models (glmer/glmer.nb) it
+# converts the default rate ratio into a difference in offspring.
+emmeans(model, ~ strain) |>
+  regrid() |>
+  contrast("pairwise", adjust = "none") |>
+  confint()
+#  -> "daf - empty_vector"   estimate   95% CI   in offspring per worm
+
+# If you fitted with a manual transformation, e.g. lm(log(TO) ~ strain),
+# emmeans does NOT auto-detect the transform -- tell it explicitly:
+emm <- emmeans(model, ~ strain) |> update(tran = "log")
+emm |> regrid() |> contrast("pairwise") |> confint()
+```
+
+Report the **estimate, the 95% confidence interval, and the units** (offspring per worm). If you prefer a multiplicative effect, report a ratio as well — but at minimum everyone reports the difference on the response scale so the room is comparing like with like.
+
+### The Results - Temporary graph to be updated when you send me your estimates
 <div class="figure" style="text-align: center">
-<img src="06-reproducibility_files/figure-html/many-analysts-demo-1.png" alt="Results from the many-analysts activity. Each point is one participant's estimate for the daf-2 RNAi effect on C. elegans total offspring. Replace the simulated data below with actual collected results." width="100%" />
-<p class="caption">(\#fig:many-analysts-demo)Results from the many-analysts activity. Each point is one participant's estimate for the daf-2 RNAi effect on C. elegans total offspring. Replace the simulated data below with actual collected results.</p>
+<img src="06-reproducibility_files/figure-html/many-analysts-demo-1.png" alt="Results from the many-analysts activity. Each point is one participant's estimate for the daf-2 RNAi effect on C. elegans total offspring. " width="100%" />
+<p class="caption">(\#fig:many-analysts-demo)Results from the many-analysts activity. Each point is one participant's estimate for the daf-2 RNAi effect on C. elegans total offspring. </p>
 </div>
 
 <div class="info">
@@ -255,8 +287,8 @@ summary(dat_raw)
 ``` r
 # Check each variable for problems
 
-# Treatment values
-dat_raw |> count(treatment)
+# strain values
+dat_raw |> count(strain)
 
 # Diet values
 dat_raw |> count(diet)
@@ -278,7 +310,7 @@ dat_raw |>
   arrange(worm_id)
 
 # Rows where everything is NA except TO
-dat_raw |> filter(is.na(treatment))
+dat_raw |> filter(is.na(strain))
 ```
 
 <div class="try">
@@ -306,16 +338,16 @@ Here is what you should have found:
 <tbody>
   <tr>
    <td style="text-align:left;"> 1 </td>
-   <td style="text-align:left;"> Mixed capitalisation in treatment </td>
-   <td style="text-align:left;"> `treatment` </td>
+   <td style="text-align:left;"> Mixed capitalisation in strain </td>
+   <td style="text-align:left;"> `strain` </td>
    <td style="text-align:left;"> `daf` (n=117) and `DAF` (n=24) — same condition, will be treated as two groups </td>
    <td style="text-align:left;"> Inflates group count; DAF worms silently excluded or double-counted </td>
   </tr>
   <tr>
    <td style="text-align:left;"> 2 </td>
-   <td style="text-align:left;"> Trailing whitespace in treatment </td>
-   <td style="text-align:left;"> `treatment` </td>
-   <td style="text-align:left;"> `empty_vector ` (with trailing space, n=3) — will not match `empty_vector` </td>
+   <td style="text-align:left;"> Trailing whitespace in strain </td>
+   <td style="text-align:left;"> `strain` </td>
+   <td style="text-align:left;"> `empty_vector ` (with trailing space) — will not match `empty_vector` </td>
    <td style="text-align:left;"> Three worms silently dropped or form a phantom third group </td>
   </tr>
   <tr>
@@ -357,7 +389,7 @@ Here is what you should have found:
    <td style="text-align:left;"> 8 </td>
    <td style="text-align:left;"> Junk rows (501–506) </td>
    <td style="text-align:left;"> All </td>
-   <td style="text-align:left;"> Six rows where B, treatment, and diet are all NA — only TO has a value </td>
+   <td style="text-align:left;"> Six rows where B, strain, and diet are all NA — only TO has a value </td>
    <td style="text-align:left;"> Probably data entry artefacts; will cause errors in grouped summaries </td>
   </tr>
   <tr>
@@ -395,20 +427,20 @@ cat("Raw rows:", nrow(dat_raw), "\n")
 cat("Final rows:", nrow(dat_final), "\n")
 cat("Difference:", nrow(dat_raw) - nrow(dat_final), "\n")
 
-# What treatment values remain in each?
-cat("\nRaw treatments:\n")
-print(count(dat_raw, treatment))
+# What strain values remain in each?
+cat("\nRaw strains:\n")
+print(count(dat_raw, strain))
 
-cat("\nFinal treatments:\n")
-print(count(dat_final, treatment))
+cat("\nFinal strains:\n")
+print(count(dat_final, strain))
 
 # Does the final still contain the problematic TO values?
 cat("\nFinal TO range:\n")
 dat_final |> summarise(min = min(TO, na.rm = TRUE),
                         max = max(TO, na.rm = TRUE))
-```
 
 In the chat: does the final file still contain TO = -46? TO = 2850? What does this tell you about the cleaning that was done?
+```
 
 This is the key point: `celegans_repro_final.csv` has had *some* issues addressed (the DAF capitalisation rows removed, some duplicates resolved) but not all of them. The -46 and 2850 values remain. This is a realistic example of partial cleaning — common in real archives, and a genuine reproducibility problem because it means different analysts working from the "final" file will still handle these values differently.
 
@@ -416,7 +448,7 @@ This is the key point: `celegans_repro_final.csv` has had *some* issues addresse
 
 ## Part 4 — Fixing it: The SORTEE Guidelines {#repro-fix}
 
-*⏱ ~40 minutes*
+*⏱ ~45 minutes*
 
 ### The framework
 
@@ -426,23 +458,23 @@ The SORTEE Guidelines (Pick, Ivimey-Cook et al. 2026) provide the broader framew
 
 ### Step 1 — Set up the project structure
 
-Most analysis projects do not start tidy. Here is a "probably very likely" folder sturcture for this *C. elegans* experiment — everything dumped in a single directory:
+Most analysis projects do not start tidy. Here is a "probably very likely" folder structure for this *C. elegans* experiment — everything dumped in a single directory:
 
 ```
 REPROCODE_ANALYSIS/
-├── celegans_raw.csv          # raw data
-├── celegans_datafinal.csv    # a "cleaned" copy — but cleaned how?
+├── celegans_repro_raw.csv          # raw data
+├── celegans_repro_final.csv    # a "cleaned" copy — but cleaned how?
 ├── ANALYSIS.R                # the analysis script
 ├── old_code.R                # an earlier version, still sitting here
 ├── celegans_analysis.Rmd     # a write-up
 ├── celegans_analysis.html    # the rendered write-up
 ├── final.jpg
-├── finalplot.jpg             # "finalplot" — so which figure is current?
-├── ExtracedFigure1.png
+├── finalplot.jpeg             # "finalplot" — so which figure is current?
+├── ExtractedFigure1.png
 └── 4Rs.jpg
 ```
 
-This is a **bad structure**, and it is completely normal — most projects look like this. Nothing separates raw data from processed data, so you cannot tell which file is safe to overwrite or how `celegans_datafinal.csv` was produced. `old_code.R` is dead code left lying around; it invites a collaborator to run the wrong script. The four loose `.jpg` files are generated outputs mixed in with the source, and names like `finalplot.jpg` are version control by filename — undocumented and unreproducible. There is no README, so nothing tells a newcomer what to run, or in what order. (We review `ANALYSIS.R` itself in the code review chapter this afternoon — for now we fix the *structure*.)
+This is a **bad structure**, and it is completely normal — most projects look like this. Nothing separates raw data from processed data, so you cannot tell which file is safe to overwrite or how `celegans_repro_final.csv` was produced. `old_code.R` is dead code left lying around; it invites a collaborator to run the wrong script. The four loose image files are generated outputs mixed in with the source, and names like `finalplot.jpeg` are version control by filename — undocumented and unreproducible. There is no README, so nothing tells a newcomer what to run, or in what order. (We review `ANALYSIS.R` itself in the code review chapter this afternoon — for now we fix the *structure*.)
 
 Here is the structure to aim for instead — a few standard folders that separate inputs, code and outputs:
 
@@ -476,14 +508,14 @@ list.files(recursive = TRUE, include.dirs = TRUE)
 #
 # Study:    Effect of daf-2 RNAi and dietary restriction on total offspring
 # Organism: Caenorhabditis elegans (N2 background)
-# Design:   2 treatments (daf-2 RNAi vs empty_vector control) ×
+# Design:   2 strains (daf-2 RNAi vs empty_vector control) ×
 #           2 diets (AL = ad libitum; EODF = every-other-day fasting)
 #           6 batches (B); multiple worms per batch
 #
 # Variables:
 #   worm_id   — individual worm ID (integer)
 #   B         — batch number (1–6); should be treated as random effect
-#   treatment — "daf" = daf-2 RNAi; "empty_vector" = control
+#   strain — "daf" = daf-2 RNAi; "empty_vector" = control
 #   diet      — "AL" = ad libitum; "EODF" = every-other-day fasting
 #   TO        — total offspring (count); 9999 = undocumented code for "not recorded"
 #
@@ -500,34 +532,34 @@ dat_raw <- read_csv(here("data", "raw", "celegans_repro_raw.csv"),
 cat("Raw data:", nrow(dat_raw), "rows\n")
 
 # ── 2. Standardise factor levels (case and whitespace) ────────────────────────
-# treatment: "DAF" is a capitalisation error — same as "daf"
+# strain: "DAF" is a capitalisation error — same as "daf"
 # "empty_vector " has trailing whitespace — same as "empty_vector"
 # diet: "eodf" is a capitalisation error — same as "EODF"
 dat_std <- dat_raw |>
   mutate(
-    treatment = str_trim(str_to_lower(treatment)),
+    strain = str_trim(str_to_lower(strain)),
     diet      = str_trim(str_to_upper(diet))
   )
 
-cat("After standardisation — treatment values:\n")
-print(count(dat_std, treatment))
+cat("After standardisation — strain values:\n")
+print(count(dat_std, strain))
 cat("After standardisation — diet values:\n")
 print(count(dat_std, diet))
 
-# ── 3. Remove structural junk rows ───────────────────────────────────────────
-# Rows 501–506: worm_id > 500 with NA treatment/diet — data entry artefacts
-n_junk <- sum(dat_std$worm_id >= 500 & is.na(dat_std$treatment),
+# ── 3. Count structural junk rows ───────────────────────────────────────────
+# Rows 501–506: worm_id > 500 with NA strain/diet — data entry artefacts
+n_junk <- sum(dat_std$worm_id >= 500 & is.na(dat_std$strain),
               na.rm = TRUE)
-cat("Junk rows (worm_id >= 500, NA treatment):", n_junk, "\n")
+cat("Junk rows (worm_id >= 500, NA strain):", n_junk, "\n")
 
-dat_std <- dat_std |>
-  filter(!(is.na(treatment) & is.na(diet)))
-
-# ── 4. Remove duplicate rows ──────────────────────────────────────────────────
+# ── 4. Remove junk and duplicate rows ──────────────────────────────────────────────────
 # Batch 2 rows appear duplicated — retain first occurrence only
+dat_std <- dat_std |>
+  filter(!(is.na(strain) & is.na(diet)))
+
 n_before_dedup <- nrow(dat_std)
 dat_std <- dat_std |>
-  distinct(worm_id, B, treatment, diet, .keep_all = TRUE)
+  distinct(worm_id, B, strain, diet, .keep_all = TRUE)
 n_removed_dupes <- n_before_dedup - nrow(dat_std)
 cat("Duplicate rows removed:", n_removed_dupes, "\n")
 
@@ -559,7 +591,7 @@ dat_clean <- dat_std |>
   ) |>
   mutate(
     # Explicit factor with reference levels
-    treatment = factor(treatment,
+    strain = factor(strain,
                        levels = c("empty_vector", "daf")),
     diet      = factor(diet, levels = c("AL", "EODF")),
     B         = factor(B)  # batch as factor for random effect
@@ -572,7 +604,7 @@ write_csv(dat_clean, here("data", "processed", "celegans_clean.csv"))
 
 exclusion_log <- tribble(
   ~Criterion,                                       ~N,
-  "Junk rows (worm_id >= 500, no treatment/diet)",  n_junk,
+  "Junk rows (worm_id >= 500, no strain/diet)",  n_junk,
   "Duplicate rows removed",                          n_removed_dupes,
   "Missing offspring (TO = 9999)",                  n_missing,
   "Impossible count (TO < 0)",                      n_neg,
@@ -595,6 +627,8 @@ observations?</li>
 <li>The script flags TO = 2850 as “pending verification” rather than
 silently removing or including it. Why is this the correct approach from
 a reproducibility standpoint?</li>
+<li>Read through the cleaning script, do you understand what it is
+doing?</li>
 </ol>
 </div>
 
@@ -645,8 +679,9 @@ elegans project. The app asks for the sections shown in the template
 below — the hardest is the data dictionary, so focus there: can you
 complete every row?</p>
 <p>If you cannot get the app running, fill in the template by hand — the
-fields are identical. # C. elegans daf-2 × diet reproduction
-experiment</p>
+fields are identical.</p>
+<h1 id="c.-elegans-strain-diet-reproduction-experiment">C. elegans
+strain × diet reproduction experiment</h1>
 <h2 id="authors">Authors</h2>
 <ul>
 <li>[Name] ([ORCID]), [Affiliation]</li>
@@ -695,7 +730,7 @@ README.md</p>
 <td>Should be treated as random effect</td>
 </tr>
 <tr>
-<td>treatment</td>
+<td>strain</td>
 <td>character</td>
 <td>—</td>
 <td></td>
@@ -725,10 +760,10 @@ README.md</p>
 source(“analysis/02_analysis.R”)</p>
 <h2 id="licence">Licence</h2>
 <p>Data: CC BY 4.0 Code: MIT</p>
+<p>Export the <code>README.md</code> from READMEBuilder into your
+project root, then paste your “Overview” paragraph and your completed
+data dictionary into the chat.</p>
 </div>
-
-
-Export the `README.md` from READMEBuilder into your project root, then paste your "Overview" paragraph and your completed data dictionary into the chat.
 
 ---
 
@@ -743,7 +778,7 @@ TADA! sets the floor for code sharing (Part 4). The SORTEE Guidelines build on t
 Data: CC BY 4.0  (https://creativecommons.org/licenses/by/4.0/)
 Code: MIT        (https://opensource.org/licenses/MIT)
 
-**Persistent archiving.** The OSF page at https://osf.io/jgeq9/ is itself a public archive — it has a stable URL. However, you can edit and remove the repository. The best method is to use GitHub and connect with Zenodo or Figshare and create a permanent URL and formal DOI. We cover GitHub later .
+**Persistent archiving.** The OSF page at https://osf.io/jgeq9/ is itself a public archive — it has a stable URL. However, you can edit and remove the repository. The best method is to use GitHub and connect with Zenodo or Figshare and create a permanent URL and formal DOI. We cover GitHub later.
 
 ### Pre-submission checklist
 

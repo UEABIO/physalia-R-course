@@ -56,7 +56,7 @@ my-project.Rproj
 |   |- processed/    # outputs of cleaning
 |- R/
 |   |- functions/    # function definitions only
-|- scripts/          # or numbered analysis scripts in R/
+|   |- scripts/          # or numbered analysis scripts in R/
 |- outputs/
 |   |- figures/
 |   |- tables/
@@ -66,6 +66,60 @@ The principle that does the most work here is *raw data is read-only*. Cleaning
 scripts read from `data/raw/` and write to `data/processed/`; they never overwrite
 the original. If a clean goes wrong, the source of truth is untouched.
 
+
+### Setting up folders
+
+This can be done in your IDE
+
+Create the following folders using the + New Folder button in the Files tab
+
+# data/raw
+# data/clean
+# R/scripts
+# outputs
+
+Or it can be done programmatically: 
+
+
+#### BASE R
+
+
+``` r
+# dir.create makes directories
+# unless specified it is not "recursive"
+
+dir.create("data/raw",
+           recursive = TRUE) 
+
+dir.create("data/clean",
+           recursive = TRUE)
+
+dir.create("R/scripts",
+           recursive = TRUE)
+
+dir.create("outputs") 
+```
+
+#### fs package
+
+Run `fs::dir_tree()` to generate a nicely formatted directory tree and is a great sanity check before and after file manipulation
+
+The `fs` Hester et al. (2025) package is a great OS agnostic package and one that works safely (it will not overwrite files or folders unless explicitly asked).
+
+
+``` r
+# Load the package
+library(fs)
+
+# Create standard folders
+dir_create("data", c("raw", "clean"))   # creates dir recursively as standard
+dir_create("R", c("scripts"))       # for your R code
+dir_create("outputs")    # for figures and plots
+```
+
+
+
+
 ## The `here` package
 
 Even inside a project, paths written with `/` or `\\` can behave differently
@@ -74,7 +128,7 @@ across operating systems, and they break if you run code from a subdirectory.
 called from or which operating system runs it.
 
 
-```r
+``` r
 # Fragile: relative to wherever the session happens to sit
 raw_data <- readr::read_csv("data/raw/penguins.csv")
 
@@ -105,17 +159,17 @@ directory line, and the path.
  </div></div>
 
 
-```r
+``` r
 setwd("/Users/sam/Documents/penguin_thesis/")
 
 penguins_raw <- read.csv("/Users/sam/Documents/penguin_thesis/data/raw/penguins.csv")
 ```
 
-<button id="displayTextunnamed-chunk-7" onclick="javascript:toggle('unnamed-chunk-7');">Show Solution</button>
+<button id="displayTextunnamed-chunk-9" onclick="javascript:toggle('unnamed-chunk-9');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-7" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-9" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
-```r
+``` r
 # No setwd() at all: open the project instead, which sets the directory for you.
 library(here)
 library(tidyverse)
@@ -160,7 +214,7 @@ A project that runs today can break next year if a package changes its behaviour
 library, so the environment can be reconstructed later or on another machine.
 
 
-```r
+``` r
 # Once per project: create a project-local library and record current versions
 renv::init()
 

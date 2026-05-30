@@ -539,7 +539,38 @@ places. This is the prerequisite for both testing and, eventually,
 pipelining.</p>
 </div>
 
-## Part D: testing functions
+## Part D: The function factory
+
+It's functions all the way down...
+
+A function factory is a function that builds and returns other functions. You give the factory some configuration, and it hands back a new function with that configuration baked in and ready to use. If you have ever written nearly identical unit converters, threshold checkers, or formatters and felt that the repetition was unnecessary, function factories are the tool for collapsing those variants into a single recipe.
+
+The mechanism rests on lexical scoping. When a function is defined inside another function, it keeps a reference to the environment in which it was born. So if the outer function had a variable called factor, the inner function can still see it long after the outer call has finished. That preserved environment is called a closure, and it is what allows the manufactured functions to remember the settings you gave them. In practice, you write the factory once and produce as many specialised functions as you need:
+
+
+``` r
+# The factory: takes a multiplier, returns a function configured with it
+make_converter <- function(factor) {
+  function(x) x * factor
+}
+
+# Manufacture two specialised converters from the same factory
+g_to_kg  <- make_converter(1 / 1000)
+mm_to_cm <- make_converter(1 / 10)
+
+penguins |>
+  drop_na(body_mass_g, culmen_length_mm) |>
+  mutate(
+    body_mass_kg   = g_to_kg(body_mass_g),
+    culmen_length_cm = mm_to_cm(culmen_length_mm)
+  ) |>
+  select(species, body_mass_kg, culmen_length_cm)
+```
+
+The point to internalise is that g_to_kg and mm_to_cm are distinct functions, each carrying its own value of factor bound at the moment the factory was called. That persistent enclosing environment is the closure, and a function factory is simply a function that exploits it to produce configured functions on demand, which is useful when you want to avoid repeating yourself across many similar transformations or to pre-configure behaviour (a threshold, a unit, a reference mean) once and reuse it.
+
+
+## Part E: testing functions
 
 When you refactor, you check once that the new code matches the old, then move on.
 Six weeks later you change the function and have no way to know whether you broke
@@ -549,7 +580,7 @@ so you can change it tomorrow with confidence.
 A small, committed **fixture** keeps tests fast and reproducible:
 
 
-```r
+``` r
 # Run once to create the fixture, then never again
 penguins_test_subset <- palmerpenguins::penguins |>
   tidyr::drop_na(body_mass_g, flipper_length_mm, species) |>
@@ -565,7 +596,7 @@ Twenty rows per species: small enough to read and reason about, large enough to
 fit a regression. The test file:
 
 
-```r
+``` r
 # tests/test_modelling_functions.R
 library(testthat)
 source(here::here("R", "functions", "modelling_functions.R"))
@@ -594,7 +625,7 @@ test_that("conf_level controls interval width", {
 Run them with `testthat::test_file()`. No package infrastructure is needed:
 
 
-```r
+``` r
 testthat::test_file(here::here("tests", "test_modelling_functions.R"))
 # [ FAIL 0 | WARN 0 | SKIP 0 | PASS 3 ]
 ```
@@ -623,9 +654,9 @@ Three principles carry most of the value:
 
 :::
 
-<button id="displayTextunnamed-chunk-33" onclick="javascript:toggle('unnamed-chunk-33');">Show Solution</button>
+<button id="displayTextunnamed-chunk-34" onclick="javascript:toggle('unnamed-chunk-34');">Show Solution</button>
 
-<div id="toggleTextunnamed-chunk-33" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
+<div id="toggleTextunnamed-chunk-34" style="display: none"><div class="panel panel-default"><div class="panel-heading panel-heading1"> Solution </div><div class="panel-body">
 
 ``` r
 test_that("make_scatter_plot returns a ggplot", {

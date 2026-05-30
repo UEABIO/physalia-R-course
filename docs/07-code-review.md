@@ -75,7 +75,7 @@ Ivimey-Cook et al. (2023) organise what a code reviewer should evaluate around f
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;font-weight: bold;"> Reported </td>
    <td style="text-align:left;"> Is the code as reported? </td>
-   <td style="text-align:left;"> Methods and code must match </td>
+   <td style="text-align:left;"> Methods and code must match (note in this case we are simply using the code to help us link to the methods) </td>
   </tr>
   <tr>
    <td style="text-align:left;"> 2 </td>
@@ -100,7 +100,7 @@ Ivimey-Cook et al. (2023) organise what a code reviewer should evaluate around f
 
 ### Each R in the context of `ANALYSIS.R`
 
-**Reported.** A reviewer should be able to hold the methods section in one hand and the code in the other and verify they describe the same analysis. `ANALYSIS.R` has no header and almost no comments: a reviewer cannot tell what the intended analysis is, why one worm is dropped, or which of the three models that get fitted is meant to be *the* result. Its variable names (`strain`, `block`, `total_offspring`) also drift from the data dictionary you wrote this morning (`treatment`, `B`, `TO`).
+**Reported.** A reviewer should be able to hold the methods section in one hand and the code in the other and verify they describe the same analysis. `ANALYSIS.R` has no header and almost no comments: a reviewer cannot tell what the intended analysis is, why one worm is dropped, or which of the three models that get fitted is meant to be *the* result. Its variable names (`block`, `total_offspring`) also drift from the data dictionary you wrote this morning (`B`, `TO`).
 
 **Run.** Can the code be executed on a different machine, in a clean R session? `ANALYSIS.R` reads its data from an absolute OneDrive path, and lines 23–24 call `libray()` — a typo for `library()` — so the script does not even parse to the end.
 
@@ -133,7 +133,7 @@ recovering the reported numbers</li>
 
 ### The script to review
 
-`ANALYSIS.R` from https://osf.io/jgeq9/ is a **real** analysis script for the *C. elegans* daf-2 × diet experiment — the same experiment you cleaned this morning. It is reproduced here for reference:
+`ANALYSIS.R` from https://osf.io/jgeq9/ is a **real** analysis script for the *C. elegans* strain × diet experiment — the same experiment you cleaned this morning. It is reproduced here for reference:
 
 
 ``` r
@@ -168,7 +168,7 @@ dat1$block <-  as.numeric(dat1$block)
 dat1$worm_id <- as.numeric(dat1$worm_id)
 dat1$total_offspring <- as.numeric(dat1$total_offspring)
 
-dat2 <- pivot_longer(dat1, cols = 3:5, names_to = "treatment", values_to = "total offspring") %>% filter(worm_id != 5)
+dat2 <- pivot_longer(dat1, cols = 3:5, names_to = "strain", values_to = "total offspring") %>% filter(worm_id != 5)
 
 full.dat <- dat2[complete.cases(dat2$`total offspring`), ]
 
@@ -221,12 +221,10 @@ ggsave(filename = "final2.jpg", path = "~/Library/CloudStorage/OneDrive-Universi
 <div class="note">
 <p><strong>A bridge from this morning.</strong> <code>ANALYSIS.R</code>
 analyses the same experiment as the reproducibility chapter, but its
-author used different names: <code>strain</code> for what the data
-dictionary calls <code>treatment</code>, <code>block</code> for
-<code>B</code>, and <code>total_offspring</code> for <code>TO</code>.
-That drift between code and data dictionary is itself a small
-<em>Reported</em> problem — but to keep the review readable we use the
-script’s own names below.</p>
+author used different names: <code>block</code> for <code>B</code>, and
+<code>total_offspring</code> for <code>TO</code>. That drift between
+code and data dictionary is itself a small <em>Reported</em> problem —
+but to keep the review readable we use the script’s own names below.</p>
 </div>
 
 <div class="try">
@@ -236,8 +234,8 @@ script’s own names below.</p>
 <li>What does this script try to do?</li>
 <li>What is the intended analysis?</li>
 <li>What immediately strikes you as wrong?</li>
-<li>Could the style be improved (e.g. would using Air or styler help,
-see Extra Material, intro to R)</li>
+<li>Could the style be improved? (e.g. would using Air or styler help,
+see Extra Material, Addins intro to R)</li>
 </ul>
 <p>Then move to the checklist.</p>
 </div>
@@ -316,7 +314,7 @@ Work through the script systematically. Record ✅ Pass / ❌ Fail / ⚠️ Uncl
   <tr grouplength="6"><td colspan="4" style="border-bottom: 1px solid;"><strong>Reliable</strong></td></tr>
 <tr>
    <td style="text-align:left;padding-left: 2em;" indentlevel="1"> Reliable </td>
-   <td style="text-align:left;"> Is the analysis sample selected with correct operator precedence? </td>
+   <td style="text-align:left;"> Is the analysis sample selected with correct use of filter arguments? </td>
    <td style="text-align:left;">  </td>
    <td style="text-align:left;">  </td>
   </tr>
@@ -538,7 +536,7 @@ Finding the problems is only half of code review; the point is to fix them. The 
 
 ### A corrected version
 
-Here is `ANALYSIS.R` rewritten. It also slots into the project structure you built this morning: the cleaning happens in `01_data_cleaning.R`, so this script reads the cleaned file and only *analyses*. Each numbered section names the problems (P1–P12) it resolves, and it uses the documented data-dictionary names (`TO`, `treatment`, `B`).
+Here is `ANALYSIS.R` rewritten. It also slots into the project structure you built this morning: the cleaning happens in `01_data_cleaning.R`, so this script reads the cleaned file and only *analyses*. Each numbered section names the problems (P1–P12) it resolves, and it uses the documented data-dictionary names (`TO`, `B`).
 
 
 ``` r
@@ -549,11 +547,11 @@ Here is `ANALYSIS.R` rewritten. It also slots into the project structure you bui
 #
 # Input:   data/processed/celegans_clean.csv   (produced by 01_data_cleaning.R)
 # Output:  results/model_summary.csv
-#          figures/offspring_by_treatment.png
+#          figures/offspring_by_strain.png
 #          results/sessionInfo.txt
 #
 # Pre-specified model (see osf.io/jgeq9/):
-#   TO ~ treatment * diet + (1 | B)        TO = total offspring (a count)
+#   TO ~ strain * diet + (1 | B)        TO = total offspring (a count)
 
 # -- Packages: load only what is used --------------------------------- fixes P1, P3
 library(tidyverse)    # readr, dplyr, ggplot2
@@ -567,24 +565,24 @@ library(here)         # project-relative paths -- fixes P2
 dat <- read_csv(here("data", "processed", "celegans_clean.csv"),
                 show_col_types = FALSE) |>
   mutate(
-    treatment = factor(treatment, levels = c("empty_vector", "daf")),
+    strain = factor(strain, levels = c("empty_vector", "daf")),
     diet      = factor(diet),
     B         = factor(B)
   )
 
 # -- 2. Select the analysis sample ------------------------------------ fixes P4, P7
-# Keep the two treatments of interest AND require diet to be recorded.
+# Keep the two strains of interest AND require diet to be recorded.
 # The parentheses are the fix for P4: the original wrote
-#   treatment == "daf" | treatment == "empty_vector" & !is.na(diet)
+#   strain == "daf" | strain == "empty_vector" & !is.na(diet)
 # which R reads as  daf | (empty_vector & diet recorded)  -- not the intent.
 dat <- dat |>
-  filter(treatment %in% c("empty_vector", "daf") & !is.na(diet))
+  filter(strain %in% c("empty_vector", "daf") & !is.na(diet))
 
 # -- 3. Fit ONE pre-specified model ----------------------------------- fixes P9, P10
 # TO is a count, so a Gaussian lmer is the wrong family. Fit one
 # negative-binomial GLMM (handles the overdispersion typical of brood
 # counts) and report it -- no comparing across model classes.
-m <- glmer.nb(TO ~ treatment * diet + (1 | B), data = dat)
+m <- glmer.nb(TO ~ strain * diet + (1 | B), data = dat)
 
 # -- 4. Diagnostics --------------------------------------------------- fixes P10
 plot(m)                                   # residuals vs fitted
@@ -595,14 +593,14 @@ write_csv(tidy(m, conf.int = TRUE),
           here("results", "model_summary.csv"))
 
 # -- 6. Figure: categorical x, so show data + group means ------------- fixes P11
-p <- ggplot(dat, aes(x = treatment, y = TO, colour = diet)) +
+p <- ggplot(dat, aes(x = strain, y = TO, colour = diet)) +
   geom_jitter(width = 0.15, alpha = 0.3) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.3) +
   stat_summary(fun = mean, geom = "point", size = 3) +
-  labs(x = "Treatment (RNAi)", y = "Total offspring", colour = "Diet") +
+  labs(x = "strain (RNAi)", y = "Total offspring", colour = "Diet") +
   theme_classic()
 
-ggsave(here("figures", "offspring_by_treatment.png"), p,
+ggsave(here("figures", "offspring_by_strain.png"), p,
        width = 7, height = 5, dpi = 300)
 
 # -- 7. Record the computational environment -------------------------- fixes P12
@@ -626,9 +624,7 @@ minutes)</strong></p>
 <ol style="list-style-type: decimal">
 <li>For each numbered section (1–7), name which problems it fixes. Two
 of the twelve are <em>not</em> fixed by this script — which two, and
-why? (Hint: both belong to the raw-data reshaping — the
-<code>pivot_longer</code> and the disk round-trip — that this script no
-longer does.)</li>
+why? (Hint: both belong to the raw-data reshaping).</li>
 <li>Section 1 of the corrected script reads
 <code>celegans_clean.csv</code> instead of re-cleaning the raw file. How
 does separating cleaning (<code>01_data_cleaning.R</code>) from analysis
@@ -638,7 +634,7 @@ review?</li>
 by dropping <code>m1a</code>/<code>m1b</code>/<code>m1c</code>, and is
 that a loss worth accepting?</li>
 </ol>
-<p>Type your answers to questions 1 and 2 into the chat.</p>
+<p>Type your answers into the chat.</p>
 </div>
 
 ### Tidy the project, not just the script
@@ -731,8 +727,7 @@ Most code review never happens because no one organises it. Ivimey-Cook et al. (
 5. **Think about credit up front.** A reviewer who catches a meaningful bug deserves more than a thank-you — MeRIT acknowledgement (Nakagawa et al. 2023) or co-authorship where the fix changes the conclusions. Agree the default *before* the first review, not after.
 
 <div class="try">
-<p><strong>Plan your group</strong> <em>(~5 min — type in chat, or pair
-up if you’re in the same room)</em></p>
+<p><strong>Plan your group</strong> <em>(~5 min — type in chat)</em></p>
 <p>Without overthinking it, commit to specifics on the following five
 questions. Two-line answers are fine — the point is to write them down,
 because <em>“we should review each other’s code”</em> without specifics
@@ -743,7 +738,7 @@ next month.</li>
 <li><strong>What</strong> — readability/learning, or pre-submission
 error-checking? (Pick one for the first meeting.)</li>
 <li><strong>When and where</strong> — cadence and platform (in-person,
-Zoom, async via GitHub PRs).</li>
+Zoom, async via GitHub).</li>
 <li><strong>First case</strong> — whose code goes first, and what’s the
 explicit scope of that review (which of the four Rs)?</li>
 <li><strong>Credit</strong> — what’s your default acknowledgement, and
@@ -755,9 +750,7 @@ and we’ll workshop it briefly as a group.</p>
 
 ### Online lab culture
 
-For groups working entirely online, the **pull request** model on GitHub provides the most practical structure for code review. The author opens a PR, writes a description explaining what the code does and why, and requests review. The reviewer comments on specific lines. Nothing merges until approved.
-
-A PR description is the intent documentation that makes *Reported* checking possible: it tells the reviewer what the code is supposed to do, so they can evaluate whether it does. We cover this in the GitHub chapter.
+For groups working entirely online, the **pull request** model on GitHub provides the most practical structure for code review. The author opens a PR, writes a description explaining what the code does and why, and requests review. The reviewer comments on specific lines. Nothing merges until approved. We cover this in the GitHub session tomorrow.
 
 <div class="try">
 <p><strong>Closing reflection</strong> <em>(type in chat)</em></p>
