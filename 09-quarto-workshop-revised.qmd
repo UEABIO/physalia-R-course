@@ -1,4 +1,4 @@
-# Quarto: 90-120 Minute Introduction {.unnumbered}
+# Quarto {.unnumbered}
 
 
 
@@ -614,76 +614,143 @@ Create a document with:
 
 ---
 
-## 6. Cross-References (15 minutes)
+## 6. Captions and cross-references (15 minutes)
 
 **Teaching: 10 minutes | Practice: 5 minutes**
 
-### Why Cross-References Matter
+A caption and a cross-reference do two different jobs. The caption is the text that travels with the figure or table; the cross-reference is the mechanism that lets you point to it from your prose and have the number resolve automatically. Quarto ties them together through a single chunk label, so once the label is in place both jobs are done at once.
 
-Instead of: *"See the figure below"* or *"Table 1 shows..."*
+A note on what belongs in a caption. The four-element legend structure (descriptive sentence, methods and sample, statistical model and result, visual components) is precisely what should go inside the `fig-cap` or `tbl-cap` string. The captions you write here should still describe neutrally and in the past tense, and should avoid stating results as a substitute for describing the figure.
 
-Use: *"@fig-scatter shows a clear relationship"* → **"Figure 1 shows a clear relationship"**
+:::{.callout-info collapse = "true"}
 
-**Benefits:**
+## Figure legends
 
-- Numbers update automatically
-- Links are clickable in HTML
-- No broken references when you add or remove items
+A figure for a journal or lab report is not complete without its legend. The legend exists so that the figure can be understood without the reader returning to the body text. The discipline is to write it as four elements, always in this order.
 
-A cross-reference has two halves: a chunk label with the correct prefix (`fig-` or `tbl-`), and an `@`-reference to that label in your text. Both must be present for the reference to resolve.
+### The four elements
 
-### Referencing Figures
+1. **Descriptive sentence.** What the figure shows, stated neutrally. Past tense.
+2. **Methods and sample.** Data source with citation; sample sizes per group; exclusions.
+3. **Statistical model and result.** The test, the test statistic with degrees of freedom, the exact or appropriately-bounded p-value, what the annotations represent. Adjustment method named.
+4. **Visual components defined.** Every layer on the figure (density, boxplot, points, error bars, lines, brackets, asterisks, colours, shapes) defined explicitly.
+
+### Good and bad legends
+
+For each of the four elements, a good and a bad example. The bad examples cluster around two failure modes: vagueness (omitting details the reader needs) and category confusion (writing a result where a description is wanted, or a name where a definition is wanted).
+
+**Element 1 — Descriptive sentence:**
+
+| Verdict | Example |
+|---|---|
+| Good | Body mass of three penguin species in the Palmer Archipelago, Antarctica. |
+| Bad | Gentoo penguins are heavier. (*This is a result, not a description. Belongs in the body text or as an explanatory title.*) |
+| Bad | Penguin data. (*Too vague: which penguins? which variable?*) |
+
+**Element 2 — Methods and sample:**
+
+| Verdict | Example |
+|---|---|
+| Good | Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing body mass were excluded, giving final sample sizes of 151 Adelie, 68 Chinstrap, and 124 Gentoo individuals. |
+| Bad | Data from a survey. (*No source, no sample size, no exclusions.*) |
+| Bad | n = 343. (*Total only; per-group sample sizes are missing, and the source and exclusion criteria are not stated.*) |
+
+**Element 3 — Statistical model and result:**
+
+| Verdict | Example |
+|---|---|
+| Good | A one-way ANOVA indicated a significant effect of species on body mass (F(2, 340) = 343.6, p < 0.001). Pairwise contrasts were Tukey-adjusted. |
+| Bad | Species differed significantly. (*No test, no test statistic, no degrees of freedom, no p-value, no adjustment method.*) |
+| Bad | ANOVA showed differences (p < 0.05). (*Test named but no F-statistic; reports a threshold rather than the exact p-value; no multiple-comparisons adjustment named.*) |
+
+Note: if the figure is descriptive only and no statistical test has been performed, this element should be omitted entirely rather than fabricated. State this explicitly only if the reader might otherwise expect a test (for example, in a paper where every other figure has one).
+
+**Element 4 — Visual components defined:**
+
+| Verdict | Example |
+|---|---|
+| Good | The shaded region shows a kernel density estimate of the distribution; the central box shows the interquartile range with the median indicated by a horizontal line and whiskers extending to 1.5 × IQR; individual observations are displayed as jittered points. |
+| Bad | Shows a raincloud plot. (*Names the type but defines nothing.*) |
+| Bad | Boxplots of body mass. (*Misnames the figure — it is not a boxplot — and defines none of the layers.*) |
+
+### A worked example
+
+> **Figure 1.** Body mass (g) of three penguin species (*Pygoscelis adeliae*, *P. chinstrap*, and *P. papua*) in the Palmer Archipelago, Antarctica. Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing body mass values were excluded, giving final sample sizes of 151 Adelie, 68 Chinstrap, and 124 Gentoo individuals. The shaded region shows a kernel density estimate of the distribution; the central box shows the interquartile range with the median indicated by a horizontal line; individual observations are displayed as jittered points.
+
+
+This legend uses three of the four elements (descriptive sentence, methods and sample, visual components). The statistical-model element is omitted because the figure is descriptive — no model has been fitted to these data. Were a model present, the third element would sit between methods and visual components.
+
+:::
+
+### Why cross-references matter
+
+Instead of *"see the figure below"* or *"Table 1 shows..."*, write `@fig-scatter shows a clear relationship`, which renders as **"Figure 1 shows a clear relationship"**. Hard-coding a number such as "Table 1" creates a maintenance problem: insert a table earlier in the document and every subsequent reference is silently wrong. The benefits of the cross-reference approach are that numbers update automatically when items are added or removed, links are clickable in HTML output, and references never go stale.
+
+A cross-reference has two halves: a chunk label carrying the correct prefix (`fig-` for figures, `tbl-` for tables, `sec-` for sections), and an `@`-reference to that label in the surrounding text. Both halves must be present for the reference to resolve. A label without an `@`-reference produces a numbered item that nothing points to; an `@`-reference without a matching label renders as a literal, unresolved `@fig-name` in the output. If a reference is not resolving, check that the prefix on the label matches the prefix in the `@`-reference exactly.
+
+### Referencing figures
+
+The caption for a figure is set through the `fig-cap` chunk option, not as an argument inside the plotting code.
 
 ````markdown
-
-```{r}`r ''`
+```{r}
 #| label: fig-correlation
-#| fig-cap: "Strong positive correlation between flipper length and body mass"
-
+#| fig-cap: "Body mass (g) plotted against flipper length (mm) for three penguin species in the Palmer Archipelago. Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing values were excluded. Points show individual observations."
 ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
   geom_point(alpha = 0.7) +
   theme_minimal()
 ```
 
-As shown in @fig-correlation, penguins with longer flippers tend to have greater body mass.
+As shown in @fig-correlation, penguins with longer flippers tended to have greater body mass.
 ````
 
-### Referencing Tables
+Two requirements are easy to miss. The label must begin with `fig-` for Quarto to treat the chunk as a figure and number it accordingly; a label such as `correlation` without the prefix will not cross-reference as a figure. The caption is a quoted string on the `fig-cap` line, so any internal quotation marks must be escaped or the YAML will fail to parse.
+
+### Referencing tables
+
+For tables, the caption is set through the `tbl-cap` chunk option. The example below uses `knitr::kable`, covered in the previous section, to render the summary.
 
 ````markdown
-
-```{r}`r ''`
+```{r}
 #| label: tbl-descriptive
-#| tbl-cap: "Descriptive statistics for penguin measurements"
-
+#| tbl-cap: "Descriptive statistics for four penguin body measurements, reported as group means and standard deviations. Sample sizes were 151 Adelie, 68 Chinstrap, and 124 Gentoo individuals after excluding observations with missing values."
 penguins |>
   summarise(
     across(
-      c(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g),
+      c(culmen_length_mm, culmen_depth_mm, flipper_length_mm, body_mass_g),
       list(mean = \(x) mean(x, na.rm = TRUE), sd = \(x) sd(x, na.rm = TRUE))
     )
   ) |>
   knitr::kable(digits = 1)
 ```
 
-The summary statistics (@tbl-descriptive) reveal important patterns in penguin morphology.
+The summary statistics (@tbl-descriptive) describe the central tendency and spread of each measurement.
 ````
 
-### Referencing Sections
+
+### Referencing sections
+
+Sections are cross-referenced by attaching an explicit identifier with the `sec-` prefix in braces after the heading. This requires `number-sections: true` in the document or project YAML, otherwise the reference has no number to resolve to.
 
 ```markdown
 # Methods {#sec-methods}
 
 ## Analysis {#sec-analysis}
 
-As described in @sec-methods, we used...
+As described in @sec-methods, the data were filtered before modelling.
 ```
 
 ### Practice (5 minutes)
 
-1. Add labels to your figures and tables
-2. Reference them in text using `@fig-name` and `@tbl-name`
-3. Render and see the automatic numbering
+Using `02-qmd-figures-chunks.qmd`:
+
+1. Add `fig-` and `tbl-` labels to your figures and tables, and write a caption for each following the four-element legend structure from Block 6.
+
+2. Reference each item in your text using `@fig-name` and `@tbl-name`.
+
+3. Render the document and confirm that the numbering is automatic and that the in-text references resolve to the correct numbers.
+
+4. Insert a new figure earlier in the document, re-render, and confirm that all subsequent numbers and references update without further editing.
 
 ---
 

@@ -1,0 +1,99 @@
+# Block 2: Choosing the right figure {.unnumbered}
+
+
+```{r}
+#| include: false
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+```
+
+
+
+```{r}
+#| include: false
+rm(list = ls())
+
+library(palmerpenguins)
+library(tidyverse)
+library(ggdist)
+library(ggrepel)
+library(ggtext)
+library(patchwork)
+library(colorspace)
+library(colorBlindness)
+library(ggview)
+library(ragg)
+library(scales)
+library(here)
+
+# Drop incomplete cases for the figures used in worked examples
+penguins_complete <- penguins |> 
+  tidyr::drop_na(body_mass_g, flipper_length_mm, bill_length_mm, bill_depth_mm, sex)
+```
+
+
+
+## The chart-type table
+
+Before anything else, the structure of your data determines the chart type. Variable count and variable type narrow the choice. The table below is a guide, not a constraint — your scientific question may demand something else, but you should be able to justify it.
+
+| Variable 1 | Variable 2 | Variable 3 | Default chart |
+|---|---|---|---|
+| Continuous | — | — | Raincloud (`ggdist::stat_halfeye` + boxplot + jittered points) |
+| Continuous | Continuous | — | Scatter plot |
+| Continuous | Continuous | Discrete | Scatter plot with colour and shape mapped to the discrete variable |
+| Discrete | — | — | Bar chart of counts |
+| Discrete | Continuous | — | Raincloud per group |
+| Discrete | Discrete | — | Heatmap of counts |
+| Discrete | Discrete | Continuous | Heatmap of the continuous variable |
+| Date | Continuous | — | Line chart |
+| Date | Continuous | Discrete | Line chart, one line per group |
+
+Several prohibitions are worth committing to memory: no pie charts (use a labelled proportion); no 3D effects of any kind; no dual y-axes (use two panels instead); no dynamite plots (bar charts of means with error bars) where raw data are available — use a raincloud or strip plot (Weissgerber et al., 2015).
+
+## Descriptive vs explanatory framing
+
+Every figure communicates at two levels: it presents the data, and it makes an argument. The framing of the title and the legend determines which level the reader engages with first.
+
+A **descriptive title** states what the figure shows in neutral language: *"Body mass of three penguin species in the Palmer Archipelago"*. The reader is shown the data and invited to interpret.
+
+An **explanatory title** states what the figure means: *"Gentoo penguins are substantially heavier than Adelie and Chinstrap"*. The reader is told the conclusion and invited to verify it from the data.
+
+Neither is wrong. The choice is determined by the audience. Journal figures and lab reports use descriptive framing because the reader is expected to bring their own judgement and the figure legend below carries the necessary methodological detail. Talks, posters, and public engagement use explanatory framing because the reader has limited time, attention, or technical background to derive the conclusion themselves.
+
+## Audience design
+
+The same finding becomes a different figure for different audiences. The table below summarises the design choices that should change with context:
+
+| Element | Journal / lab report | Poster | Talk | Public engagement |
+|---|---|---|---|---|
+| Title above figure | No | Yes (explanatory) | Yes (explanatory) | Yes (explanatory) |
+| Figure legend below | Yes (four elements) | Optional, abbreviated | No | No |
+| Direct labelling | Where it does not break convention | Yes | Yes | Yes |
+| Highlighting (grey out non-focal groups) | No | Yes | Yes | Yes |
+| Reference lines and annotations | Sparingly | Yes | Yes | Yes |
+| Statistical detail | Precise p-values where shown | Abbreviated | One key result | None or one sentence |
+| Base font size | 12pt (floor) | 16–20pt | 14–18pt | 14–18pt |
+| Raw data shown | Always where n permits | Always | Always | Where it clarifies |
+
+What changes is not the standard — every figure must remain honest and accessible — but the design choices needed to communicate to that audience.
+
+### Exercise 2: Same data, four audiences
+
+:::{.callout-important}
+You have one finding:
+
+> **Gentoo penguins are substantially heavier than Adelie and Chinstrap penguins** 
+
+Discuss how you might change your graph in these four scenarios: 
+
+1. Journal figure (specialist reader, no time pressure)
+2. Conference poster (3 seconds to attract, 2 minutes to engage)
+3. Seminar slide (audience cannot control viewing time)
+4. Museum infographic (non-specialist, no assumed technical knowledge)
+
+Try and create four different graphs using the penguins dataset.  
+:::
+

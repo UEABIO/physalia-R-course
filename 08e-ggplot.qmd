@@ -1,0 +1,204 @@
+# # Block 5: Saving figures correctly {.unnumbered}
+
+
+```{r}
+#| include: false
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+```
+
+
+
+```{r}
+#| include: false
+rm(list = ls())
+
+library(palmerpenguins)
+library(tidyverse)
+library(ggdist)
+library(ggrepel)
+library(ggtext)
+library(patchwork)
+library(colorspace)
+library(colorBlindness)
+library(ggview)
+library(ragg)
+library(scales)
+library(here)
+
+# Drop incomplete cases for the figures used in worked examples
+penguins_complete <- penguins |> 
+  tidyr::drop_na(body_mass_g, flipper_length_mm, bill_length_mm, bill_depth_mm, sex)
+```
+
+
+
+The on-screen plot pane is rarely the same physical size as the saved figure. A font that looks correct at 10pt in the RStudio viewer will appear smaller in the saved PDF because the viewer renders at 72 dpi and the PDF embeds at the dimensions you specify. This is the single most common source of "the figure looks fine on my screen but is unreadable in the manuscript" problems.
+
+Two extensions and one discipline solve this.
+
+## ggview for canvas-size preview
+
+`ggview` (Domin, 2025) adds a `canvas()` layer to the plot. The preview then renders at the dimensions the file will be saved at, so what you see is what you save.
+
+```{r}
+#| eval: false
+fig <- penguins_complete |> 
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  ggdist::stat_halfeye(adjust = 0.5, justification = -0.2,
+                       .width = 0, point_colour = NA, alpha = 0.8) +
+  geom_boxplot(width = 0.12, outlier.shape = NA, alpha = 0.5) +
+  colorspace::scale_fill_discrete_qualitative(palette = "Dark2") +
+  labs(x = NULL, y = "Body mass (g)") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "none") +
+  ggview::canvas(width = 7, height = 5, units = "in", dpi = 300)
+
+# Print displays the figure at the canvas size
+print(fig)
+
+# save_ggplot uses the canvas dimensions
+ggview::save_ggplot(
+  fig,
+  here::here("outputs", "figures", "fig01_body_mass.png")
+)
+```
+
+For one-off iteration, `canvas()` is lighter than the older `camcorder` package, which auto-saves every plot to disk. Use `camcorder` only when you specifically want a session-wide recording or a GIF of your iteration history.
+
+## The ragg graphics device
+
+`ggsave()` is the interface for writing figures; under the hood it calls a graphics device to do the rendering. For raster output (PNG, JPG, TIFF), `ragg::agg_png` is the modern recommended device because it renders text with better antialiasing, accesses system fonts without `extrafont` or `showtext`, and — importantly for version control — writes no timestamp into the file. Identical code produces byte-identical output, so `git diff` works as expected.
+
+To set `ragg` as the plot pane backend in Positron or RStudio (≥1.4), go to *Settings → Graphics → Backend: AGG*. For Quarto documents, set `knitr::opts_chunk$set(dev = "ragg_png")` in the setup chunk.
+
+## The two-format default
+
+Save publication figures in two formats:
+
+- **PDF** for inclusion in LaTeX manuscripts and final journal submission. Vector, infinitely scalable, the default for serious typesetting.
+- **PNG at 300 dpi** via `ragg::agg_png` for slides, posters, and quick previews.
+
+```{r}
+#| eval: false
+ggplot2::ggsave(
+  filename = here::here("outputs", "figures", "fig01_body_mass.pdf"),
+  plot = fig,
+  width = 7,
+  height = 5,
+  units = "in"
+)
+
+ggplot2::ggsave(
+  filename = here::here("outputs", "figures", "fig01_body_mass.png"),
+  plot = fig,
+  width = 7,
+  height = 5,
+  units = "in",
+  dpi = 300,
+  device = ragg::agg_png,
+  bg = "white"
+)
+```
+
+`bg = "white"` is needed for PNG output because the `ggplot2` default is transparent, which causes display issues in many viewers.
+
+:::{.callout-warning}
+Always specify `width`, `height`, `units`, and `dpi` explicitly. Never rely on `ggsave()` defaults. The defaults rarely match the dimensions of the figure you actually want.
+:::
+
+
+# Day 3 Block 6: Three questions for every figure {.unnumbered}
+
+Every figure you produce, in every context, should answer three questions. If it cannot, it is not finished.
+
+1. **Does the visual impression match the data?** Honest axes, appropriate encoding, no distortion. The reader should reach the same conclusion from the figure that they would reach from the underlying numbers.
+
+2. **Who is the audience and does the design serve them?** Complexity, annotation density, and font size calibrated to the reader. A journal figure is not a poster figure is not a public engagement figure.
+
+3. **Is the figure self-contained?** Labels, units, a legend that defines every visual layer, and ideally the script that produced it, so a future reader (including yourself) can reconstruct what you did and why.
+
+These three questions are the standard. The principles, the extensions, and the discipline of this workshop are all in service of being able to answer *yes* to each one.
+
+## Take-home exercise
+
+The workshop has given you the principles, the extensions, and the discipline. The integration — applying everything to your own data — is now homework. The aim is to produce one publication-ready figure from a dataset you brought, using the techniques from Blocks 1 to 6.
+
+## The task
+
+Choose a dataset from your own research with at least one continuous variable, one categorical grouping, and a sample size of at least thirty observations. Produce one publication-ready figure that applies the principles and extensions from this workshop:
+
+1. **Block 1.** Variable types determine the chart. Honest axes. Accessible palette via `colorspace`. The encoding hierarchy applied — most important variable to position, most important categorical to colour hue with shape redundantly.
+2. **Block 2.** Audience-appropriate framing — pick journal/lab report unless you have a specific other audience in mind. Descriptive title and full legend.
+3. **Block 3.** A `theme_project()` (or equivalent) applied; scales formatted with `scales::breaks_pretty()` and an appropriate `scales::label_*()` function for the units.
+4. **Block 4.** At least one extension used appropriately (raincloud distribution display, direct labelling with `ggrepel` or `ggtext`, or multi-panel composition with `patchwork`).
+5. **Block 5.** Save the figure as both PDF and PNG using `ragg::agg_png` for the PNG; verify with `colorBlindness::cvdPlot()` before saving.
+
+
+
+## A skeleton to adapt
+
+```{r}
+#| eval: false
+# !! PARTICIPANT: replace the data load with your own file.
+my_data <- readr::read_csv(here::here("data", "my_data.csv"))
+
+# Source the project theme function defined in Block 3
+# (paste theme_project() into R/functions/plot_functions.R first)
+source(here::here("R", "functions", "plot_functions.R"))
+
+# Build the figure using the patterns from Blocks 1-4.
+# Example structure (modify to match your variables and audience):
+my_figure <- my_data |>
+  tidyr::drop_na(<your_continuous_var>, <your_grouping_var>) |>
+  ggplot2::ggplot(ggplot2::aes(x = <your_grouping_var>,
+                               y = <your_continuous_var>,
+                               fill = <your_grouping_var>)) +
+  ggdist::stat_halfeye(adjust = 0.5, justification = -0.2,
+                       .width = 0, point_colour = NA, alpha = 0.8) +
+  ggplot2::geom_boxplot(width = 0.12, outlier.shape = NA, alpha = 0.5) +
+  colorspace::scale_fill_discrete_qualitative(palette = "Dark2") +
+  ggplot2::scale_y_continuous(
+    breaks = scales::breaks_pretty(n = 6)
+  ) +
+  ggplot2::labs(x = NULL, y = "<Variable name (unit)>") +
+  theme_project(base_size = 12) +
+  ggplot2::theme(legend.position = "none")
+
+# Verify accessibility before saving
+colorBlindness::cvdPlot(my_figure)
+
+# Save in both formats
+ggplot2::ggsave(
+  filename = here::here("outputs", "figures", "my_figure.pdf"),
+  plot = my_figure,
+  width = 7, height = 5, units = "in"
+)
+ggplot2::ggsave(
+  filename = here::here("outputs", "figures", "my_figure.png"),
+  plot = my_figure,
+  width = 7, height = 5, units = "in",
+  dpi = 300, device = ragg::agg_png, bg = "white"
+)
+```
+
+:::{.callout-tip}
+If your figure passes `colorBlindness::cvdPlot()` and the legend would let someone understand it without the manuscript text, you have met the standard. If either fails, fix it before submitting.
+:::
+
+
+## Further reading and references
+
+- Allen, M., Poggiali, D., Whitaker, K., Marshall, T.R., van Langen, J. and Kievit, R.A. (2021) Raincloud plots: a multi-platform tool for robust data visualization. *Wellcome Open Research*, 4, 63.
+- Cleveland, W.S. and McGill, R. (1984) Graphical perception: theory, experimentation, and application to the development of graphical methods. *Journal of the American Statistical Association*, 79(387), 531–554.
+- Cumming, G., Fidler, F. and Vaux, D.L. (2007) Error bars in experimental biology. *Journal of Cell Biology*, 177(1), 7–11.
+- Healey, C.G. and Enns, J.T. (2012) Attention and visual memory in visualization and computer graphics. *IEEE Transactions on Visualization and Computer Graphics*, 18(7), 1170–1188.
+- Horst, A.M., Hill, A.P. and Gorman, K.B. (2020) palmerpenguins: Palmer Archipelago (Antarctica) penguin data. R package, https://allisonhorst.github.io/palmerpenguins/
+- Okabe, M. and Ito, K. (2008) *Color Universal Design (CUD)*. https://jfly.uni-koeln.de/color/
+- Sharpe, L.T., Stockman, A., Jägle, H. and Nathans, J. (1999) Opsin genes, cone photopigments, color vision and color blindness. In *Color Vision: From Genes to Perception*, 3–51.
+- Tufte, E.R. (1983) *The Visual Display of Quantitative Information*. Graphics Press.
+- Weissgerber, T.L., Milic, N.M., Winham, S.J. and Garovic, V.D. (2015) Beyond bar and line graphs: time for a new data presentation paradigm. *PLOS Biology*, 13(4), e1002128.
+- Wilke, C.O. (2019) *Fundamentals of Data Visualization*. O'Reilly Media. https://clauswilke.com/dataviz/
+- Zeileis, A., Fisher, J.C., Hornik, K., Ihaka, R., McWhite, C.D., Murrell, P., Stauffer, R. and Wilke, C.O. (2020) colorspace: A toolbox for manipulating and assessing colors and palettes. *Journal of Statistical Software*, 96(1), 1–49.
