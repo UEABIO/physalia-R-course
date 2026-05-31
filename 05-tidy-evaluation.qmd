@@ -16,7 +16,7 @@ The fix is to make the response and predictor arguments. The complication is tha
 dplyr verbs do not look up column names the way ordinary R does. This block
 teaches the mental model and the four patterns you need.
 
-## 5.1 The problem
+## The problem
 
 A first, reasonable attempt that does not work:
 
@@ -34,7 +34,7 @@ summarise_by_species(penguins, body_mass_g)
 The function received `var = body_mass_g`. Inside the function, `var` is the name
 of the argument. Yet the error says it cannot be found. Why?
 
-## 5.2 The mental model
+## The mental model
 
 Ordinary R looks up names in the calling environment: `mean(x)` searches the
 function's environment, then the enclosing one, and so on.
@@ -62,7 +62,7 @@ vignette (`vignette("programming", package = "dplyr")`).
 
 :::
 
-## 5.3 Embracing in practice
+## Embracing in practice
 
 The fix:
 
@@ -110,7 +110,7 @@ the curly braces: they capture, then inject.
 
 :::
 
-## 5.4 Data-masking versus tidy-selection
+## Data-masking versus tidy-selection
 
 This distinction is rarely taught explicitly and is the single biggest later
 source of confusion. Spend time here; the mental model pays back for years.
@@ -340,7 +340,7 @@ exists: it lets tidy-selection helpers reach into data-masking verbs.
 
 `r unhide()`
 
-## 5.5 Strings and dynamic names
+## Strings and dynamic names
 
 When a column name arrives as a string, embracing does not apply: strings are
 values, not expressions to capture. Use the `.data` pronoun in data-masking
@@ -382,7 +382,129 @@ Two things happen on the left of `:=`. `"{{ var }}_mean"` is glue-style injectio
 replacing `{{ var }}` with the argument's name; `:=` is the assignment that accepts
 a string on its left. Both are needed.
 
-## 5.6 The payoff: generalising `fit_model`
+## Choosing the pattern
+
+Activities 1 to 4 each drilled one pattern in isolation. In practice the hard part
+is deciding *which* pattern a situation calls for, because the answer depends on
+two independent questions: how does the column name arrive (bare name, string, or
+character vector), and what is the context (data-masking or tidy-selection)? This
+activity makes that decision the task.
+
+### Activity 5: choose the pattern
+
+:::{.task}
+::::{.task-header}
+Activity 5: choose the pattern
+::::
+::::{.task-container}
+
+For each scenario, name the correct forwarding pattern, then write the function.
+All four group by `species`.
+
+(a) `var` arrives as a **bare name**; compute its mean (data-masking).
+
+(b) `var_name` arrives as a **string**; compute its mean (data-masking).
+
+(c) `cols` arrives as a **character vector**; select those columns (tidy-selection).
+
+(d) `var` arrives as a **bare name**; compute its mean into an output column named
+    `<var>_mean` (data-masking with a dynamic output name).
+
+::::
+:::
+
+
+`r hide("Solution")`
+
+Each scenario maps onto exactly one of the four working patterns.
+
+```{r, eval = FALSE}
+# (a) bare name, data-masking -> {{ }}
+summarise_mean <- function(data, var) {
+  data |>
+    dplyr::summarise(mean = mean({{ var }}, na.rm = TRUE), .by = species)
+}
+
+# (b) string, data-masking -> .data[[ ]]
+summarise_mean_str <- function(data, var_name) {
+  data |>
+    dplyr::summarise(mean = mean(.data[[var_name]], na.rm = TRUE), .by = species)
+}
+
+# (c) character vector, tidy-selection -> all_of()
+select_cols <- function(data, cols) {
+  data |>
+    dplyr::select(species, dplyr::all_of(cols))
+}
+
+# (d) bare name, dynamic output name -> {{ }} with :=
+summarise_named <- function(data, var) {
+  data |>
+    dplyr::summarise("{{ var }}_mean" := mean({{ var }}, na.rm = TRUE), .by = species)
+}
+```
+
+These are the four patterns from the closing callout, one per scenario. The
+decision procedure is: first ask whether the name arrives bare, as a string, or as
+a vector; then, if it is a string or vector, ask whether the verb is data-masking
+(`.data[[ ]]`) or tidy-selection (`all_of()`). A bare name uses `{{ }}` in either
+context.
+
+
+`r unhide()`
+
+### Activity 6: predict the error
+
+:::{.task}
+::::{.task-header}
+Activity 6: predict the error
+::::
+::::{.task-container}
+
+Before running anything, predict what each call does: does it succeed, return the
+wrong answer, or error? Then explain why in terms of the masking model.
+
+```{r, eval = FALSE}
+# (i) embracing a string
+summarise_mean <- function(data, var) {
+  data |> dplyr::summarise(mean = mean({{ var }}, na.rm = TRUE), .by = species)
+}
+summarise_mean(penguins, "body_mass_g")
+
+# (ii) a string into a data-masking verb without .data
+summarise_mean_str <- function(data, var_name) {
+  data |> dplyr::summarise(mean = mean(var_name, na.rm = TRUE), .by = species)
+}
+summarise_mean_str(penguins, "body_mass_g")
+```
+
+::::
+:::
+
+
+`r hide("Solution")`
+
+(i) **Returns the wrong answer (or a warning), not an error.** `{{ }}` captures the
+expression `"body_mass_g"`, which is a string literal, not a column reference.
+`mean()` then receives a single character value, and `mean()` of a character
+returns `NA` with a warning. Embracing is for bare names; a string needs
+`.data[[ ]]`.
+
+(ii) **Returns the wrong answer.** `var_name` is not embraced, so dplyr first looks
+for a column called `var_name`, fails, then finds `var_name` in the function
+environment holding the string `"body_mass_g"`. It computes the mean of that single
+string, again yielding `NA`. The string never reaches the data frame as a column
+reference because nothing told dplyr to treat it as one; that is the job of
+`.data[[var_name]]`.
+
+The general lesson: passing the wrong *kind* of object to a masked verb rarely
+errors loudly. It often produces a silent `NA`, which is more dangerous than an
+error. Match the pattern to how the name arrives.
+
+
+`r unhide()`
+
+## The payoff: generalising `fit_model`
 
 ```{r}
 #| eval: false
