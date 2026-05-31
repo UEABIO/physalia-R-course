@@ -1,0 +1,747 @@
+# ggplot {#sec-ggplot}
+
+```{r, include = FALSE}
+library(tidyverse)
+library(here)
+library(patchwork)
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+
+penguins <- readRDS(here("files", "chapter5.RDS"))
+
+
+```
+
+## Learning Objectives
+
+By the end of this chapter, you will be able to:
+
+- Understand the basic structure of a ggplot and how it builds layer by layer.
+
+- Map data variables to visual aesthetics like position, color, and shape.
+
+- Add and customise plot elements such as labels, themes, and titles.
+
+- Use facets to compare subgroups effectively.
+
+- Apply best practices for clear, meaningful visualisations.
+
+
+Data visualisation helps us see relationships, patterns, and surprises that tables of numbers can easily hide. In this chapter, we’ll explore how to use **ggplot2**{@R-ggplot2} — part of the tidyverse — to build clear, insightful graphics step by step.
+
+We’ll use our dataset of penguin measurements to explore how different species vary in their culmen dimensions. You’ll learn how to go from a simple scatterplot to well-polished figures that communicate data stories effectively.
+
+:::{.callout-tip}
+If you are struggling to write the code for you ggplot, try loading the `esquisse` @R-esquisse add-in to produce a point-and-click interface that will help you build your plot and produce R code at the end. 
+
+:::
+
+```{r, eval = TRUE, echo = FALSE}
+downloadthis::download_link(
+  link = "https://raw.githubusercontent.com/Philip-Leftwich/Oct-Intro-Analytics/refs/heads/dev/files/penguins_clean.csv",
+  button_label = "Clean Penguin Data",
+  button_type = "success",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+## Building plots {.unnumbered}
+
+We are using the package `ggplot2` to create data visualisations. It's part of the tidyverse package. Actually, most people call th package `ggplot` but it's official name is `ggplot2`.
+
+We’ll be using the `ggplot2` package to create data visualisations. It’s part of the `tidyverse` suite of packages. Although many people refer to it simply as `ggplot`, its official name is `ggplot2`.
+
+::: grid
+::: g-col-6
+**ggplot2** uses a layered grammar of graphics, where plots are constructed through a series of layers. You start with a base layer (by calling `ggplot`), then add **data** and **aesthetics**, followed by selecting the appropriate **geometries** for the plot.
+
+These first 3 layers will give you the most simple version of a complete plot. However, you can enhance the plot’s clarity and appearance by adding additional layers such as **scales**, **facets**, **coordinates**, **labels** and **themes**.
+
+:::
+
+::: g-col-6
+```{r, eval=TRUE, echo=FALSE, out.width="80%"}
+knitr::include_graphics("images/gglayers.png")
+```
+:::
+:::
+
+
+
+```{r}
+head(penguins)
+```
+
+Let's build a basic scatterplot to show the relationship between `flipper_length` and `body_mass`. We will customise plots further later on in the individual plots. This is just a quick overview of the different layers.
+
+Let’s build a basic scatterplot to show the relationship between `flipper_length` and `body_mass`. We will further customise the plots in subsequent sections, but for now, this will provide a quick overview of the different layers.
+
+* **Layer 1** creates the base plot that we build upon.
+* **Layer 2** adds the `data` and some `aesthetics`:
+  * The data is passed as the first argument.
+  * Aesthetics are added via the mapping argument, where you define your variables (e.g., x or both x and y). This also allows you to specify general properties, like the color for grouping variables, etc.
+* **Layer 3** adds geometries, or `geom_?` for short. This tells ggplot how to display the data points. Remember to add these layers with a `+`, rather than using a pipe (`%>%`). You can also add multiple geoms if needed, for example, combining a violin plot with a boxplot.
+* **Layer 4** includes `scale_?` functions, which let you customise aesthetics like color. You can do much more with scales, but we'll explore later.
+* **Layer 5** introduces facets, such as `facet_wrap()`, allowing you to add an extra dimension to your plot by showing the relationship you are interested in for each level of a categorical variable.
+* **Layer 6** involves coordinates, where `coord_cartesian()` controls the limits for the x- and y-axes (xlim and ylim), enabling you to zoom in or out of the plot.
+* **Layer 7** helps you modify axis labels.
+* **Layer 8** controls the overall style of the plot, including background color, text size, and borders. R provides several predefined themes, such as `theme_classic`, `theme_bw`, `theme_minimal`, and `theme_light`.
+
+Click on the tabs below to see how each layer contributes to refining the plot.
+
+::: {.panel-tabset}
+## Layer 1
+
+```{r}
+ggplot()
+```
+
+There’s not much to see at this stage - this is basically an empty plot layer.
+
+## Layer 2
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = body_mass_g, y = flipper_length_mm))
+```
+
+You won’t see any data points yet because we haven’t specified how to display them. However, we have mapped the aesthetics, indicating that we want to plot `body_mass` on the x-axis and `flipper_length` on the y-axis. This also sets the axis titles, as well as the axis values and breakpoints.
+
+::: callout-tip
+You won't need to add `data =` or `mapping =` if you keep those arguments in exactly that order. Likewise, the first column name you enter within the `aes()` function will always be interpreted as x, and the second as y, so you could omit them if you wish.
+
+You don’t need to include `data =` or `mapping =` if you keep those arguments in the default order. Similarly, the first column name you enter in the `aes()` function will automatically be interpreted as the x variable, and the second as y, so you can omit specifying `x` and `y` if you prefer.
+
+```{r eval = FALSE}
+ggplot(penguins, aes(body_mass_g, flipper_length_mm))
+```
+
+will give you the same output as the code above.
+:::
+
+## Layer 3
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = body_mass_g, y = flipper_length_mm, colour = sex)) +
+  geom_point()
+```
+
+Here we are telling `ggplot` to add a scatterplot. You may notice a warning indicating that some rows were removed due to missing values.
+
+The `colour` argument adds colour to the points based on a grouping variable (in this case, `sex`).  If you want all the points to be black — representing only two dimensions rather than three — simply omit the `colour` argument.
+
+## Layer 4
+
+```{r}
+ggplot(data = penguins, mapping = aes(x = body_mass_g, y = flipper_length_mm, colour = sex)) +
+  geom_point() +
+  # changes colour palette
+  scale_colour_brewer(palette = "Dark2") + 
+  # add breaks from 2500 to 6500 in increasing steps of 500
+  scale_x_continuous(breaks = seq(from = 2500, to = 6500, by = 500)) 
+  
+```
+
+The `scale_?` functions allow us to modify the color palette of the plot, adjust axis breaks, and more. You could change the axis labels within `scale_x_continuous()` as well or leave it for Layer 7.
+
+## Layer 5
+
+```{r}
+ggplot(data = penguins, mapping = aes(x=body_mass_g, y=flipper_length_mm, colour=sex)) +
+  geom_point() +
+  scale_colour_brewer(palette = "Dark2") + 
+  # split main plot up into different subplots by species 
+  facet_wrap(~ species) 
+
+```
+
+In this step, we’re using faceting to split the plot by species.
+
+## Layer 6
+
+```{r}
+ggplot(data = penguins, mapping = aes(x=body_mass_g, y=flipper_length_mm, colour=sex)) +
+  geom_point() +
+  scale_colour_brewer(palette = "Dark2") + 
+  facet_wrap(~ species) +
+  # limits the range of the y axis
+  coord_cartesian(ylim = c(0, 250)) 
+```
+
+Here we adjust the limits of the y-axis to zoom out of the plot. If you want to zoom in or out of the x-axis, you can add the `xlim` argument to the `coord_cartesian()` function.
+
+## Layer 7
+
+```{r}
+ggplot(data = penguins, mapping = aes(x=body_mass_g, y=flipper_length_mm, colour=sex)) +
+  geom_point() +
+  scale_colour_brewer(palette = "Dark2") + 
+  facet_wrap(~ species) +
+  labs(x = "Body Mass (in g)", # labels the x axis
+       y = "Flipper length (in mm)", # labels the y axis
+       colour = "Sex") # labels the grouping variable in the legend
+```
+
+You can change the axis labels using the `labs()` function, or you can modify them when adjusting the scales (e.g., within the `scale_x_continuous()` function).
+
+## Layer 8
+
+```{r}
+ggplot(data = penguins, mapping = aes(x=body_mass_g, y=flipper_length_mm, colour=sex)) +
+  geom_point() +
+  scale_colour_brewer(palette = "Dark2") + 
+  facet_wrap(~ species) +
+  labs(x = "Body Mass (in g)", 
+       y = "Flipper length (in mm)",
+       colour = "Sex") +
+  # add a theme
+  theme_classic()
+
+```
+
+The `theme_classic()` function is applied to change the overall appearance of the plot.
+
+:::
+
+::: callout-important
+
+You need to stick to the first three layers to create your base plot. Everything else is optional, meaning you don’t need to use all eight layers. Additionally, layers 4-8 can be added in any order (more or less), whereas layers 1-3 must follow a fixed sequence.
+
+:::
+
+
+## Exploring Common Geom Types
+
+We’ve seen scatterplots, boxplots, and histograms—but ggplot offers many more geoms for storytelling.
+
+| Data type              | Example geom                                  | Purpose              |
+|------------------------|-----------------------------------------------|----------------------|
+| Continuous–continuous  | `geom_point()`, `geom_line()`, `geom_smooth()` | Relationships/trends |
+| Categorical–continuous | `geom_boxplot()`, `geom_violin()`, `geom_col()` | Comparisons          |
+| Continuous             | `geom_histogram()`, `geom_density()`           | Distributions        |
+
+
+## Histogram (`geom_histogram()`) {#sec-hist}
+
+If you want to show the **distribution of a continuous variable**, you can use a histogram. As with every plot, you need at least 3 layers to create a base version of the plot. Similar to `geom_bar()`, `geom_histogram()` only requires an `x` variable as it does the counting "in the background".
+
+A histogram divides the data into "bins" (i.e., groupings displayed in a single bar). These bins are plotted along the x-axis, with the y-axis showing the count of observations in each bin. It's basically a barchart for continuous variables.
+
+Let's have a look at the weight distribution in our dataset.
+
+```{r fig-hist, fig.cap="Default histogram"}
+
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram() 
+```
+
+
+The default **number of bins** is 30 (as shown in @fig-hist above). Changing the number of bins (argument `bins`) allows for more or less fine-tuning of the data. A higher number of bins results in more detailed granularity.
+
+Perhaps it’s more intuitive to modify the **width of each bin** using the `binwidth` argument. For example, `binwidth = 1` for the weight category would mean each "weight group" represents 1g, while `binwidth = 50` would group ages into 50g spans. The plots below show modifications for both `bins` and `binwidth`.
+
+
+```{r eval = FALSE, message = FALSE}
+#less finetuning
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(bins = 10) 
+
+# more fineturning
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 50) 
+```
+
+```{r fig-bins, fig.cap="Bins vs binwidth arguments", echo=FALSE}
+bins_manipulation <- 
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(bins = 10) 
+
+
+binwidth_manipulation <-
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 50) 
+
+# add plots together in 1 row
+bins_manipulation + binwidth_manipulation + plot_layout(nrow = 1)
+```
+
+The **warning message** tells us 2 row of data were removed due to containing `non-finite values outside the scale range`. Have a look at the body mass column (penguins) to see if you can decipher the warning message.
+
+The rows were removed because `r mcq(c(x = "they fall outside of the plot range", answer = "they contain missing values"))`.
+
+Colours are manipulated slightly differently than in the barchart. Click through each tab to see how you can modify colours, axis labels, margins, and breaks, and apply a different theme.
+
+
+::: {.panel-tabset}
+
+## Colour
+
+We can change the plot colours by adding a **fill argument** and a **colour argument**. The `fill` argument changes the colour of the bars, while the `colour` argument modifies the outline of the bars. Note that these arguments are **added directly to the `geom_histogram()`**, rather than within the overall `aes()`, as we did with the barchart.
+
+
+```{r warning=FALSE}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 50, fill = "#586cfd", colour = "#FC58BE")
+```
+
+::: callout-tip
+
+You could use:
+
+* Hex codes for `fill` and `colour`, as we did here: `geom_histogram(binwidth = 50, fill = "#586cfd", colour = "#FC58BE")`. If you want to create your own colours, check out [this website](https://www.hexcolortool.com/){target="_blank"}.
+
+* Pre-defined colour names: `geom_histogram(binwidth = 50, fill = "purple", colour = "green")`. See the full list [here](https://www.datanovia.com/en/blog/awesome-list-of-657-r-color-names/){target="_blank"}.
+
+:::
+
+
+## Axes labels, margins, and breaks
+
+Here we **removed the label** for the y axes `Count` (to show you some variety) and **modified the breaks**. The y-axis is now displayed in increasing steps of 5 (rather than 10), and the x-axis has 1-year increments instead of 5. 
+
+Notice how the `breaks =` argument changes the labels of the break ticks but not the scale limits. You can adjust the limits of the scale using the `limits =` argument. To exaggerate, we set the limits to 15 and 50. See how the values from 15 to 19, and 44 to 50 do not have labels? You would need to adjust that using the `breaks =` argument.
+
+
+The `expansion()` function removes the gap between the x-axis and the bars.
+
+
+```{r warning=FALSE}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 50, fill = "#586cfd", colour = "#FC58BE") +
+  labs(x = "Body mass in (g)", # renaming x axis label
+       y = "") + # removing the y axis label
+  scale_y_continuous(
+    # remove the space below the bars (first number), but keep a tiny bit (5%) above (second number)
+    expand = expansion(mult = c(0, 0.05)),
+    # changing break points on y axis
+    breaks = seq(from = 0, to = 20, by = 5)
+    ) +
+  scale_x_continuous(
+    # changing break points on x axis
+    breaks = seq(from = 2500, to = 6500, by = 500),
+    # Experimenting with
+    limits = c(2000, 7000)
+    )
+  
+```
+
+## Themes
+
+Let's experiment with the themes. For this plot we have chosen `theme_bw()`
+
+```{r warning=FALSE}
+ggplot(penguins, aes(x = body_mass_g)) +
+  geom_histogram(binwidth = 50, fill = "#586cfd", colour = "#FC58BE") +
+  labs(x = "Body mass in (g)", # renaming x axis label
+       y = "") + # removing the y axis label
+  scale_y_continuous(
+    # remove the space below the bars (first number), but keep a tiny bit (5%) above (second number)
+    expand = expansion(mult = c(0, 0.05)),
+    # changing break points on y axis
+    breaks = seq(from = 0, to = 20, by = 5)
+    ) +
+  scale_x_continuous(
+    # changing break points on x axis
+    breaks = seq(from = 2500, to = 6500, by = 500),
+    # Experimenting with
+    limits = c(2000, 7000)
+    )+
+  theme_bw()
+  
+```
+:::
+
+
+## Scatterplot (`geom_point()`) {#sec-scatter}
+
+Scatterplots are appropriate when you want to plot **two continuous variables**.
+We can also **add a trendline** by using `geom_smooth()`. The default trendline is `loess`. If you want a linear trendline, you would need to add `method = "lm"` inside the `geom_smooth()` function.
+
+
+
+```{r eval=FALSE}
+ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mm)) +
+  geom_point() +
+  geom_smooth()
+
+ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mmx)) +
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+
+```{r fig-scatter, echo=FALSE, message=FALSE, fig.cap="Default Scatterplot with added trendline - loess (left) and linear (right)"}
+Scat_1 <- ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mm)) +
+  geom_point() +
+  geom_smooth()
+
+scat_2 <- ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mm)) +
+  geom_point() +
+  geom_smooth(method = lm)
+
+Scat_1 + scat_2 + plot_layout(nrow = 1)
+```
+
+
+
+Customising the colour of a scatterplot is slightly different from the other plots we’ve encountered so far. Technically, the point is not a "filled-in black area" but rather an extremely wide outline of a circle. Therefore, we cannot use the usual `fill` argument and instead need to use the `colour` argument, similar to how we customised the outline of the histogram. 
+
+See the tabs below to learn how to change the colour for all points or how to adjust the colour based on groupings.
+
+
+::: {.panel-tabset}
+
+
+## Colour for all points
+
+If we want to **change the colour of all the points**, we can add the `colour` argument to the `geom_point()` function. Likewise, to change the **colour of the trendline**, we would also use the `colour` argument. Here, we used pre-defined colour names, but HEX codes would work just as well.
+
+
+
+```{r message=FALSE}
+# colour of all points and the trendline
+ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mm)) +
+  geom_point(colour = "darkorange")+
+  geom_smooth(method = "lm", colour = "darkblue")
+```
+
+
+
+## Colour with grouping
+
+If we want the points to **change colour based on another grouping variable**, the `colour` argument should go inside the `aes()`. If you don’t want to define the colours manually, you can use a colour palette like Brewer (`scale_colour_brewer()`) or Viridis (`scale_colour_viridis_d()`).
+
+```{r message=FALSE}
+## adding grouping variable Pre_reg_group and changing the colour values manually
+ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mm, colour = species)) +
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_colour_manual(values = c("darkorange", "cyan", "purple"))
+```
+
+::: {.callout-important collapse="true" icon="false"} 
+## What happened to the direction of correlation?
+
+Adding colour to the variable species reveals a striking reversal of the apparent correlation.
+
+This is known as Simpson's Paradox, and is a result of "Omitted Variable Bias" - our original scatterplot did not include the confounder of species
+
+Omitting important variables can lead to incorrect assertions
+
+
+:::
+
+
+## Legend title and labels
+
+You can tidy the legend title and group labels using the `scale_colour_?` function, depending on the palette you’re using (e.g., `scale_colour_manual()`, `scale_colour_brewer` and many more).
+
+
+```{r message=FALSE}
+ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mm, colour = species)) +
+  geom_point()+
+  geom_smooth(method = "lm")+
+  scale_colour_manual(values = c("darkorange", "cyan", "purple"),
+                      name = "Species",
+                      labels = c("Adelie penguin", "Chinstrap penguin", "Gentoo penguin"))
+```
+
+:::
+
+
+:::{.task}
+::::{.task-header}
+Your turn
+::::
+::::{.task-container}
+
+All other layers remain exactly the same as in other plots. Try adding layers to make the plot above prettier:
+
+* [ ] 1. relabel axes x and y
+* [ ] 2. move the legend to a different position (either top, left, or bottom)
+* [ ] 3. add a theme
+
+
+
+
+::: {.callout-note collapse="true" icon="false"} 
+
+## More hints
+
+If you are experiencing issues with the legend position and theme, try modifying the order of the layers.
+
+:::
+
+
+::: {.callout-caution collapse="true" icon="false"} 
+
+## Solution
+
+```{r message=FALSE}
+ggplot(data = penguins, aes(x=culmen_length_mm, y=culmen_depth_mm, colour = species)) +
+  geom_point()+
+  geom_smooth(method = "lm",
+              show.legend = FALSE)+ # stop this layer from appearing in the legend.
+  scale_colour_manual(values = c("darkorange", "cyan", "purple"),
+                      name = "Species",
+                      labels = c("Adelie penguin", "Chinstrap penguin", "Gentoo penguin"))+
+  labs(x = "Bill length (mm)", y = "Bill depth (mm)")+
+  theme_classic() + # place before moving the legend position
+  theme(legend.position = "top") # move legend to the top
+  
+
+```
+
+
+:::
+
+::::
+:::
+
+
+## Boxplot (`geom_boxplot()`)
+
+A boxplot is one of the options to display a **continuous variable with categorical grouping variable**. 
+
+```{r}
+# default boxplot
+ggplot(penguins, aes(x = species, y = body_mass_g))+
+  geom_boxplot()
+  
+```
+
+
+Tada! As usual, we can enhance the plot by adding various layers. Click on each tab below to see how.
+
+
+::: {.panel-tabset}
+
+## Colour
+
+We can change the colour by adding a `fill` argument inside the `aes()`. To customise the colours further, we can add a `scale_fill_?` layer. If you have specific colours in mind, use `scale_fill_manual()`. If you prefer pre-defined palettes, such as Brewer, you can use `scale_fill_brewer()`.
+
+
+```{r}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_boxplot()+
+  # customise colour
+  scale_fill_brewer(palette = "Dark2")
+```
+
+## Axes labels
+
+We need to relabel the axes. The function to use depends on the variable type. Here, we need `scale_x_discrete()` for the x-axis and `scale_y_continuous()` for the y-axis. We can also tidy up the group labels and adjust the breaks on the y-axis (e.g., in steps of 1 instead of 2) within these same functions.
+
+
+```{r}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2")+
+  scale_x_discrete(
+    # changing the label of x
+    name = "Species",
+    # changing the group labels of the 2 groups
+    labels = c("Adelie penguin", "Chinstrap penguin", "Gentoo penguin")) + 
+  scale_y_continuous(
+    # changing name of the y axis
+    name = "Body mass (g)",
+    # changing break labels
+    breaks = c(seq(from = 3000, to = 6000, by = 500))
+  )
+  
+```
+
+## Legend and Theme
+
+The legend is superfluous; best to take it off. We can remove the legend by adding the argument `guide = "none"` to the `scale_fill_?` function.
+
+Let's pick a theme we haven't used yet: `theme_dark()`.
+
+
+```{r}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_boxplot()+
+  scale_fill_brewer(palette = "Dark2",
+                    guide = "none")+
+  scale_x_discrete(
+    # changing the label of x
+    name = "Species",
+    # changing the group labels of the 2 groups
+    labels = c("Adelie penguin", "Chinstrap penguin", "Gentoo penguin")) + 
+  scale_y_continuous(
+    # changing name of the y axis
+    name = "Body mass (g)",
+    # changing break labels
+    breaks = c(seq(from = 3000, to = 6000, by = 500))
+  )
+  
+```
+
+:::
+
+
+
+
+## Violin plot (`geom_violin()`)
+
+An alternative way to display a **continuous variable with a categorical grouping variable** is a violin plot.
+
+```{r}
+# default boxplot
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_violin()
+```
+
+:::{.task}
+::::{.task-header}
+Your turn
+::::
+::::{.task-container}
+
+Adjusting the violin plot would be exactly the same as the boxplot. Try to add layers to the base plot above to
+
+* [ ] change the colours either manually or using a pre-defined colour palette 
+* [ ] tidy the axes labels and group names
+* [ ] in case a legend appears, take it off
+* [ ] add a theme
+
+
+::: {.callout-caution collapse="true" icon="false"} 
+
+## One possible Solution
+
+```{r}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_violin()+
+  scale_fill_brewer(palette = "Dark2",
+                    guide = "none")+
+  scale_x_discrete(
+    # changing the label of x
+    name = "Species",
+    # changing the group labels of the 2 groups
+    labels = c("Adelie penguin", "Chinstrap penguin", "Gentoo penguin")) + 
+  scale_y_continuous(
+    # changing name of the y axis
+    name = "Body mass (g)",
+    # changing break labels
+    breaks = c(seq(from = 3000, to = 6000, by = 500))
+  )+
+  theme_bw()
+```
+:::
+
+::::
+:::
+
+
+## Violin-boxplots
+
+So far, we’ve only added one `geom_?` layer to our plots. However, thanks to ggplot's layered system, we can add multiple geoms, for example, when creating a violin-boxplot.
+
+Remember, the order of the layers can sometimes make a difference. We've seen this already - adding a theme at the end can override earlier arguments like the legend position. Similarly, `ggplot + violinplot + boxplot` will look different from `ggplot + boxplot + violinplot`.
+
+
+```{r eval=FALSE}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_violin()+
+  geom_boxplot()
+
+
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_boxplot() +
+  geom_violin()
+```
+
+
+```{r, fig-vb_bv, echo=FALSE, fig.cap="Default violin-boxplot: Order of the layer matters"}
+vb <- ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_violin()+
+  geom_boxplot()
+
+
+bv <- ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_boxplot() +
+  geom_violin()
+
+vb + bv + plot_layout(nrow = 1)
+
+```
+
+
+See the tabs below to learn how to customise various elements, such as the width of the boxes, and the colour or opacity.
+
+
+::: {.panel-tabset}
+
+## Width of the boxes
+
+If we want to get any information from the boxplot, we need to place it "on top of" the violin plot. But still, the boxplot is pretty wide and covers important details from the violin plot. To make the information more visible, we can **adjust the width of the boxes**. Finding an appropriate width might take some trial and error.
+
+
+```{r, fig-vb_width, fig.cap="Default violin-boxplot: adjusting width of the box"}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_violin()+
+  geom_boxplot(width = .2)
+```
+
+## Colour
+
+Adding colour should be pretty straightforward by now. The code is no different from what we used for the boxplot or violin plot. We need to add the `fill` argument within the `aes()`, along with a `scale_fill_?` layer.
+
+However, we can further customise the plot by adding an **opacity argument** using `alpha` to the violin plot geom.
+
+
+```{r fig-vb_colour, fig.cap="Violin-boxplot with a different colour palette"}
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+  geom_violin(alpha = 0.4) + # alpha for opacity
+  geom_boxplot(width = 0.2) + # change width of the boxes
+  scale_fill_brewer(palette = "Dark2") # customise colour
+```
+
+:::
+
+:::{.task}
+::::{.task-header}
+Your turn
+::::
+::::{.task-container}
+
+* [ ] Change the x- and y-axis labels
+* [ ] Remove the legend
+* [ ] add a theme
+
+::: {.callout-caution collapse="true" icon="false"} 
+
+## One possible Solution 
+
+```{r}
+
+ggplot(penguins, aes(x = species, y = body_mass_g, fill = species))+
+    geom_violin(alpha = 0.4) +
+  geom_boxplot(width = 0.2) +
+  scale_fill_brewer(palette = "Dark2",
+                    guide = "none")+
+  scale_x_discrete(
+    # changing the label of x
+    name = "Species",
+    # changing the group labels of the 2 groups
+    labels = c("Adelie penguin", "Chinstrap penguin", "Gentoo penguin")) + 
+  scale_y_continuous(
+    # changing name of the y axis
+    name = "Body mass (g)",
+    # changing break labels
+    breaks = c(seq(from = 3000, to = 6000, by = 500))
+  )
+```
+:::
+
+::::
+:::
+
+
+
+
+
+
+
