@@ -352,10 +352,17 @@ female_egg_data$eggs_hatched[3] <- female_egg_data$eggs_laid[3] + 5
 
 When `tidylog` is loaded, standard `dplyr` verbs report what they change. This is particularly helpful in pipelines where rows are filtered or variables are modified without otherwise obvious trace.
 
-```{r}
+```{r, eval = FALSE}
 female_egg_data_clean <- female_egg_data |>
   filter(age_days > 0) |>
   mutate(eggs_per_day = eggs_laid / age_days)
+```
+
+```{r, echo = FALSE}
+female_egg_data_clean <- female_egg_data |>
+  filter(age_days > 0) |>
+  mutate(eggs_per_day = eggs_laid / age_days) |> 
+  head()
 ```
 
 Instead of silently dropping rows or creating variables, the console output summarises exactly what was removed or added, making the workflow easier to audit and debug.
@@ -380,14 +387,14 @@ glimpse(female_egg_data_clean)
 
 `verify()` is the simplest function. It evaluates a logical expression against the whole dataframe and stops if it is FALSE. Think of it as `stopifnot()` with better error messages and pipeline compatibility.
 
-```{r}
+```{r, eval = FALSE}
 #| error: true
 # Check that all rows of eggs laid are positive — this should pass
 female_egg_data_clean |>
   verify(eggs_laid > 0)
 ```
 
-```{r}
+```{r, eval = FALSE}
 #| error: true
 # Check something that will fail — no female should produce more than 1000 offspring
 female_egg_data_clean |>
@@ -402,7 +409,7 @@ female_egg_data_clean |>
 
 `assert()` applies a predicate function to one or more columns and reports which rows fail. This is more useful for checking individual variables.
 
-```{r}
+```{r, eval = FALSE}
 #| error: true
 # Check that eggs_hatched is within a plausible biological range
 female_egg_data_clean |>
@@ -419,7 +426,7 @@ female_egg_data_clean |>
 
 You can check multiple columns at once by listing them:
 
-```{r}
+```{r, eval = FALSE}
 #| error: true
 # Check both egg measurements are within plausible ranges
 female_egg_data_clean |>
@@ -475,7 +482,7 @@ female_egg_data_clean |>
 
 Sometimes the condition is not about a single column but about a combination of values across columns in the same row. `assert_rows()` handles this. It applies a row-reduction function first, then checks the result.
 
-```{r}
+```{r, eval = FALSE}
 #| error: true
 # Check that no row has more than 2 missing values across the numeric columns
 female_egg_data_clean |>
