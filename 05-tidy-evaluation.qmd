@@ -182,7 +182,12 @@ function to the column's values, the other extracts the column.
 
 ### Activity 1: identify the context
 
-::: {.task}
+:::{.task}
+::::{.task-header}
+Activity 1: identify the context
+::::
+::::{.task-container}
+
 For each call, say whether the column reference is data-masking or tidy-selection.
 
 1. `filter(penguins, body_mass_g > 4000)`
@@ -194,10 +199,12 @@ For each call, say whether the column reference is data-masking or tidy-selectio
 7. `arrange(penguins, desc(body_mass_g))`
 8. `filter_out(penguins, body_mass_g > 4000)`
 9. `summarise(penguins, across(where(is.numeric), mean))`
+
+::::
 :::
 
-:::{.callout-tip}
-## Solution
+
+`r hide("Solution")`
 
 1. **Data-masking.** A comparison is computed per row.
 2. **Tidy-selection.** Columns picked by name.
@@ -213,12 +220,16 @@ For each call, say whether the column reference is data-masking or tidy-selectio
 The trickiest are 4 (different contexts at different argument positions) and 8
 (`across()` as the bridge).
 
-:::
+
+`r unhide()`
 
 ### Activity 2: fix the broken function (data-masking)
 
-:::{.callout-important}
-## Task
+:::{.task}
+::::{.task-header}
+Activity 2: fix the broken function (data-masking)
+::::
+::::{.task-container}
 
 Identify the problem and fix it.
 
@@ -230,10 +241,11 @@ my_filter(penguins, body_mass_g, 4000)
 # Error: object 'var' not found
 ```
 
+::::
 :::
 
-:::{.callout-tip}
-## Solution
+
+`r hide("Solution")`
 
 `filter()` is data-masking but `var` is not embraced, so dplyr looks for a literal
 column `var`, fails, and then meets the bare symbol `body_mass_g`. Embrace `var`:
@@ -247,12 +259,16 @@ my_filter <- function(data, var, threshold) {
 `threshold` does not need embracing: it is an ordinary number, not a column
 reference. Only column-name arguments get the treatment.
 
-:::
+
+`r unhide()`
 
 ### Activity 3: fix the broken function (tidy-selection)
 
-:::{.callout-important}
-## Task
+:::{.task}
+::::{.task-header}
+Activity 3: fix the broken function (tidy-selection)
+::::
+::::{.task-container}
 
 A different problem. Identify and fix it.
 
@@ -264,10 +280,11 @@ keep_columns(penguins, c("species", "body_mass_g"))
 # Error: Can't select columns past the end.
 ```
 
+::::
 :::
 
-:::{.callout-tip}
-## Solution
+
+`r hide("Solution")`
 
 In tidy-selection, a character vector is not a set of column references by
 default. Wrap it in `all_of()`:
@@ -282,21 +299,26 @@ If instead the function takes a *bare* name, embracing works: `select({{ cols }}
 The right tool depends on whether the input arrives as a bare name (`{{ }}`) or as
 a string or character vector (`all_of()`).
 
-:::
+
+`r unhide()`
 
 ### Activity 4: the bridge
 
-:::{.callout-important}
-## Task
+:::{.task}
+::::{.task-header}
+Activity 4: the bridge
+::::
+::::{.task-container}
 
 Write `mean_of_columns(data, cols)` that takes a character vector of column names
 and returns the mean of each, grouped by species. You need both contexts: select
 the columns (they arrive as strings), then compute a mean for each.
 
+::::
 :::
 
-:::{.callout-tip}
-## Solution
+
+`r hide("Solution")`
 
 ```{r, eval = FALSE}
 mean_of_columns <- function(data, cols) {
@@ -315,7 +337,8 @@ accepts the string vector); its `.fns` argument is data-masking (applying a
 function to each selected column). The bridge is the whole reason `across()`
 exists: it lets tidy-selection helpers reach into data-masking verbs.
 
-:::
+
+`r unhide()`
 
 ## 5.5 Strings and dynamic names
 
@@ -370,18 +393,22 @@ fit_model <- function(data) {
 
 ### Activity
 
-:::{.callout-important}
-## Task
+:::{.task}
+::::{.task-header}
+Generalise fit_model
+::::
+::::{.task-container}
 
 Make `fit_model()` accept a response and predictor as bare column names,
 defaulting to body mass and flipper length so existing calls still work. There is
 a wrinkle: `lm()`'s first argument is a formula. Try both the simple `{{ }}`
 approach and the explicit `rlang::new_formula()` approach.
 
+::::
 :::
 
-:::{.callout-tip}
-## Solution
+
+`r hide("Solution")`
 
 The simple approach works because `lm()`'s formula is itself a data-masked
 context, so embracing inside it is honoured:
@@ -416,7 +443,8 @@ fit_model <- function(data,
 `enexpr()` captures the unevaluated argument; `new_formula()` assembles it. Use the
 simple version unless you need to manipulate the formula.
 
-:::
+
+`r unhide()`
 
 When you change a function's interface, pin the old behaviour down first with a
 **characterisation test**, then confirm the change preserves it:
