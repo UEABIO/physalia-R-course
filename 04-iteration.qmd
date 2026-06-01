@@ -24,9 +24,9 @@ a list. It is the tidyverse counterpart of base R's `lapply()`.
 
 ```{r}
 #| eval: false
-df_list <- list(a = 1:10, b = 11:20, c = 21:30)
+vec_list <- list(a = 1:10, b = 11:20, c = 21:30)
 
-purrr::map(df_list, mean)   # a list of three means
+purrr::map(vec_list, mean)   # a list of three means
 ```
 
 `map()` always returns a list, which is maximally general but often more than you
@@ -43,7 +43,7 @@ of that type, which is a feature: it catches mistakes early.
 
 ```{r}
 #| eval: false
-purrr::map_dbl(df_list, mean)   # a named numeric vector, not a list
+purrr::map_dbl(vec_list, mean)   # a named numeric vector, not a list
 ```
 
 :::{.callout-note}
@@ -53,6 +53,42 @@ This type-safety is the reason to prefer `map_*()` over base `sapply()`.
 depending on the input, so a function that worked on Tuesday can silently return
 a different shape on Wednesday. `map_dbl()` either returns a double vector or
 errors. Predictability beats convenience.
+
+:::
+
+
+:::{.callout-note collapse="true"}
+
+## The base R alternative: a `for` loop
+
+Before `map()`, the same job needs a loop with manual bookkeeping: pre-allocate
+an output container, then assign into it by index.
+
+```{r}
+#| eval: false
+
+vec_list <- list(a = 1:10, b = 11:20, c = 21:30)
+
+means <- vector("double", length(vec_list))   # pre-allocate data type and length
+
+names(means) <- names(vec_list)                # carry names across by hand
+
+for (i in seq_along(vec_list)) {
+  means[[i]] <- mean(vec_list[[i]])
+}
+
+means
+```
+
+`purrr::map_dbl(df_list, mean)` collapses all of this into one call. The loop is
+not wrong, and understanding it is worth doing, but three jobs are now yours
+rather than the function's: choosing the container type, sizing it, and preserving
+names. Growing the vector instead of pre-allocating (`means <- c(means, ...)`
+inside the loop) copies the whole object on every iteration, which turns linear
+work into quadratic and is the classic loop performance trap. `map_dbl()` handles
+the container, the sizing and the names, and fixes the return type. The honest
+contrast is delegated bookkeeping, not raw speed: a correctly pre-allocated loop
+and `map_dbl()` run in comparable time.
 
 :::
 
@@ -67,14 +103,14 @@ form is the R 4.1 shorthand `\(x)`:
 
 ```{r}
 #| eval: false
-purrr::map_dbl(df_list, \(x) sum(x) / length(x))
+purrr::map_dbl(vec_list, \(x) sum(x) / length(x))
 ```
 
 ## Original
 
 ```{r}
 #| eval: false
-purrr::map_dbl(df_list, function(x) sum(x) / length(x))
+purrr::map_dbl(vec_list, function(x) sum(x) / length(x))
 ```
 
 :::
@@ -89,8 +125,8 @@ Extra arguments can be passed either inside the lambda or as trailing arguments 
 
 ```{r}
 #| eval: false
-purrr::map_dbl(df_list, \(x) mean(x, na.rm = TRUE))   # inside the lambda
-purrr::map_dbl(df_list, mean, na.rm = TRUE)           # forwarded by map()
+purrr::map_dbl(vec_list, \(x) mean(x, na.rm = TRUE))   # inside the lambda
+purrr::map_dbl(vec_list, mean, na.rm = TRUE)           # forwarded by map()
 ```
 
 ### Returning a data frame: `map() |> list_rbind()`
@@ -99,6 +135,8 @@ To stack per-element tibbles into one tibble, run `map()` and then `list_rbind()
 
 ```{r}
 #| eval: false
+
+# Example:
 files <- list.files(here::here("data", "many_files"),
                     pattern = "\\.csv$", full.names = TRUE)
 
@@ -106,6 +144,42 @@ all_data <- files |>
   purrr::map(\(f) readr::read_csv(f, show_col_types = FALSE)) |>
   purrr::list_rbind()
 ```
+
+
+```{r}
+#| eval: false
+
+# --- Setup: write the penguins data out as several CSV files ---
+# In a real project these files would already exist; here we create them
+# so the reading example has something to read. We split by island, so
+# each file holds the penguins recorded at one location.
+
+dir.create(here("data", "many_files"), recursive = TRUE, showWarnings = FALSE)
+
+penguins_clean |>
+  group_by(island) |>
+  group_walk(\(rows, key) {
+    write_csv(rows, here("data", "many_files", paste0(key$island, ".csv")))
+  })
+
+# --- Reading the files back in ---
+files <- list.files(here("data", "many_files"),
+                    pattern = "\\.csv$", full.names = TRUE)
+
+
+# example to show list format before rbind
+files |>
+  map(\(f) read_csv(f, show_col_types = FALSE))
+
+# combined dataframe
+all_data <- files |>
+  map(\(f) read_csv(f, show_col_types = FALSE)) |>
+  list_rbind()
+
+all_data
+
+```
+
 
 :::{.callout-warning}
 
@@ -128,7 +202,7 @@ embarrassingly parallel. We mention these so you recognise them; for new code,
 `purrr` is the consistent default and parallelism is a later optimisation, applied
 only after profiling shows it is needed.
 
-### `map2` and `pmap`: iterating over more than one input
+### `map2` and `pmap` and `imap`: iterating over more than one input
 
 `map2(.x, .y, .f)` walks two collections in parallel, passing one element from
 each to the function. `pmap(.l, .f)` generalises to any number of inputs, taking a
@@ -141,6 +215,36 @@ widths <- c(5, 6, 7)
 
 purrr::map2_dbl(sizes, widths, \(s, w) s * w)   # 10 18 28
 ```
+
+```{r}
+#| eval: false
+sizes   <- c(2, 3, 4)
+widths  <- c(5, 6, 7)
+heights <- c(1, 2, 3)
+
+# pmap takes a list of vectors; each call receives one element from each.
+pmap_dbl(list(sizes, widths, heights), \(s, w, h) s * w * h)  # 10 36 84
+
+```
+
+
+:::{.callout-note collapse = "true"}
+
+```{r}
+# pmap walks any number of inputs in parallel. A data frame is just a named
+# list of columns, so passing one lets each column become an argument.
+# The function's parameter names should match the column names.
+penguins_clean |>
+  select(species, body_mass_g, flipper_length_mm) |>
+  drop_na() |>
+  slice_head(n = 3) |>
+  pmap_chr(\(species, body_mass_g, flipper_length_mm) {
+    glue::glue("{species}: Body weight {body_mass_g}g, Flipper length {flipper_length_mm}mm ")
+  })
+
+```
+
+:::
 
 ### `walk`: iteration for side effects
 
@@ -164,6 +268,13 @@ purrr::walk2(
 )
 
 ```
+
+
+:::{.callout-note}
+
+Note the slightly different approach to walk, here we split the data into a list and used `walk` in a previous example we used `group_walk`a variant designed explicitly to work on data after `group_by`
+
+:::
 
 ## Part B: iteration on the running example 
 

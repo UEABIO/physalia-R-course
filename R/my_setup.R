@@ -29,3 +29,15 @@ my_theme <- theme_minimal(base_size = 16) +
   )
 
 theme_set(my_theme)
+
+
+library(palmerpenguins)
+library(janitor)
+
+penguins_clean <- palmerpenguins::penguins_raw |>
+  janitor::clean_names() |> 
+  tidyr::drop_na(body_mass_g, flipper_length_mm, species)
+
+
+penguins_complete <- palmerpenguins::penguins |> 
+  tidyr::drop_na(body_mass_g, flipper_length_mm, bill_length_mm, bill_depth_mm, sex)

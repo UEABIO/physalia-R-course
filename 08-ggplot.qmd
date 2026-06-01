@@ -12,8 +12,6 @@ library(here)
 
 
 ```{r}
-#| include: false
-rm(list = ls())
 
 library(palmerpenguins)
 library(tidyverse)
@@ -29,7 +27,7 @@ library(scales)
 library(here)
 
 # Drop incomplete cases for the figures used in worked examples
-penguins_complete <- penguins |> 
+penguins_complete <- palmerpenguins::penguins |> 
   tidyr::drop_na(body_mass_g, flipper_length_mm, bill_length_mm, bill_depth_mm, sex)
 ```
 
@@ -65,7 +63,54 @@ Cleveland and McGill (1984) asked a deceptively simple question: how accurately 
 
 For continuous variables, the hierarchy from most to least accurate is: position on a common scale, length, angle, area, colour lightness, colour hue, volume. For categorical variables it is different: position remains the most accurate, but colour hue moves up to second place, with shape third. This matters: the rules for assigning encodings to variables are not the same for continuous and categorical data, and this is one of the most common errors in published figures.
 
+```{r}
+#| echo: false
+#| eval: true
+knitr::include_graphics("images/visual_hierarchy.png")
+```
+
 The practical rule is: assign your most important variable to the highest-ranked encoding available to you. For two continuous variables, both go to position (a scatter plot). For a continuous variable grouped by a category, position handles the continuous variable and colour hue handles the category — with shape added redundantly for accessibility.
+
+
+:::{.panel-tabset}
+
+## Colour
+
+```{r}
+#| eval: true
+#| message: false
+#| warning: false
+penguins_complete |> 
+  ggplot(aes(x = body_mass_g, y = flipper_length_mm,
+             colour = species)) +
+  geom_point(alpha = 0.7, size = 2.5) +
+  colorspace::scale_colour_discrete_qualitative(palette = "Dark2") +
+  labs(x = "Body mass (g)",
+       y = "Flipper length (mm)",
+       colour = "Species") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+
+## Shape
+
+```{r}
+#| eval: true
+#| message: false
+#| warning: false
+penguins_complete |> 
+  ggplot(aes(x = body_mass_g, y = flipper_length_mm,
+            shape = species)) +
+  geom_point(alpha = 0.7, size = 2.5) +
+  labs(x = "Body mass (g)",
+       y = "Flipper length (mm)",
+       shape = "Species") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+## Both
 
 ```{r}
 #| eval: true
@@ -84,6 +129,8 @@ penguins_complete |>
   theme(legend.position = "bottom")
 ```
 
+:::
+
 Two continuous variables to position (rank 1), one categorical to colour hue (rank 2) and shape (rank 3) redundantly. The figure works on a colour monitor, in greyscale print, and for a reader with colour vision deficiency. This is the baseline expectation, not an enhancement.
 
 ## Colour as a tool
@@ -92,9 +139,15 @@ Colour is pre-attentive, which makes it the second-most powerful encoding for ca
 
 | Palette type | Data structure | Example use |
 |---|---|---|
-| Categorical | Discrete groups with no inherent order | Species, treatment arm |
+| Qualitative | Discrete groups with no inherent order | Species, treatment arm |
 | Sequential | Continuous, running in one direction from a minimum | Gene expression, density |
 | Diverging | Continuous, with a meaningful midpoint | Log fold-change, temperature anomaly |
+
+```{r}
+#| echo: false
+#| eval: true
+knitr::include_graphics("images/palette.png")
+```
 
 Using the wrong type for the data structure is one of the most common errors. A sequential palette applied to categorical data implies an ordering that does not exist. A categorical palette applied to a continuous variable conceals the ordering that does exist.
 
@@ -175,16 +228,30 @@ You each will be look at two figures. For each one:
 You have five minutes.
 :::
 
+
+:::{.panel-tabset}
+
+## Example 1
+
 ```{r}
-#| type: "task"
+#| echo: false
 knitr::include_graphics("images/g_crime_1.png")
-knitr::include_graphics("images/g_crime_2.png")
 ```
+
+## Example 2
+
+```{r}
+
+knitr::include_graphics("images/g_crime_2.png")
+
+```
+
+:::
 
 
 **Bonus**
 ```{r echo}
-#| type: "task"
+
 knitr::include_graphics("images/T_bar.png")
 ```
 

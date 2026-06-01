@@ -11,8 +11,7 @@ library(here)
 
 
 *Roughly 75 minutes. The first 25 teach what a function is; the rest apply it to
-the running example, turning a messy script into organised, tested code. The
-testing coda at the end is the part to shorten if time is short.*
+the running example, turning a messy script into organised, tested code.*
 
 ## Part A: the anatomy of a function
 
@@ -77,6 +76,29 @@ This isolation is a feature: a function's behaviour depends only on its argument
 not on whatever happens to be lying around in your session. That is precisely why
 functions are more reproducible than loose script lines.
 
+:::{.callout-note}
+
+## The superassignment operator
+
+The superassigment operator or `<<-` is used for **lexical scoping** it *will* modify the variable in a parent environment. If no such variable exists it will create one!
+
+```{r}
+#| eval: false
+x <- 1
+
+fn <- function(y) {
+  x <<- x * 2   # a local copy; the global x is untouched
+  x + y
+}
+
+fn(2)   # 4
+x       # now 2! 
+```
+
+
+
+:::
+
 ### Arguments and defaults
 
 An argument can have a default, used when the caller does not supply one:
@@ -88,7 +110,7 @@ greet <- function(name = "you") {
 }
 
 greet()         # "Good morning, you"
-greet("Phil")    # "Good morning, Sam"
+greet("Phil")    # "Good morning, Phil"
 ```
 
 :::{.task}
@@ -113,6 +135,74 @@ fahr_to_celsius <- function(fahr) {
 }
 ```
 
+
+`r unhide()`
+
+### Argument order and naming
+
+Arguments are matched first by exact name, then by position. This means
+the order you write arguments in the call matters only when you rely on
+position rather than naming them.
+
+power <- function(base, exponent) {
+  base ^ exponent
+}
+
+power(2, 3)                       # 8, matched by position
+power(exponent = 3, base = 2)     # 8, matched by name, order irrelevant
+power(2, exponent = 3)            # 8, mixed: name some, position the rest
+
+Naming arguments at the call site makes code easier to read and protects
+against errors when a function has several parameters. Relying on position
+is acceptable only for the first one or two well-known arguments.
+
+:::{.task}
+::::{.task-header}
+Argument order
+::::
+::::{.task-container}
+Using the `power()` function above, write three calls that all return 8
+but use position matching, name matching, and a mix of the two.
+::::
+:::
+
+### Wrapper functions and passing arguments with ...
+
+A wrapper function calls another function, often to set sensible defaults
+or simplify a common use. The `...` (dots) construct collects any extra
+arguments and forwards them unchanged to the inner function. This lets a
+wrapper expose the full flexibility of the function it wraps without
+listing every argument.
+
+```{r, eval = FALSE}
+
+# A wrapper around mean() that removes missing values by default,
+# but still forwards any other arguments the caller supplies.
+mean_clean <- function(x, ...) {
+  mean(x, na.rm = TRUE, ...)
+}
+
+v <- c(1, 2, 3, 4, 5, 6, 7, 8, 100, NA)
+mean_clean(v)                # 2.333..., na.rm handled for you
+mean_clean(v, trim = 0.25)   # trim passed through via ...
+```
+
+:::{.task}
+::::{.task-header}
+A rounding wrapper
+::::
+::::{.task-container}
+Write a function `round2()` that wraps `round()` and uses `digits = 2`
+as its default, while still allowing the caller to override `digits` or
+pass any other argument through with `...`.
+::::
+:::
+
+`r hide("Solution")`
+
+round2 <- function(x, digits = 2, ...) {
+  round(x, digits = digits, ...)
+}
 
 `r unhide()`
 
@@ -220,7 +310,7 @@ We now meet the analysis the rest of the day improves. Set up the data file once
 if (!dir.exists(here::here("data"))) dir.create(here::here("data"))
 
 readr::write_csv(
-  palmerpenguins::penguins,
+  palmerpenguins::penguins_raw,
   here::here("data", "penguins.csv")
 )
 ```
@@ -241,6 +331,7 @@ penguins_raw <- readr::read_csv(here("data", "penguins.csv"),
                                 show_col_types = FALSE)
 
 penguins_clean <- penguins_raw |>
+  janitor::clean_names() |> 
   tidyr::drop_na(body_mass_g, flipper_length_mm, species)
 
 # Adelie ----
@@ -528,7 +619,7 @@ when *not* to write a function
 Should this be turned into a function? Justify your answer.
 
 ```{r, eval = FALSE}
-penguins |> dplyr::filter(species == "Adelie") |> dplyr::summarise(n = dplyr::n())
+penguins_clean |> dplyr::filter(species == "Adelie") |> dplyr::summarise(n = dplyr::n())
 ```
 
 ::::
@@ -562,6 +653,19 @@ Three conventions we follow for the rest of the day:
   effects.
 - Analysis scripts `source()` the function files and call the functions. Scripts
   orchestrate; they do not define.
+  
+```
+my-project.Rproj
+|- data/
+|   |- raw/          # read-only; never edited by code
+|   |- processed/    # outputs of cleaning
+|- R/
+|   |- functions/    # function definitions only
+|   |- scripts/      # or numbered analysis scripts in R/
+|- outputs/
+|   |- figures/
+|   |- tables/
+```
 
 :::{.callout-note}
 
@@ -591,7 +695,7 @@ make_converter <- function(factor) {
 g_to_kg  <- make_converter(1 / 1000)
 mm_to_cm <- make_converter(1 / 10)
 
-penguins |>
+penguins_clean |>
   drop_na(body_mass_g, culmen_length_mm) |>
   mutate(
     body_mass_kg   = g_to_kg(body_mass_g),
@@ -616,7 +720,7 @@ A small, committed **fixture** keeps tests fast and reproducible:
 ```{r}
 #| eval: false
 # Run once to create the fixture, then never again
-penguins_test_subset <- palmerpenguins::penguins |>
+penguins_test_subset <- penguins_clean |>
   tidyr::drop_na(body_mass_g, flipper_length_mm, species) |>
   dplyr::slice_head(n = 20, by = species)
 

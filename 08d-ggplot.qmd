@@ -13,7 +13,7 @@ library(here)
 
 ```{r}
 #| include: false
-rm(list = ls())
+
 
 library(palmerpenguins)
 library(tidyverse)
@@ -28,9 +28,7 @@ library(ragg)
 library(scales)
 library(here)
 
-# Drop incomplete cases for the figures used in worked examples
-penguins_complete <- penguins |> 
-  tidyr::drop_na(body_mass_g, flipper_length_mm, bill_length_mm, bill_depth_mm, sex)
+
 ```
 
 
@@ -307,18 +305,17 @@ p1 <- penguins_complete |>
   geom_boxplot(width = 0.12, outlier.shape = NA, alpha = 0.5) +
   scale_fill_manual(values = pal, name = "Species") +
   labs(x = NULL, y = "Body mass (g)") +
-  theme_minimal(base_size = 11)+
-  theme(legend.position = "none")
+  theme_minimal(base_size = 11) +
+  guides(fill = "none")
 
 p2 <- penguins_complete |> 
   ggplot(aes(x = bill_length_mm, y = bill_depth_mm,
              fill = species, shape = species)) +
   geom_point(alpha = 0.7) +
   scale_fill_manual(values = pal, name = "Species") +
-  scale_shape_manual(name = "Species", values = c(21,22,23)) +
+  scale_shape_manual(values = c(21,22,23), name = "Species") +
   labs(x = "Bill length (mm)", y = "Bill depth (mm)") +
-  theme_minimal(base_size = 11)+
-  theme(legend.position = "none")
+  theme_minimal(base_size = 11)
 
 p3 <- penguins_complete |> 
   count(species, island) |> 
@@ -326,8 +323,8 @@ p3 <- penguins_complete |>
   geom_col(position = position_dodge2(preserve = "single")) +
   scale_fill_manual(values = pal, name = "Species") +
   labs(x = NULL, y = "Count") +
-  theme_minimal(base_size = 11)+
-  theme(legend.position = "bottom")
+  theme_minimal(base_size = 11) +
+  guides(fill = "none")
 
 # Edit the letter grid below to rearrange panels.
 # Letters refer to plots in the order they are added (A = p1, B = p2, C = p3).
@@ -337,11 +334,69 @@ CC
 "
 
 p1 + p2 + p3 +
-  patchwork::plot_layout(design = layout) +
+  patchwork::plot_layout(design = layout, guides = "collect") +
   patchwork::plot_annotation(tag_levels = "A") &
-  theme(
+  theme(legend.position = "bottom",
         plot.tag = element_text(face = "bold", size = 12))
 ```
+
+
+:::{.callout-note collapse = "true"}
+## guides
+
+When you combine plots with patchwork and set guides = "collect", patchwork gathers legends from every panel and merges any it considers identical. 
+
+"Identical" is strict: the guides must share the same aesthetic, scale, breaks and title. If your panels encode the same grouping variable through different aesthetics (say fill in one panel and colour plus shape in another) or through different scales, patchwork treats them as distinct and shows one legend per panel rather than a single shared key. 
+
+- First, decide which single legend should represent the shared variable across all panels, and choose the panel whose legend carries the most visual encoding, since that legend can serve as a complete key for the others. 
+
+- Second, actively suppress the legends on the remaining panels with guides(<aesthetic> = "none").
+
+```{r}
+#| eval: true
+#| message: false
+#| warning: false
+#| fig-height: 6
+p1 <- penguins_complete |> 
+  ggplot(aes(x = species, y = body_mass_g, fill = species)) +
+  ggdist::stat_halfeye(adjust = 0.5, justification = -0.2,
+                       .width = 0, point_colour = NA, alpha = 0.8) +
+  geom_boxplot(width = 0.12, outlier.shape = NA, alpha = 0.5) +
+  colorspace::scale_fill_discrete_qualitative(palette = "Dark2") +
+  labs(x = NULL, y = "Body mass (g)") +
+  theme_minimal(base_size = 11)
+
+p2 <- penguins_complete |> 
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm,
+             colour = species, shape = species)) +
+  geom_point(alpha = 0.7) +
+  colorspace::scale_colour_discrete_qualitative(palette = "Dark2") +
+  labs(x = "Bill length (mm)", y = "Bill depth (mm)") +
+  theme_minimal(base_size = 11)
+
+p3 <- penguins_complete |> 
+  count(species, island) |> 
+  ggplot(aes(x = species, y = n, fill = island)) +
+  geom_col(position = "dodge") +
+  colorspace::scale_fill_discrete_qualitative(palette = "Set 2") +
+  labs(x = NULL, y = "Count") +
+  theme_minimal(base_size = 11)
+
+# Edit the letter grid below to rearrange panels.
+# Letters refer to plots in the order they are added (A = p1, B = p2, C = p3).
+layout <- "
+AB
+CC
+"
+
+p1 + p2 + p3 +
+  patchwork::plot_layout(design = layout, guides = "collect") +
+  patchwork::plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom",
+        plot.tag = element_text(face = "bold", size = 12))
+```
+
+:::
 
 The `&` operator applies its right-hand side to every subplot, including those added later — use it for global theme settings like legend position and tag formatting. The `+` operator applies only to the most recently added subplot.
 

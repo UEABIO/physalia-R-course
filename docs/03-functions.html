@@ -566,6 +566,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
 <li><a href="#a-note-on-environments" id="toc-a-note-on-environments" class="nav-link" data-scroll-target="#a-note-on-environments">A note on environments</a></li>
   <li><a href="#arguments-and-defaults" id="toc-arguments-and-defaults" class="nav-link" data-scroll-target="#arguments-and-defaults">Arguments and defaults</a></li>
+  <li><a href="#argument-order-and-naming" id="toc-argument-order-and-naming" class="nav-link" data-scroll-target="#argument-order-and-naming">Argument order and naming</a></li>
+  <li><a href="#wrapper-functions-and-passing-arguments-with" id="toc-wrapper-functions-and-passing-arguments-with" class="nav-link" data-scroll-target="#wrapper-functions-and-passing-arguments-with">Wrapper functions and passing arguments with …</a></li>
   <li><a href="#documenting-a-function" id="toc-documenting-a-function" class="nav-link" data-scroll-target="#documenting-a-function">Documenting a function</a></li>
   <li><a href="#flow-control-and-a-vectorisation-trap" id="toc-flow-control-and-a-vectorisation-trap" class="nav-link" data-scroll-target="#flow-control-and-a-vectorisation-trap">Flow control, and a vectorisation trap</a></li>
   </ul>
@@ -614,7 +616,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><p><em>Roughly 75 minutes. The first 25 teach what a function is; the rest apply it to the running example, turning a messy script into organised, tested code. The testing coda at the end is the part to shorten if time is short.</em></p>
+</header><p><em>Roughly 75 minutes. The first 25 teach what a function is; the rest apply it to the running example, turning a messy script into organised, tested code.</em></p>
 <section id="part-a-the-anatomy-of-a-function" class="level2"><h2 class="anchored" data-anchor-id="part-a-the-anatomy-of-a-function">Part A: the anatomy of a function</h2>
 <p>R lets you define your own functions with <code>function()</code>. The shape is always the same: a name, some arguments, a body, and a returned value.</p>
 <div class="cell" data-layout-align="center">
@@ -666,15 +668,39 @@ Note
 <span id="cb3-9"><a href="#cb3-9"></a>x       <span class="co"># still 1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This isolation is a feature: a function’s behaviour depends only on its arguments, not on whatever happens to be lying around in your session. That is precisely why functions are more reproducible than loose script lines.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The superassignment operator
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The superassigment operator or <code>&lt;&lt;-</code> is used for <strong>lexical scoping</strong> it <em>will</em> modify the variable in a parent environment. If no such variable exists it will create one!</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a>fn <span class="ot">&lt;-</span> <span class="cf">function</span>(y) {</span>
+<span id="cb4-4"><a href="#cb4-4"></a>  x <span class="ot">&lt;&lt;-</span> x <span class="sc">*</span> <span class="dv">2</span>   <span class="co"># a local copy; the global x is untouched</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a>  x <span class="sc">+</span> y</span>
+<span id="cb4-6"><a href="#cb4-6"></a>}</span>
+<span id="cb4-7"><a href="#cb4-7"></a></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="fu">fn</span>(<span class="dv">2</span>)   <span class="co"># 4</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a>x       <span class="co"># now 2! </span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
 </section><section id="arguments-and-defaults" class="level3"><h3 class="anchored" data-anchor-id="arguments-and-defaults">Arguments and defaults</h3>
 <p>An argument can have a default, used when the caller does not supply one:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>greet <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">name =</span> <span class="st">"you"</span>) {</span>
-<span id="cb4-2"><a href="#cb4-2"></a>  <span class="fu">paste</span>(<span class="st">"Good morning,"</span>, name)</span>
-<span id="cb4-3"><a href="#cb4-3"></a>}</span>
-<span id="cb4-4"><a href="#cb4-4"></a></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="fu">greet</span>()         <span class="co"># "Good morning, you"</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="fu">greet</span>(<span class="st">"Phil"</span>)    <span class="co"># "Good morning, Sam"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>greet <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">name =</span> <span class="st">"you"</span>) {</span>
+<span id="cb5-2"><a href="#cb5-2"></a>  <span class="fu">paste</span>(<span class="st">"Good morning,"</span>, name)</span>
+<span id="cb5-3"><a href="#cb5-3"></a>}</span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="fu">greet</span>()         <span class="co"># "Good morning, you"</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="fu">greet</span>(<span class="st">"Phil"</span>)    <span class="co"># "Good morning, Phil"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="task">
 <div class="task-header">
@@ -690,66 +716,106 @@ Note
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>fahr_to_celsius <span class="ot">&lt;-</span> <span class="cf">function</span>(fahr) {</span>
-<span id="cb5-2"><a href="#cb5-2"></a>  (fahr <span class="sc">-</span> <span class="dv">32</span>) <span class="sc">*</span> <span class="dv">5</span> <span class="sc">/</span> <span class="dv">9</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>fahr_to_celsius <span class="ot">&lt;-</span> <span class="cf">function</span>(fahr) {</span>
+<span id="cb6-2"><a href="#cb6-2"></a>  (fahr <span class="sc">-</span> <span class="dv">32</span>) <span class="sc">*</span> <span class="dv">5</span> <span class="sc">/</span> <span class="dv">9</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+</div>
+</section><section id="argument-order-and-naming" class="level3"><h3 class="anchored" data-anchor-id="argument-order-and-naming">Argument order and naming</h3>
+<p>Arguments are matched first by exact name, then by position. This means the order you write arguments in the call matters only when you rely on position rather than naming them.</p>
+<p>power &lt;- function(base, exponent) { base ^ exponent }</p>
+<p>power(2, 3) # 8, matched by position power(exponent = 3, base = 2) # 8, matched by name, order irrelevant power(2, exponent = 3) # 8, mixed: name some, position the rest</p>
+<p>Naming arguments at the call site makes code easier to read and protects against errors when a function has several parameters. Relying on position is acceptable only for the first one or two well-known arguments.</p>
+<div class="task">
+<div class="task-header">
+<p>Argument order</p>
+</div>
+<div class="task-container">
+<p>Using the <code><a href="https://rdrr.io/r/stats/power.html">power()</a></code> function above, write three calls that all return 8 but use position matching, name matching, and a mix of the two.</p>
+</div>
+</div>
+</section><section id="wrapper-functions-and-passing-arguments-with" class="level3"><h3 class="anchored" data-anchor-id="wrapper-functions-and-passing-arguments-with">Wrapper functions and passing arguments with …</h3>
+<p>A wrapper function calls another function, often to set sensible defaults or simplify a common use. The <code>...</code> (dots) construct collects any extra arguments and forwards them unchanged to the inner function. This lets a wrapper expose the full flexibility of the function it wraps without listing every argument.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># A wrapper around mean() that removes missing values by default,</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="co"># but still forwards any other arguments the caller supplies.</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>mean_clean <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...) {</span>
+<span id="cb7-4"><a href="#cb7-4"></a>  <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>, ...)</span>
+<span id="cb7-5"><a href="#cb7-5"></a>}</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a>v <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">100</span>, <span class="cn">NA</span>)</span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="fu">mean_clean</span>(v)                <span class="co"># 2.333..., na.rm handled for you</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="fu">mean_clean</span>(v, <span class="at">trim =</span> <span class="fl">0.25</span>)   <span class="co"># trim passed through via ...</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="task">
+<div class="task-header">
+<p>A rounding wrapper</p>
+</div>
+<div class="task-container">
+<p>Write a function <code>round2()</code> that wraps <code><a href="https://rdrr.io/r/base/Round.html">round()</a></code> and uses <code>digits = 2</code> as its default, while still allowing the caller to override <code>digits</code> or pass any other argument through with <code>...</code>.</p>
+</div>
+</div>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<p>round2 &lt;- function(x, digits = 2, …) { round(x, digits = digits, …) }</p>
 </div>
 </section><section id="documenting-a-function" class="level3"><h3 class="anchored" data-anchor-id="documenting-a-function">Documenting a function</h3>
 <p>A function with no documentation is a puzzle for your future self. The lightweight habit is a comment block stating what the function does, what each argument is, and what it returns. The fuller habit, which we adopt for functions that live in <code>R/functions/</code>, is <strong>roxygen2</strong> format: documentation lines beginning <code>#'</code>, placed directly above the function.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">#' Convert Fahrenheit to Celsius</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="co">#'</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="co">#'  # a roxygen2 comment line (note the apostrophe)</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="co">#' @param fahr Numeric. Temperature in degrees Fahrenheit.   # documents one argument</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="co">#' @return Numeric. Temperature in degrees Celsius.          # documents what comes back</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="co">#' @examples                                                 # starts an examples block</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="co">#' fahr_to_celsius(32)   # 0</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a>fahr_to_celsius <span class="ot">&lt;-</span> <span class="cf">function</span>(fahr) {</span>
-<span id="cb6-9"><a href="#cb6-9"></a>  (fahr <span class="sc">-</span> <span class="dv">32</span>) <span class="sc">*</span> <span class="dv">5</span> <span class="sc">/</span> <span class="dv">9</span></span>
-<span id="cb6-10"><a href="#cb6-10"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">#' Convert Fahrenheit to Celsius</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="co">#'</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="co">#'  # a roxygen2 comment line (note the apostrophe)</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="co">#' @param fahr Numeric. Temperature in degrees Fahrenheit.   # documents one argument</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="co">#' @return Numeric. Temperature in degrees Celsius.          # documents what comes back</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="co">#' @examples                                                 # starts an examples block</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co">#' fahr_to_celsius(32)   # 0</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a>fahr_to_celsius <span class="ot">&lt;-</span> <span class="cf">function</span>(fahr) {</span>
+<span id="cb8-9"><a href="#cb8-9"></a>  (fahr <span class="sc">-</span> <span class="dv">32</span>) <span class="sc">*</span> <span class="dv">5</span> <span class="sc">/</span> <span class="dv">9</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>You do not need to build a package or run <code>roxygenise()</code> to benefit from this. The block is readable as plain text, and writing it forces you to state the function’s contract: what it expects and what it promises.</p>
 </section><section id="flow-control-and-a-vectorisation-trap" class="level3"><h3 class="anchored" data-anchor-id="flow-control-and-a-vectorisation-trap">Flow control, and a vectorisation trap</h3>
 <p>Functions often need to choose between values. The base tools are <code>if</code>/<code>else</code> for a single condition and <code><a href="https://rdrr.io/r/base/ifelse.html">ifelse()</a></code> (or the tidyverse <code><a href="https://dplyr.tidyverse.org/reference/if_else.html">dplyr::if_else()</a></code>) for a vectorised one.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>a <span class="ot">&lt;-</span> <span class="dv">4</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a></span>
-<span id="cb7-3"><a href="#cb7-3"></a>b <span class="ot">&lt;-</span> <span class="dv">5</span></span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a><span class="cf">if</span> (a <span class="sc">&gt;</span> b) <span class="dv">20</span> <span class="cf">else</span> <span class="dv">10</span>      <span class="co"># 10 -- a single TRUE/FALSE only</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>a <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a></span>
+<span id="cb9-3"><a href="#cb9-3"></a>b <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="cf">if</span> (a <span class="sc">&gt;</span> b) <span class="dv">20</span> <span class="cf">else</span> <span class="dv">10</span>      <span class="co"># 10 -- a single TRUE/FALSE only</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The trap: <code>if</code> evaluates only the first element of a vector and, in current R, errors if given a longer one. For element-wise choices use <code><a href="https://rdrr.io/r/base/ifelse.html">ifelse()</a></code>:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="fu">if_else</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>) <span class="sc">&gt;</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">0</span>), <span class="st">"yes"</span>, <span class="st">"no"</span>)   <span class="co"># "no" "yes" "yes"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="fu">if_else</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>) <span class="sc">&gt;</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">1</span>, <span class="dv">0</span>), <span class="st">"yes"</span>, <span class="st">"no"</span>)   <span class="co"># "no" "yes" "yes"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>For several conditions, <code><a href="https://dplyr.tidyverse.org/reference/case-and-replace-when.html">dplyr::case_when()</a></code> is far clearer than nested <code><a href="https://rdrr.io/r/base/ifelse.html">ifelse()</a></code>:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>temperature <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">25</span>, <span class="dv">5</span>, <span class="dv">30</span>, <span class="dv">15</span>)</span>
-<span id="cb9-2"><a href="#cb9-2"></a></span>
-<span id="cb9-3"><a href="#cb9-3"></a>dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
-<span id="cb9-4"><a href="#cb9-4"></a>  temperature <span class="sc">&lt;</span>  <span class="dv">10</span>                      <span class="sc">~</span> <span class="st">"Cold"</span>,</span>
-<span id="cb9-5"><a href="#cb9-5"></a>  temperature <span class="sc">&gt;=</span> <span class="dv">10</span> <span class="sc">&amp;</span> temperature <span class="sc">&lt;</span> <span class="dv">25</span>   <span class="sc">~</span> <span class="st">"Moderate"</span>,</span>
-<span id="cb9-6"><a href="#cb9-6"></a>  temperature <span class="sc">&gt;=</span> <span class="dv">25</span>                      <span class="sc">~</span> <span class="st">"Hot"</span>,</span>
-<span id="cb9-7"><a href="#cb9-7"></a>  <span class="at">.default =</span> <span class="st">"Unknown"</span></span>
-<span id="cb9-8"><a href="#cb9-8"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>temperature <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">25</span>, <span class="dv">5</span>, <span class="dv">30</span>, <span class="dv">15</span>)</span>
+<span id="cb11-2"><a href="#cb11-2"></a></span>
+<span id="cb11-3"><a href="#cb11-3"></a>dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
+<span id="cb11-4"><a href="#cb11-4"></a>  temperature <span class="sc">&lt;</span>  <span class="dv">10</span>                      <span class="sc">~</span> <span class="st">"Cold"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5"></a>  temperature <span class="sc">&gt;=</span> <span class="dv">10</span> <span class="sc">&amp;</span> temperature <span class="sc">&lt;</span> <span class="dv">25</span>   <span class="sc">~</span> <span class="st">"Moderate"</span>,</span>
+<span id="cb11-6"><a href="#cb11-6"></a>  temperature <span class="sc">&gt;=</span> <span class="dv">25</span>                      <span class="sc">~</span> <span class="st">"Hot"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7"></a>  <span class="at">.default =</span> <span class="st">"Unknown"</span></span>
+<span id="cb11-8"><a href="#cb11-8"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>A worked conditional function: report a p-value in the conventional style, “p &lt; 0.001” below the threshold and “p = 0.XXX” otherwise. The naive version uses <code>if</code> and breaks on a vector; the fix is the vectorised <code>if_else()</code>.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="co">#' Format a p-value for reporting</span></span>
-<span id="cb10-2"><a href="#cb10-2"></a><span class="co">#'</span></span>
-<span id="cb10-3"><a href="#cb10-3"></a><span class="co">#' @param p Numeric. P-value(s) to format.</span></span>
-<span id="cb10-4"><a href="#cb10-4"></a><span class="co">#' @param digits Integer. Decimal places. Default 3.</span></span>
-<span id="cb10-5"><a href="#cb10-5"></a><span class="co">#' @return Character. "p &lt; 0.001" or "p = X.XXX".</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a>report_p <span class="ot">&lt;-</span> <span class="cf">function</span>(p, <span class="at">digits =</span> <span class="dv">3</span>) {</span>
-<span id="cb10-7"><a href="#cb10-7"></a>  dplyr<span class="sc">::</span><span class="fu">if_else</span>(</span>
-<span id="cb10-8"><a href="#cb10-8"></a>    p <span class="sc">&lt;</span> <span class="fl">0.001</span>,</span>
-<span id="cb10-9"><a href="#cb10-9"></a>    <span class="st">"p &lt; 0.001"</span>,</span>
-<span id="cb10-10"><a href="#cb10-10"></a>    <span class="fu">paste</span>(<span class="st">"p ="</span>, <span class="fu">round</span>(p, digits))</span>
-<span id="cb10-11"><a href="#cb10-11"></a>  )</span>
-<span id="cb10-12"><a href="#cb10-12"></a>}</span>
-<span id="cb10-13"><a href="#cb10-13"></a></span>
-<span id="cb10-14"><a href="#cb10-14"></a><span class="fu">report_p</span>(<span class="fu">c</span>(<span class="fl">0.0005</span>, <span class="fl">0.045</span>))   <span class="co"># "p &lt; 0.001"  "p = 0.045"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="co">#' Format a p-value for reporting</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="co">#'</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="co">#' @param p Numeric. P-value(s) to format.</span></span>
+<span id="cb12-4"><a href="#cb12-4"></a><span class="co">#' @param digits Integer. Decimal places. Default 3.</span></span>
+<span id="cb12-5"><a href="#cb12-5"></a><span class="co">#' @return Character. "p &lt; 0.001" or "p = X.XXX".</span></span>
+<span id="cb12-6"><a href="#cb12-6"></a>report_p <span class="ot">&lt;-</span> <span class="cf">function</span>(p, <span class="at">digits =</span> <span class="dv">3</span>) {</span>
+<span id="cb12-7"><a href="#cb12-7"></a>  dplyr<span class="sc">::</span><span class="fu">if_else</span>(</span>
+<span id="cb12-8"><a href="#cb12-8"></a>    p <span class="sc">&lt;</span> <span class="fl">0.001</span>,</span>
+<span id="cb12-9"><a href="#cb12-9"></a>    <span class="st">"p &lt; 0.001"</span>,</span>
+<span id="cb12-10"><a href="#cb12-10"></a>    <span class="fu">paste</span>(<span class="st">"p ="</span>, <span class="fu">round</span>(p, digits))</span>
+<span id="cb12-11"><a href="#cb12-11"></a>  )</span>
+<span id="cb12-12"><a href="#cb12-12"></a>}</span>
+<span id="cb12-13"><a href="#cb12-13"></a></span>
+<span id="cb12-14"><a href="#cb12-14"></a><span class="fu">report_p</span>(<span class="fu">c</span>(<span class="fl">0.0005</span>, <span class="fl">0.045</span>))   <span class="co"># "p &lt; 0.001"  "p = 0.045"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -767,61 +833,62 @@ Note
 </section></section><section id="part-b-the-starting-point" class="level2"><h2 class="anchored" data-anchor-id="part-b-the-starting-point">Part B: the starting point</h2>
 <p>We now meet the analysis the rest of the day improves. Set up the data file once:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>))) <span class="fu">dir.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>))</span>
-<span id="cb11-2"><a href="#cb11-2"></a></span>
-<span id="cb11-3"><a href="#cb11-3"></a>readr<span class="sc">::</span><span class="fu">write_csv</span>(</span>
-<span id="cb11-4"><a href="#cb11-4"></a>  palmerpenguins<span class="sc">::</span>penguins,</span>
-<span id="cb11-5"><a href="#cb11-5"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>)</span>
-<span id="cb11-6"><a href="#cb11-6"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>))) <span class="fu">dir.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>))</span>
+<span id="cb13-2"><a href="#cb13-2"></a></span>
+<span id="cb13-3"><a href="#cb13-3"></a>readr<span class="sc">::</span><span class="fu">write_csv</span>(</span>
+<span id="cb13-4"><a href="#cb13-4"></a>  palmerpenguins<span class="sc">::</span>penguins_raw,</span>
+<span id="cb13-5"><a href="#cb13-5"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>)</span>
+<span id="cb13-6"><a href="#cb13-6"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The goal, restated: fit <code>body_mass_g ~ flipper_length_mm</code> for each species, with a coefficient table and a multi-panel figure. Here is how that analysis is often written, by copy-paste:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="co"># analysis.R -- pre-refactor</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a></span>
-<span id="cb12-3"><a href="#cb12-3"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb12-4"><a href="#cb12-4"></a><span class="fu">library</span>(broom)</span>
-<span id="cb12-5"><a href="#cb12-5"></a><span class="fu">library</span>(here)</span>
-<span id="cb12-6"><a href="#cb12-6"></a></span>
-<span id="cb12-7"><a href="#cb12-7"></a>penguins_raw <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>),</span>
-<span id="cb12-8"><a href="#cb12-8"></a>                                <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb12-9"><a href="#cb12-9"></a></span>
-<span id="cb12-10"><a href="#cb12-10"></a>penguins_clean <span class="ot">&lt;-</span> penguins_raw <span class="sc">|&gt;</span></span>
-<span id="cb12-11"><a href="#cb12-11"></a>  tidyr<span class="sc">::</span><span class="fu">drop_na</span>(body_mass_g, flipper_length_mm, species)</span>
-<span id="cb12-12"><a href="#cb12-12"></a></span>
-<span id="cb12-13"><a href="#cb12-13"></a><span class="co"># Adelie ----</span></span>
-<span id="cb12-14"><a href="#cb12-14"></a>adelie <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Adelie"</span>)</span>
-<span id="cb12-15"><a href="#cb12-15"></a>mod_adelie <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> adelie)</span>
-<span id="cb12-16"><a href="#cb12-16"></a>coefs_adelie <span class="ot">&lt;-</span> broom<span class="sc">::</span><span class="fu">tidy</span>(mod_adelie, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
-<span id="cb12-17"><a href="#cb12-17"></a>coefs_adelie<span class="sc">$</span>species <span class="ot">&lt;-</span> <span class="st">"Adelie"</span></span>
-<span id="cb12-18"><a href="#cb12-18"></a>p_adelie <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(adelie,</span>
-<span id="cb12-19"><a href="#cb12-19"></a>                            <span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
-<span id="cb12-20"><a href="#cb12-20"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb12-21"><a href="#cb12-21"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
-<span id="cb12-22"><a href="#cb12-22"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Adelie"</span>, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>)</span>
-<span id="cb12-23"><a href="#cb12-23"></a></span>
-<span id="cb12-24"><a href="#cb12-24"></a><span class="co"># Gentoo ----</span></span>
-<span id="cb12-25"><a href="#cb12-25"></a>gentoo <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"gentoo"</span>)</span>
-<span id="cb12-26"><a href="#cb12-26"></a>mod_gentoo <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> gentoo)</span>
-<span id="cb12-27"><a href="#cb12-27"></a>coefs_gentoo <span class="ot">&lt;-</span> broom<span class="sc">::</span><span class="fu">tidy</span>(mod_gentoo, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.90</span>)</span>
-<span id="cb12-28"><a href="#cb12-28"></a>coefs_gentoo<span class="sc">$</span>species <span class="ot">&lt;-</span> <span class="st">"Gentoo"</span></span>
-<span id="cb12-29"><a href="#cb12-29"></a>p_gentoo <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(gentoo,</span>
-<span id="cb12-30"><a href="#cb12-30"></a>                            <span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
-<span id="cb12-31"><a href="#cb12-31"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb12-32"><a href="#cb12-32"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
-<span id="cb12-33"><a href="#cb12-33"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Gentoo"</span>, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>)</span>
-<span id="cb12-34"><a href="#cb12-34"></a></span>
-<span id="cb12-35"><a href="#cb12-35"></a><span class="co"># Chinstrap ----</span></span>
-<span id="cb12-36"><a href="#cb12-36"></a>chinstrap <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Chinstrap"</span>)</span>
-<span id="cb12-37"><a href="#cb12-37"></a>mod_chinstrap <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> chinstrap)</span>
-<span id="cb12-38"><a href="#cb12-38"></a>coefs_chinstrap <span class="ot">&lt;-</span> broom<span class="sc">::</span><span class="fu">tidy</span>(mod_chinstrap, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
-<span id="cb12-39"><a href="#cb12-39"></a>coefs_chinstrap<span class="sc">$</span>species <span class="ot">&lt;-</span> <span class="st">"Chinstrap"</span></span>
-<span id="cb12-40"><a href="#cb12-40"></a>p_chinstrap <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(chinstrap,</span>
-<span id="cb12-41"><a href="#cb12-41"></a>                               <span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
-<span id="cb12-42"><a href="#cb12-42"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb12-43"><a href="#cb12-43"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
-<span id="cb12-44"><a href="#cb12-44"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Chinstrap"</span>, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>)</span>
-<span id="cb12-45"><a href="#cb12-45"></a></span>
-<span id="cb12-46"><a href="#cb12-46"></a>all_coefs <span class="ot">&lt;-</span> <span class="fu">rbind</span>(coefs_adelie, coefs_gentoo, coefs_chinstrap)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># analysis.R -- pre-refactor</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a></span>
+<span id="cb14-3"><a href="#cb14-3"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="fu">library</span>(broom)</span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="fu">library</span>(here)</span>
+<span id="cb14-6"><a href="#cb14-6"></a></span>
+<span id="cb14-7"><a href="#cb14-7"></a>penguins_raw <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"penguins.csv"</span>),</span>
+<span id="cb14-8"><a href="#cb14-8"></a>                                <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb14-9"><a href="#cb14-9"></a></span>
+<span id="cb14-10"><a href="#cb14-10"></a>penguins_clean <span class="ot">&lt;-</span> penguins_raw <span class="sc">|&gt;</span></span>
+<span id="cb14-11"><a href="#cb14-11"></a>  janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb14-12"><a href="#cb14-12"></a>  tidyr<span class="sc">::</span><span class="fu">drop_na</span>(body_mass_g, flipper_length_mm, species)</span>
+<span id="cb14-13"><a href="#cb14-13"></a></span>
+<span id="cb14-14"><a href="#cb14-14"></a><span class="co"># Adelie ----</span></span>
+<span id="cb14-15"><a href="#cb14-15"></a>adelie <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Adelie"</span>)</span>
+<span id="cb14-16"><a href="#cb14-16"></a>mod_adelie <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> adelie)</span>
+<span id="cb14-17"><a href="#cb14-17"></a>coefs_adelie <span class="ot">&lt;-</span> broom<span class="sc">::</span><span class="fu">tidy</span>(mod_adelie, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
+<span id="cb14-18"><a href="#cb14-18"></a>coefs_adelie<span class="sc">$</span>species <span class="ot">&lt;-</span> <span class="st">"Adelie"</span></span>
+<span id="cb14-19"><a href="#cb14-19"></a>p_adelie <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(adelie,</span>
+<span id="cb14-20"><a href="#cb14-20"></a>                            <span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
+<span id="cb14-21"><a href="#cb14-21"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb14-22"><a href="#cb14-22"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb14-23"><a href="#cb14-23"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Adelie"</span>, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>)</span>
+<span id="cb14-24"><a href="#cb14-24"></a></span>
+<span id="cb14-25"><a href="#cb14-25"></a><span class="co"># Gentoo ----</span></span>
+<span id="cb14-26"><a href="#cb14-26"></a>gentoo <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"gentoo"</span>)</span>
+<span id="cb14-27"><a href="#cb14-27"></a>mod_gentoo <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> gentoo)</span>
+<span id="cb14-28"><a href="#cb14-28"></a>coefs_gentoo <span class="ot">&lt;-</span> broom<span class="sc">::</span><span class="fu">tidy</span>(mod_gentoo, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.90</span>)</span>
+<span id="cb14-29"><a href="#cb14-29"></a>coefs_gentoo<span class="sc">$</span>species <span class="ot">&lt;-</span> <span class="st">"Gentoo"</span></span>
+<span id="cb14-30"><a href="#cb14-30"></a>p_gentoo <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(gentoo,</span>
+<span id="cb14-31"><a href="#cb14-31"></a>                            <span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
+<span id="cb14-32"><a href="#cb14-32"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb14-33"><a href="#cb14-33"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb14-34"><a href="#cb14-34"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Gentoo"</span>, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>)</span>
+<span id="cb14-35"><a href="#cb14-35"></a></span>
+<span id="cb14-36"><a href="#cb14-36"></a><span class="co"># Chinstrap ----</span></span>
+<span id="cb14-37"><a href="#cb14-37"></a>chinstrap <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Chinstrap"</span>)</span>
+<span id="cb14-38"><a href="#cb14-38"></a>mod_chinstrap <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> chinstrap)</span>
+<span id="cb14-39"><a href="#cb14-39"></a>coefs_chinstrap <span class="ot">&lt;-</span> broom<span class="sc">::</span><span class="fu">tidy</span>(mod_chinstrap, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
+<span id="cb14-40"><a href="#cb14-40"></a>coefs_chinstrap<span class="sc">$</span>species <span class="ot">&lt;-</span> <span class="st">"Chinstrap"</span></span>
+<span id="cb14-41"><a href="#cb14-41"></a>p_chinstrap <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(chinstrap,</span>
+<span id="cb14-42"><a href="#cb14-42"></a>                               <span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
+<span id="cb14-43"><a href="#cb14-43"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb14-44"><a href="#cb14-44"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb14-45"><a href="#cb14-45"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Chinstrap"</span>, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>)</span>
+<span id="cb14-46"><a href="#cb14-46"></a></span>
+<span id="cb14-47"><a href="#cb14-47"></a>all_coefs <span class="ot">&lt;-</span> <span class="fu">rbind</span>(coefs_adelie, coefs_gentoo, coefs_chinstrap)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="activity-find-the-bugs" class="level3"><h3 class="anchored" data-anchor-id="activity-find-the-bugs">Activity: find the bugs</h3>
 <div class="task">
@@ -872,25 +939,25 @@ Note
 <p>The principled refactor: find what <em>varies</em> across the repeated blocks and make it an argument; everything that <em>stays the same</em> becomes the function body. Across the three species blocks, only the species name truly varies. The formula, the confidence level and the tidying are constant.</p>
 <section id="stage-1-extract-what-varies" class="level3"><h3 class="anchored" data-anchor-id="stage-1-extract-what-varies">Stage 1: extract what varies</h3>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># R/functions/modelling_functions.R</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a></span>
-<span id="cb13-3"><a href="#cb13-3"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp) {</span>
-<span id="cb13-4"><a href="#cb13-4"></a>  data_sp <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(data, species <span class="sc">==</span> sp)</span>
-<span id="cb13-5"><a href="#cb13-5"></a>  model   <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data_sp)</span>
-<span id="cb13-6"><a href="#cb13-6"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb13-7"><a href="#cb13-7"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co"># R/functions/modelling_functions.R</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a></span>
+<span id="cb15-3"><a href="#cb15-3"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp) {</span>
+<span id="cb15-4"><a href="#cb15-4"></a>  data_sp <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(data, species <span class="sc">==</span> sp)</span>
+<span id="cb15-5"><a href="#cb15-5"></a>  model   <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data_sp)</span>
+<span id="cb15-6"><a href="#cb15-6"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb15-7"><a href="#cb15-7"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Check it reproduces the original before trusting it:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"modelling_functions.R"</span>))</span>
-<span id="cb14-2"><a href="#cb14-2"></a></span>
-<span id="cb14-3"><a href="#cb14-3"></a>new_coefs_adelie <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Adelie"</span>)</span>
-<span id="cb14-4"><a href="#cb14-4"></a></span>
-<span id="cb14-5"><a href="#cb14-5"></a><span class="fu">all.equal</span>(</span>
-<span id="cb14-6"><a href="#cb14-6"></a>  new_coefs_adelie,</span>
-<span id="cb14-7"><a href="#cb14-7"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(mod_adelie, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb14-8"><a href="#cb14-8"></a>)</span>
-<span id="cb14-9"><a href="#cb14-9"></a><span class="co"># [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"modelling_functions.R"</span>))</span>
+<span id="cb16-2"><a href="#cb16-2"></a></span>
+<span id="cb16-3"><a href="#cb16-3"></a>new_coefs_adelie <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Adelie"</span>)</span>
+<span id="cb16-4"><a href="#cb16-4"></a></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="fu">all.equal</span>(</span>
+<span id="cb16-6"><a href="#cb16-6"></a>  new_coefs_adelie,</span>
+<span id="cb16-7"><a href="#cb16-7"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(mod_adelie, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-8"><a href="#cb16-8"></a>)</span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="co"># [1] TRUE</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code><a href="https://rdrr.io/r/base/all.equal.html">all.equal()</a></code> returns <code>TRUE</code> on a match (within numerical tolerance) or a description of the differences otherwise. It is the right quick interactive check when refactoring.</p>
 </section><section id="stage-2-handle-the-obvious-failure" class="level3"><h3 class="anchored" data-anchor-id="stage-2-handle-the-obvious-failure">Stage 2: handle the obvious failure</h3>
@@ -900,21 +967,21 @@ Note
 <p>This error points at the model, not the filter where the real problem was. Without input validation, you are left hunting backwards through the code to find why the data is empty.</p>
 <p>A well-designed function catches this <em>before</em> anything goes wrong, using <code><a href="https://rdrr.io/r/base/stop.html">stop()</a></code> to abort immediately with a message that names the actual problem:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp) {</span>
-<span id="cb16-2"><a href="#cb16-2"></a><span class="co"># Validate sp before doing any work -- fail fast with a useful messag</span></span>
-<span id="cb16-3"><a href="#cb16-3"></a>  <span class="cf">if</span> (<span class="sc">!</span>sp <span class="sc">%in%</span> <span class="fu">unique</span>(data<span class="sc">$</span>species)) {</span>
-<span id="cb16-4"><a href="#cb16-4"></a>    <span class="fu">stop</span>(</span>
-<span id="cb16-5"><a href="#cb16-5"></a>      <span class="st">"Species '"</span>, sp, <span class="st">"' is not in the data. "</span>,</span>
-<span id="cb16-6"><a href="#cb16-6"></a>      <span class="st">"Available species: "</span>,</span>
-<span id="cb16-7"><a href="#cb16-7"></a>      <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(data<span class="sc">$</span>species)), <span class="at">collapse =</span> <span class="st">", "</span>)</span>
-<span id="cb16-8"><a href="#cb16-8"></a>    )</span>
-<span id="cb16-9"><a href="#cb16-9"></a>  }</span>
-<span id="cb16-10"><a href="#cb16-10"></a></span>
-<span id="cb16-11"><a href="#cb16-11"></a>  data_sp <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(data, species <span class="sc">==</span> sp)</span>
-<span id="cb16-12"><a href="#cb16-12"></a>  model   <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data_sp)</span>
-<span id="cb16-13"><a href="#cb16-13"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb16-14"><a href="#cb16-14"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> sp, <span class="at">.before =</span> <span class="dv">1</span>)</span>
-<span id="cb16-15"><a href="#cb16-15"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp) {</span>
+<span id="cb18-2"><a href="#cb18-2"></a><span class="co"># Validate sp before doing any work -- fail fast with a useful messag</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>  <span class="cf">if</span> (<span class="sc">!</span>sp <span class="sc">%in%</span> <span class="fu">unique</span>(data<span class="sc">$</span>species)) {</span>
+<span id="cb18-4"><a href="#cb18-4"></a>    <span class="fu">stop</span>(</span>
+<span id="cb18-5"><a href="#cb18-5"></a>      <span class="st">"Species '"</span>, sp, <span class="st">"' is not in the data. "</span>,</span>
+<span id="cb18-6"><a href="#cb18-6"></a>      <span class="st">"Available species: "</span>,</span>
+<span id="cb18-7"><a href="#cb18-7"></a>      <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(data<span class="sc">$</span>species)), <span class="at">collapse =</span> <span class="st">", "</span>)</span>
+<span id="cb18-8"><a href="#cb18-8"></a>    )</span>
+<span id="cb18-9"><a href="#cb18-9"></a>  }</span>
+<span id="cb18-10"><a href="#cb18-10"></a></span>
+<span id="cb18-11"><a href="#cb18-11"></a>  data_sp <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(data, species <span class="sc">==</span> sp)</span>
+<span id="cb18-12"><a href="#cb18-12"></a>  model   <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data_sp)</span>
+<span id="cb18-13"><a href="#cb18-13"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb18-14"><a href="#cb18-14"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> sp, <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb18-15"><a href="#cb18-15"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Now the same typo produces:</p>
 <pre><code>Error in `fit_species_model()`:
@@ -929,80 +996,80 @@ Note
 <strong>It says how to fix it</strong> — lists the valid options.</li>
 </ol>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"gentoo"</span>)</span>
-<span id="cb18-2"><a href="#cb18-2"></a><span class="co"># Error in fit_species_model(penguins_clean, "gentoo"):</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a><span class="co">#   Species 'gentoo' is not in the data.</span></span>
-<span id="cb18-4"><a href="#cb18-4"></a><span class="co">#   Available species: Adelie, Chinstrap, Gentoo</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"gentoo"</span>)</span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="co"># Error in fit_species_model(penguins_clean, "gentoo"):</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="co">#   Species 'gentoo' is not in the data.</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a><span class="co">#   Available species: Adelie, Chinstrap, Gentoo</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The error arrives immediately, names the problem, and lists the valid options.</p>
 </section><section id="stage-3-document-and-add-a-default" class="level3"><h3 class="anchored" data-anchor-id="stage-3-document-and-add-a-default">Stage 3: document and add a default</h3>
 <p>Documentation describes a thing that exists, so we write it last, once the function has settled:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a><span class="co"># R/functions/modelling_functions.R</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a></span>
-<span id="cb19-3"><a href="#cb19-3"></a><span class="co">#' Fit body mass ~ flipper length for one species</span></span>
-<span id="cb19-4"><a href="#cb19-4"></a><span class="co">#'</span></span>
-<span id="cb19-5"><a href="#cb19-5"></a><span class="co">#' @param data A data frame with `species`, `body_mass_g` and</span></span>
-<span id="cb19-6"><a href="#cb19-6"></a><span class="co">#'   `flipper_length_mm`. NA rows on these should be removed first.</span></span>
-<span id="cb19-7"><a href="#cb19-7"></a><span class="co">#' @param sp Character of length 1. Species name, spelled exactly as in</span></span>
-<span id="cb19-8"><a href="#cb19-8"></a><span class="co">#'   `data$species`.</span></span>
-<span id="cb19-9"><a href="#cb19-9"></a><span class="co">#' @param conf_level Numeric in (0, 1). Confidence level for the</span></span>
-<span id="cb19-10"><a href="#cb19-10"></a><span class="co">#'   coefficient intervals. Default 0.95.</span></span>
-<span id="cb19-11"><a href="#cb19-11"></a><span class="co">#' @return A tibble of tidied coefficients with a `species` column prepended.</span></span>
-<span id="cb19-12"><a href="#cb19-12"></a><span class="co">#' @examples</span></span>
-<span id="cb19-13"><a href="#cb19-13"></a><span class="co">#' fit_species_model(penguins_clean, "Adelie")</span></span>
-<span id="cb19-14"><a href="#cb19-14"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
-<span id="cb19-15"><a href="#cb19-15"></a></span>
-<span id="cb19-16"><a href="#cb19-16"></a>  <span class="cf">if</span> (<span class="sc">!</span>sp <span class="sc">%in%</span> <span class="fu">unique</span>(data<span class="sc">$</span>species)) {</span>
-<span id="cb19-17"><a href="#cb19-17"></a>    <span class="fu">stop</span>(</span>
-<span id="cb19-18"><a href="#cb19-18"></a>      <span class="st">"Species '"</span>, sp, <span class="st">"' is not in the data. "</span>,</span>
-<span id="cb19-19"><a href="#cb19-19"></a>      <span class="st">"Available species: "</span>,</span>
-<span id="cb19-20"><a href="#cb19-20"></a>      <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(data<span class="sc">$</span>species)), <span class="at">collapse =</span> <span class="st">", "</span>)</span>
-<span id="cb19-21"><a href="#cb19-21"></a>    )</span>
-<span id="cb19-22"><a href="#cb19-22"></a>  }</span>
-<span id="cb19-23"><a href="#cb19-23"></a></span>
-<span id="cb19-24"><a href="#cb19-24"></a>  data_sp <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(data, species <span class="sc">==</span> sp)</span>
-<span id="cb19-25"><a href="#cb19-25"></a>  model   <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data_sp)</span>
-<span id="cb19-26"><a href="#cb19-26"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> conf_level) <span class="sc">|&gt;</span></span>
-<span id="cb19-27"><a href="#cb19-27"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> sp, <span class="at">.before =</span> <span class="dv">1</span>)</span>
-<span id="cb19-28"><a href="#cb19-28"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a><span class="co"># R/functions/modelling_functions.R</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a></span>
+<span id="cb21-3"><a href="#cb21-3"></a><span class="co">#' Fit body mass ~ flipper length for one species</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a><span class="co">#'</span></span>
+<span id="cb21-5"><a href="#cb21-5"></a><span class="co">#' @param data A data frame with `species`, `body_mass_g` and</span></span>
+<span id="cb21-6"><a href="#cb21-6"></a><span class="co">#'   `flipper_length_mm`. NA rows on these should be removed first.</span></span>
+<span id="cb21-7"><a href="#cb21-7"></a><span class="co">#' @param sp Character of length 1. Species name, spelled exactly as in</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a><span class="co">#'   `data$species`.</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a><span class="co">#' @param conf_level Numeric in (0, 1). Confidence level for the</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="co">#'   coefficient intervals. Default 0.95.</span></span>
+<span id="cb21-11"><a href="#cb21-11"></a><span class="co">#' @return A tibble of tidied coefficients with a `species` column prepended.</span></span>
+<span id="cb21-12"><a href="#cb21-12"></a><span class="co">#' @examples</span></span>
+<span id="cb21-13"><a href="#cb21-13"></a><span class="co">#' fit_species_model(penguins_clean, "Adelie")</span></span>
+<span id="cb21-14"><a href="#cb21-14"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
+<span id="cb21-15"><a href="#cb21-15"></a></span>
+<span id="cb21-16"><a href="#cb21-16"></a>  <span class="cf">if</span> (<span class="sc">!</span>sp <span class="sc">%in%</span> <span class="fu">unique</span>(data<span class="sc">$</span>species)) {</span>
+<span id="cb21-17"><a href="#cb21-17"></a>    <span class="fu">stop</span>(</span>
+<span id="cb21-18"><a href="#cb21-18"></a>      <span class="st">"Species '"</span>, sp, <span class="st">"' is not in the data. "</span>,</span>
+<span id="cb21-19"><a href="#cb21-19"></a>      <span class="st">"Available species: "</span>,</span>
+<span id="cb21-20"><a href="#cb21-20"></a>      <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(data<span class="sc">$</span>species)), <span class="at">collapse =</span> <span class="st">", "</span>)</span>
+<span id="cb21-21"><a href="#cb21-21"></a>    )</span>
+<span id="cb21-22"><a href="#cb21-22"></a>  }</span>
+<span id="cb21-23"><a href="#cb21-23"></a></span>
+<span id="cb21-24"><a href="#cb21-24"></a>  data_sp <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(data, species <span class="sc">==</span> sp)</span>
+<span id="cb21-25"><a href="#cb21-25"></a>  model   <span class="ot">&lt;-</span> <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data_sp)</span>
+<span id="cb21-26"><a href="#cb21-26"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> conf_level) <span class="sc">|&gt;</span></span>
+<span id="cb21-27"><a href="#cb21-27"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> sp, <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb21-28"><a href="#cb21-28"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>This is the mature function: one job, validated input, a sensible default, a predictable output shape, and documentation a reader can use without running it.</p>
 </section><section id="extract-the-plot-too" class="level3"><h3 class="anchored" data-anchor-id="extract-the-plot-too">Extract the plot too</h3>
 <p>The missing-y-label bug was a plotting bug, so extract the plot the same way and write its labels once:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="co"># R/functions/plotting_functions.R</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a></span>
-<span id="cb20-3"><a href="#cb20-3"></a><span class="co">#' Scatter of body mass against flipper length for one species</span></span>
-<span id="cb20-4"><a href="#cb20-4"></a><span class="co">#'</span></span>
-<span id="cb20-5"><a href="#cb20-5"></a><span class="co">#' @param data A data frame with `species`, `body_mass_g`, `flipper_length_mm`.</span></span>
-<span id="cb20-6"><a href="#cb20-6"></a><span class="co">#' @param sp Character of length 1. Species to plot.</span></span>
-<span id="cb20-7"><a href="#cb20-7"></a><span class="co">#' @return A ggplot object.</span></span>
-<span id="cb20-8"><a href="#cb20-8"></a>make_scatter_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp) {</span>
-<span id="cb20-9"><a href="#cb20-9"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb20-10"><a href="#cb20-10"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> sp) <span class="sc">|&gt;</span></span>
-<span id="cb20-11"><a href="#cb20-11"></a>    ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(<span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
-<span id="cb20-12"><a href="#cb20-12"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb20-13"><a href="#cb20-13"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
-<span id="cb20-14"><a href="#cb20-14"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(<span class="at">title =</span> sp, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>) <span class="sc">+</span></span>
-<span id="cb20-15"><a href="#cb20-15"></a>    ggplot2<span class="sc">::</span><span class="fu">theme_minimal</span>()</span>
-<span id="cb20-16"><a href="#cb20-16"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a><span class="co"># R/functions/plotting_functions.R</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a></span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="co">#' Scatter of body mass against flipper length for one species</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="co">#'</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a><span class="co">#' @param data A data frame with `species`, `body_mass_g`, `flipper_length_mm`.</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a><span class="co">#' @param sp Character of length 1. Species to plot.</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a><span class="co">#' @return A ggplot object.</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>make_scatter_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp) {</span>
+<span id="cb22-9"><a href="#cb22-9"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb22-10"><a href="#cb22-10"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> sp) <span class="sc">|&gt;</span></span>
+<span id="cb22-11"><a href="#cb22-11"></a>    ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(<span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
+<span id="cb22-12"><a href="#cb22-12"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb22-13"><a href="#cb22-13"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb22-14"><a href="#cb22-14"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(<span class="at">title =</span> sp, <span class="at">x =</span> <span class="st">"Flipper length (mm)"</span>, <span class="at">y =</span> <span class="st">"Body mass (g)"</span>) <span class="sc">+</span></span>
+<span id="cb22-15"><a href="#cb22-15"></a>    ggplot2<span class="sc">::</span><span class="fu">theme_minimal</span>()</span>
+<span id="cb22-16"><a href="#cb22-16"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section><section id="the-refactored-script" class="level3"><h3 class="anchored" data-anchor-id="the-refactored-script">The refactored script</h3>
 <p>The three near-identical blocks collapse to three calls each:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a><span class="co"># analysis.R -- refactored</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"modelling_functions.R"</span>))</span>
-<span id="cb21-3"><a href="#cb21-3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"plotting_functions.R"</span>))</span>
-<span id="cb21-4"><a href="#cb21-4"></a></span>
-<span id="cb21-5"><a href="#cb21-5"></a>coefs_adelie    <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Adelie"</span>)</span>
-<span id="cb21-6"><a href="#cb21-6"></a>coefs_gentoo    <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Gentoo"</span>)</span>
-<span id="cb21-7"><a href="#cb21-7"></a>coefs_chinstrap <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Chinstrap"</span>)</span>
-<span id="cb21-8"><a href="#cb21-8"></a>all_coefs <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(coefs_adelie, coefs_gentoo, coefs_chinstrap)</span>
-<span id="cb21-9"><a href="#cb21-9"></a></span>
-<span id="cb21-10"><a href="#cb21-10"></a>p_adelie    <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(penguins_clean, <span class="st">"Adelie"</span>)</span>
-<span id="cb21-11"><a href="#cb21-11"></a>p_gentoo    <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(penguins_clean, <span class="st">"Gentoo"</span>)</span>
-<span id="cb21-12"><a href="#cb21-12"></a>p_chinstrap <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(penguins_clean, <span class="st">"Chinstrap"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a><span class="co"># analysis.R -- refactored</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"modelling_functions.R"</span>))</span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"plotting_functions.R"</span>))</span>
+<span id="cb23-4"><a href="#cb23-4"></a></span>
+<span id="cb23-5"><a href="#cb23-5"></a>coefs_adelie    <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Adelie"</span>)</span>
+<span id="cb23-6"><a href="#cb23-6"></a>coefs_gentoo    <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Gentoo"</span>)</span>
+<span id="cb23-7"><a href="#cb23-7"></a>coefs_chinstrap <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(penguins_clean, <span class="st">"Chinstrap"</span>)</span>
+<span id="cb23-8"><a href="#cb23-8"></a>all_coefs <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(coefs_adelie, coefs_gentoo, coefs_chinstrap)</span>
+<span id="cb23-9"><a href="#cb23-9"></a></span>
+<span id="cb23-10"><a href="#cb23-10"></a>p_adelie    <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(penguins_clean, <span class="st">"Adelie"</span>)</span>
+<span id="cb23-11"><a href="#cb23-11"></a>p_gentoo    <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(penguins_clean, <span class="st">"Gentoo"</span>)</span>
+<span id="cb23-12"><a href="#cb23-12"></a>p_chinstrap <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(penguins_clean, <span class="st">"Chinstrap"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The repetition is not gone (there are still three calls each), but every operation now lives in one named, validated, documented place. Block 4 removes the remaining repetition with iteration.</p>
 </section><section id="activity-when-not-to-write-a-function" class="level3"><h3 class="anchored" data-anchor-id="activity-when-not-to-write-a-function">Activity: when <em>not</em> to write a function</h3>
@@ -1013,7 +1080,7 @@ Note
 <div class="task-container">
 <p>Should this be turned into a function? Justify your answer.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>penguins <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Adelie"</span>) <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">n =</span> dplyr<span class="sc">::</span><span class="fu">n</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a>penguins_clean <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> <span class="st">"Adelie"</span>) <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">n =</span> dplyr<span class="sc">::</span><span class="fu">n</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -1031,6 +1098,16 @@ Solution
 <li>Function files contain <em>only</em> definitions: no <code><a href="https://rdrr.io/r/base/library.html">library()</a></code>, no <code><a href="https://rdrr.io/r/base/source.html">source()</a></code>, no top-level executable code. A function file should be sourceable with no side effects.</li>
 <li>Analysis scripts <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the function files and call the functions. Scripts orchestrate; they do not define.</li>
 </ul>
+<pre><code>my-project.Rproj
+|- data/
+|   |- raw/          # read-only; never edited by code
+|   |- processed/    # outputs of cleaning
+|- R/
+|   |- functions/    # function definitions only
+|   |- scripts/      # or numbered analysis scripts in R/
+|- outputs/
+|   |- figures/
+|   |- tables/</code></pre>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1049,68 +1126,68 @@ Note
 <p>A function factory is a function that builds and returns other functions. You give the factory some configuration, and it hands back a new function with that configuration baked in and ready to use. If you have ever written nearly identical unit converters, threshold checkers, or formatters and felt that the repetition was unnecessary, function factories are the tool for collapsing those variants into a single recipe.</p>
 <p>The mechanism rests on lexical scoping. When a function is defined inside another function, it keeps a reference to the environment in which it was born. So if the outer function had a variable called factor, the inner function can still see it long after the outer call has finished. That preserved environment is called a closure, and it is what allows the manufactured functions to remember the settings you gave them. In practice, you write the factory once and produce as many specialised functions as you need:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a><span class="co"># The factory: takes a multiplier, returns a function configured with it</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a>make_converter <span class="ot">&lt;-</span> <span class="cf">function</span>(factor) {</span>
-<span id="cb23-3"><a href="#cb23-3"></a>  <span class="cf">function</span>(x) x <span class="sc">*</span> factor</span>
-<span id="cb23-4"><a href="#cb23-4"></a>}</span>
-<span id="cb23-5"><a href="#cb23-5"></a></span>
-<span id="cb23-6"><a href="#cb23-6"></a><span class="co"># Manufacture two specialised converters from the same factory</span></span>
-<span id="cb23-7"><a href="#cb23-7"></a>g_to_kg  <span class="ot">&lt;-</span> <span class="fu">make_converter</span>(<span class="dv">1</span> <span class="sc">/</span> <span class="dv">1000</span>)</span>
-<span id="cb23-8"><a href="#cb23-8"></a>mm_to_cm <span class="ot">&lt;-</span> <span class="fu">make_converter</span>(<span class="dv">1</span> <span class="sc">/</span> <span class="dv">10</span>)</span>
-<span id="cb23-9"><a href="#cb23-9"></a></span>
-<span id="cb23-10"><a href="#cb23-10"></a>penguins <span class="sc">|&gt;</span></span>
-<span id="cb23-11"><a href="#cb23-11"></a>  <span class="fu">drop_na</span>(body_mass_g, culmen_length_mm) <span class="sc">|&gt;</span></span>
-<span id="cb23-12"><a href="#cb23-12"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb23-13"><a href="#cb23-13"></a>    <span class="at">body_mass_kg   =</span> <span class="fu">g_to_kg</span>(body_mass_g),</span>
-<span id="cb23-14"><a href="#cb23-14"></a>    <span class="at">culmen_length_cm =</span> <span class="fu">mm_to_cm</span>(culmen_length_mm)</span>
-<span id="cb23-15"><a href="#cb23-15"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb23-16"><a href="#cb23-16"></a>  <span class="fu">select</span>(species, body_mass_kg, culmen_length_cm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a><span class="co"># The factory: takes a multiplier, returns a function configured with it</span></span>
+<span id="cb26-2"><a href="#cb26-2"></a>make_converter <span class="ot">&lt;-</span> <span class="cf">function</span>(factor) {</span>
+<span id="cb26-3"><a href="#cb26-3"></a>  <span class="cf">function</span>(x) x <span class="sc">*</span> factor</span>
+<span id="cb26-4"><a href="#cb26-4"></a>}</span>
+<span id="cb26-5"><a href="#cb26-5"></a></span>
+<span id="cb26-6"><a href="#cb26-6"></a><span class="co"># Manufacture two specialised converters from the same factory</span></span>
+<span id="cb26-7"><a href="#cb26-7"></a>g_to_kg  <span class="ot">&lt;-</span> <span class="fu">make_converter</span>(<span class="dv">1</span> <span class="sc">/</span> <span class="dv">1000</span>)</span>
+<span id="cb26-8"><a href="#cb26-8"></a>mm_to_cm <span class="ot">&lt;-</span> <span class="fu">make_converter</span>(<span class="dv">1</span> <span class="sc">/</span> <span class="dv">10</span>)</span>
+<span id="cb26-9"><a href="#cb26-9"></a></span>
+<span id="cb26-10"><a href="#cb26-10"></a>penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb26-11"><a href="#cb26-11"></a>  <span class="fu">drop_na</span>(body_mass_g, culmen_length_mm) <span class="sc">|&gt;</span></span>
+<span id="cb26-12"><a href="#cb26-12"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb26-13"><a href="#cb26-13"></a>    <span class="at">body_mass_kg   =</span> <span class="fu">g_to_kg</span>(body_mass_g),</span>
+<span id="cb26-14"><a href="#cb26-14"></a>    <span class="at">culmen_length_cm =</span> <span class="fu">mm_to_cm</span>(culmen_length_mm)</span>
+<span id="cb26-15"><a href="#cb26-15"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb26-16"><a href="#cb26-16"></a>  <span class="fu">select</span>(species, body_mass_kg, culmen_length_cm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The point to internalise is that g_to_kg and mm_to_cm are distinct functions, each carrying its own value of factor bound at the moment the factory was called. That persistent enclosing environment is the closure, and a function factory is simply a function that exploits it to produce configured functions on demand, which is useful when you want to avoid repeating yourself across many similar transformations or to pre-configure behaviour (a threshold, a unit, a reference mean) once and reuse it.</p>
 </section><section id="part-e-testing-functions" class="level2"><h2 class="anchored" data-anchor-id="part-e-testing-functions">Part E: testing functions</h2>
 <p>When you refactor, you check once that the new code matches the old, then move on. Six weeks later you change the function and have no way to know whether you broke something. <strong>Tests pin down behaviour</strong>: they record what the function does today so you can change it tomorrow with confidence.</p>
 <p>A small, committed <strong>fixture</strong> keeps tests fast and reproducible:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a><span class="co"># Run once to create the fixture, then never again</span></span>
-<span id="cb24-2"><a href="#cb24-2"></a>penguins_test_subset <span class="ot">&lt;-</span> palmerpenguins<span class="sc">::</span>penguins <span class="sc">|&gt;</span></span>
-<span id="cb24-3"><a href="#cb24-3"></a>  tidyr<span class="sc">::</span><span class="fu">drop_na</span>(body_mass_g, flipper_length_mm, species) <span class="sc">|&gt;</span></span>
-<span id="cb24-4"><a href="#cb24-4"></a>  dplyr<span class="sc">::</span><span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">20</span>, <span class="at">by =</span> species)</span>
-<span id="cb24-5"><a href="#cb24-5"></a></span>
-<span id="cb24-6"><a href="#cb24-6"></a><span class="fu">dir.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb24-7"><a href="#cb24-7"></a>           <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb24-8"><a href="#cb24-8"></a><span class="fu">saveRDS</span>(penguins_test_subset,</span>
-<span id="cb24-9"><a href="#cb24-9"></a>        here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"penguins_test_subset.rds"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="co"># Run once to create the fixture, then never again</span></span>
+<span id="cb27-2"><a href="#cb27-2"></a>penguins_test_subset <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb27-3"><a href="#cb27-3"></a>  tidyr<span class="sc">::</span><span class="fu">drop_na</span>(body_mass_g, flipper_length_mm, species) <span class="sc">|&gt;</span></span>
+<span id="cb27-4"><a href="#cb27-4"></a>  dplyr<span class="sc">::</span><span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">20</span>, <span class="at">by =</span> species)</span>
+<span id="cb27-5"><a href="#cb27-5"></a></span>
+<span id="cb27-6"><a href="#cb27-6"></a><span class="fu">dir.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb27-7"><a href="#cb27-7"></a>           <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb27-8"><a href="#cb27-8"></a><span class="fu">saveRDS</span>(penguins_test_subset,</span>
+<span id="cb27-9"><a href="#cb27-9"></a>        here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"penguins_test_subset.rds"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Twenty rows per species: small enough to read and reason about, large enough to fit a regression. The test file:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a><span class="co"># tests/test_modelling_functions.R</span></span>
-<span id="cb25-2"><a href="#cb25-2"></a><span class="fu">library</span>(testthat)</span>
-<span id="cb25-3"><a href="#cb25-3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"modelling_functions.R"</span>))</span>
-<span id="cb25-4"><a href="#cb25-4"></a>test_data <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>,</span>
-<span id="cb25-5"><a href="#cb25-5"></a>                                <span class="st">"penguins_test_subset.rds"</span>))</span>
-<span id="cb25-6"><a href="#cb25-6"></a></span>
-<span id="cb25-7"><a href="#cb25-7"></a><span class="fu">test_that</span>(<span class="st">"fit_species_model has the expected columns"</span>, {</span>
-<span id="cb25-8"><a href="#cb25-8"></a>  out <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(test_data, <span class="st">"Adelie"</span>)</span>
-<span id="cb25-9"><a href="#cb25-9"></a>  <span class="fu">expect_named</span>(out, <span class="fu">c</span>(<span class="st">"species"</span>, <span class="st">"term"</span>, <span class="st">"estimate"</span>, <span class="st">"std.error"</span>,</span>
-<span id="cb25-10"><a href="#cb25-10"></a>                      <span class="st">"statistic"</span>, <span class="st">"p.value"</span>, <span class="st">"conf.low"</span>, <span class="st">"conf.high"</span>))</span>
-<span id="cb25-11"><a href="#cb25-11"></a>})</span>
-<span id="cb25-12"><a href="#cb25-12"></a></span>
-<span id="cb25-13"><a href="#cb25-13"></a><span class="fu">test_that</span>(<span class="st">"fit_species_model rejects unknown species"</span>, {</span>
-<span id="cb25-14"><a href="#cb25-14"></a>  <span class="fu">expect_error</span>(<span class="fu">fit_species_model</span>(test_data, <span class="st">"gentoo"</span>),</span>
-<span id="cb25-15"><a href="#cb25-15"></a>               <span class="at">regexp =</span> <span class="st">"not in the data"</span>)</span>
-<span id="cb25-16"><a href="#cb25-16"></a>})</span>
-<span id="cb25-17"><a href="#cb25-17"></a></span>
-<span id="cb25-18"><a href="#cb25-18"></a><span class="fu">test_that</span>(<span class="st">"conf_level controls interval width"</span>, {</span>
-<span id="cb25-19"><a href="#cb25-19"></a>  out_95 <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(test_data, <span class="st">"Adelie"</span>, <span class="at">conf_level =</span> <span class="fl">0.95</span>)</span>
-<span id="cb25-20"><a href="#cb25-20"></a>  out_99 <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(test_data, <span class="st">"Adelie"</span>, <span class="at">conf_level =</span> <span class="fl">0.99</span>)</span>
-<span id="cb25-21"><a href="#cb25-21"></a>  <span class="fu">expect_true</span>(<span class="fu">all</span>((out_99<span class="sc">$</span>conf.high <span class="sc">-</span> out_99<span class="sc">$</span>conf.low) <span class="sc">&gt;</span></span>
-<span id="cb25-22"><a href="#cb25-22"></a>                  (out_95<span class="sc">$</span>conf.high <span class="sc">-</span> out_95<span class="sc">$</span>conf.low)))</span>
-<span id="cb25-23"><a href="#cb25-23"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a><span class="co"># tests/test_modelling_functions.R</span></span>
+<span id="cb28-2"><a href="#cb28-2"></a><span class="fu">library</span>(testthat)</span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R"</span>, <span class="st">"functions"</span>, <span class="st">"modelling_functions.R"</span>))</span>
+<span id="cb28-4"><a href="#cb28-4"></a>test_data <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>,</span>
+<span id="cb28-5"><a href="#cb28-5"></a>                                <span class="st">"penguins_test_subset.rds"</span>))</span>
+<span id="cb28-6"><a href="#cb28-6"></a></span>
+<span id="cb28-7"><a href="#cb28-7"></a><span class="fu">test_that</span>(<span class="st">"fit_species_model has the expected columns"</span>, {</span>
+<span id="cb28-8"><a href="#cb28-8"></a>  out <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(test_data, <span class="st">"Adelie"</span>)</span>
+<span id="cb28-9"><a href="#cb28-9"></a>  <span class="fu">expect_named</span>(out, <span class="fu">c</span>(<span class="st">"species"</span>, <span class="st">"term"</span>, <span class="st">"estimate"</span>, <span class="st">"std.error"</span>,</span>
+<span id="cb28-10"><a href="#cb28-10"></a>                      <span class="st">"statistic"</span>, <span class="st">"p.value"</span>, <span class="st">"conf.low"</span>, <span class="st">"conf.high"</span>))</span>
+<span id="cb28-11"><a href="#cb28-11"></a>})</span>
+<span id="cb28-12"><a href="#cb28-12"></a></span>
+<span id="cb28-13"><a href="#cb28-13"></a><span class="fu">test_that</span>(<span class="st">"fit_species_model rejects unknown species"</span>, {</span>
+<span id="cb28-14"><a href="#cb28-14"></a>  <span class="fu">expect_error</span>(<span class="fu">fit_species_model</span>(test_data, <span class="st">"gentoo"</span>),</span>
+<span id="cb28-15"><a href="#cb28-15"></a>               <span class="at">regexp =</span> <span class="st">"not in the data"</span>)</span>
+<span id="cb28-16"><a href="#cb28-16"></a>})</span>
+<span id="cb28-17"><a href="#cb28-17"></a></span>
+<span id="cb28-18"><a href="#cb28-18"></a><span class="fu">test_that</span>(<span class="st">"conf_level controls interval width"</span>, {</span>
+<span id="cb28-19"><a href="#cb28-19"></a>  out_95 <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(test_data, <span class="st">"Adelie"</span>, <span class="at">conf_level =</span> <span class="fl">0.95</span>)</span>
+<span id="cb28-20"><a href="#cb28-20"></a>  out_99 <span class="ot">&lt;-</span> <span class="fu">fit_species_model</span>(test_data, <span class="st">"Adelie"</span>, <span class="at">conf_level =</span> <span class="fl">0.99</span>)</span>
+<span id="cb28-21"><a href="#cb28-21"></a>  <span class="fu">expect_true</span>(<span class="fu">all</span>((out_99<span class="sc">$</span>conf.high <span class="sc">-</span> out_99<span class="sc">$</span>conf.low) <span class="sc">&gt;</span></span>
+<span id="cb28-22"><a href="#cb28-22"></a>                  (out_95<span class="sc">$</span>conf.high <span class="sc">-</span> out_95<span class="sc">$</span>conf.low)))</span>
+<span id="cb28-23"><a href="#cb28-23"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Run them with <code><a href="https://testthat.r-lib.org/reference/test_file.html">testthat::test_file()</a></code>. No package infrastructure is needed:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_modelling_functions.R"</span>))</span>
-<span id="cb26-2"><a href="#cb26-2"></a><span class="co"># [ FAIL 0 | WARN 0 | SKIP 0 | PASS 3 ]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_modelling_functions.R"</span>))</span>
+<span id="cb29-2"><a href="#cb29-2"></a><span class="co"># [ FAIL 0 | WARN 0 | SKIP 0 | PASS 3 ]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Three principles carry most of the value:</p>
 <ul>
@@ -1139,14 +1216,14 @@ Note
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="fu">test_that</span>(<span class="st">"make_scatter_plot returns a ggplot"</span>, {</span>
-<span id="cb27-2"><a href="#cb27-2"></a>  <span class="fu">expect_true</span>(ggplot2<span class="sc">::</span><span class="fu">is.ggplot</span>(<span class="fu">make_scatter_plot</span>(test_data, <span class="st">"Adelie"</span>)))</span>
-<span id="cb27-3"><a href="#cb27-3"></a>})</span>
-<span id="cb27-4"><a href="#cb27-4"></a></span>
-<span id="cb27-5"><a href="#cb27-5"></a><span class="fu">test_that</span>(<span class="st">"make_scatter_plot only plots the requested species"</span>, {</span>
-<span id="cb27-6"><a href="#cb27-6"></a>  p <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(test_data, <span class="st">"Adelie"</span>)</span>
-<span id="cb27-7"><a href="#cb27-7"></a>  <span class="fu">expect_equal</span>(<span class="fu">unique</span>(p<span class="sc">$</span>data<span class="sc">$</span>species), <span class="st">"Adelie"</span>)</span>
-<span id="cb27-8"><a href="#cb27-8"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a><span class="fu">test_that</span>(<span class="st">"make_scatter_plot returns a ggplot"</span>, {</span>
+<span id="cb30-2"><a href="#cb30-2"></a>  <span class="fu">expect_true</span>(ggplot2<span class="sc">::</span><span class="fu">is.ggplot</span>(<span class="fu">make_scatter_plot</span>(test_data, <span class="st">"Adelie"</span>)))</span>
+<span id="cb30-3"><a href="#cb30-3"></a>})</span>
+<span id="cb30-4"><a href="#cb30-4"></a></span>
+<span id="cb30-5"><a href="#cb30-5"></a><span class="fu">test_that</span>(<span class="st">"make_scatter_plot only plots the requested species"</span>, {</span>
+<span id="cb30-6"><a href="#cb30-6"></a>  p <span class="ot">&lt;-</span> <span class="fu">make_scatter_plot</span>(test_data, <span class="st">"Adelie"</span>)</span>
+<span id="cb30-7"><a href="#cb30-7"></a>  <span class="fu">expect_equal</span>(<span class="fu">unique</span>(p<span class="sc">$</span>data<span class="sc">$</span>species), <span class="st">"Adelie"</span>)</span>
+<span id="cb30-8"><a href="#cb30-8"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
