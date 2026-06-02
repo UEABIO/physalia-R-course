@@ -66,6 +66,7 @@ A representative set of modifications, applied to a complete theme:
 #| message: false
 #| warning: false
 #| fig-height: 4
+
 penguins_complete |> 
   ggplot(aes(x = bill_length_mm, y = flipper_length_mm, colour = species)) +
   geom_point(alpha = 0.7) +
@@ -171,10 +172,10 @@ penguins_complete |>
   ggplot(aes(x = body_mass_g)) +
   geom_histogram(bins = 30, fill = "#0072B2", colour = "white") +
   scale_x_continuous(
-    breaks = scales::breaks_pretty(n = 6)
+    breaks = scales::breaks_extended(6)
   ) +
   scale_y_continuous(
-    breaks = scales::breaks_pretty(n = 5),
+    breaks = scales::breaks_extended(5),
     expand = expansion(mult = c(0, 0.05))
   ) +
   labs(x = "Body mass (g)", y = "Count") +
@@ -182,6 +183,33 @@ penguins_complete |>
 ```
 
 The `expansion(mult = c(0, 0.05))` argument adds no padding at the bottom (so bars sit on the axis) and 5% padding at the top (so the tallest bar does not touch the upper edge). This is the convention for bar charts and histograms.
+
+:::{.callout-note collapse = "true"}
+
+## Precise breaks
+
+The scales package treats your `n` argument as a target, not a guarantee. The algorithm optimises jointly over simplicity, coverage, density and legibility, and it will return fewer breaks than requested if "nicer" round numbers score better at a lower count.
+
+If you want to specify breaks precisely we can do this manually:
+
+```{r}
+
+penguins_complete |>
+  ggplot(aes(x = body_mass_g)) +
+  geom_histogram(bins = 30, fill = "#0072B2", colour = "white") +
+  scale_x_continuous(
+    breaks = seq(3000, 6000, by = 500)
+  ) +
+  scale_y_continuous(
+    breaks = c(0,1,5,10),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  labs(x = "Body mass (g)", y = "Count") +
+  theme_project()
+
+```
+
+:::
 
 ### Label functions
 
@@ -209,7 +237,7 @@ penguins_complete |>
   ggplot(aes(x = fct_reorder(island, prop), y = prop)) +
   geom_col(fill = "#0072B2") +
   scale_y_continuous(
-    breaks = scales::breaks_pretty(n = 5),
+    breaks = scales::breaks_extended(n = 5),
     labels = scales::label_percent(accuracy = 1),
     expand = expansion(mult = c(0, 0.05))
   ) +
@@ -230,6 +258,7 @@ The cumulative effect of theme and scale choices is easier to see than to descri
 #| warning: false
 #| fig-height: 4
 #| fig-width: 9
+
 base_data <- penguins_complete |> 
   count(island) |> 
   mutate(prop = n / sum(n))
@@ -243,7 +272,7 @@ p_improved <- base_data |>
   ggplot(aes(x = fct_reorder(island, prop), y = prop)) +
   geom_col(fill = "#0072B2") +
   scale_y_continuous(
-    breaks = scales::breaks_pretty(n = 5),
+    breaks = scales::breaks_extended(n = 5),
     labels = scales::label_percent(accuracy = 1),
     expand = expansion(mult = c(0, 0.05))
   ) +
@@ -276,8 +305,5 @@ scale_y_continuous(
 :::
 
 
-:::{.callout-note}
-**Break (15 minutes).** Energy is high after the participatory exercises in Blocks 1 and 2 and the coding-focused Block 3. The remaining blocks are coding-heavy and benefit from fresh attention.
-:::
 
 

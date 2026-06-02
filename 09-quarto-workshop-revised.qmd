@@ -16,13 +16,15 @@ library(here)
 #| message: false
 #| echo: false
 
-load(here::here("files", "chapter5.RData"))
+
 library(tidyverse)
 library(janitor)
 library(lubridate)
 library(gt)
 library(kableExtra)
 library(palmerpenguins)
+
+penguins <- palmerpenguins::penguins
 
 ```
 
@@ -57,9 +59,8 @@ By the end of this session, you will be able to:
 
 ---
 
-## 1. What is Quarto? (10 minutes)
+## 1. What is Quarto?
 
-**Teaching: 7 minutes | Discussion: 3 minutes**
 
 ### The Problem with Traditional Workflows
 
@@ -103,10 +104,31 @@ The second point is worth stressing during the session, because new users freque
 #| eval: true
 #| echo: false
 #| out-width: "80%"
-knitr::include_graphics("images/quarto.png")
+knitr::include_graphics("images/front_quarto.png")
 ```
 
-````
+:::{.callout-note}
+
+Untick the visual editor option for now
+
+:::
+
+
+:::{.task}
+::::{.task-header}
+Render a Document
+::::
+::::{.task-container}
+
+**File → New File → Quarto Document**
+
+Open a new Quarto file, make your new blank document look like the below and then render:
+
+````markdown
+
+---
+title: "Untitled"
+---
 
 ```{r}`r ''`
 # Analysis
@@ -128,11 +150,13 @@ The R-squared between flipper length and body mass is `` `r "\u0060r round(summa
 
 The line below the chunk uses an *inline code expression*: backticks containing `r` followed by an R expression. When the document renders, that expression is evaluated and replaced with the computed value. This is what "outputs generated from code" means in practice: change the model or the data, re-render, and the number in the sentence updates on its own. There is no figure file to re-save and no value to re-type.
 
+::::
+:::
+
 ---
 
-## 2. Basic Document Structure (15 minutes)
+## 2. Basic Document Structure
 
-**Teaching: 10 minutes | Hands-on: 5 minutes**
 
 ### The Three Parts of a Quarto Document
 
@@ -193,12 +217,13 @@ A chunk opens with three backticks and `{r}` (the language), and closes with thr
 - `#| warning: false` - Hide warnings
 - `#| message: false` - Hide messages
 
-Setting these once globally in the YAML applies them to every chunk:
+Setting these once globally in the YAML applies them to **every** chunk:
 
 ```yaml
 ---
 title: "My Report"
 format: html
+date: today
 execute:
   echo: false
   warning: false
@@ -208,17 +233,29 @@ execute:
 
 You can still override the global setting on any individual chunk. When generating a report for a non-R audience, hiding code, messages, and warnings while showing output is the usual choice.
 
-### Hands-on: Create Your First Document (5 minutes)
+### Edit your document
 
-1. **File → New File → Quarto Document**
-2. Add basic YAML, a heading, some text, and a simple code chunk
-3. Click **Render** button
+:::{.task}
+::::{.task-header}
+Edit your document
+::::
+::::{.task-container}
+
+1. Edit the basic YAML, making sure to add the `echo:false` argument
+2. Click **Render** button
+3. What changed?
+::::
+:::
+
 
 ---
 
-## 3. Essential Workflow (15 minutes)
+## 3. Essential Workflow 
 
-**Teaching: 8 minutes | Setup: 7 minutes**
+By the end of this section you will be able to lay out a project so that every
+file reference works regardless of who runs the document or where the project
+folder sits, and you will understand the one path rule that is specific to
+`.qmd` files.
 
 ### File Organization That Works
 
@@ -238,19 +275,28 @@ my-research-project/
 
 ```
 
+The principle is separation: raw inputs in `data/`, code in `scripts/`,
+outputs in `reports/`. Nothing in the project ever needs to know where on your
+machine the project lives, only where files sit relative to one another.
+
 ### Why RStudio Projects Matter
 
-✅ **With Projects:**
+Opening the `.Rproj` file sets the working directory to the project root, which
+is what lets relative paths resolve.
 
-```r
-# This works reliably
+With a Project, this works on any machine and survives the folder being moved
+or shared:
+
+```{r, eval = F, echo =T}
+
 data <- read_csv("data/raw-data.csv")
 ```
 
-❌ **Without Projects:**
+Without one, an absolute path breaks the moment the project is moved, shared,
+or opened by a collaborator:
 
-```r
-# This breaks when you move files or share the project
+```{r, eval = F, echo =T}
+# Breaks for anyone who is not you, on a folder that is not yours
 data <- read_csv("/Users/YourName/Documents/SomeFolder/data/raw-data.csv")
 ```
 
@@ -258,8 +304,11 @@ data <- read_csv("/Users/YourName/Documents/SomeFolder/data/raw-data.csv")
 
 > If you reference a file, use a **relative path** from your project root.
 
-**Good:** `"data/my-data.csv"`
+**Good:** `here("data", "my-data.csv")`
 **Bad:** `"C:/Users/Phil/Documents/Research/data/my-data.csv"`
+
+The `here` package is the most reliable way to write a relative path, for the
+reason set out next.
 
 ### A critical wrinkle: the working directory of a .qmd file
 
@@ -270,7 +319,8 @@ So if your report lives in `reports/analysis-report.qmd` and you write `read_csv
 You have two reliable options:
 
 1. Keep the `.qmd` file in the same folder as the `.Rproj` file, so relative paths match between scripts and reports.
-2. Use the `here` package, which builds paths from the project root regardless of where the `.qmd` file sits:
+
+2. Use the `here` package across all scripts, which builds paths from the project root regardless of where the `.qmd` file sits:
 
 ```{r}
 #| eval: false
@@ -278,18 +328,23 @@ library(here)
 data <- read_csv(here("data", "raw-data.csv"))
 ```
 
-Whichever you choose, be consistent across all `.R` and `.qmd` files in the project, or you will hit path errors.
+Option 2 is the more robust choice and the one assumed in the rest of this
+session, because it keeps reports in their own folder without breaking paths.
+Whichever you choose, be consistent across every `.R` and `.qmd` file in the
+project, or you will hit path errors. This wrinkle becomes concrete in the
+final exercise, where a script sourced into a report only resolves its paths
+correctly because it uses `here()`.
 
-### Setting Up Your Project (7 minutes)
+### Setting up your own project
 
-1. **File → New Project → New Directory**
-2. Choose **Quarto Project**
-3. Create folders: `data/`, `reports/`, `scripts/`
-4. **Always** open `.Rproj` file when working
+You will build a project with this structure yourself in the consolidation
+exercise (Section 9), so there is no separate setup walkthrough here. For now,
+the points to carry forward are the three-folder layout, the relative-path
+rule, and the `.qmd` working-directory trap.
 
 ---
 
-## 4. Rendering Outputs (10 minutes)
+## 4. Rendering Outputs
 
 **Teaching: 5 minutes | Practice: 5 minutes**
 
@@ -372,7 +427,13 @@ A few worth knowing:
 The full list lives at https://bootswatch.com. Setting theme: changes colours, fonts, spacing, and the appearance of code blocks, callouts, and tables all at once, which is usually all the customisation a scientific report needs.
 If you do want finer control, you can pass two themes together: a base Bootswatch theme plus a small SCSS file containing your overrides. This is genuinely useful for institutional branding but is out of scope for today; the Quarto documentation on HTML theming covers it.
 
-### Practice (5 minutes)
+### Practice
+
+:::{.task}
+::::{.task-header}
+Change the rendered output
+::::
+::::{.task-container}
 
 1. Render your document as HTML
 
@@ -382,11 +443,13 @@ If you do want finer control, you can pass two themes together: a base Bootswatc
 
 4. Try two or three different theme: values and pick one you prefer
 
+::::
+:::
+
 ---
 
-## 5. Figures & Tables (25 minutes)
+## 5. Figures & Tables 
 
-**Teaching: 15 minutes | Hands-on: 10 minutes**
 
 ### Creating Figures
 
@@ -437,7 +500,7 @@ The base plot for this section:
 ```{r}
 penguin_colours <- c("darkolivegreen4", "darkorchid3", "goldenrod1")
 
-plot <- penguins |>
+plot <- penguins |> 
   ggplot(aes(x = flipper_length_mm,
              y = body_mass_g)) +
   geom_point(aes(colour = species)) +
@@ -445,6 +508,7 @@ plot <- penguins |>
   theme_minimal(base_size = 11)
 
 ```
+
 
 **Too narrow: elements crowd the plot area.**
 
@@ -462,6 +526,7 @@ plot
 #| echo: false
 #| fig-asp: 0.8
 #| fig-width: 3
+#| 
 plot
 ```
 
@@ -562,8 +627,7 @@ The figure was drawn at 7 inches wide, but takes up only half the column on the 
 #| label: tbl-summary
 #| tbl-cap: "Summary statistics for penguin body mass by species"
 
-library(knitr)
-library(dplyr)
+
 summary_stats <- penguins |>
   summarise(
     mean_mass = round(mean(body_mass_g, na.rm = TRUE), 0),
@@ -576,6 +640,20 @@ kable(summary_stats)
 ```
 
 ````
+
+```{r, eval = T, echo = F}
+
+summary_stats <- penguins |>
+  summarise(
+    mean_mass = round(mean(body_mass_g, na.rm = TRUE), 0),
+    sd_mass = round(sd(body_mass_g, na.rm = TRUE), 0),
+    n = sum(!is.na(body_mass_g)),
+    .by = species
+  )
+
+kable(summary_stats)
+
+```
 
 Note the use of `.by = species` for per-operation grouping rather than the older `group_by()` then `ungroup()` pattern.
 
@@ -604,19 +682,46 @@ penguins |>
 
 ````
 
-### Hands-on Exercise (10 minutes)
+```{r, eval = T, echo = F}
+library(gt)
 
+penguins |>
+  head(5) |>
+  select(species, bill_length_mm, bill_depth_mm, body_mass_g) |>
+  gt() |>
+  fmt_number(columns = c(bill_length_mm, bill_depth_mm), decimals = 1) |>
+  fmt_number(columns = body_mass_g, decimals = 0) |>
+  cols_label(
+    species = "Species",
+    bill_length_mm = "Bill Length (mm)",
+    bill_depth_mm = "Bill Depth (mm)",
+    body_mass_g = "Body Mass (g)"
+  )
+
+```
+
+### Hands-on Exercise
+
+
+
+:::{.task}
+::::{.task-header}
+Create a new document or modify the existing one
+::::
+
+::::{.task-container}
 Create a document with:
 
 1. A scatter plot with proper caption
 2. A summary table
 3. Experiment with figure sizing: try changing `fig-width`, `fig-asp`, and `out-width` and observe what each one does
+::::
+:::
 
 ---
 
-## 6. Captions and cross-references (15 minutes)
+## 6. Captions and cross-references 
 
-**Teaching: 10 minutes | Practice: 5 minutes**
 
 A caption and a cross-reference do two different jobs. The caption is the text that travels with the figure or table; the cross-reference is the mechanism that lets you point to it from your prose and have the number resolve automatically. Quarto ties them together through a single chunk label, so once the label is in place both jobs are done at once.
 
@@ -693,7 +798,8 @@ A cross-reference has two halves: a chunk label carrying the correct prefix (`fi
 The caption for a figure is set through the `fig-cap` chunk option, not as an argument inside the plotting code.
 
 ````markdown
-```{r}
+
+```{r}`r ''`
 #| label: fig-correlation
 #| fig-cap: "Body mass (g) plotted against flipper length (mm) for three penguin species in the Palmer Archipelago. Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing values were excluded. Points show individual observations."
 ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
@@ -711,7 +817,8 @@ Two requirements are easy to miss. The label must begin with `fig-` for Quarto t
 For tables, the caption is set through the `tbl-cap` chunk option. The example below uses `knitr::kable`, covered in the previous section, to render the summary.
 
 ````markdown
-```{r}
+
+```{r}`r ''`
 #| label: tbl-descriptive
 #| tbl-cap: "Descriptive statistics for four penguin body measurements, reported as group means and standard deviations. Sample sizes were 151 Adelie, 68 Chinstrap, and 124 Gentoo individuals after excluding observations with missing values."
 penguins |>
@@ -740,7 +847,7 @@ Sections are cross-referenced by attaching an explicit identifier with the `sec-
 As described in @sec-methods, the data were filtered before modelling.
 ```
 
-### Practice (5 minutes)
+### Practice
 
 Using `02-qmd-figures-chunks.qmd`:
 
@@ -754,9 +861,8 @@ Using `02-qmd-figures-chunks.qmd`:
 
 ---
 
-## 7. Extensions and Templates (8 minutes)
+## 7. Extensions and Templates
 
-**Demonstration — instructor-led with files open**
 
 ### Why extensions exist
 
@@ -814,11 +920,10 @@ You will not write your own extension today, and most scientists never need to. 
 
 ---
 
-## 8. Quick Troubleshooting (7 minutes)
+## 8. Quick Troubleshooting
 
-**Teaching: 7 minutes**
 
-### Top issues for scientists
+### Top issues 
 
 #### 1. "File not found" Errors
 
@@ -866,61 +971,144 @@ This is the most common failure and follows directly from the clean-session requ
 
 ---
 
-## 9. Hands-on Exercise: Complete Scientific Report (15 minutes)
+## 9. Consolidation Exercise: From Raw Data to Sourced Report (20 minutes)
 
-**Goal:** Create a mini scientific report with all elements
+**Goal:** Reproduce a full project workflow — directory setup, a standalone
+analysis script, and a Quarto report that sources it — using a dataset you
+have not seen before.
 
-### Your Task
+This exercise deliberately combines the project-organisation rules from
+Section 3 with the figure, caption, and cross-reference skills from Sections
+5 and 6.
 
-Create a document called `scientific-report.qmd` that includes:
+### Part A — Set up a project (from the previous workshop)
 
-1. **Professional YAML header** (title, author, date, HTML format, global execute options)
-2. **Introduction section** with background text
-3. **Methods section** describing your analysis
-4. **Results section** with:
-   - A figure showing the relationship between two variables, with sensible `fig-width`, `fig-asp`, and `out-width`
-   - A summary table with descriptive statistics
-   - Proper captions and cross-references to both
-5. **Conclusion section** referencing your figure and table
-6. **Bonus:** install a journal template extension and render the report with it
+1. File → New Project → New Directory → Quarto Project.
 
-### Suggested Data
+2. Inside it, create: `data/`, `scripts/`, `reports/`.
 
-Use the Palmer penguins dataset or your own data:
+3. Confirm the `.Rproj` file sits at the project root and that you have it open.
+
+````markdown
+
+my-research-project/
+├── my-research-project.Rproj
+├── data/
+│   
+├── reports/
+
+├── scripts/
+    └── make-figure.R
+
+
+
+````
+
+### Part B — Import and explore an unfamiliar dataset
+
+1. Download the dataset
 
 ```{r}
-#| eval: false
-# Load data and packages
-library(palmerpenguins)
-library(ggplot2)
-library(dplyr)
-data(penguins)
-
-# Create figure
-ggplot(penguins, aes(x = flipper_length_mm, y = body_mass_g, colour = species)) +
-  geom_point(alpha = 0.7) +
-  geom_smooth(method = "lm") +
-  theme_minimal()
-
-# Create table
-penguins |>
-  summarise(
-    across(
-      c(bill_length_mm, body_mass_g),
-      list(mean = \(x) mean(x, na.rm = TRUE), sd = \(x) sd(x, na.rm = TRUE))
-    ),
-    .by = species
-  )
+#| eval: true
+#| echo: false
+downloadthis::download_link(
+  link = "https://raw.githubusercontent.com/UEABIO/physalia-R-course/refs/heads/2026-qmd/files/darwin.csv",
+  button_label = "Download darwin.csv",
+  button_type = "success",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
 ```
 
-### Success Criteria
 
-- Document renders without errors from a clean session
-- Figure and table have proper captions
-- Cross-references resolve to the correct numbers
-- Figure sizing is appropriate for the page
-- Professional appearance
+2. You have not seen these data before. In the console, read them in and
+   inspect them: `glimpse()`, `summary()`, and check for missing values.
+3. Identify two continuous variables whose relationship you could plot.
 
+:::{.callout-note collapse = "true"}
+
+### About the data
+
+These data come from Charles Darwin's experiments on cross- and
+self-fertilisation, published in *The Effects of Cross and Self-Fertilisation
+in the Vegetable Kingdom* (Darwin, 1876). Darwin raised maize (*Zea mays*)
+seedlings from seed produced in one of two ways: fertilised with pollen from a
+different plant (cross-fertilised) or with pollen from the same individual
+(self-fertilised). Seedling height was recorded as a proxy for fitness.
+
+Darwin's hypothesis was that inbreeding reduces fitness, so that self-fertilised
+seedlings would tend to be shorter than cross-fertilised ones.
+
+The dataset has 15 matched pairs and three columns:
+
+- `pair`   — pairing identifier (1–15); the two plants in a pair shared
+             growing conditions, so the design is paired, not independent.
+- `type`   — fertilisation method, either "Cross" or "Self".
+- `height` — seedling height in inches.
+
+
+:::
+
+### Part C — Build the figure in a standalone script
+
+Create `scripts/make-figure.R` containing only:
+
+```{r, eval = F, echo = T}
+
+    library(tidyverse)
+    library(here)
+
+    data <- read_csv(here("data", "darwin.csv"))
+
+    # Make a plot of your choosing
+    plot <- 
+
+```
+
+Note two things. The path uses `here()`, not a bare relative path —
+this is required, because when the script is sourced from a `.qmd` the
+working directory is the report's folder, not the project root. And the
+plot is *assigned to an object* (`mass_plot`); it is not printed. Sourcing
+the script creates the object but draws nothing.
+
+### Part D — Source the script into a Quarto report
+
+Create `reports/analysis-report.qmd`. In a setup chunk, source the script;
+in a later chunk, print the object with a caption and cross-reference it:
+
+````markdown
+
+```{r}`r ''`
+    #| include: false
+    source(here::here("scripts", "make-figure.R"))
+```
+
+````
+
+````markdown
+
+```{r}`r ''`
+    #| label: fig-relationship
+    #| fig-cap: "[Write a four-element legend here.]"
+    #| fig-width: 7
+    #| fig-asp: 0.8
+    
+plot
+```
+
+````
+
+    @fig-relationship shows the relationship between the two variables.
+
+### Success criteria
+
+- The report renders from a clean session (Session → Restart R, then Render).
+- The figure appears, sourced from the external script, not redefined in the .qmd.
+- The caption follows the four-element legend structure and @fig- resolves to a number.
+- Removing `here()` from the script and re-rendering reproduces the path error
+  from Section 3 — then putting it back fixes it. (Do this last, deliberately,
+  to see the trap.)
 ---
 
 ## Next Steps & Resources

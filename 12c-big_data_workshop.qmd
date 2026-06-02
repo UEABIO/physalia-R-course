@@ -82,58 +82,6 @@ take-home capability, and they are the least replaceable content in the session.
 
 ---
 
-## Setup: preparing and confirming the data {-}
-
-### Instructor: build the files once, ahead of time {-}
-
-Run this script once before distributing the files. It generates a one-million-row
-synthetic survey dataset and writes it in three forms. Distribute the resulting
-`bird_survey.csv`, `bird_survey.parquet`, and `bird_survey_partitioned/` so that
-no participant regenerates a million rows live.
-
-```{r generate-data}
-#| eval: false
-library(readr);   library(data.table); library(dtplyr)
-library(arrow);   library(duckdb);     library(dbplyr)
-library(dplyr);   library(bench)
-
-set.seed(42)
-n <- 1e6
-
-species_names <- c(
-  "Parus major", "Turdus merula", "Erithacus rubecula",
-  "Fringilla coelebs", "Passer domesticus", "Columba palumbus",
-  "Corvus corone", "Sturnus vulgaris", "Sylvia atricapilla",
-  "Phylloscopus collybita"
-)
-
-survey_data <- tibble(
-  observation_id      = 1:n,
-  species             = sample(species_names, n, replace = TRUE),
-  site_id             = sample(paste0("SITE_", sprintf("%04d", 1:500)),
-                               n, replace = TRUE),
-  habitat             = sample(c("woodland", "grassland", "wetland",
-                                 "urban", "heathland"), n, replace = TRUE),
-  year                = sample(2000:2023, n, replace = TRUE),
-  month               = sample(1:12, n, replace = TRUE),
-  day                 = sample(1:28, n, replace = TRUE),
-  observer_id         = sample(paste0("OBS_", sprintf("%03d", 1:100)),
-                               n, replace = TRUE),
-  count               = rpois(n, lambda = 3),
-  temperature_c       = rnorm(n, mean = 12, sd = 5),
-  wind_speed_ms       = rgamma(n, shape = 2, rate = 0.5),
-  precipitation_mm    = rgamma(n, shape = 0.5, rate = 1),
-  visibility_m        = pmax(rnorm(n, mean = 5000, sd = 1500), 100),
-  canopy_cover_pct    = runif(n, 0, 100),
-  survey_duration_min = sample(c(5L, 10L, 15L, 20L), n, replace = TRUE)
-)
-
-write_csv(survey_data,     "bird_survey.csv")
-write_parquet(survey_data, "bird_survey.parquet")
-write_dataset(survey_data,
-              path         = "bird_survey_partitioned",
-              partitioning = "year")
-```
 
 ### Participant: confirm the files load (run before the session) {-}
 

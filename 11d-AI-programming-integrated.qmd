@@ -18,12 +18,12 @@ library(webexercises)
 
 Github Copilot Chat uses the same underlying AI model as inline completion, but for a different kind of help. Inline completion is best when you are actively writing code and want quick suggestions or continuations, which are usually included in standard Copilot usage. Chat is better for higher-level tasks such as planning an approach, understanding an error, or discussing design decisions, and these features are more likely to be usage-limited or *metered* because they require more computation. The two tools complement each other rather than replace one another.
 
-*⏱ ~40 minutes* 
+*⏱ ~30 minutes*
 
 
 ## What Chat sees, and what it does not
 
-Here Githhub Copilot Chat differs fundamentally from a general chatbot such as ChatGPT, and the difference is easy to get wrong. ChatGPT sees *only the text you paste*; it has no connection to your files. Github Copilot is integrated with your editor and repository and can draw on context you did not paste. How much it draws on, and whether it can act on your machine can vary depending on set-up. Three matter for this workshop, and they are not equivalent.
+Here Github Copilot Chat differs fundamentally from a general chatbot such as ChatGPT, and the difference is easy to get wrong. ChatGPT sees *only the text you paste*; it has no connection to your files. Github Copilot is integrated with your editor and repository and can draw on context you did not paste. How much it draws on, and whether it can act on your machine can vary depending on set-up. Three matter for this workshop, and they are not equivalent.
 
 - **Browser Chat on github.com**: open your repository on github.com and select the Copilot icon. It works in the context of that repository and can reach its files, but it has no connection to your local machine, runs no code, and cannot see your R session. This is the one that behaves the same for everyone.
 
@@ -32,7 +32,13 @@ Here Githhub Copilot Chat differs fundamentally from a general chatbot such as C
 - Your `copilot-instructions.md`, if present, is loaded automatically into every Copilot Chat request in that workspace. Exactly what is pulled in automatically has changed between versions and differs across surfaces, so the reliable habit is to set the context yourself with the references above rather than to assume (*see Part 5*).
 
 
-For these exercises we should run them either in browser Chat, *or* in a session where the relevant file and environment are not already in context. In Positron, Copilot may already have your data frame in context, or be able to inspect it by running code, which removes the contrast entirely. Either is worth noticing. RStudio users should use browser Chat throughout. 
+For these exercises we should run them in [Browser Chat](https://github.com/copilot) and be on **Ask mode**
+
+```{r}
+#| echo: false
+#| eval: true
+knitr::include_graphics("images/github-chat.png")
+```
 
 :::{.callout-note}
 An assistant can describe your data confidently for two different reasons: 1) it has been given real information about your session, 2) or it is recalling something from training data. Only the first is reliable.
@@ -70,7 +76,9 @@ Caused by error:
 ! object 'mass_post' not found
 ```
 
-Read the answer. It will be generic and slightly tentative, because Chat is reasoning from the error alone.
+Read the answer. It will be reasoning from the error alone.
+
+*Try* setting the type of model in the drop-down Github separates these by complexity.
 
 **2. Now open a new Chat session and paste the same error along with the code that produced it and the output of `glimpse(voles)`:**
 
@@ -101,8 +109,28 @@ The data structure is:
 What is wrong?
 ```
 
-Read this answer. It will name the specific bug (a missing `_g` suffix on `mass_post`) and propose the fix. Chat could not name it from the error alone because the column names are a property of the data loaded in your R session, which Chat cannot see; supplying the `glimpse()` output put them in front of it. A generic question gets a generic answer; a specific question gets a specific answer.
+Read this answer. It will name the specific bug (a missing `_g` suffix on `mass_post`) and propose the fix. 
 
+
+**3. Now open a new Chat session and attach the file from the repository and try pasting the error message:**
+
+```{r}
+#| echo: false
+#| eval: true
+knitr::include_graphics("images/context-button.png")
+```
+
+ With the file itself in context, Copilot can see the
+column names directly, so it should again identify the missing `_g` suffix,
+this time without your having pasted `glimpse()` output. The lesson is not
+that one route is correct and the others wrong, but that the answer is only
+as good as the context, and that context reaches the model by more than one
+route: what you paste, and what the surface can already read.
+
+Compare the three answers. The first reasons from the error text alone and
+can only guess. The second and third both locate the specific bug, because
+both were given the column names, one by your paste and one by reading the
+file.
 
 ## How much of your data to show
 
@@ -124,7 +152,6 @@ When you do describe a data frame deliberately, three commands reveal increasing
 
 - `glimpse(voles)` and `str(voles)` add the first few actual values of every column.
 
-Use the least-disclosing call that still lets the AI help, and scale up only if the answer needs it. For the synthetic voles data this is moot, because no real subject is described. For your own data it is not. Human-participant data, and sensitive ecological data such as the locations of a protected species, may not be shared with an external tool at all under your data-management plan or ethics approval. names() is almost always safe; summary() and str() expose real values and may not be.
 
 ## Exercise 2: Refining an approach question
 
@@ -138,7 +165,7 @@ I have a dataset with pre and post measurements. How should I analyse it?
 
 Read the answer. With no design and no scientific question supplied, it will be a tour of paired t-tests, mixed models, change scores, ANCOVA, and so on, because the question is too vague to permit a recommendation.
 
-**2. Refine the question, with the dataset structure and the scientific question explicit:**
+**2. In a new chat session, refine the question, with the dataset structure and the scientific question explicit:**
 
 ```
 I have 72 voles, balanced across three treatment arms (Control, Low_dose,
@@ -153,34 +180,20 @@ alongside any inferential test. Given this design, what is a defensible
 primary analysis, and what are the main threats to its validity?
 ```
 
-Read the second answer. It will be substantially more useful, because the question now has enough information to permit a recommendation. The exercise is about question-craft: AI tools answer the question you actually asked, not the question you meant.
+**3. In a new chat session, add the raw data file as context ** 
 
+Try asking the first vague question
 
-## Exercise 3: Verify the AI did not change behaviour
-
-Asking AI to comment or to refactor code carries a specific risk: that it changes what the code does while claiming only to have tidied it. Reading the diff catches changed code. It does not always catch changed output, because a small alteration is easy to miss by eye. There is a cheap check for the output.
-
-**1. Compute and keep a reference result:**
-
-```{r}
-#| eval: false
-original <- voles |>
-  mutate(mass_change_g = mass_post_g - mass_pre_g) |>
-  summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
+```
+I have a dataset with pre and post measurements. How should I analyse it?
 ```
 
-**2. Ask Chat to refactor or comment the pipeline.** Use a prompt such as: "Add explanatory comments to this pipeline and make it more readable, but do not change what it returns." Run the version it gives you, assigning the result to `refactored`.
+Compare all three answers? Which was best?
 
-**3. Compare the two results:**
-
-```{r}
-#| eval: false
-all.equal(original, refactored)
-```
-
-`all.equal()` returns `TRUE` when the two objects are identical to within numerical tolerance. Anything else is a report of the differences, and a signal that the refactor changed the output. For tibbles, `waldo::compare(original, refactored)` gives a more readable account of where they diverge.
-
-The point is not that AI always changes your code; often it does not. The point is that you cannot tell by trust, and the check costs one line. Whenever you ask AI to transform code that already works, verify that the output survived the transformation.
+ Even though the question is the same vague one from step 1,
+the file in context supplies the design that the prompt omits: column names,
+types, and the treatment arms. The answer should narrow accordingly, closer
+to step 2 than to step 1, without your having stated the design in prose.
 
 
 ## When to use Chat versus inline
@@ -201,13 +214,13 @@ The rule is not strict; both tools have considerable overlap. The principle is: 
 
 ## Check your understanding
 
-**Which statement best describes the context available to in-IDE Copilot Chat, compared with a general chatbot such as ChatGPT?**
+**Which statement best describes the context available to in-IDE Copilot
+Chat in Ask mode, compared with a general chatbot such as ChatGPT?**
 
 `r longmcq(c(
   "Like ChatGPT, it sees only the text you paste into the prompt",
-  answer = "It is integrated with your editor and project, so it can draw on open files, a workspace index, and files you reference, but it cannot see the objects loaded in your R session",
-  "It has full automatic access to every file in the repository and to your running R session",
-  "It can execute your R code to read the data directly"
+  answer = "It is integrated with your editor and project, so beyond what you paste it can draw on open files, a workspace index, files you reference, and, in Positron, injected session context",
+  "It has full automatic access to every file in the repository and to your running R session, on every surface",
+  "It can always execute your R code to read the data directly"
 ))`
-
 

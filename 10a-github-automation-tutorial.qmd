@@ -15,24 +15,68 @@ library(here)
 
 library(usethis)
 library(gitcreds)
+library(renv)
 
 ```
 
-## What you will learn
 
-By the end of this tutorial you will have two automated checks running in your project:
 
-1. A **git hook** that runs on your machine every time you commit, checking that your
-   `renv.lock` file is up to date
-   
-2. A **GitHub Actions workflow** that runs on GitHub's servers every time you push,
-   automatically rendering your Quarto document and storing the output for download
+## Bridging Block 1 and Block 2 
 
-Neither requires manual triggering. Both connect directly to your existing project workflow.
+In Block 1 you built a repository (the `my-first-repo` clone) containing a Quarto
+document that loads `tidyverse` and `palmerpenguins` and produces a figure of body
+mass against flipper length. That figure was developed on the `new-plot` branch and
+merged into `main`. Block 2 now adds two automated checks to that **same** repository,
+so the work here extends what you already have rather than starting afresh.
+
+Before continuing, confirm three things:
+
+- You are on the `main` branch.
+- You have pulled the merged work, so the figure code is present in your local `main`.
+- Your Quarto file has a known name. Rename it to `analysis.qmd` if it does not already
+  match, since every task below refers to that name.
+
+### Set up renv in your penguins repository
+
+Block 2 assumes your project tracks its dependencies with `renv`, which Block 1 did
+not set up. Initialise it now, once, at the console:
+
+```{r}
+#| eval: false
+renv::init()
+renv::snapshot()
+```
+
+`renv::init()` creates the project library and the `renv.lock` file; `renv::snapshot()`
+records the currently loaded packages (`tidyverse`, `palmerpenguins`) into the lockfile.
+Commit `renv.lock` and the `renv/` infrastructure through the Git pane before proceeding.
+
+::: {.callout-note}
+With `renv.lock` committed, the "Before you start" checks below will pass rather than
+report a missing lockfile. Everything in this block now operates on your penguins
+repository: the hook guards its lockfile, and the Action renders its document.
+:::
 
 ---
 
-## The mental model: two gates, two purposes
+### What you will learn
+
+By the end of this tutorial you will have two automated checks running in your
+penguins project:
+
+1. A **git hook** that runs on your machine every time you commit, checking that your
+   `renv.lock` file is up to date.
+
+2. A **GitHub Actions workflow** that runs on GitHub's servers every time you push,
+   automatically rendering your penguins Quarto document and storing the output for
+   download.
+
+Neither requires manual triggering. Both connect directly to the project workflow you
+established in Block 1.
+
+---
+
+### The mental model: two gates, two purposes
 
 Before writing any code, it is worth understanding what these tools are and why you would
 use both.
@@ -55,13 +99,21 @@ The two tools are complementary rather than interchangeable. The hook catches pr
 locally before they are committed. Actions verifies that your code works in a clean
 environment after they are pushed. Together they form two checkpoints:
 
+```markdown
+You write code
+↓
+git commit 
+↓
+[HOOK: renv check]
+↓
+git push 
+↓
+[ACTIONS: render Quarto]
 ```
-You write code → git commit → [HOOK: renv check] → git push → [ACTIONS: render Quarto]
-```
 
 
 
-## A note on YAML
+### A note on YAML
 
 The GitHub Actions workflow file is written in YAML (rhymes with "camel"). YAML is a
 format for writing structured configuration — think of it as a way of expressing a nested
@@ -72,7 +124,7 @@ tabs, and keep the indentation consistent with the examples shown.
 
 
 
-## A note on r-lib/actions
+### A note on r-lib/actions
 
 The R community maintains a library of pre-built GitHub Actions specifically for R users,
 available at [https://github.com/r-lib/actions](https://github.com/r-lib/actions). These
@@ -85,6 +137,11 @@ other tasks.
 
 
 ## Before you start
+
+You should be working in the penguins repository from Block 1, on the `main` branch, with
+the merged figure code present and your Quarto file named `analysis.qmd`. You should also
+have run `renv::init()` and `renv::snapshot()` as set out in the bridge above, and committed
+`renv.lock`.
 
 **Check that renv.lock is committed.** In RStudio or Positron, open the Git pane (usually
 in the top-right panel). If `renv.lock` appears in the list of changed files, it has not
@@ -102,22 +159,9 @@ renv::snapshot()
 top. If it says `main`, you are ready to proceed. If it says `master` or something else,
 note the name — you will need to substitute it in the workflow file in Part 2.
 
-**Confirm you have a Quarto document.** Your project should contain a `.qmd` file, for
-example `analysis.qmd`. If you do not have one yet, create a minimal file now:
-
-````markdown
----
-title: "My Analysis"
-format: html
----
-
-This document is rendered automatically by GitHub Actions.
-
-```{r}`r ''`
-summary(cars)
-```
-
-````
+**Confirm your penguins Quarto document.** Your project should contain `analysis.qmd`,
+the document carrying the body-mass-against-flipper-length figure you built in Block 1.
+If you have not renamed it yet, do so now so that the tasks below match.
 
 
 
@@ -139,7 +183,7 @@ packages and `renv.lock` are out of sync, the commit is blocked and you are told
 `renv::snapshot()`. If they are in sync, the commit proceeds normally. You do not interact
 with the hook directly — it fires on its own.
 
-### Setting up the hook using usethis
+### Setting up the hook with usethis
 
 The `usethis` package provides a function that creates the hook file and sets the correct
 file permissions in a single R call, with no terminal commands required.
@@ -153,24 +197,43 @@ install.packages("usethis")
 
 Make the following file
 
-use .gitignore changes to ignore the `.git/hooks/` directory, so that the hook script is not accidentally added to git:
-
 scripts/hooks/pre-commit.sh:
 
-```
+```markdown
 echo "--- Checking renv synchronisation..."
-"/c/Program Files/R/R-4.5.2/bin/x64/Rscript" --no-save --no-restore-data -e '
-  renv::load(".")
-  status <- renv::status()
-  ok <- isTRUE(status$synchronized)
-  if (!ok) {
+
+Rscript --no-save --no-restore-data -e '
+  if (!isTRUE(renv::status()$synchronized)) {
     message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")
     quit(status = 1)
   }
   message("renv check passed.")
-' || exit 1
+'
 
 ```
+
+:::{.callout-warning}
+This script assumes `Rscript` is available on your system PATH, which is the
+default on macOS and Linux. On Windows, R is not always added to the PATH. If
+the hook fails with a "command not found" error, you 
+replace `Rscript` in the script above with the full path to your installation,
+for example `"/c/Program Files/R/R-4.5.2/bin/x64/Rscript"`. Adjust the version
+number to match your installed version of R.
+
+```markdown
+echo "--- Checking renv synchronisation..."
+
+"/c/Program Files/R/R-4.5.2/bin/x64/Rscript" --no-save --no-restore-data -e '
+  if (!isTRUE(renv::status()$synchronized)) {
+    message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")
+    quit(status = 1)
+  }
+  message("renv check passed.")
+'
+
+```
+
+:::
 
 
 ```{r}
@@ -192,12 +255,104 @@ executable. You do not need to use the terminal for any of this.
 > it is hidden; you can see it in your operating system's file explorer if you enable
 > hidden files.
 
-## Part 2: Your first GitHub Action — rendering a Quarto document
+### Watch the hook block a commit
+
+We will now deliberately trigger the hook on your penguins repository so you can see it
+work. Your existing figure colours the points by species; suppose you decide to format the
+body-mass axis with thousands separators, which the `scales` package provides. Installing
+`scales` without snapshotting is exactly the kind of desync the hook is designed to catch.
+
+:::{.task}
+::::{.task-header}
+**Task: watch the hook block a commit — this commit is meant to fail**
+::::
+
+::::{.task-container}
+
+This task deliberately triggers the hook so you can see it work. The first commit attempt
+**is supposed to be blocked**. That is the demonstration, not an error on your part.
+
+1. Install `scales` at the console (a package you have not yet snapshotted):
+
+   ```r
+   install.packages("scales")   # or renv::install("scales")
+   ```
+
+2. Edit the figure chunk in `analysis.qmd` to use it. For example, load the package and
+   format the y-axis:
+
+   ````md
+   ```{{r}}
+   #| label: fig-penguins
+   #| fig-cap: "Body mass against flipper length, by species."
+   library(tidyverse)
+   library(palmerpenguins)
+   library(scales)
+
+   pal <- c(
+     "Adelie"    = "#FF8C00",
+     "Chinstrap" = "#A034F0",
+     "Gentoo"    = "#159090"
+   )
+
+   penguins |>
+     ggplot(aes(x = flipper_length_mm, y = body_mass_g)) +
+     geom_point(aes(colour = species)) +
+     scale_colour_manual(values = pal) +
+     scale_y_continuous(labels = label_comma()) +
+     theme_minimal()
+   ```
+   ````
+
+   Save the file.
+
+3. The act of installing `scales` **without snapshotting** is what has put your library
+   out of sync with `renv.lock`. Stage both files in the Git pane and attempt to commit.
+
+4. The commit is **blocked**. The hook reports that `renv` is out of sync and tells you to
+   run `renv::snapshot()`.
+
+5. Run `renv::snapshot()` at the console to record `scales` in the lockfile. Stage the
+   updated `renv.lock` alongside your other changes and commit again. This time it
+   succeeds.
+
+::::
+:::
+
+The point to take from step 3 is that the block was caused by the un-snapshotted install,
+not by editing the document. Saving a file never trips the hook; an installed package
+missing from `renv.lock` does.
+
+::: {.callout-warning}
+## Bypassing the hook
+Occasionally you will need to commit despite the hook, for instance when it raises a false
+positive or you must record an urgent change. The `--no-verify` flag skips the hook for a
+single commit, leaving it in place for the next one:
+
+```bash
+git commit --no-verify -m "your message"
+```
+
+Use this as an escape hatch, not a routine. A hook you bypass by habit checks nothing.
+RStudio's Commit button has no equivalent tick box, so a bypass must be done at the
+terminal — which is a useful piece of friction.
+:::
+
+::: {.callout-note}
+### Removing the hook permanently
+If you want to disable the check altogether, delete or rename the hook file at
+`.git/hooks/pre-commit` in your operating system's file explorer (it is hidden by
+default). This is reversible only by recreating the hook with
+`usethis::use_git_hook()`, so prefer `--no-verify` for one-off cases and reserve removal
+for when you no longer want the check at all.
+:::
+
+## Part 2: Your first GitHub Action — rendering the penguins document
 
 ### Why this matters
 
-Rendering a Quarto document on GitHub's clean servers achieves two things. First, it
-confirms that your document renders correctly using only the packages in `renv.lock`,
+Rendering your penguins document on GitHub's clean servers achieves two things. First, it
+confirms that the document renders correctly using only the packages in `renv.lock`,
 catching the common situation where something works on your machine but fails elsewhere.
 Second, it produces a rendered HTML file that anyone with access to the repository can
 download, without needing R or Quarto installed.
@@ -233,7 +388,11 @@ common failure mode later.
 5. Select **Read and write permissions**
 6. Click **Save**
 
-### Step 2: Create the workflow file
+### Step 2: Pin your R version, then create the workflow file
+
+Because this workflow restores your exact packages from `renv.lock`, it must run on the R
+version those packages were recorded under. Find yours by running `R.version.string` at
+the console and note the number, for example `4.5.2`.
 
 Create the following folder structure in your project. You can do this in RStudio's Files
 pane: New Folder → `.github`, then inside that New Folder → `workflows`.
@@ -244,12 +403,13 @@ pane: New Folder → `.github`, then inside that New Folder → `workflows`.
     render-quarto.yml
 ```
 
-Open `render-quarto.yml` and paste the following. Every section is explained in the
-comments.
+Open `render-quarto.yml` and paste the following. It restores the exact package versions
+recorded in the `renv.lock` you built in Part 1, so the document renders against the same
+packages you used locally. Every section is explained in the comments.
 
 ```yaml
 # The name shown in the Actions tab on GitHub.
-name: Render Quarto document
+name: Render penguins analysis
 
 # When to run this workflow.
 # 'push' means: every time you push commits to GitHub.
@@ -258,41 +418,26 @@ on:
   push:
     branches: ["main"]
 
-# A workflow contains one or more jobs.
-# Each job runs on a separate machine provided by GitHub.
 jobs:
   render:
-
-    # The operating system for GitHub's machine.
-    # ubuntu-latest means the current version of Ubuntu Linux.
-    # Linux is the standard choice: it is fast and free for public repositories.
-    # You do not need to know Linux to use it here.
     runs-on: ubuntu-latest
 
-    # Steps are the individual tasks that run in sequence on that machine.
-    # If any step fails, the job stops and reports a failure.
     steps:
-
       # Step 1: Download your repository files onto GitHub's machine.
-      # This is always the first step — without it, the machine has no
-      # access to your code.
-      # 'uses:' means this step uses a pre-built action rather than
-      # running a command directly. The @v4 pins the version of the
-      # action, so updates to it do not break your workflow unexpectedly.
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Step 2: Install R.
-      # This uses a pre-built action from r-lib/actions — the community-
-      # maintained collection of R-specific actions.
-      # 'release' installs the current stable version of R.
+      # Step 2: Install R. Set the version to match your renv.lock,
+      # i.e. the number from R.version.string on your machine.
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: "4.5.2" # set to the version recorded in renv.lock
-          use-public-rspm: true  # add this line
+          r-version: "4.5.2"   # set to YOUR version from R.version.string
+          use-public-rspm: true
 
-      # Step 3: Install renv and restore your packages.
+      # Step 3: Install renv and restore the exact packages from renv.lock.
+      # Because this reads renv.lock, there is no package list to maintain
+      # here: it is the same lockfile your hook guards in Part 1.
       - name: Set up renv
         uses: r-lib/actions/setup-renv@v2
         env:
@@ -302,17 +447,11 @@ jobs:
       - name: Install Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
-      # Step 5: Render the document.
-      # 'run:' means this step executes a command directly, rather than
-      # using a pre-built action.
-      # Change 'analysis.qmd' to the name of your Quarto file if it differs.
+      # Step 5: Render the penguins document.
       - name: Render Quarto document
         run: quarto render analysis.qmd
 
       # Step 6: Save the rendered output so you can download it.
-      # GitHub stores this as an 'artefact' attached to the workflow run.
-      # After 7 days, GitHub deletes it automatically to save storage space.
-      # Change 'analysis.html' to match your output file if it differs.
       - name: Upload rendered output
         uses: actions/upload-artifact@v4
         with:
@@ -321,6 +460,93 @@ jobs:
           retention-days: 7
 ```
 
+Because `setup-renv` restores from `renv.lock`, and your lockfile now contains
+`tidyverse`, `palmerpenguins`, and `scales` from Part 1, there is no `packages:` block to
+edit. This is the payoff of the renv approach: the workflow's package list and your
+project's package list cannot drift apart, because they are the same file.
+
+:::{.callout-warning}
+The workflow file refers to `analysis.qmd` and `analysis.html`. If your Quarto file has a
+different name, change both the `.qmd` and `.html` references everywhere they appear,
+including the upload path. A mismatch produces a failure whose cause is not obvious from
+the log.
+:::
+
+:::{.callout-note}
+The `@v2` and `@v4` suffixes pin each action to a major version, which protects
+you from unexpected breaking changes. These major versions are occasionally
+superseded; if a workflow begins to fail after working previously, check the
+action's repository for a newer version.
+:::
+
+:::{.callout-warning collapse= "true"}
+
+### Match the R version
+If the `r-version` you pin differs from the version recorded in `renv.lock`,
+`setup-renv` may rebuild packages from source, which makes the first run noticeably
+slower and can occasionally fail on a package that needs system libraries. Setting
+`r-version` from your own `R.version.string`, as Step 2 instructs, is the mitigation.
+
+If we set up a workflow that was `renv` and `R` version agnostic:
+
+````markdown
+# The name shown in the Actions tab on GitHub.
+name: Render penguins analysis
+
+# When to run this workflow.
+# 'push' means: every time you push commits to GitHub.
+# Adjust the branch name below if yours is not 'main'.
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Download your repository files onto GitHub's machine.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install R. 'release' tracks the current release version,
+      # so there is no version number to maintain here.
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+          use-public-rspm: true
+
+      # Step 3: Install the packages your document needs.
+      # List every package loaded in analysis.qmd here.
+      - name: Install R packages
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::palmerpenguins
+            any::tidyverse
+            any::scales
+
+      # Step 4: Install Quarto so we can render the document.
+      - name: Install Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # Step 5: Render the penguins document.
+      - name: Render Quarto document
+        run: quarto render analysis.qmd
+
+      # Step 6: Save the rendered output so you can download it.
+      - name: Upload rendered output
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-analysis
+          path: analysis.html
+          retention-days: 7
+
+
+````
+
+:::
 
 ### Step 3: Commit and push
 
@@ -333,19 +559,19 @@ git push
 ```
 
 Note that the pre-commit hook will run before this commit. It will pass because you have
-not changed any packages.
+not changed any packages since your last snapshot in Part 1.
 
 ### Step 4: Watch the workflow run
 
 1. Go to your repository on GitHub.com
 2. Click the **Actions** tab in the top navigation bar
-3. You will see a workflow run listed, named *Render Quarto document*
+3. You will see a workflow run listed, named *Render penguins analysis*
 4. Click on it, then click the **render** job
 5. Each step expands to show its output as it runs
 
 A green tick next to a step means it passed. A red cross means it failed and the job has
 stopped. The workflow typically takes three to five minutes on first run because packages
-are being installed; on subsequent runs, caching makes the renv step much faster.
+are being restored; on subsequent runs, caching makes the renv step much faster.
 
 ### Step 5: Download the rendered output
 
@@ -355,12 +581,12 @@ When the run completes with a green tick:
 2. Under **Artefacts**, click **rendered-analysis**
 3. A zip file downloads containing `analysis.html`
 
-This is your rendered Quarto document, produced on GitHub's servers without any action
-on your part beyond pushing a commit.
+This is your penguins document, rendered on GitHub's servers from the exact package
+versions in your lockfile, without any action on your part beyond pushing a commit.
 
 ---
 
-## Reading a failure
+### Reading a failure
 
 Failures are normal, particularly on first run. Click on the red cross next to the
 failing step to see the full log. The four most common causes are:
@@ -380,7 +606,8 @@ Error in library(somepackage) : there is no package called 'somepackage'
 ```
 
 Fix: install the package locally, run `renv::snapshot()`, commit the updated `renv.lock`,
-and push.
+and push. This is precisely the situation Part 1's hook is designed to prevent before the
+commit ever leaves your machine.
 
 :::{.callout-note}
 
@@ -403,7 +630,7 @@ the workflow file and change `"main"` to your branch name, commit, and push.
 
 ## How the two tools work together
 
-With both in place, your workflow now looks like this:
+With both in place, your penguins workflow now looks like this:
 
 | Event | What fires | What it catches |
 |---|---|---|
@@ -526,9 +753,10 @@ listed explicitly in the workflow file:
 ```
 
 This is less reproducible than `renv` because it installs the latest available version of
-each package rather than the exact version you used locally. For your own projects, renv
-and `setup-renv` is the better choice. For adapting workflows from others who do not use
-renv, `setup-r-dependencies` is what you will encounter.
+each package rather than the exact version you used locally. For your own projects — such
+as the penguins repository you have built here — renv and `setup-renv` is the better
+choice. For adapting workflows from others who do not use renv, `setup-r-dependencies` is
+what you will encounter.
 
 ---
 
