@@ -489,13 +489,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11e-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 5: Custom instructions and skills</span></a>
+ <span class="menu-text">Block 5: From Chat to Agent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11f-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 6: Functionalise a script step and prove the result is unchanged</span></a>
+ <span class="menu-text">Block 6: Custom instructions and skills</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11g-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 7: AI-Assisted Code Review</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11h-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 8: Functionalise a script step and prove the result is unchanged</span></a>
   </div>
 </li>
       </ul>
@@ -690,15 +702,16 @@ Note
 </div>
 <p>Make the following file</p>
 <p>scripts/hooks/pre-commit.sh:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1"></a>echo "--- Checking renv synchronisation..."</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1"></a>#!/usr/bin/env bash</span>
 <span id="cb5-2"><a href="#cb5-2"></a></span>
-<span id="cb5-3"><a href="#cb5-3"></a>Rscript --no-save --no-restore-data -e '</span>
-<span id="cb5-4"><a href="#cb5-4"></a>  if (!isTRUE(renv::status()$synchronized)) {</span>
-<span id="cb5-5"><a href="#cb5-5"></a>    message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")</span>
-<span id="cb5-6"><a href="#cb5-6"></a>    quit(status = 1)</span>
-<span id="cb5-7"><a href="#cb5-7"></a>  }</span>
-<span id="cb5-8"><a href="#cb5-8"></a>  message("renv check passed.")</span>
-<span id="cb5-9"><a href="#cb5-9"></a>'</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-3"><a href="#cb5-3"></a>echo "--- Checking renv synchronisation..."</span>
+<span id="cb5-4"><a href="#cb5-4"></a>"Rscript" --no-save --no-restore-data -e '</span>
+<span id="cb5-5"><a href="#cb5-5"></a>  if (!isTRUE(renv::status()$synchronized)) {</span>
+<span id="cb5-6"><a href="#cb5-6"></a>    message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")</span>
+<span id="cb5-7"><a href="#cb5-7"></a>    quit(status = 1)</span>
+<span id="cb5-8"><a href="#cb5-8"></a>  }</span>
+<span id="cb5-9"><a href="#cb5-9"></a>  message("renv check passed.")</span>
+<span id="cb5-10"><a href="#cb5-10"></a>'</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -709,23 +722,28 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>This script assumes <code>Rscript</code> is available on your system PATH, which is the default on macOS and Linux. On Windows, R is not always added to the PATH. If the hook fails with a “command not found” error, you replace <code>Rscript</code> in the script above with the full path to your installation, for example <code>"/c/Program Files/R/R-4.5.2/bin/x64/Rscript"</code>. Adjust the version number to match your installed version of R.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1"></a>echo "--- Checking renv synchronisation..."</span>
-<span id="cb6-2"><a href="#cb6-2"></a></span>
-<span id="cb6-3"><a href="#cb6-3"></a>"/c/Program Files/R/R-4.5.2/bin/x64/Rscript" --no-save --no-restore-data -e '</span>
-<span id="cb6-4"><a href="#cb6-4"></a>  if (!isTRUE(renv::status()$synchronized)) {</span>
-<span id="cb6-5"><a href="#cb6-5"></a>    message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")</span>
-<span id="cb6-6"><a href="#cb6-6"></a>    quit(status = 1)</span>
-<span id="cb6-7"><a href="#cb6-7"></a>  }</span>
-<span id="cb6-8"><a href="#cb6-8"></a>  message("renv check passed.")</span>
-<span id="cb6-9"><a href="#cb6-9"></a>'</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This script assumes <code>Rscript</code> is available on your system PATH, which is the default on macOS and Linux. On Windows, R is not always added to the PATH. If the hook fails with a “command not found” error, you replace <code>Rscript</code> in the script above with the full path to your installation:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="fu">file.path</span>(<span class="fu">R.home</span>(<span class="st">"bin"</span>), <span class="st">"R"</span>) <span class="co"># find your R.exe</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>for example <code>"/c/Program Files/R/R-4.5.3/bin/x64/Rscript"</code>. Adjust the version number to match your installed version of R.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1"></a>#!/usr/bin/env bash</span>
+<span id="cb7-2"><a href="#cb7-2"></a></span>
+<span id="cb7-3"><a href="#cb7-3"></a>echo "--- Checking renv synchronisation..."</span>
+<span id="cb7-4"><a href="#cb7-4"></a>"/c/Program Files/R/R-4.5.3/bin/x64/Rscript" --no-save --no-restore-data -e '</span>
+<span id="cb7-5"><a href="#cb7-5"></a>  if (!isTRUE(renv::status()$synchronized)) {</span>
+<span id="cb7-6"><a href="#cb7-6"></a>    message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")</span>
+<span id="cb7-7"><a href="#cb7-7"></a>    quit(status = 1)</span>
+<span id="cb7-8"><a href="#cb7-8"></a>  }</span>
+<span id="cb7-9"><a href="#cb7-9"></a>  message("renv check passed.")</span>
+<span id="cb7-10"><a href="#cb7-10"></a>'</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>usethis<span class="sc">::</span><span class="fu">use_git_hook</span>(</span>
-<span id="cb7-2"><a href="#cb7-2"></a>  <span class="at">hook   =</span> <span class="st">"pre-commit"</span>,</span>
-<span id="cb7-3"><a href="#cb7-3"></a>  <span class="at">script =</span> <span class="fu">readLines</span>(<span class="st">"scripts/hooks/pre-commit.sh"</span>) <span class="sc">|&gt;</span> <span class="fu">paste</span>(<span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb7-4"><a href="#cb7-4"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>usethis<span class="sc">::</span><span class="fu">use_git_hook</span>(</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  <span class="at">hook   =</span> <span class="st">"pre-commit"</span>,</span>
+<span id="cb8-3"><a href="#cb8-3"></a>  <span class="at">script =</span> <span class="fu">readLines</span>(<span class="st">"scripts/hooks/pre-commit.sh"</span>) <span class="sc">|&gt;</span> <span class="fu">paste</span>(<span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb8-4"><a href="#cb8-4"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code><a href="https://usethis.r-lib.org/reference/use_git_hook.html">usethis::use_git_hook()</a></code> writes the script into <code>.git/hooks/pre-commit</code> and makes it executable. You do not need to use the terminal for any of this.</p>
 <blockquote class="blockquote">
@@ -742,30 +760,30 @@ Warning
 <ol type="1">
 <li>
 <p>Install <code>scales</code> at the console (a package you have not yet snapshotted):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="fu">install.packages</span>(<span class="st">"scales"</span>)   <span class="co"># or renv::install("scales")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="fu">install.packages</span>(<span class="st">"scales"</span>)   <span class="co"># or renv::install("scales")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </li>
 <li>
 <p>Edit the figure chunk in <code>analysis.qmd</code> to use it. For example, load the package and format the y-axis:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource markdown md number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1"></a><span class="in">```{r}</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a><span class="co">#| label: fig-penguins</span></span>
-<span id="cb9-3"><a href="#cb9-3"></a><span class="co">#| fig-cap: "Body mass against flipper length, by species."</span></span>
-<span id="cb9-4"><a href="#cb9-4"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb9-5"><a href="#cb9-5"></a><span class="fu">library</span>(palmerpenguins)</span>
-<span id="cb9-6"><a href="#cb9-6"></a><span class="fu">library</span>(scales)</span>
-<span id="cb9-7"><a href="#cb9-7"></a></span>
-<span id="cb9-8"><a href="#cb9-8"></a>pal <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb9-9"><a href="#cb9-9"></a>  <span class="st">"Adelie"</span>    <span class="ot">=</span> <span class="st">"#FF8C00"</span>,</span>
-<span id="cb9-10"><a href="#cb9-10"></a>  <span class="st">"Chinstrap"</span> <span class="ot">=</span> <span class="st">"#A034F0"</span>,</span>
-<span id="cb9-11"><a href="#cb9-11"></a>  <span class="st">"Gentoo"</span>    <span class="ot">=</span> <span class="st">"#159090"</span></span>
-<span id="cb9-12"><a href="#cb9-12"></a>)</span>
-<span id="cb9-13"><a href="#cb9-13"></a></span>
-<span id="cb9-14"><a href="#cb9-14"></a>penguins <span class="sc">|&gt;</span></span>
-<span id="cb9-15"><a href="#cb9-15"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
-<span id="cb9-16"><a href="#cb9-16"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> species)) <span class="sc">+</span></span>
-<span id="cb9-17"><a href="#cb9-17"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> pal) <span class="sc">+</span></span>
-<span id="cb9-18"><a href="#cb9-18"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">label_comma</span>()) <span class="sc">+</span></span>
-<span id="cb9-19"><a href="#cb9-19"></a>  <span class="fu">theme_minimal</span>()</span>
-<span id="cb9-20"><a href="#cb9-20"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource markdown md number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb10-1"><a href="#cb10-1"></a><span class="in">```{r}</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="co">#| label: fig-penguins</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="co">#| fig-cap: "Body mass against flipper length, by species."</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="fu">library</span>(palmerpenguins)</span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="fu">library</span>(scales)</span>
+<span id="cb10-7"><a href="#cb10-7"></a></span>
+<span id="cb10-8"><a href="#cb10-8"></a>pal <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb10-9"><a href="#cb10-9"></a>  <span class="st">"Adelie"</span>    <span class="ot">=</span> <span class="st">"#FF8C00"</span>,</span>
+<span id="cb10-10"><a href="#cb10-10"></a>  <span class="st">"Chinstrap"</span> <span class="ot">=</span> <span class="st">"#A034F0"</span>,</span>
+<span id="cb10-11"><a href="#cb10-11"></a>  <span class="st">"Gentoo"</span>    <span class="ot">=</span> <span class="st">"#159090"</span></span>
+<span id="cb10-12"><a href="#cb10-12"></a>)</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a>penguins <span class="sc">|&gt;</span></span>
+<span id="cb10-15"><a href="#cb10-15"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> flipper_length_mm, <span class="at">y =</span> body_mass_g)) <span class="sc">+</span></span>
+<span id="cb10-16"><a href="#cb10-16"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> species)) <span class="sc">+</span></span>
+<span id="cb10-17"><a href="#cb10-17"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> pal) <span class="sc">+</span></span>
+<span id="cb10-18"><a href="#cb10-18"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">label_comma</span>()) <span class="sc">+</span></span>
+<span id="cb10-19"><a href="#cb10-19"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb10-20"><a href="#cb10-20"></a><span class="in">```</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Save the file.</p>
 </li>
 <li><p>The act of installing <code>scales</code> <strong>without snapshotting</strong> is what has put your library out of sync with <code>renv.lock</code>. Stage both files in the Git pane and attempt to commit.</p></li>
@@ -786,7 +804,7 @@ Warning
 </div>
 <div class="callout-body-container callout-body">
 <p>Occasionally you will need to commit despite the hook, for instance when it raises a false positive or you must record an urgent change. The <code>--no-verify</code> flag skips the hook for a single commit, leaving it in place for the next one:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1"></a><span class="fu">git</span> commit <span class="at">--no-verify</span> <span class="at">-m</span> <span class="st">"your message"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1"></a><span class="fu">git</span> commit <span class="at">--no-verify</span> <span class="at">-m</span> <span class="st">"your message"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Use this as an escape hatch, not a routine. A hook you bypass by habit checks nothing. RStudio’s Commit button has no equivalent tick box, so a bypass must be done at the terminal — which is a useful piece of friction.</p>
 </div>
 </div>
@@ -830,56 +848,56 @@ Warning
   workflows/
     render-quarto.yml</code></pre>
 <p>Open <code>render-quarto.yml</code> and paste the following. It restores the exact package versions recorded in the <code>renv.lock</code> you built in Part 1, so the document renders against the same packages you used locally. Every section is explained in the comments.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># The name shown in the Actions tab on GitHub.</span></span>
-<span id="cb13-2"><a href="#cb13-2"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> Render penguins analysis</span></span>
-<span id="cb13-3"><a href="#cb13-3"></a></span>
-<span id="cb13-4"><a href="#cb13-4"></a><span class="co"># When to run this workflow.</span></span>
-<span id="cb13-5"><a href="#cb13-5"></a><span class="co"># 'push' means: every time you push commits to GitHub.</span></span>
-<span id="cb13-6"><a href="#cb13-6"></a><span class="co"># Adjust the branch name below if yours is not 'main'.</span></span>
-<span id="cb13-7"><a href="#cb13-7"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb13-8"><a href="#cb13-8"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
-<span id="cb13-9"><a href="#cb13-9"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"main"</span><span class="kw">]</span></span>
-<span id="cb13-10"><a href="#cb13-10"></a></span>
-<span id="cb13-11"><a href="#cb13-11"></a><span class="fu">jobs</span><span class="kw">:</span></span>
-<span id="cb13-12"><a href="#cb13-12"></a><span class="at">  </span><span class="fu">render</span><span class="kw">:</span></span>
-<span id="cb13-13"><a href="#cb13-13"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
-<span id="cb13-14"><a href="#cb13-14"></a></span>
-<span id="cb13-15"><a href="#cb13-15"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb13-16"><a href="#cb13-16"></a><span class="co">      # Step 1: Download your repository files onto GitHub's machine.</span></span>
-<span id="cb13-17"><a href="#cb13-17"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Check out repository</span></span>
-<span id="cb13-18"><a href="#cb13-18"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
-<span id="cb13-19"><a href="#cb13-19"></a></span>
-<span id="cb13-20"><a href="#cb13-20"></a><span class="co">      # Step 2: Install R. Set the version to match your renv.lock,</span></span>
-<span id="cb13-21"><a href="#cb13-21"></a><span class="co">      # i.e. the number from R.version.string on your machine.</span></span>
-<span id="cb13-22"><a href="#cb13-22"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Set up R</span></span>
-<span id="cb13-23"><a href="#cb13-23"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
-<span id="cb13-24"><a href="#cb13-24"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb13-25"><a href="#cb13-25"></a><span class="at">          </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.5.2"</span><span class="co">   # set to YOUR version from R.version.string</span></span>
-<span id="cb13-26"><a href="#cb13-26"></a><span class="at">          </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb13-27"><a href="#cb13-27"></a></span>
-<span id="cb13-28"><a href="#cb13-28"></a><span class="co">      # Step 3: Install renv and restore the exact packages from renv.lock.</span></span>
-<span id="cb13-29"><a href="#cb13-29"></a><span class="co">      # Because this reads renv.lock, there is no package list to maintain</span></span>
-<span id="cb13-30"><a href="#cb13-30"></a><span class="co">      # here: it is the same lockfile your hook guards in Part 1.</span></span>
-<span id="cb13-31"><a href="#cb13-31"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Set up renv</span></span>
-<span id="cb13-32"><a href="#cb13-32"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-renv@v2</span></span>
-<span id="cb13-33"><a href="#cb13-33"></a><span class="at">        </span><span class="fu">env</span><span class="kw">:</span></span>
-<span id="cb13-34"><a href="#cb13-34"></a><span class="at">          </span><span class="fu">RENV_CONFIG_PAK_ENABLED</span><span class="kw">:</span><span class="at"> </span><span class="st">"true"</span></span>
-<span id="cb13-35"><a href="#cb13-35"></a></span>
-<span id="cb13-36"><a href="#cb13-36"></a><span class="co">      # Step 4: Install Quarto so we can render the document.</span></span>
-<span id="cb13-37"><a href="#cb13-37"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install Quarto</span></span>
-<span id="cb13-38"><a href="#cb13-38"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> quarto-dev/quarto-actions/setup@v2</span></span>
-<span id="cb13-39"><a href="#cb13-39"></a></span>
-<span id="cb13-40"><a href="#cb13-40"></a><span class="co">      # Step 5: Render the penguins document.</span></span>
-<span id="cb13-41"><a href="#cb13-41"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Render Quarto document</span></span>
-<span id="cb13-42"><a href="#cb13-42"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> quarto render analysis.qmd</span></span>
-<span id="cb13-43"><a href="#cb13-43"></a></span>
-<span id="cb13-44"><a href="#cb13-44"></a><span class="co">      # Step 6: Save the rendered output so you can download it.</span></span>
-<span id="cb13-45"><a href="#cb13-45"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Upload rendered output</span></span>
-<span id="cb13-46"><a href="#cb13-46"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/upload-artifact@v4</span></span>
-<span id="cb13-47"><a href="#cb13-47"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb13-48"><a href="#cb13-48"></a><span class="at">          </span><span class="fu">name</span><span class="kw">:</span><span class="at"> rendered-analysis</span></span>
-<span id="cb13-49"><a href="#cb13-49"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> analysis.html</span></span>
-<span id="cb13-50"><a href="#cb13-50"></a><span class="at">          </span><span class="fu">retention-days</span><span class="kw">:</span><span class="at"> </span><span class="dv">7</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># The name shown in the Actions tab on GitHub.</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> Render penguins analysis</span></span>
+<span id="cb14-3"><a href="#cb14-3"></a></span>
+<span id="cb14-4"><a href="#cb14-4"></a><span class="co"># When to run this workflow.</span></span>
+<span id="cb14-5"><a href="#cb14-5"></a><span class="co"># 'push' means: every time you push commits to GitHub.</span></span>
+<span id="cb14-6"><a href="#cb14-6"></a><span class="co"># Adjust the branch name below if yours is not 'main'.</span></span>
+<span id="cb14-7"><a href="#cb14-7"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb14-8"><a href="#cb14-8"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb14-9"><a href="#cb14-9"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"main"</span><span class="kw">]</span></span>
+<span id="cb14-10"><a href="#cb14-10"></a></span>
+<span id="cb14-11"><a href="#cb14-11"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb14-12"><a href="#cb14-12"></a><span class="at">  </span><span class="fu">render</span><span class="kw">:</span></span>
+<span id="cb14-13"><a href="#cb14-13"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb14-14"><a href="#cb14-14"></a></span>
+<span id="cb14-15"><a href="#cb14-15"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb14-16"><a href="#cb14-16"></a><span class="co">      # Step 1: Download your repository files onto GitHub's machine.</span></span>
+<span id="cb14-17"><a href="#cb14-17"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Check out repository</span></span>
+<span id="cb14-18"><a href="#cb14-18"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
+<span id="cb14-19"><a href="#cb14-19"></a></span>
+<span id="cb14-20"><a href="#cb14-20"></a><span class="co">      # Step 2: Install R. Set the version to match your renv.lock,</span></span>
+<span id="cb14-21"><a href="#cb14-21"></a><span class="co">      # i.e. the number from R.version.string on your machine.</span></span>
+<span id="cb14-22"><a href="#cb14-22"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Set up R</span></span>
+<span id="cb14-23"><a href="#cb14-23"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
+<span id="cb14-24"><a href="#cb14-24"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb14-25"><a href="#cb14-25"></a><span class="at">          </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.5.2"</span><span class="co">   # set to YOUR version from R.version.string</span></span>
+<span id="cb14-26"><a href="#cb14-26"></a><span class="at">          </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb14-27"><a href="#cb14-27"></a></span>
+<span id="cb14-28"><a href="#cb14-28"></a><span class="co">      # Step 3: Install renv and restore the exact packages from renv.lock.</span></span>
+<span id="cb14-29"><a href="#cb14-29"></a><span class="co">      # Because this reads renv.lock, there is no package list to maintain</span></span>
+<span id="cb14-30"><a href="#cb14-30"></a><span class="co">      # here: it is the same lockfile your hook guards in Part 1.</span></span>
+<span id="cb14-31"><a href="#cb14-31"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Set up renv</span></span>
+<span id="cb14-32"><a href="#cb14-32"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-renv@v2</span></span>
+<span id="cb14-33"><a href="#cb14-33"></a><span class="at">        </span><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb14-34"><a href="#cb14-34"></a><span class="at">          </span><span class="fu">RENV_CONFIG_PAK_ENABLED</span><span class="kw">:</span><span class="at"> </span><span class="st">"true"</span></span>
+<span id="cb14-35"><a href="#cb14-35"></a></span>
+<span id="cb14-36"><a href="#cb14-36"></a><span class="co">      # Step 4: Install Quarto so we can render the document.</span></span>
+<span id="cb14-37"><a href="#cb14-37"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install Quarto</span></span>
+<span id="cb14-38"><a href="#cb14-38"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> quarto-dev/quarto-actions/setup@v2</span></span>
+<span id="cb14-39"><a href="#cb14-39"></a></span>
+<span id="cb14-40"><a href="#cb14-40"></a><span class="co">      # Step 5: Render the penguins document.</span></span>
+<span id="cb14-41"><a href="#cb14-41"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Render Quarto document</span></span>
+<span id="cb14-42"><a href="#cb14-42"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> quarto render analysis.qmd</span></span>
+<span id="cb14-43"><a href="#cb14-43"></a></span>
+<span id="cb14-44"><a href="#cb14-44"></a><span class="co">      # Step 6: Save the rendered output so you can download it.</span></span>
+<span id="cb14-45"><a href="#cb14-45"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Upload rendered output</span></span>
+<span id="cb14-46"><a href="#cb14-46"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/upload-artifact@v4</span></span>
+<span id="cb14-47"><a href="#cb14-47"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb14-48"><a href="#cb14-48"></a><span class="at">          </span><span class="fu">name</span><span class="kw">:</span><span class="at"> rendered-analysis</span></span>
+<span id="cb14-49"><a href="#cb14-49"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> analysis.html</span></span>
+<span id="cb14-50"><a href="#cb14-50"></a><span class="at">          </span><span class="fu">retention-days</span><span class="kw">:</span><span class="at"> </span><span class="dv">7</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Because <code>setup-renv</code> restores from <code>renv.lock</code>, and your lockfile now contains <code>tidyverse</code>, <code>palmerpenguins</code>, and <code>scales</code> from Part 1, there is no <code>packages:</code> block to edit. This is the payoff of the renv approach: the workflow’s package list and your project’s package list cannot drift apart, because they are the same file.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -921,59 +939,59 @@ Note
 <div class="callout-body-container callout-body">
 <p>If the <code>r-version</code> you pin differs from the version recorded in <code>renv.lock</code>, <code>setup-renv</code> may rebuild packages from source, which makes the first run noticeably slower and can occasionally fail on a package that needs system libraries. Setting <code>r-version</code> from your own <code>R.version.string</code>, as Step 2 instructs, is the mitigation.</p>
 <p>If we set up a workflow that was <code>renv</code> and <code>R</code> version agnostic:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb14-1"><a href="#cb14-1"></a><span class="fu"># The name shown in the Actions tab on GitHub.</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a>name: Render penguins analysis</span>
-<span id="cb14-3"><a href="#cb14-3"></a></span>
-<span id="cb14-4"><a href="#cb14-4"></a><span class="fu"># When to run this workflow.</span></span>
-<span id="cb14-5"><a href="#cb14-5"></a><span class="fu"># 'push' means: every time you push commits to GitHub.</span></span>
-<span id="cb14-6"><a href="#cb14-6"></a><span class="fu"># Adjust the branch name below if yours is not 'main'.</span></span>
-<span id="cb14-7"><a href="#cb14-7"></a>on:</span>
-<span id="cb14-8"><a href="#cb14-8"></a>  push:</span>
-<span id="cb14-9"><a href="#cb14-9"></a>    branches: <span class="co">[</span><span class="ot">"main"</span><span class="co">]</span></span>
-<span id="cb14-10"><a href="#cb14-10"></a></span>
-<span id="cb14-11"><a href="#cb14-11"></a>jobs:</span>
-<span id="cb14-12"><a href="#cb14-12"></a>  render:</span>
-<span id="cb14-13"><a href="#cb14-13"></a>    runs-on: ubuntu-latest</span>
-<span id="cb14-14"><a href="#cb14-14"></a></span>
-<span id="cb14-15"><a href="#cb14-15"></a><span class="in">    steps:</span></span>
-<span id="cb14-16"><a href="#cb14-16"></a><span class="in">      # Step 1: Download your repository files onto GitHub's machine.</span></span>
-<span id="cb14-17"><a href="#cb14-17"></a><span class="in">      - name: Check out repository</span></span>
-<span id="cb14-18"><a href="#cb14-18"></a><span class="in">        uses: actions/checkout@v4</span></span>
-<span id="cb14-19"><a href="#cb14-19"></a></span>
-<span id="cb14-20"><a href="#cb14-20"></a><span class="in">      # Step 2: Install R. 'release' tracks the current release version,</span></span>
-<span id="cb14-21"><a href="#cb14-21"></a><span class="in">      # so there is no version number to maintain here.</span></span>
-<span id="cb14-22"><a href="#cb14-22"></a><span class="in">      - name: Set up R</span></span>
-<span id="cb14-23"><a href="#cb14-23"></a><span class="in">        uses: r-lib/actions/setup-r@v2</span></span>
-<span id="cb14-24"><a href="#cb14-24"></a><span class="in">        with:</span></span>
-<span id="cb14-25"><a href="#cb14-25"></a><span class="in">          r-version: "release"</span></span>
-<span id="cb14-26"><a href="#cb14-26"></a><span class="in">          use-public-rspm: true</span></span>
-<span id="cb14-27"><a href="#cb14-27"></a></span>
-<span id="cb14-28"><a href="#cb14-28"></a><span class="in">      # Step 3: Install the packages your document needs.</span></span>
-<span id="cb14-29"><a href="#cb14-29"></a><span class="in">      # List every package loaded in analysis.qmd here.</span></span>
-<span id="cb14-30"><a href="#cb14-30"></a><span class="in">      - name: Install R packages</span></span>
-<span id="cb14-31"><a href="#cb14-31"></a><span class="in">        uses: r-lib/actions/setup-r-dependencies@v2</span></span>
-<span id="cb14-32"><a href="#cb14-32"></a><span class="in">        with:</span></span>
-<span id="cb14-33"><a href="#cb14-33"></a><span class="in">          packages: |</span></span>
-<span id="cb14-34"><a href="#cb14-34"></a><span class="in">            any::palmerpenguins</span></span>
-<span id="cb14-35"><a href="#cb14-35"></a><span class="in">            any::tidyverse</span></span>
-<span id="cb14-36"><a href="#cb14-36"></a><span class="in">            any::scales</span></span>
-<span id="cb14-37"><a href="#cb14-37"></a></span>
-<span id="cb14-38"><a href="#cb14-38"></a><span class="in">      # Step 4: Install Quarto so we can render the document.</span></span>
-<span id="cb14-39"><a href="#cb14-39"></a><span class="in">      - name: Install Quarto</span></span>
-<span id="cb14-40"><a href="#cb14-40"></a><span class="in">        uses: quarto-dev/quarto-actions/setup@v2</span></span>
-<span id="cb14-41"><a href="#cb14-41"></a></span>
-<span id="cb14-42"><a href="#cb14-42"></a><span class="in">      # Step 5: Render the penguins document.</span></span>
-<span id="cb14-43"><a href="#cb14-43"></a><span class="in">      - name: Render Quarto document</span></span>
-<span id="cb14-44"><a href="#cb14-44"></a><span class="in">        run: quarto render analysis.qmd</span></span>
-<span id="cb14-45"><a href="#cb14-45"></a></span>
-<span id="cb14-46"><a href="#cb14-46"></a><span class="in">      # Step 6: Save the rendered output so you can download it.</span></span>
-<span id="cb14-47"><a href="#cb14-47"></a><span class="in">      - name: Upload rendered output</span></span>
-<span id="cb14-48"><a href="#cb14-48"></a><span class="in">        uses: actions/upload-artifact@v4</span></span>
-<span id="cb14-49"><a href="#cb14-49"></a><span class="in">        with:</span></span>
-<span id="cb14-50"><a href="#cb14-50"></a><span class="in">          name: rendered-analysis</span></span>
-<span id="cb14-51"><a href="#cb14-51"></a><span class="in">          path: analysis.html</span></span>
-<span id="cb14-52"><a href="#cb14-52"></a><span class="in">          retention-days: 7</span></span>
-<span id="cb14-53"><a href="#cb14-53"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb15-1"><a href="#cb15-1"></a><span class="fu"># The name shown in the Actions tab on GitHub.</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>name: Render penguins analysis</span>
+<span id="cb15-3"><a href="#cb15-3"></a></span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="fu"># When to run this workflow.</span></span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="fu"># 'push' means: every time you push commits to GitHub.</span></span>
+<span id="cb15-6"><a href="#cb15-6"></a><span class="fu"># Adjust the branch name below if yours is not 'main'.</span></span>
+<span id="cb15-7"><a href="#cb15-7"></a>on:</span>
+<span id="cb15-8"><a href="#cb15-8"></a>  push:</span>
+<span id="cb15-9"><a href="#cb15-9"></a>    branches: <span class="co">[</span><span class="ot">"main"</span><span class="co">]</span></span>
+<span id="cb15-10"><a href="#cb15-10"></a></span>
+<span id="cb15-11"><a href="#cb15-11"></a>jobs:</span>
+<span id="cb15-12"><a href="#cb15-12"></a>  render:</span>
+<span id="cb15-13"><a href="#cb15-13"></a>    runs-on: ubuntu-latest</span>
+<span id="cb15-14"><a href="#cb15-14"></a></span>
+<span id="cb15-15"><a href="#cb15-15"></a><span class="in">    steps:</span></span>
+<span id="cb15-16"><a href="#cb15-16"></a><span class="in">      # Step 1: Download your repository files onto GitHub's machine.</span></span>
+<span id="cb15-17"><a href="#cb15-17"></a><span class="in">      - name: Check out repository</span></span>
+<span id="cb15-18"><a href="#cb15-18"></a><span class="in">        uses: actions/checkout@v4</span></span>
+<span id="cb15-19"><a href="#cb15-19"></a></span>
+<span id="cb15-20"><a href="#cb15-20"></a><span class="in">      # Step 2: Install R. 'release' tracks the current release version,</span></span>
+<span id="cb15-21"><a href="#cb15-21"></a><span class="in">      # so there is no version number to maintain here.</span></span>
+<span id="cb15-22"><a href="#cb15-22"></a><span class="in">      - name: Set up R</span></span>
+<span id="cb15-23"><a href="#cb15-23"></a><span class="in">        uses: r-lib/actions/setup-r@v2</span></span>
+<span id="cb15-24"><a href="#cb15-24"></a><span class="in">        with:</span></span>
+<span id="cb15-25"><a href="#cb15-25"></a><span class="in">          r-version: "release"</span></span>
+<span id="cb15-26"><a href="#cb15-26"></a><span class="in">          use-public-rspm: true</span></span>
+<span id="cb15-27"><a href="#cb15-27"></a></span>
+<span id="cb15-28"><a href="#cb15-28"></a><span class="in">      # Step 3: Install the packages your document needs.</span></span>
+<span id="cb15-29"><a href="#cb15-29"></a><span class="in">      # List every package loaded in analysis.qmd here.</span></span>
+<span id="cb15-30"><a href="#cb15-30"></a><span class="in">      - name: Install R packages</span></span>
+<span id="cb15-31"><a href="#cb15-31"></a><span class="in">        uses: r-lib/actions/setup-r-dependencies@v2</span></span>
+<span id="cb15-32"><a href="#cb15-32"></a><span class="in">        with:</span></span>
+<span id="cb15-33"><a href="#cb15-33"></a><span class="in">          packages: |</span></span>
+<span id="cb15-34"><a href="#cb15-34"></a><span class="in">            any::palmerpenguins</span></span>
+<span id="cb15-35"><a href="#cb15-35"></a><span class="in">            any::tidyverse</span></span>
+<span id="cb15-36"><a href="#cb15-36"></a><span class="in">            any::scales</span></span>
+<span id="cb15-37"><a href="#cb15-37"></a></span>
+<span id="cb15-38"><a href="#cb15-38"></a><span class="in">      # Step 4: Install Quarto so we can render the document.</span></span>
+<span id="cb15-39"><a href="#cb15-39"></a><span class="in">      - name: Install Quarto</span></span>
+<span id="cb15-40"><a href="#cb15-40"></a><span class="in">        uses: quarto-dev/quarto-actions/setup@v2</span></span>
+<span id="cb15-41"><a href="#cb15-41"></a></span>
+<span id="cb15-42"><a href="#cb15-42"></a><span class="in">      # Step 5: Render the penguins document.</span></span>
+<span id="cb15-43"><a href="#cb15-43"></a><span class="in">      - name: Render Quarto document</span></span>
+<span id="cb15-44"><a href="#cb15-44"></a><span class="in">        run: quarto render analysis.qmd</span></span>
+<span id="cb15-45"><a href="#cb15-45"></a></span>
+<span id="cb15-46"><a href="#cb15-46"></a><span class="in">      # Step 6: Save the rendered output so you can download it.</span></span>
+<span id="cb15-47"><a href="#cb15-47"></a><span class="in">      - name: Upload rendered output</span></span>
+<span id="cb15-48"><a href="#cb15-48"></a><span class="in">        uses: actions/upload-artifact@v4</span></span>
+<span id="cb15-49"><a href="#cb15-49"></a><span class="in">        with:</span></span>
+<span id="cb15-50"><a href="#cb15-50"></a><span class="in">          name: rendered-analysis</span></span>
+<span id="cb15-51"><a href="#cb15-51"></a><span class="in">          path: analysis.html</span></span>
+<span id="cb15-52"><a href="#cb15-52"></a><span class="in">          retention-days: 7</span></span>
+<span id="cb15-53"><a href="#cb15-53"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -1059,10 +1077,10 @@ Note
 <hr></section><section id="going-further-running-code-on-a-schedule" class="level2"><h2 class="anchored" data-anchor-id="going-further-running-code-on-a-schedule">Going further: running code on a schedule</h2>
 <p>So far, the workflow has been triggered by a push — useful for testing, but not always the most natural fit. For many analytical tasks, a scheduled run is more appropriate: a report that refreshes every morning, or a data file that is updated weekly, without you having to do anything at all.</p>
 <p>GitHub Actions supports scheduled runs using what are called <strong>cron jobs</strong>. A cron expression is a compact way of specifying a time schedule. Replace the <code>on: push:</code> trigger in your workflow file with the following:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb18-1"><a href="#cb18-1"></a><span class="co"># Run every day at 9:00am UTC</span></span>
-<span id="cb18-2"><a href="#cb18-2"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb18-3"><a href="#cb18-3"></a><span class="at">  </span><span class="fu">schedule</span><span class="kw">:</span></span>
-<span id="cb18-4"><a href="#cb18-4"></a><span class="at">    </span><span class="kw">-</span><span class="at"> </span><span class="fu">cron</span><span class="kw">:</span><span class="at"> </span><span class="st">'0 9 * * *'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb19-1"><a href="#cb19-1"></a><span class="co"># Run every day at 9:00am UTC</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="at">  </span><span class="fu">schedule</span><span class="kw">:</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="at">    </span><span class="kw">-</span><span class="at"> </span><span class="fu">cron</span><span class="kw">:</span><span class="at"> </span><span class="st">'0 9 * * *'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The five fields in a cron expression represent, in order: minute, hour, day of month, month, and day of week. An asterisk means “every”. So <code>0 9 * * *</code> means: at minute 0 of hour 9, every day of every month. The time is always in UTC, which is one hour behind British Summer Time and five hours ahead of Eastern Time — adjust accordingly.</p>
 <p>The syntax is not intuitive to read or write from memory. The website <a href="https://crontab.guru">crontab.guru</a> translates cron expressions into plain English and lets you build expressions interactively. It is worth bookmarking.</p>
 <p>Some useful examples:</p>
@@ -1091,51 +1109,51 @@ Note
 </tbody>
 </table>
 <p>You can also combine a schedule with a push trigger, so the workflow runs both on demand and on a timer:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb19-1"><a href="#cb19-1"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
-<span id="cb19-3"><a href="#cb19-3"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"main"</span><span class="kw">]</span></span>
-<span id="cb19-4"><a href="#cb19-4"></a><span class="at">  </span><span class="fu">schedule</span><span class="kw">:</span></span>
-<span id="cb19-5"><a href="#cb19-5"></a><span class="at">    </span><span class="kw">-</span><span class="at"> </span><span class="fu">cron</span><span class="kw">:</span><span class="at"> </span><span class="st">'0 9 * * 1'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb20-1"><a href="#cb20-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"main"</span><span class="kw">]</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a><span class="at">  </span><span class="fu">schedule</span><span class="kw">:</span></span>
+<span id="cb20-5"><a href="#cb20-5"></a><span class="at">    </span><span class="kw">-</span><span class="at"> </span><span class="fu">cron</span><span class="kw">:</span><span class="at"> </span><span class="st">'0 9 * * 1'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <hr></section><section id="going-further-committing-output-back-to-the-repository" class="level2"><h2 class="anchored" data-anchor-id="going-further-committing-output-back-to-the-repository">Going further: committing output back to the repository</h2>
 <p>The workflow in Part 2 uploads the rendered document as a temporary artefact, which GitHub deletes after seven days and which requires a manual download to access. An alternative is to have the workflow commit the rendered file back into the repository directly, making it a permanent part of your commit history and accessible at a fixed URL.</p>
 <p>Add the following step after the render step, replacing the upload-artifact step:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb20-1"><a href="#cb20-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Commit rendered output to repository</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb20-3"><a href="#cb20-3"></a>          # Set the git identity for this commit.</span>
-<span id="cb20-4"><a href="#cb20-4"></a>          # These details appear in the commit history.</span>
-<span id="cb20-5"><a href="#cb20-5"></a>          git config --local user.email "actions@github.com"</span>
-<span id="cb20-6"><a href="#cb20-6"></a>          git config --local user.name "GitHub Actions"</span>
-<span id="cb20-7"><a href="#cb20-7"></a></span>
-<span id="cb20-8"><a href="#cb20-8"></a>          # Stage the rendered file.</span>
-<span id="cb20-9"><a href="#cb20-9"></a>          git add analysis.html</span>
-<span id="cb20-10"><a href="#cb20-10"></a></span>
-<span id="cb20-11"><a href="#cb20-11"></a>          # Commit it. The || handles the case where nothing has changed:</span>
-<span id="cb20-12"><a href="#cb20-12"></a>          # if there is no new output, git commit would normally fail with</span>
-<span id="cb20-13"><a href="#cb20-13"></a>          # an error. The || tells bash: if the left side fails, run the</span>
-<span id="cb20-14"><a href="#cb20-14"></a>          # right side instead — in this case, just print a message and</span>
-<span id="cb20-15"><a href="#cb20-15"></a>          # continue without failing the workflow.</span>
-<span id="cb20-16"><a href="#cb20-16"></a>          git commit -m "chore: update rendered analysis" || echo "No changes to commit"</span>
-<span id="cb20-17"><a href="#cb20-17"></a></span>
-<span id="cb20-18"><a href="#cb20-18"></a>          # Push the commit back to GitHub.</span>
-<span id="cb20-19"><a href="#cb20-19"></a>          git push origin || echo "No changes to commit"</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb21-1"><a href="#cb21-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Commit rendered output to repository</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>          # Set the git identity for this commit.</span>
+<span id="cb21-4"><a href="#cb21-4"></a>          # These details appear in the commit history.</span>
+<span id="cb21-5"><a href="#cb21-5"></a>          git config --local user.email "actions@github.com"</span>
+<span id="cb21-6"><a href="#cb21-6"></a>          git config --local user.name "GitHub Actions"</span>
+<span id="cb21-7"><a href="#cb21-7"></a></span>
+<span id="cb21-8"><a href="#cb21-8"></a>          # Stage the rendered file.</span>
+<span id="cb21-9"><a href="#cb21-9"></a>          git add analysis.html</span>
+<span id="cb21-10"><a href="#cb21-10"></a></span>
+<span id="cb21-11"><a href="#cb21-11"></a>          # Commit it. The || handles the case where nothing has changed:</span>
+<span id="cb21-12"><a href="#cb21-12"></a>          # if there is no new output, git commit would normally fail with</span>
+<span id="cb21-13"><a href="#cb21-13"></a>          # an error. The || tells bash: if the left side fails, run the</span>
+<span id="cb21-14"><a href="#cb21-14"></a>          # right side instead — in this case, just print a message and</span>
+<span id="cb21-15"><a href="#cb21-15"></a>          # continue without failing the workflow.</span>
+<span id="cb21-16"><a href="#cb21-16"></a>          git commit -m "chore: update rendered analysis" || echo "No changes to commit"</span>
+<span id="cb21-17"><a href="#cb21-17"></a></span>
+<span id="cb21-18"><a href="#cb21-18"></a>          # Push the commit back to GitHub.</span>
+<span id="cb21-19"><a href="#cb21-19"></a>          git push origin || echo "No changes to commit"</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This pattern is particularly useful for scheduled workflows: the workflow runs on a timer, re-renders the document with current data, and pushes the updated HTML back to the repository automatically. The <code>||</code> operator is a bash pattern worth understanding — it means “or”, and separates a command from a fallback to run if the first command fails.</p>
 <p>Note that this approach writes to your repository’s main branch directly, which adds commits generated by GitHub Actions to your history. Whether this is desirable depends on your project; for a solo analyst it is usually fine.</p>
 <hr></section><section id="going-further-projects-without-renv" class="level2"><h2 class="anchored" data-anchor-id="going-further-projects-without-renv">Going further: projects without renv</h2>
 <p>The workflow in Part 2 uses <code>r-lib/actions/setup-renv@v2</code>, which requires a committed <code>renv.lock</code> file. If you encounter a project or tutorial that does not use renv, you will see a different approach: <code>r-lib/actions/setup-r-dependencies@v2</code>, which installs packages listed explicitly in the workflow file:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb21-1"><a href="#cb21-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install packages</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a><span class="at">  </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r-dependencies@v2</span></span>
-<span id="cb21-3"><a href="#cb21-3"></a><span class="at">  </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="fu">    packages</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb21-5"><a href="#cb21-5"></a>      any::ggplot2</span>
-<span id="cb21-6"><a href="#cb21-6"></a>      any::dplyr</span>
-<span id="cb21-7"><a href="#cb21-7"></a>      any::quarto</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb22-1"><a href="#cb22-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install packages</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a><span class="at">  </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r-dependencies@v2</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a><span class="at">  </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a><span class="fu">    packages</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb22-5"><a href="#cb22-5"></a>      any::ggplot2</span>
+<span id="cb22-6"><a href="#cb22-6"></a>      any::dplyr</span>
+<span id="cb22-7"><a href="#cb22-7"></a>      any::quarto</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This is less reproducible than <code>renv</code> because it installs the latest available version of each package rather than the exact version you used locally. For your own projects — such as the penguins repository you have built here — renv and <code>setup-renv</code> is the better choice. For adapting workflows from others who do not use renv, <code>setup-r-dependencies</code> is what you will encounter.</p>
 <hr></section><section id="where-to-go-next" class="level2"><h2 class="anchored" data-anchor-id="where-to-go-next">Where to go next</h2>
 <p>The r-lib/actions repository (<a href="https://github.com/r-lib/actions">https://github.com/r-lib/actions</a>) contains example workflows for a wide range of R tasks. Each example includes its <code><a href="https://usethis.r-lib.org/reference/use_github_action.html">usethis::use_github_action()</a></code> call where one exists. The patterns you have learned here transfer directly: adjust the trigger, swap the render step, change what is uploaded.</p>
 <p><strong>Render only on pull requests</strong> rather than every push, to keep the per-push feedback loop fast:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb22-1"><a href="#cb22-1"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb22-2"><a href="#cb22-2"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
-<span id="cb22-3"><a href="#cb22-3"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"main"</span><span class="kw">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb23-1"><a href="#cb23-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb23-2"><a href="#cb23-2"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
+<span id="cb23-3"><a href="#cb23-3"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"main"</span><span class="kw">]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 
 
 </section></main><!-- /main --><script>

@@ -200,9 +200,10 @@ Make the following file
 scripts/hooks/pre-commit.sh:
 
 ```markdown
-echo "--- Checking renv synchronisation..."
+#!/usr/bin/env bash
 
-Rscript --no-save --no-restore-data -e '
+echo "--- Checking renv synchronisation..."
+"Rscript" --no-save --no-restore-data -e '
   if (!isTRUE(renv::status()$synchronized)) {
     message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")
     quit(status = 1)
@@ -216,14 +217,20 @@ Rscript --no-save --no-restore-data -e '
 This script assumes `Rscript` is available on your system PATH, which is the
 default on macOS and Linux. On Windows, R is not always added to the PATH. If
 the hook fails with a "command not found" error, you 
-replace `Rscript` in the script above with the full path to your installation,
-for example `"/c/Program Files/R/R-4.5.2/bin/x64/Rscript"`. Adjust the version
+replace `Rscript` in the script above with the full path to your installation:
+
+```{r,eval = FALSE}
+file.path(R.home("bin"), "R") # find your R.exe
+```
+
+for example `"/c/Program Files/R/R-4.5.3/bin/x64/Rscript"`. Adjust the version
 number to match your installed version of R.
 
 ```markdown
-echo "--- Checking renv synchronisation..."
+#!/usr/bin/env bash
 
-"/c/Program Files/R/R-4.5.2/bin/x64/Rscript" --no-save --no-restore-data -e '
+echo "--- Checking renv synchronisation..."
+"/c/Program Files/R/R-4.5.3/bin/x64/Rscript" --no-save --no-restore-data -e '
   if (!isTRUE(renv::status()$synchronized)) {
     message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")
     quit(status = 1)

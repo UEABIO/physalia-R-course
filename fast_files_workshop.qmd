@@ -1,0 +1,374 @@
+---
+title: "A 50-Minute Tour: Parquet, SQL, and data.table"
+format: html
+---
+
+```{r workshop-setup}
+#| include: false
+knitr::opts_chunk$set(echo      = TRUE,
+                      eval      = FALSE,
+                      message   = FALSE,
+                      warning   = FALSE,
+                      fig.align = "center")
+```
+
+This is a self-paced session for R users who know `dplyr` and the native pipe
+(`|>`) but have not met Parquet, SQL, or `data.table`. It is deliberately short and
+deliberately shallow: you will not write any of the three fluently by the end. You
+will leave able to do one thing, and recognise three tools that do it.
+
+The one thing is this: **read only the part of a file you actually need, rather than
+loading the whole file and then throwing most of it away.** That single habit is
+what keeps a large file from filling your memory and crashing the session. Parquet,
+SQL, and `data.table` are three different ways to apply it. Seeing the same idea in
+all three is the point; mastering any one of them is a job for a longer session.
+
+### Learning outcomes {-}
+
+By the end you should be able to:
+
+1. Explain why a CSV read loads the whole file but a Parquet read need not.
+2. Read selected columns from a Parquet file and measure that it reads less.
+3. Query a database with `dplyr`, finish with `collect()`, and read the SQL that
+   `show_query()` produces.
+4. Recognise the `data.table` `DT[i, j, by]` template and map it to `dplyr`.
+5. Decide, for a file of your own, which of the three tools fits the situation.
+
+:::{.callout-note}
+**Before you start.** Install the packages and confirm the data files are present.
+
+```{r install}
+#| eval: false
+install.packages(c("readr", "dplyr", "arrow", "bench",
+                   "DBI", "RSQLite", "dbplyr", "data.table"))
+```
+
+If `install.packages("arrow")` fails rather than completing, you can still do
+Blocks 3 and 4; only Block 2 needs it. Three data files are provided, all holding
+the **same** one-million-row dataset: `bird_survey.csv`, `bird_survey.parquet`, and
+`bird_survey.sqlite`. Put them in your working directory and check:
+
+```{r check-files}
+#| eval: false
+file.exists("bird_survey.csv")      # should be TRUE
+file.exists("bird_survey.parquet")  # should be TRUE
+file.exists("bird_survey.sqlite")   # should be TRUE
+```
+
+The dataset has 15 columns. The ones used below are `species`, `habitat`, `year`
+(values 2000 to 2023), and `count`.
+:::
+
+## Running order
+
+| Block | Content | Time |
+|---|---|---|
+| 1 | The one idea: read less of the file | ≈8 min |
+| 2 | Parquet: columns you don't ask for are never read | ≈12 min |
+| 3 | SQL: querying without loading | ≈12 min |
+| 4 | `data.table`: the fast in-memory option | ≈10 min |
+| 5 | Close: which to reach for, and a checklist | ≈8 min |
+
+---
+
+## 1. The one idea: read less of the file
+
+A CSV stores data one row at a time, as plain text. To read it, R parses every
+value on every line into memory. For a small file this is instant and you never
+think about it. For a file approaching the size of your memory, it is the reason
+the session dies: R tries to hold the whole thing at once.
+
+There are two independent ways to read less. You can **store the file in a format
+that lets you read only some columns** (that is Parquet, Block 2). Or you can
+**describe the query first and let an engine run it, returning only the result**
+rather than the whole table (that is SQL and `data.table`, Blocks 3 and 4). The
+best tools do both.
+
+The word that recurs is `collect()`. When you query a database or a lazy Parquet
+dataset through `dplyr`, nothing is read until you call `collect()`. Before it, you
+hold a *description* of the query; after it, you hold an ordinary tibble with just
+the answer. Watch for that word in every block below.
+
+:::{.callout-tip}
+**I/O is the slow part.** "I/O" means reading from and writing to disk, which is far
+slower than computing on data already in memory. Every technique here is, at heart,
+a way to move fewer bytes off the disk. If you remember nothing else, remember that
+the goal is to read fewer bytes, not to find a faster reading function.
+:::
+
+---
+
+## 2. Parquet: columns you don't ask for are never read
+
+Parquet stores data one *column* at a time, in compressed binary form, with a small
+footer recording each column's name, type, and range. Because each column sits in
+its own block, asking for two columns reads only those two blocks. The rest of the
+file is never touched. This is the whole advantage, and CSV cannot do it: a CSV read
+always parses every column on every line, even the ones you discard.
+
+### Exercise 2: does selecting columns speed up the read?
+
+**Predict first.** You will read 2 of the 15 columns from each format. Write down,
+before you run it, whether you expect selecting columns to be *faster* for CSV, for
+Parquet, for both, or for neither.
+
+```{r ex-parquet}
+#| eval: false
+library(readr)
+library(arrow)
+library(bench)
+
+bench::mark(
+  csv_all      = read_csv("bird_survey.csv", show_col_types = FALSE),
+  csv_two      = read_csv("bird_survey.csv",
+                          col_select = c(species, count),
+                          show_col_types = FALSE),
+  parquet_all  = read_parquet("bird_survey.parquet"),
+  parquet_two  = read_parquet("bird_survey.parquet",
+                              col_select = c(species, count)),
+  iterations = 5,
+  check      = FALSE
+)[, c("expression", "median")]
+```
+
+`r hide("Solution")`
+
+The two CSV times should be close to each other: a CSV is row-oriented, so the
+parser reads every value regardless and only *then* drops the columns you didn't
+ask for. Selecting columns saves memory in R but not disk reading. The two Parquet
+times should differ, with the two-column read faster: Parquet reads only the blocks
+for the columns you named, so fewer columns means genuinely fewer bytes off the
+disk. This is the reason to convert a large, code-queried file to Parquet.
+
+The numbers are noisy over five iterations, so judge the *direction* of the
+difference, not the exact figures. On this million-row file the Parquet gap is
+real but modest; it widens as the file grows and as you skip more columns.
+
+`r unhide()`
+
+To convert a CSV you already have, once:
+
+```{r convert-parquet}
+#| eval: false
+read_csv("bird_survey.csv", show_col_types = FALSE) |>
+  write_parquet("bird_survey.parquet")
+```
+
+:::{.callout-note}
+Parquet is binary, so you cannot open it in a text editor or a basic spreadsheet.
+Keep CSV for files a person edits by hand or opens in Excel. Choose Parquet for a
+large file you query from code.
+:::
+
+---
+
+## 3. SQL: querying without loading
+
+SQL (Structured Query Language) is the standard language for asking questions of
+data in a database. A database file sits on disk, and you query it without loading
+it into R. The good news for you: you can write the query in `dplyr`, and the
+`dbplyr` package translates it to SQL automatically. The only new step is
+`collect()` at the end, to pull the (small) result back into R.
+
+We use SQLite, a database that lives in a single file and needs no server. The
+provided `bird_survey.sqlite` holds one table, `surveys`, with the same data as the
+CSV and Parquet files.
+
+### Exercise 3: query a database with dplyr, then read the SQL
+
+```{r ex-sql}
+#| eval: false
+library(DBI)
+library(dplyr)
+library(dbplyr)
+
+# Connect to the single-file SQLite database
+con <- dbConnect(RSQLite::SQLite(), "bird_survey.sqlite")
+
+dbListTables(con)                  # should list "surveys"
+surveys <- tbl(con, "surveys")     # a lazy handle, NOT a tibble yet
+surveys                            # prints first rows; note the row count is "??"
+```
+
+The `??` in the printed dimensions is the lesson: R knows the columns but has not
+counted the rows, because it has not read the table. Now query it, exactly as you
+would a data frame, and finish with `collect()`:
+
+```{r ex-sql-query}
+#| eval: false
+result <- surveys |>
+  filter(year >= 2020, habitat == "woodland") |>
+  group_by(year, species) |>
+  summarise(total = sum(count), .groups = "drop") |>
+  collect()                        # runs the query, returns a tibble
+```
+
+**Predict first:** what does the same pipeline *without* `collect()` return? Run
+both and check the class of each.
+
+```{r ex-sql-class}
+#| eval: false
+plan <- surveys |>
+  filter(year >= 2020, habitat == "woodland") |>
+  group_by(year, species) |>
+  summarise(total = sum(count), .groups = "drop")
+
+class(plan)     # a lazy query object
+class(result)   # a tibble
+
+plan |> show_query()   # see the SQL your dplyr became
+
+dbDisconnect(con)
+```
+
+`r hide("Solution")`
+
+Without `collect()` you hold a lazy query object, not data: `class(plan)` shows
+database/`tbl` classes (such as `tbl_SQLiteConnection`), while `class(result)`
+shows `tbl_df`. `show_query()` prints the generated SQL, which selects `year`,
+`species`, and a `SUM(count)`, filters with a `WHERE` clause, and groups with
+`GROUP BY`. Reading that SQL beside the `dplyr` you wrote is the gentlest way to
+start learning it: `WHERE` is `filter()`, `SELECT` is `select()`, `GROUP BY` is
+`group_by()`.
+
+`r unhide()`
+
+:::{.callout-warning}
+One real difference between the two engines: `dplyr`'s `sum()` returns `NA` if any
+value is missing, whereas SQL's `SUM` ignores missing values by default. Add
+`na.rm = TRUE` on the R side if you need them to agree, and always check on a small
+subset before trusting that two engines give the same answer.
+:::
+
+---
+
+## 4. data.table: the fast in-memory option
+
+Parquet and SQL both help when a file is large relative to your memory. `data.table`
+solves a different problem: a table that *does* fit in memory, but where `dplyr`
+operations feel slow. It is a drop-in alternative to the data frame with its own
+compact syntax, and it is widely used for speed on large in-memory tables.
+
+The syntax is one bracket, read as `DT[i, j, by]`: `i` chooses rows (like
+`filter`), `j` chooses or computes columns (like `select` or `summarise`), and `by`
+groups (like `group_by`). You do not need to write it fluently today; you need to
+recognise it.
+
+### Exercise 4: the same operation, three ways
+
+Here is one operation, expressed in `dplyr`, in `data.table`, and in SQL, so you can
+see they are the same idea. It matches the question from Block 3: woodland records,
+total count per species, for years 2020 onward. Run the first two; read the third.
+
+```{r ex-dt}
+#| eval: false
+library(data.table)
+library(dplyr)
+
+# Load the CSV both ways
+df <- readr::read_csv("bird_survey.csv", show_col_types = FALSE)  # a tibble
+dt <- fread("bird_survey.csv")                                    # a data.table
+
+# dplyr
+df |>
+  filter(year >= 2020, habitat == "woodland") |>
+  group_by(species) |>
+  summarise(total = sum(count))
+
+# data.table: the same, in one bracket
+dt[year >= 2020 & habitat == "woodland",
+   .(total = sum(count)),
+   by = species]
+```
+
+The SQL form of the same question, for recognition only:
+
+```sql
+SELECT species, SUM(count) AS total
+FROM surveys
+WHERE year >= 2020 AND habitat = 'woodland'
+GROUP BY species
+```
+
+`r hide("Solution")`
+
+All three keep woodland rows from 2020 onward, group by species, and total the
+count. In `data.table`, the `i` slot (`year >= 2020 & habitat == "woodland"`) is
+the filter, the `j` slot (`.(total = sum(count))`) computes the summary, and
+`by = species` groups. The three results should match. The mapping to recognise:
+
+| | rows (`filter`) | summary (`summarise`) | group |
+|---|---|---|---|
+| `dplyr` | `filter(...)` | `summarise(...)` | `group_by(...)` |
+| `data.table` | `DT[i, ...]` | `DT[, j, ]` | `by =` |
+| SQL | `WHERE` | `SELECT ... AS` | `GROUP BY` |
+
+`fread()` is also simply a fast CSV reader, so even if you never adopt the bracket
+syntax, `fread("file.csv")` is a useful function to know.
+
+`r unhide()`
+
+:::{.callout-note}
+`data.table` works in memory, so it does not help with a file too large to load.
+For that, you are back to Parquet (Block 2) or a database (Block 3). `data.table`
+is for speed on data that already fits.
+:::
+
+---
+
+## 5. Close: which to reach for
+
+Three tools, three situations:
+
+- **Parquet** when you have a large file you query from code by column, and you want
+  reads to touch only the columns you need. Convert once with `write_parquet()`,
+  then read with `read_parquet(..., col_select = ...)` or query lazily with
+  `arrow::open_dataset()`.
+- **SQL / a database** when data lives in, or belongs in, a database, especially
+  several related tables or a store queried repeatedly. Query it in `dplyr` through
+  `dbplyr`, finish with `collect()`, and use `show_query()` to learn the SQL.
+- **`data.table`** when the data fits in memory but `dplyr` is too slow, or when you
+  just want a fast CSV reader in `fread()`.
+
+The thread through all three is the one idea from Block 1: read only what you need.
+Parquet reads only the columns; a database returns only the query result;
+`data.table` is the fast path once the data is in memory.
+
+### Closing checklist
+
+- [ ] Large file, queried from code, want fast column reads? **Parquet.**
+- [ ] Hand-edited or opened in a spreadsheet? **Keep CSV.**
+- [ ] Data in a database, or several related tables? **Query in `dplyr` via
+      `dbplyr`, end with `collect()`.**
+- [ ] Fits in memory but `dplyr` feels slow? **`data.table`** (and `fread()` for a
+      fast read).
+- [ ] When you meet SQL, read `WHERE` as `filter()` and `SELECT` as `select()`;
+      `show_query()` shows the SQL your own `dplyr` becomes.
+- [ ] Don't trust a general speed claim. Measure on your file and machine with
+      `bench::mark()` first.
+
+---
+
+## Appendix: key terms {-}
+
+**`collect()`**: runs a lazy query (database or Arrow) and returns a tibble. Before
+it, a plan; after it, data in memory.
+
+**Column projection**: reading only the columns you asked for. Parquet does this;
+CSV cannot.
+
+**`data.table`**: a fast in-memory alternative to the data frame, with the syntax
+`DT[i, j, by]`. `fread()` is its CSV reader.
+
+**`fread()`**: `data.table`'s fast CSV reader; usable on its own.
+
+**I/O**: input/output, the work of reading and writing disk, usually the slow part.
+
+**Parquet**: a compressed, columnar, binary file format; small and fast to query by
+column, but not human readable.
+
+**SQL**: Structured Query Language, the standard language for querying databases;
+`SELECT`, `FROM`, `WHERE`, `GROUP BY` are its core verbs.
+
+**`show_query()`**: prints the SQL that a `dplyr` pipeline against a database
+generates; a gentle way to learn SQL.
