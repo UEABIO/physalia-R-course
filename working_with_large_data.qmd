@@ -1,0 +1,454 @@
+# Working with larger data {.unnumbered}
+
+
+```{r}
+#| include: false
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+
+library(here)
+```
+
+
+Throughout this block we use the Portal mammals survey data, distributed as both a
+CSV file and a SQLite database. The CSV is around 35,000 rows: small enough to
+inspect, large enough to make timing differences visible.
+
+```{r}
+#| eval: false
+library(tidyverse)
+library(data.table)   # fread() and the data.table class
+library(dtplyr)       # dplyr syntax, data.table speed
+library(DBI)          # database connections
+library(RSQLite)      # the SQLite driver
+library(microbenchmark)
+
+csv_name <- here::here("data", "surveys.csv")
+```
+
+
+```{r, eval = TRUE, echo = FALSE}
+downloadthis::download_link(
+  link = "https://raw.githubusercontent.com/UEABIO/physalia-R-course/refs/heads/2024/surveys.csv",
+  button_label = "Download surveys data as csv",
+  button_type = "success",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+
+## Why a data frame is sometimes the wrong tool
+
+A `data.frame` (and its tidyverse refinement, the `tibble`) holds the whole
+dataset in memory and copies it on most operations. For tens of thousands of rows
+this is invisible. For tens of millions it becomes the dominant cost of an
+analysis, and for data larger than available RAM it fails outright.
+
+Two strategies address this. The first keeps the data in memory but uses a
+structure optimised for speed and low copying: `data.table`. The second leaves the
+data on disk in a database and pulls only what each query needs: a SQLite file
+queried through `dbplyr`. The rest of this block works through each in turn.
+
+:::{.callout-note}
+
+The thresholds are approximate and hardware-dependent, but a useful rule of thumb:
+under ~1 GB, a tibble is fine; from ~1 GB up to the limits of RAM, reach for
+`data.table`; beyond RAM, or when the data are already in a database, use a
+database backend.
+
+:::
+
+## Reading large files: `fread()`
+
+There are three common ways to read a delimited file: base R's `read.csv()`,
+`readr::read_csv()`, and `data.table::fread()`. For small files the choice is
+immaterial. As files grow past roughly 100 MB the differences become substantial,
+with `fread()` and `read_csv()` typically several times faster than `read.csv()`.
+
+```{r}
+#| eval: false
+library(microbenchmark)
+
+microbenchmark(
+  base  = read.csv(csv_name),
+  readr = readr::read_csv(csv_name, show_col_types = FALSE),
+  dt    = data.table::fread(csv_name, showProgress = FALSE),
+  times = 10,
+  unit  = "ms"
+)
+```
+
+The return types differ, and this matters. `read.csv()` returns a `data.frame`,
+`read_csv()` returns a `tibble`, and `fread()` returns a `data.table`. The first
+two behave identically for our purposes; the `data.table` is a different object
+with its own syntax, covered below.
+
+### Reading only part of a file
+
+When a file does not fit in memory, the simplest fix is to read less of it.
+`fread()` exposes two arguments for this. `nrows` caps the number of rows read, and
+`skip` discards rows from the top — or, given a string, starts reading at the first
+line matching it.
+
+```{r}
+#| eval: false
+# First 500 rows only
+fread(csv_name, nrows = 500, showProgress = FALSE)
+
+# Start from the first line containing "1986"
+fread(csv_name, skip = "1986", showProgress = FALSE)
+```
+
+The `select` argument restricts which columns are read, which often has a larger
+effect on memory than restricting rows. `drop` is its complement.
+
+```{r}
+#| eval: false
+three_columns <- fread(
+  csv_name,
+  select       = c("species_id", "sex", "hindfoot_length"),
+  showProgress = FALSE
+)
+```
+
+`readr` offers the same controls under different names: `n_max` for rows, `skip`
+for an offset, and `col_select` for columns. Unlike older versions, `col_select`
+now accepts column names directly, so the two packages are close to equivalent
+here.
+
+```{r}
+#| eval: false
+readr::read_delim(
+  csv_name,
+  delim      = ",",
+  n_max      = 500,
+  col_select = c(species_id, sex, hindfoot_length)
+)
+```
+
+## `data.table` syntax in one minute
+
+A `data.table` is indexed as `dt[i, j, by]`: filter rows in `i`, do something to
+columns in `j`, grouped by `by`. It is terse and fast, but the grammar is not
+dplyr's.
+
+```{r}
+#| eval: false
+allData <- fread(csv_name, showProgress = FALSE)
+
+# Filter rows
+allData[year > 1988]
+
+# Select columns (note: .() returns a data.table, not a vector)
+allData[, .(species_id, year)]
+
+# Aggregate by group
+allData[, .(mean_hf = mean(hindfoot_length, na.rm = TRUE)), by = species_id]
+```
+
+You do not have to learn this grammar to get the speed. `dtplyr` lets you write
+ordinary dplyr and translates it to `data.table` code under the hood.
+
+## Driving `data.table` with dplyr: `dtplyr`
+
+`dtplyr` is the bridge. You wrap a `data.table` in `lazy_dt()`, write the dplyr you
+already know, and call `as_tibble()` (or `collect()`) at the end to trigger
+execution and return a normal tibble.
+
+```{r}
+#| eval: false
+library(dtplyr)
+
+allData |>
+  lazy_dt() |>
+  filter(year > 1988) |>
+  summarise(mean_hf = mean(hindfoot_length, na.rm = TRUE),
+            .by = species_id) |>
+  as_tibble()
+```
+
+The `lazy_dt()` step is the important change from older tutorials. Evaluation is
+*lazy*: the pipeline builds up a translation but runs nothing until
+`as_tibble()`/`collect()`. To see the `data.table` code that dtplyr generates, pipe
+into `show_query()`.
+
+```{r}
+#| eval: false
+allData |>
+  lazy_dt() |>
+  filter(year > 1988) |>
+  summarise(mean_hf = mean(hindfoot_length, na.rm = TRUE), .by = species_id) |>
+  show_query()
+```
+
+:::{.callout-tip}
+
+Piping a bare `data.table` straight into a dplyr verb appears to work because
+recent dtplyr quietly converts it to a `lazy_dt()` for you, with a warning. Do not
+rely on this. Make the `lazy_dt()` step explicit so it is clear where the
+translation begins and so the laziness is visible to anyone reading the code.
+
+:::
+
+There is a small, fixed translation overhead per verb (under a millisecond), which
+is irrelevant for large data but means dtplyr is not worth it for tiny tables. And
+because dtplyr preserves dplyr's copy-on-modify semantics, it is marginally slower
+than hand-written `data.table`. For most analysis work that trade is well worth the
+readability.
+
+### Activity: translate a pipeline
+
+:::{.task}
+::::{.task-header}
+the same question, three ways
+::::
+::::{.task-container}
+
+Using `allData`, find the mean `hindfoot_length` per `species_id` for records after
+1985, sorted from largest to smallest mean. Write it (a) as native `data.table`,
+(b) as a `dtplyr` pipeline, then use `show_query()` to compare your dtplyr code with
+the `data.table` it generates. Are they the same?
+
+::::
+:::
+
+
+`r hide("Solution")`
+
+```{r}
+#| eval: false
+# (a) native data.table
+allData[year > 1985,
+        .(mean_hf = mean(hindfoot_length, na.rm = TRUE)),
+        by = species_id][order(-mean_hf)]
+
+# (b) dtplyr
+allData |>
+  lazy_dt() |>
+  filter(year > 1985) |>
+  summarise(mean_hf = mean(hindfoot_length, na.rm = TRUE), .by = species_id) |>
+  arrange(desc(mean_hf)) |>
+  as_tibble()
+
+# inspect the translation
+allData |>
+  lazy_dt() |>
+  filter(year > 1985) |>
+  summarise(mean_hf = mean(hindfoot_length, na.rm = TRUE), .by = species_id) |>
+  arrange(desc(mean_hf)) |>
+  show_query()
+```
+
+The generated query is close to the hand-written version. It will not be character
+-for-character identical — dtplyr introduces intermediate steps to honour dplyr
+semantics — but it uses the same `[i, j, by]` machinery, which is where the speed
+comes from.
+
+`r unhide()`
+
+## When the data live on disk: databases
+
+`data.table` still holds everything in memory. Once the data exceed RAM, or when
+they already sit in a shared database, the better move is to leave them where they
+are and query across the connection. We use SQLite here because it is a single
+file with no server to configure, but the same code works against PostgreSQL,
+MySQL, BigQuery, and others through the common `DBI` interface.
+
+```{r}
+#| eval: false
+library(DBI)
+library(RSQLite)
+
+# A connection to a SQLite database file
+mammals <- DBI::dbConnect(RSQLite::SQLite(),
+                          here::here("data", "portal_mammals.sqlite"))
+
+DBI::dbListTables(mammals)
+# [1] "plots"   "species" "surveys"
+```
+
+`dbConnect()` opens the connection; `RSQLite::SQLite()` names the driver. The
+returned object, `mammals`, is the handle we query against. Point a `tbl()` at one
+of its tables to get something that behaves like a lazy tibble.
+
+```{r}
+#| eval: false
+surveys <- dplyr::tbl(mammals, "surveys")
+surveys
+# # Source:   table<`surveys`> [?? x 9]
+# # Database: sqlite [.../portal_mammals.sqlite]
+#    record_id month   day  year plot_id species_id sex   ...
+#        <int> <int> <int> <int>   <int> <chr>      <chr>
+#  1         1     7    16  1977       2 NL         M
+#  ...
+```
+
+Note the `[?? x 9]`: R reports nine columns but an unknown number of rows. It has
+not counted them, because doing so would mean reading the whole table. This
+laziness is the entire point — R fetches only what a query demands.
+
+## Querying with `dbplyr`
+
+`dbplyr` translates dplyr verbs into SQL automatically. In practice you write the
+same pipeline you would for a local tibble, with one addition: nothing is fetched
+until you call `collect()`.
+
+```{r}
+#| eval: false
+library(dbplyr)
+
+# How many males were recorded in plot 2 in 1978?
+surveys |>
+  filter(sex == "M", year == 1978, plot_id == 2) |>
+  count() |>
+  collect()                # <- pulls the result into a local tibble
+```
+
+Without `collect()`, the pipeline remains a query object and prints only a preview.
+With it, the SQL runs on the database and the (usually small) result comes back as
+an ordinary tibble you can plot or model. Filter and aggregate on the database
+side, where the data are; `collect()` only the reduced result.
+
+:::{.callout-note}
+
+Most dplyr verbs translate, but not all of R is available inside a database.
+`slice_head()` and friends are unsupported because database tables have no
+inherent row order, and any function dbplyr cannot translate will error. When that
+happens, `collect()` first and finish the work locally.
+
+:::
+
+### Seeing the generated SQL
+
+Learning what dbplyr produces is a low-cost way to learn SQL itself. Pipe any
+un-collected query into `show_query()`.
+
+```{r}
+#| eval: false
+surveys |>
+  filter(year %in% c(1998, 1999, 2000)) |>
+  summarise(n = n(), .by = c(year, species_id)) |>
+  show_query()
+# <SQL>
+# SELECT `year`, `species_id`, COUNT(*) AS `n`
+# FROM `surveys`
+# WHERE (`year` IN (1998, 1999, 2000))
+# GROUP BY `year`, `species_id`
+```
+
+If you prefer to write SQL directly, `DBI::dbGetQuery()` sends a raw query and
+returns a data frame in one step.
+
+```{r}
+#| eval: false
+DBI::dbGetQuery(
+  mammals,
+  "SELECT year, species_id, COUNT(*) AS n
+   FROM surveys
+   WHERE year IN (1998, 1999, 2000)
+   GROUP BY year, species_id"
+)
+```
+
+### Activity: SQL to dplyr and back
+
+:::{.task}
+::::{.task-header}
+read it, then write it
+::::
+::::{.task-container}
+
+First, translate this SQL into a dbplyr pipeline:
+
+```sql
+SELECT record_id, hindfoot_length
+FROM surveys
+WHERE hindfoot_length > 20
+```
+
+Then, going the other way, write the dbplyr pipeline below and use `show_query()`
+to predict the SQL before you run it:
+
+```{r}
+#| eval: false
+surveys |>
+  filter(year > 1977, year < 2000, hindfoot_length == 30) |>
+  arrange(desc(species_id))
+```
+
+::::
+:::
+
+
+`r hide("Solution")`
+
+```{r}
+#| eval: false
+# SQL -> dbplyr
+surveys |>
+  select(record_id, hindfoot_length) |>
+  filter(hindfoot_length > 20) |>
+  collect()
+
+# The second pipeline generates SQL along these lines:
+# SELECT *
+# FROM `surveys`
+# WHERE (`year` > 1977 AND `year` < 2000 AND `hindfoot_length` = 30)
+# ORDER BY `species_id` DESC
+```
+
+Two things to notice. The chained `filter()` conditions become a single `WHERE`
+joined by `AND`, and `arrange(desc(...))` becomes `ORDER BY ... DESC`. The mapping
+is close enough that reading SQL and reading dplyr reinforce each other.
+
+`r unhide()`
+
+## Building a database from a CSV
+
+If your data start life as a CSV that is too large to load, you can write it into a
+SQLite file in chunks, then query it lazily as above. Read a block with `fread()`,
+append it to the table, and repeat. `purrr::walk()` drives the loop for its side
+effect (writing), returning nothing.
+
+```{r}
+#| eval: false
+library(purrr)
+
+db <- dbConnect(SQLite(), here::here("data", "surveys.sqlite"))
+
+# Write one chunk: read `n` rows starting after `skip`, append to the table
+write_chunk <- function(skip_rows, n = 5000) {
+  chunk <- fread(csv_name, skip = skip_rows, nrows = n, showProgress = FALSE)
+  dbWriteTable(db, "surveys", chunk, append = TRUE)
+}
+
+# Offsets for each chunk, then write them all
+skips <- seq(0, by = 5000, length.out = 8)
+walk(skips, write_chunk)
+
+dbDisconnect(db)
+```
+
+In real use you would read column names from the header once and reuse them, since
+`skip` discards the header along with the data rows. The pattern, though, is the
+general one: never hold more than one chunk in memory at a time.
+
+:::{.callout-note}
+
+**Where this leaves us.** We can read selectively with `fread()`, run dplyr at
+`data.table` speed through `lazy_dt()`, and query on-disk databases through
+`dbplyr` while fetching only what we need with `collect()`. The common thread is
+that the dplyr grammar carries across all three settings; what changes is where
+the data sit and when the work actually runs.
+
+:::
+
+## Reading
+
+- dtplyr: <https://dtplyr.tidyverse.org/>
+- dbplyr: <https://dbplyr.tidyverse.org/>
+- data.table introduction: <https://rdatatable.gitlab.io/data.table/>
+- Handling large data files in R: <https://inbo.github.io/tutorials/tutorials/r_large_data_files_handling/>

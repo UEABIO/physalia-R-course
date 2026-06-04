@@ -354,6 +354,50 @@ default). This is reversible only by recreating the hook with
 for when you no longer want the check at all.
 :::
 
+
+## Publishing to the web with GitHub Pages
+
+GitHub Pages serves web pages at a public URL of the form https://your-username.github.io/your-repo/. With no Action and no configuration file, you can publish your rendered penguins document by committing the HTML and letting Pages serve it. This is the simplest possible way to put your analysis on the web.
+Pages does not render Quarto; it only serves files that already exist in your repository. So the process is: `render index.qmd` to `index.html` locally, commit that HTML, and point Pages at it. Pages looks for a file named index.html at the repository root as the default page, which is why the document must be named index.qmd.
+
+::: {.callout-warning}
+Anything published to Pages is publicly visible on the open web, including the rendered document and any data shown in it. Do not publish a repository containing data you would not want public.
+:::
+
+::: {.task}
+:::: {.task-header}
+Task: publish your penguins analysis to the web
+::::
+:::: {.task-container}
+
+Rename analysis.qmd to index.qmd in RStudio's Files pane. If later parts refer to analysis.qmd, keep a copy, since the index name is specific to Pages.
+Render it locally. In the terminal:
+
+```markdown 
+quarto render index.qmd
+```
+
+This produces index.html in your project root.
+
+On GitHub.com, open your repository's Settings, click Pages in the left sidebar, and under Build and deployment → Source select Deploy from a branch. Set Branch to main and the folder to / (root), then Save.
+
+Commit and push both files:
+
+```markdown   
+git add index.qmd index.html
+git commit -m "docs: publish penguins analysis to Pages"
+git push
+```
+
+Visit https://your-username.github.io/your-repo/. The first build can take a minute or two. Confirm the body-mass-against-flipper-length figure appears.
+
+::::
+:::
+
+::: {.callout-note}
+Because Pages serves the committed index.html, you must re-render and re-commit it whenever you change index.qmd; the site does not update on its own. Part 2 shows how a GitHub Action can do the rendering for you on every push, so the published page stays current without manual steps.
+:::
+
 ## Part 2: Your first GitHub Action — rendering the penguins document
 
 ### Why this matters
@@ -456,14 +500,14 @@ jobs:
 
       # Step 5: Render the penguins document.
       - name: Render Quarto document
-        run: quarto render analysis.qmd
+        run: quarto render index.qmd
 
       # Step 6: Save the rendered output so you can download it.
       - name: Upload rendered output
         uses: actions/upload-artifact@v4
         with:
           name: rendered-analysis
-          path: analysis.html
+          path: index.html
           retention-days: 7
 ```
 
