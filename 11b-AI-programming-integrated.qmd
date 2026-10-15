@@ -7,12 +7,6 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-```{r}
-#| include: false
-library(tidyverse)
 library(webexercises)
 ```
 
@@ -26,18 +20,20 @@ Inline completion is the most familiar AI-coding feature: ghost text appears as 
 
 Verify that inline completion is enabled and working in your chosen IDE.
 
-**RStudio:** Tools → Global Options → Copilot → Enable GitHub Copilot, then sign in to GitHub.
+**RStudio:** Tools → Global Options → Assistant, choose **GitHub Copilot** from the "Use code assistant" drop-down, install the Copilot components if prompted, then click **Sign In**. On RStudio Server or Posit Workbench, Copilot is off by default and an administrator must enable it (`copilot-enabled=1` in `rsession.conf`). See the [RStudio Copilot guide](https://docs.posit.co/ide/user/ide/guide/tools/copilot.html).
 
-**Positron:** Copilot is provided through the bundled Positron Assistant extension. Open the Copilot panel in the sidebar and sign in.
+**Positron:** Copilot inline completions switch on once you sign in to GitHub Copilot as a language model provider. Open the Command Palette, run **Authentication: Configure Language Model Providers**, select **GitHub Copilot**, and sign in. (Signing in through the Accounts menu alone does not connect Copilot to Positron's AI features.) Positron's built-in AI chat is now **Posit Assistant**, which replaced the deprecated Positron Assistant; Block 4 says more about it. See the [Positron completions guide](https://positron.posit.co/assistant-completions.html).
 
-**VS Code:** Install the GitHub Copilot extension from the marketplace, then sign in via the prompt that appears.
+**VS Code:** Copilot is built into VS Code, so there is no separate extension to install. Hover over the Copilot icon in the Status Bar, select **Use AI Features**, and sign in with your GitHub account. If your account has no Copilot plan, you are enrolled in Copilot Free. See the [VS Code Copilot setup guide](https://code.visualstudio.com/docs/copilot/setup).
 
-In all three, verify by opening a **blank R script** and start typing `# Calculate the mean of 1 to 100`. After a second or two you should see grey ghost text suggesting `mean(1:100)` or similar (If nothing appears try hitting enter to move the blinking cursor to the next line).
+In all three, verify by opening a **blank R script** and typing `# Calculate the mean of 1 to 100`. After a second or two you should see grey ghost text suggesting `mean(1:100)` or similar (if nothing appears, try pressing Enter to move the blinking cursor to the next line).
 
 
 ## The context principle
 
-Inline completion sees, at minimum, the current file. In Positron and VS Code (and likely in newer RStudio versions, though the behaviour has changed historically and is worth checking against current documentation rather than asserting), it may also draw on other open tabs. It does not search your project for unrelated files, and it does not remember previous sessions.
+Inline completion sees, at minimum, the current file. In VS Code it also looks at the other files open in your editor. RStudio has an optional setting, "Index project files with GitHub Copilot", that lets Copilot read other supported files in the current project. Beyond that, it does not search your project for unrelated files, and it does not remember previous sessions.
+
+Newer editors also offer **Next Edit Suggestions** (NES), which predict *where* your next edit will be as well as what it should be, and can propose changes away from the cursor (for example, renaming a variable everywhere after you rename it once). In VS Code you turn them on with the `github.copilot.nextEditSuggestions.enabled` setting; RStudio and Positron offer a Posit AI version. This block focuses on ordinary ghost text at the cursor, but the same context principle applies.
 
 The practical consequence: the comment immediately before your cursor, and the code above it in the same file, dominate what you get. Everything else has at best a modest effect.
 
@@ -51,9 +47,6 @@ The context demonstration
 ::::{.task-container}
 
 For this exercise you will use `voles_metabolism.csv`, a small synthetic biological dataset deliberately chosen because its column names are unlikely to feature in Copilot's training data. The columns are `subject_id`, `sex`, `treatment_arm`, `mass_pre_g`, `mass_post_g`, and `metabolic_rate_post`. The data record a hypothetical metabolism trial in voles with three treatment arms and two sexes, sample size 72.
-
-::::
-:::
 
 **1. Start with no context.** Open a blank R script. Type only this single comment **into your script**, then wait:
 
@@ -90,15 +83,14 @@ Record what Copilot suggests this time. The expected output resembles:
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
-
+```{r}
+#| eval: false
 voles |>
   mutate(mass_change_g = mass_post_g - mass_pre_g) |>
   summarise(
     mean_change = mean(mass_change_g, na.rm = TRUE),
     .by = treatment_arm
   )
-
 ```
 
 
@@ -107,6 +99,9 @@ voles |>
 The exact form will vary between participants and between sessions; that variation is itself part of the lesson.
 
 How different were the two outputs? Did the second version use column names that exist in the data? Did Copilot construct `mass_change_g` itself or did you have to prompt for it?
+
+::::
+:::
 
 
 ## Activity: Build a small analysis
@@ -117,7 +112,7 @@ Build a small analysis
 ::::
 ::::{.task-container}
 
-Working on the same script you set up in Exercise 1, drive inline completion through a four-step analysis. Write the comment for each step first, then accept, reject, or modify the suggestion.
+Working on the same script you set up in the context demonstration, drive inline completion through a four-step analysis. Write the comment for each step first, then accept, reject, or modify the suggestion.
 
 **1.** Filter to subjects with non-missing `metabolic_rate_post` and create a derived variable `mass_change_g`.
 
@@ -127,9 +122,9 @@ Working on the same script you set up in Exercise 1, drive inline completion thr
 
 **4.** Produce one diagnostic plot relating `mass_change_g` to `metabolic_rate_post`, coloured by `treatment_arm`.
 
-For each step, your deliverable is the comment you wrote, the code Copilot suggested, and a one-line note on whether you accepted it, modified it, or rejected it and wrote something else. The point of recording this is not bureaucratic; it is to make you notice when you accepted something without inspecting it.
+For each step, your deliverable is the comment you wrote, the code Copilot suggested, and a one-line note on whether you accepted it, modified it, or rejected it and wrote something else. Recording this makes you notice when you accepted something without inspecting it.
 
-Work in pairs. Each partner attempts steps 2 and 4 independently before comparing. The pair-comparison stage typically surfaces interesting variation: different suggestions, different acceptance decisions, and (often) different bugs.
+Work in pairs. Each partner attempts steps 2 and 4 independently before comparing. Comparing usually shows variation: different suggestions, different acceptance decisions, and (often) different bugs.
 
 ::::
 :::

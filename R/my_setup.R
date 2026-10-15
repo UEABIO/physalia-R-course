@@ -34,8 +34,13 @@ theme_set(my_theme)
 library(palmerpenguins)
 library(janitor)
 
+# Short species names ("Adelie", not "Adelie Penguin (Pygoscelis adeliae)")
+# and bill_* names, so penguins_clean matches palmerpenguins::penguins
 penguins_clean <- palmerpenguins::penguins_raw |>
-  janitor::clean_names() |> 
+  janitor::clean_names() |>
+  dplyr::rename(bill_length_mm = culmen_length_mm,
+                bill_depth_mm  = culmen_depth_mm) |>
+  dplyr::mutate(species = stringr::word(species, 1)) |>
   tidyr::drop_na(body_mass_g, flipper_length_mm, species)
 
 

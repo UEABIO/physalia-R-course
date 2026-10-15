@@ -25,6 +25,8 @@ library(ggview)
 library(ragg)
 library(scales)
 library(here)
+library(ggiraph)   # interactive figures (Blocks 2 and 4)
+library(ThemePark) # remotes::install_github("MatthewBJane/ThemePark") (Block 3)
 
 # Drop incomplete cases for the figures used in worked examples
 penguins_complete <- palmerpenguins::penguins |> 
@@ -33,19 +35,19 @@ penguins_complete <- palmerpenguins::penguins |>
 
 ## We will cover:
 
-- the *principles* of figure design (what makes a figure honest, accessible, and informative), 
+- the *principles* of figure design (how to make a figure honest and informative, and accessible to every reader), 
 
 - and the *extensions* of `ggplot2` that make those principles practical to implement.
 
-The workshop runs in seven in-session blocks across three hours and forty minutes including a break, with a take-home exercise to complete afterwards:
+The workshop runs in seven in-session blocks across three and a half hours including a break, with a take-home exercise to complete afterwards:
 
 | Block | Duration | Focus |
 |---|---|---|
-| 1. Foundations and graph crimes | 50 min | Visual encoding, colour, data-ink, graph crimes tribunal |
-| 2. Choosing the right figure | 35 min | Chart selection, audience, descriptive vs explanatory |
-| 3. Themes and scales | 35 min | `theme()`, `element_*()`, `theme_project()`, `scales` package, data-ink reflection |
+| 1. Foundations and graph crimes | 50 min | Spot-it and guess-the-value games, colour, data-ink, 🏆 crime scene investigation |
+| 2. Choosing the right figure | 35 min | Chart selection, audience, descriptive vs explanatory, interactive figures |
+| 3. Themes and scales | 35 min | `theme()`, `element_*()`, `theme_project()`, 🏆 the ThemePark Ugly-Off, `scales` package |
 | Break | 15 min |  |
-| 4. Extensions in action | 40 min | `ggdist`, `colorspace`, `ggrepel`, `ggtext`, `patchwork` (worked-example walkthroughs) |
+| 4. Extensions in action | 40 min | `ggdist`, `colorspace`, `ggrepel`, `ggtext`, `patchwork`, 🏆 recreate-this-figure capstone |
 | 5. Saving figures correctly | 10 min | `ggview`, `ragg`, two-format save |
 | 6. Writing figure legends | 20 min | The four-element legend |
 | 7. Three questions for every figure | 5 min | Closing reflection |
@@ -53,15 +55,161 @@ The workshop runs in seven in-session blocks across three hours and forty minute
 
 Before you arrive, please install the packages loaded in the setup chunk above. The take-home exercise is to be completed in your own time and reviewed at a follow-up session; you do not need to bring your own data to the workshop itself.
 
+:::{.callout-note}
+**How this works on Zoom.** This is a doing session, not a watching one. Keep RStudio open beside Zoom, and keep the **chat** open: most games ask you to post an answer *before* the reveal, and the fastest correct answer wins bragging rights. Challenges marked 🏆 are solo races: everyone works in their own RStudio against the clock, posts results in the chat, and the facilitator shares the best ones on screen. They work the same whether there are five of you or fifty. Vote with Zoom **reactions** when asked. Wrong guesses are the point — they are how the principles stick.
+:::
+
 ## How we see data
 
-Our visual system did not evolve to read graphs. Some visual features are detected before conscious attention engages: a red dot among grey dots, a single triangle in a sea of circles, an unusually large shape in a field of small ones. This is called **pre-attentive processing** (Healey and Enns, 2012). When designing figures, encoding important information as features the eye picks up automatically directs attention without having to search. Encoding the same information as a subtle change in line style or a slightly different shade requires the reader to look for it.
+Our visual system did not evolve to read graphs. Some visual features are detected before conscious attention engages: a red dot among grey dots, a single triangle in a sea of circles, an unusually large shape in a field of small ones. This is called **pre-attentive processing** (Healey and Enns, 2012). If you encode important information as a feature the eye picks up automatically, readers see it without having to search. Encoding the same information as a subtle change in line style or a slightly different shade requires the reader to look for it.
+
+**Game: spot it.** The facilitator shares one tab at a time. Each hides one odd point among 80. Type **found** in the chat the moment you see it (no scrolling ahead!).
+
+```{r}
+#| include: false
+set.seed(7)
+spot <- tibble::tibble(x = runif(80), y = runif(80),
+                       odd = c(TRUE, rep(FALSE, 79)))
+spot_plot <- function(...) {
+  ggplot(spot, aes(x, y, ...)) +
+    geom_point(size = 4, show.legend = FALSE) +
+    theme_void() +
+    theme(plot.background = element_rect(fill = "white", colour = NA))
+}
+```
+
+:::{.panel-tabset}
+
+## Colour
+
+```{r}
+#| echo: false
+#| fig-height: 3
+spot_plot(colour = odd) + scale_colour_manual(values = c("grey60", "#D95F02"))
+```
+
+## Shape
+
+```{r}
+#| echo: false
+#| fig-height: 3
+spot_plot(shape = odd) + scale_shape_manual(values = c(16, 17))
+```
+
+## Colour *and* shape, mixed up
+
+```{r}
+#| echo: false
+#| fig-height: 3
+# grey points are circles, orange points are triangles;
+# the odd one out is the only grey triangle
+spot <- dplyr::mutate(spot,
+                      col = ifelse(odd, "grey", sample(c("grey", "orange"), 80, TRUE)),
+                      shp = ifelse(odd, "triangle", ifelse(col == "grey", "circle", "triangle")))
+ggplot(spot, aes(x, y, colour = col, shape = shp)) +
+  geom_point(size = 4, show.legend = FALSE) +
+  scale_colour_manual(values = c(grey = "grey60", orange = "#D95F02")) +
+  scale_shape_manual(values = c(circle = 16, triangle = 17)) +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "white", colour = NA))
+```
+
+:::
+
+Watch the chat: the colour target gets a flood of "found"s almost instantly, the shape target a moment later. In the third tab the odd point is the only *grey triangle*, and no single feature gives it away, so everyone has to check points one by one. This is the cost of making readers combine features (a *conjunction search*).
+
+## Game: guess the value
+
+Each round shows five values. **A** is always the same. Your job: **what percentage of A is B?** Post your guess in the chat *before* you check it in the box. One round at a time, no peeking at the next tab.
+
+```{r}
+#| include: false
+make_round <- function(ratio, seed) {
+  set.seed(seed)
+  v <- c(A = 80, B = 80 * ratio, C = runif(1, 30, 70),
+         D = runif(1, 30, 70), E = runif(1, 30, 70))
+  tibble::tibble(item = factor(names(v), levels = names(v)), value = v)
+}
+r1 <- make_round(0.62, 1); r2 <- make_round(0.38, 2)
+r3 <- make_round(0.45, 3); r4 <- make_round(0.71, 4)
+```
+
+:::{.panel-tabset}
+
+## Round 1
+
+```{r}
+#| echo: false
+#| fig-height: 3
+ggplot(r1, aes(item, value)) +
+  geom_col(fill = "grey40", width = 0.6) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 14) +
+  theme(axis.text.y = element_blank(), panel.grid = element_blank())
+```
+
+B is what % of A? `r fitb(62, num = TRUE, tol = 5)` (within 5 points counts)
+
+## Round 2
+
+```{r}
+#| echo: false
+#| fig-height: 3.5
+ggplot(r2, aes(x = "", y = value, fill = item)) +
+  geom_col(width = 1, colour = "white") +
+  geom_text(aes(label = item), position = position_stack(vjust = 0.5), size = 6) +
+  coord_polar(theta = "y") +
+  scale_fill_grey(start = 0.3, end = 0.85) +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+B is what % of A? `r fitb(38, num = TRUE, tol = 5)`
+
+## Round 3
+
+```{r}
+#| echo: false
+#| fig-height: 3.5
+r3 |>
+  dplyr::mutate(x = c(1, 3, 5, 2, 4), y = c(1, 1, 1, 2, 2)) |>
+  ggplot(aes(x, y, size = value)) +
+  geom_point(colour = "grey40") +
+  geom_text(aes(label = item), size = 5, colour = "white") +
+  scale_size_area(max_size = 40) +
+  xlim(0, 6) + ylim(0.3, 2.7) +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+B is what % of A? `r fitb(45, num = TRUE, tol = 5)`
+
+## Round 4
+
+```{r}
+#| echo: false
+#| fig-height: 2.5
+ggplot(r4, aes(item, 1, fill = value)) +
+  geom_tile(colour = "white", linewidth = 2) +
+  geom_text(aes(label = item), colour = "red", size = 6) +
+  scale_fill_gradient(low = "white", high = "black", limits = c(0, 100)) +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+B is what % of A? `r fitb(71, num = TRUE, tol = 5)`
+
+:::
+
+`r hide("What just happened?")`
+
+The answers were 62%, 38%, 45% and 71%. Look back at the chat: most people find Round 1 easy, get scattered on Round 2, scatter further on Round 3 (people judge circles by *width*, not area, so they overestimate small ones), and are close to guessing on Round 4.
+
+You have just re-run Cleveland and McGill's (1984) experiment. People read the same ratio most accurately as **position on a common scale**, then length, angle, area, colour lightness and colour hue. For categorical data, position is still best but colour hue rises to second, with shape third.
+
+`r unhide()`
 
 ## The encoding hierarchy
-
-Cleveland and McGill (1984) asked a deceptively simple question: how accurately can people read the same ratio when it is encoded in different visual forms? Their answer became the design discipline for the next forty years of statistical graphics. The ranking is not a recommendation; it is the order in which our perceptual system is most accurate.
-
-For continuous variables, the hierarchy from most to least accurate is: position on a common scale, length, angle, area, colour lightness, colour hue, volume. For categorical variables it is different: position remains the most accurate, but colour hue moves up to second place, with shape third. This matters: the rules for assigning encodings to variables are not the same for continuous and categorical data, and this is one of the most common errors in published figures.
 
 ```{r}
 #| echo: false
@@ -69,7 +217,7 @@ For continuous variables, the hierarchy from most to least accurate is: position
 knitr::include_graphics("images/visual_hierarchy.png")
 ```
 
-The practical rule is: assign your most important variable to the highest-ranked encoding available to you. For two continuous variables, both go to position (a scatter plot). For a continuous variable grouped by a category, position handles the continuous variable and colour hue handles the category — with shape added redundantly for accessibility.
+The practical rule is: assign your most important variable to the highest-ranked encoding available to you. For two continuous variables, both go to position (a scatter plot). For a continuous variable grouped by a category, position handles the continuous variable and colour hue handles the category, with shape added redundantly for accessibility.
 
 
 :::{.panel-tabset}
@@ -131,7 +279,7 @@ penguins_complete |>
 
 :::
 
-Two continuous variables to position (rank 1), one categorical to colour hue (rank 2) and shape (rank 3) redundantly. The figure works on a colour monitor, in greyscale print, and for a reader with colour vision deficiency. This is the baseline expectation, not an enhancement.
+Two continuous variables to position (rank 1), one categorical to colour hue (rank 2) and shape (rank 3) redundantly. The figure works on a colour monitor, in greyscale print, and for a reader with colour vision deficiency. Treat this as the minimum for every figure.
 
 ## Colour as a tool
 
@@ -165,13 +313,19 @@ colorspace::swatchplot(
 
 The same package provides `scale_*_discrete_qualitative()`, `scale_*_continuous_sequential()`, and `scale_*_continuous_diverging()` functions that integrate directly with `ggplot2`. Prefer these over manual hex vectors.
 
+**Quick check: which palette type?**
+
+- Treatment arm (control, drug A, drug B): `r mcq(c(answer = "Qualitative", "Sequential", "Diverging"))`
+- Change in body mass after a season, where 0 = no change: `r mcq(c("Qualitative", "Sequential", answer = "Diverging"))`
+- Number of eggs per nest: `r mcq(c("Qualitative", answer = "Sequential", "Diverging"))`
+
 ## Accessibility
 
 Roughly 8% of men have some form of colour vision deficiency (Sharpe et al., 1999); red-green is by far the most common. Using red and green to distinguish two groups will fail for a non-trivial fraction of any audience. The Okabe-Ito palette was designed to remain distinguishable under deuteranopia and protanopia (Okabe and Ito, 2008), and the viridis palette family is perceptually uniform under colour vision deficiency and in greyscale.
 
-Beyond palette choice, the discipline is **redundant encoding**: never let colour be the only cue distinguishing groups. Use shape redundantly for points, linetype redundantly for lines, and direct labelling wherever it is legible (we will cover direct labelling in Block 3).
+Beyond palette choice, the main rule is **redundant encoding**: never let colour be the only cue distinguishing groups. Use shape redundantly for points, linetype redundantly for lines, and direct labelling wherever it is legible (we will cover direct labelling in Block 4).
 
-The `colorBlindness` package gives you the verification step. `colorBlindness::cvdPlot()` produces a five-panel simulation — the original, deuteranopia, protanopia, tritanopia, and a desaturated version — and lets you see whether the figure still works when colour fails.
+The `colorBlindness` package gives you the verification step. `colorBlindness::cvdPlot()` produces, by default, a four-panel simulation: the original ("normal vision"), deuteranopia, protanopia, and a desaturated (greyscale) version. This lets you see whether the figure still works when colour fails. Extra "enhanced" panels can be requested through its `layout` argument; note that it does not simulate tritanopia.
 
 ```{r}
 #| eval: false
@@ -192,7 +346,7 @@ After the workshop, run `cvdPlot()` on three or four figures from your own thesi
 
 Tufte (1983) introduced **data-ink ratio**: the proportion of a figure's visual elements that actually encode data, as opposed to decoration, borders, gridlines, shadows, and three-dimensional effects that exist for their own sake. High data-ink ratio means most of the visual complexity of the figure carries information.
 
-The default `ggplot2` `theme_grey()` already fails this test: a grey panel background and white gridlines exist purely as decoration. Move to `theme_minimal()`, `theme_classic()`, or a project-specific theme function as a default discipline.
+The default `ggplot2` `theme_grey()` already fails this test: a grey panel background and white gridlines exist purely as decoration. Move to `theme_minimal()`, `theme_classic()`, or a project-specific theme function as your default.
 
 :::{.callout-warning}
 Avoid `theme_grey()` (the `ggplot2` default) in any figure intended for human consumption. Set `theme_minimal(base_size = 12)` or `theme_classic(base_size = 12)` as your project baseline.
@@ -212,20 +366,23 @@ knitr::include_graphics("images/graph_crimes.png")
 2. **Manipulating the y-axis.** Compressed or expanded vertical ranges can make tiny effects look enormous or hide real effects.
 3. **Cherry-picking time ranges.** Choosing a window of time that supports a story while ignoring the surrounding data.
 4. **Wrong chart for the data.** Pie charts for many categories; line charts for unordered categorical data; dual y-axes pretending two arbitrary scales are commensurable.
-5. **Convention violations.** Inverted colour scales (light = high); inverted y-axes; latitude on the x-axis. Readers bring expectations and figures that violate them mislead.
+5. **Convention violations.** Inverted colour scales (light = high); inverted y-axes; latitude on the x-axis. Readers bring expectations, and figures that violate them mislead.
 
 A bonus crime: spurious correlation. Two variables with a strong correlation may have no causal relationship at all. Showing a strong correlation without acknowledging the confounders is a misrepresentation of evidence.
 
-### Exercise 1: Graph crimes tribunal
+### Warm-up: graph crimes tribunal
 
-:::{.callout-important}
-You each will be look at two figures. For each one:
+:::{.task}
+::::{.task-header}
+Graph crimes tribunal
+::::
+::::{.task-container}
 
-1. **Identify the crime.** What specifically is wrong with it?  
-2. **Classify it.** Is the crime one of *distortion* (the visual misrepresents the data) or *omission* (the figure leaves out something the reader needs)?  
-3. **Sentence it.** What single concrete change would fix it?  
+You are the jury. For each figure below, post a one-line verdict in the chat in the form **crime → sentence** (e.g. *"truncated axis → start at zero"*). Is the crime one of *distortion* (the visual misrepresents the data) or *omission* (the figure leaves out something the reader needs)?
 
-You have five minutes.
+Three minutes, then the facilitator reads out the best (and harshest) sentences.
+
+::::
 :::
 
 
@@ -241,18 +398,86 @@ knitr::include_graphics("images/g_crime_1.png")
 ## Example 2
 
 ```{r}
-
+#| echo: false
 knitr::include_graphics("images/g_crime_2.png")
-
 ```
 
 :::
 
 
-**Bonus**
-```{r echo}
+**Bonus.** Look closely at the error bars.
 
+```{r}
+#| echo: false
 knitr::include_graphics("images/T_bar.png")
 ```
 
+`r hide("The verdicts")`
 
+- **Example 1 — guilty of distortion.** The y-axis starts at 80, so Japan's 84 looks twice the height of Spain's 82 when the real difference is under 3%. The 15-colour legend adds nothing the axis labels could not. *Sentence:* start the axis at zero, or show points on a sensible range, and drop the legend.
+- **Example 2 — guilty of distortion.** The axis starts at 120, so a \$123M opening looks almost nothing next to \$177M. *Sentence:* bars from zero, or a dot plot with labelled values.
+- **Bonus — guilty of everything.** The "error bars" are the capital letter **T** typed above each bar. They show no variability at all, on top of a dynamite plot that hides the raw data. *Sentence:* plot the raw points with a real interval.
+
+`r unhide()`
+
+### 🏆 Challenge: crime scene investigation
+
+:::{.task}
+::::{.task-header}
+Crime scene investigation (solo race, 12 minutes)
+::::
+::::{.task-container}
+
+The code below was found at a crime scene. It uses `chickwts`, a dataset built into R: the weight of chicks after six weeks on one of six feed supplements. Copy it into RStudio and run it. There are **at least seven** graph crimes in it.
+
+1. **Investigate (4 min).** Post each crime in the chat as you spot it. The first person to post a *new* crime gets the point, so be quick, and don't repeat one already posted.
+2. **Rehabilitate (8 min).** Rewrite the code into an honest, accessible figure in your own RStudio.
+3. **Report.** Post a screenshot of your fixed figure in the chat. The facilitator shares the best few on screen, and you score yourself against the case file below.
+
+**Scoring:** 1 point per crime you were first to post, 2 more for each crime fixed in your figure. Highest score chooses which figure the facilitator shows first.
+
+```{r}
+#| eval: false
+chickwts |>
+  group_by(feed) |>
+  summarise(mean_weight = mean(weight), se = sd(weight) / sqrt(n())) |>
+  ggplot(aes(x = feed, y = mean_weight, fill = feed)) +
+  geom_col() +
+  geom_errorbar(aes(ymin = mean_weight - se, ymax = mean_weight + se), width = 0.2) +
+  coord_cartesian(ylim = c(150, 350)) +
+  scale_fill_manual(values = rainbow(6)) +
+  labs(x = "feed", y = "mean_weight") +
+  theme_grey()
+```
+
+::::
+:::
+
+`r hide("Case file: the crimes and a rehabilitated figure")`
+
+1. **Dynamite plot.** Bars of means hide the 71 individual chicks.
+2. **Truncated axis.** The bars start at 150 g, so horsebean looks a fraction of casein's weight; the real ratio is about half.
+3. **Undefined error bars.** They are ± 1 SE, but nothing says so.
+4. **Rainbow palette.** Not colour-blind safe (red vs green), and the lightness jumps around.
+5. **Redundant legend.** Colour repeats the x-axis, so the legend is pure eye-travel.
+6. **Unordered categories.** Alphabetical order hides the ranking.
+7. **Variable names as labels.** "mean_weight" with no units.
+8. **`theme_grey()`.** The grey panel fails the data-ink test.
+
+```{r}
+#| fig-height: 4
+chickwts |>
+  mutate(feed = fct_reorder(feed, weight, .fun = median)) |>
+  ggplot(aes(x = weight, y = feed)) +
+  geom_jitter(height = 0.15, alpha = 0.6, colour = "grey45") +
+  stat_summary(fun = median, geom = "point", shape = 23,
+               size = 3.5, fill = "#D95F02") +
+  labs(x = "Chick weight at six weeks (g)", y = "Feed supplement",
+       caption = "Points: individual chicks. Diamonds: medians.") +
+  theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank())
+```
+
+Every chick is visible, the feeds are ranked, there is one colour with a job (the median), the axis has units, and no legend is needed. Because these are points rather than bars, the axis does not need to start at zero.
+
+`r unhide()`

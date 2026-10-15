@@ -17,8 +17,9 @@ project, not your home directory, the centre of the universe.
 
 ## Why a project
 
-An RStudio (or Positron) project is a folder with an `.Rproj` marker file. Opening
-it does two useful things automatically: it sets the working directory to the
+An RStudio project is a folder with an `.Rproj` marker file; in Positron, a
+project is simply a folder you open (**File &rarr; Open Folder**), no `.Rproj` file
+needed. Opening it does two useful things automatically: it sets the working directory to the
 project folder, and it points the file browser there. Every path you write can
 then be relative to the project root, which means the project can be zipped,
 shared, or moved to another operating system and still run without editing a
@@ -64,7 +65,7 @@ my-project.Rproj
 |   |- processed/    # outputs of cleaning
 |- R/
 |   |- functions/    # function definitions only
-|   |- scripts/          # or numbered analysis scripts in R/
+|   |- scripts/      # numbered analysis scripts
 |- outputs/
 |   |- figures/
 |   |- tables/
@@ -77,7 +78,7 @@ the original. If a clean goes wrong, the source of truth is untouched.
 
 ## Setting up a new project
 
-You should start a new R project when you begin working on a distinct task, research project, or analysis. This ensures that your work is well-organized, and it's especially beneficial when you need to collaborate, share, or revisit the project later.
+Start a new R project whenever you begin a distinct task, research project or analysis. This keeps your work organised, which helps most when you need to collaborate, share the work or come back to it later.
 
 
 :::{.task}
@@ -86,7 +87,7 @@ Your turn
 ::::
 ::::{.task-container}
 
-Set up our first R Project: 
+Set up your first R project:
 
 * [ ] 1. Go to "File" in the RStudio menu.
 
@@ -105,21 +106,17 @@ The new project will be created with a .Rproj file. You can open it by double-cl
 
 :::{.callout-warning}
 
-It is very important to NEVER to move the .Rproj file, this may prevent your workspace from opening properly. 
+NEVER move the .Rproj file; this may stop your workspace from opening properly.
 
 :::
 
-More on projects can be found in the [R4DS](https://r4ds.had.co.nz/workflow-projects.html) book. 
+More on projects can be found in the [R4DS](https://r4ds.hadley.nz/workflow-scripts.html#projects) book. 
 
 
 
 ## Build a Project Structure
 
-Let's create a clean folder structure - we can do this in several ways:
-
-```{r, eval=TRUE, echo=FALSE, out.width="80%", fig.cap = "An example of a typical R project set-up"}
-knitr::include_graphics("images/project.png")
-```
+Let's create the folder structure above. There are several ways to do this:
 
 
 :::{.panel-tabset}
@@ -129,22 +126,28 @@ knitr::include_graphics("images/project.png")
 * Create the following folders using the + New Folder button in the Files tab
 
   * data/raw
-  * data/clean
-  * scripts
+  * data/processed
+  * R/functions
+  * R/scripts
   * outputs
 
 
-```{r, eval=TRUE, echo=FALSE, out.width="80%", fig.cap = "Making folders"}
+```{r}
+#| eval: true
+#| echo: false
+#| out-width: "80%"
+#| fig-cap: "Making folders"
 knitr::include_graphics("images/new-folders.png")
 ```
 
 :::{.callout-warning}
-R is case-sensitive and whitespace-sensitive so type everything EXACTLY as printed here
+R is case-sensitive and whitespace-sensitive, so type everything EXACTLY as printed here
 :::
 
 ## Base R
 
-```{r, eval = F}
+```{r}
+#| eval: false
 
 # dir.create makes directories
 # unless specified it is not "recursive"
@@ -152,10 +155,14 @@ R is case-sensitive and whitespace-sensitive so type everything EXACTLY as print
 dir.create("data/raw",
            recursive = TRUE) 
 
-dir.create("data/clean",
+dir.create("data/processed",
            recursive = TRUE)
 
-dir.create("scripts")
+dir.create("R/functions",
+           recursive = TRUE)
+
+dir.create("R/scripts",
+           recursive = TRUE)
 
 dir.create("outputs") 
 
@@ -164,26 +171,27 @@ dir.create("outputs")
 
 ## `fs`
 
-```{r, eval = F}
+```{r}
+#| eval: false
 # Load the package
 library(fs)
 
 # Create standard folders
-dir_create("data", c("raw", "clean"))   # creates dir recursively as standard
-dir_create("scripts")       # for your R code
-dir_create("outputs")    # for figures and plots
+dir_create("data", c("raw", "processed"))   # creates dir recursively as standard
+dir_create("R", c("functions", "scripts"))  # for your R code
+dir_create("outputs")    # for figures and tables
 
 ```
 
-Run `fs::dir_tree()` to generate a nicely formatted directory tree and is a great sanity check before and after file manipulation
+Run `fs::dir_tree()` to print a nicely formatted directory tree. It is a quick sanity check before and after you move files around.
 
-The `fs` @R-fs package is a great OS agnostic package and one that works safely (it will not overwrite files or folders unless explicitly asked).
+The `fs` @R-fs package behaves the same on every operating system, and it works safely: it will not overwrite files or folders unless you explicitly ask it to.
 
 :::
 
-Having these separate subfolders within our project helps keep things tidy, means it's harder to lose things, and lets you easily tell R exactly where to go to retrieve data.  
+Separate subfolders keep the project tidy, make files harder to lose, and make it easy to tell R exactly where to find your data.
 
-You might want also want to keep any information (wider reading) you have gathered that is relevant to your project.
+You might also want to keep any wider reading or other information you have gathered that is relevant to the project.
 
 
 
@@ -195,20 +203,21 @@ Your turn
 
 Try creating subdirectories for the outputs folder
 
+::::
+:::
+
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 
-subdir <- c("figures", "talks", "reports")
+subdir <- c("figures", "tables")
 
 fs::dir_create("outputs", subdir)
 
 ```
 
 `r unhide()`
-
-::::
-:::
 
 
 
@@ -254,9 +263,6 @@ Below is the opening of a script written without a project. Rewrite it so it wou
 run unchanged on a colleague's machine. You should change two things: the working
 directory line, and the path.
 
-::::
-:::
-
 ```{r}
 #| eval: false
 setwd("/Users/sam/Documents/penguin_thesis/")
@@ -264,22 +270,25 @@ setwd("/Users/sam/Documents/penguin_thesis/")
 penguins_raw <- read.csv("/Users/sam/Documents/penguin_thesis/data/raw/penguins.csv")
 ```
 
+::::
+:::
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 # No setwd() at all: open the project instead, which sets the directory for you.
 library(here)
 library(tidyverse)
 
-penguins_raw <- readr::read_csv(here("data", "raw", "penguins_raw.csv"))
+penguins_raw <- readr::read_csv(here("data", "raw", "penguins.csv"))
 ```
 
-The `setwd()` line is deleted entirely, not replaced. Working directory is the
-project's job, not the script's. The path is rebuilt from the project root with
+The `setwd()` line is deleted entirely, not replaced. Setting the working directory
+is the project's job, not the script's. The path is rebuilt from the project root with
 `here()`, so it no longer mentions any user or machine.
-tidyverse contains the `readr` package which has `read_csv()`, so we load it here. We could load `readr` directly if we wanted, but `tidyverse` is a common choice for data analysis and it includes `readr`, so we go with that.
 
+`read_csv()` comes from the `readr` package, which is part of the tidyverse, so loading `tidyverse` covers it. You could load `readr` on its own instead; we load `tidyverse` because it is a common choice for data analysis.
 
 `r unhide()`
 
@@ -293,7 +302,7 @@ does **not** detach packages, reset options, or change the working directory. Th
 session is still contaminated.
 
 The reliable habit is to **restart R** (Session &rarr; Restart R, or
-`Ctrl/Cmd+Shift+F10`) and rerun the script from the top. If the analysis only runs
+`Ctrl/Cmd+Shift+F10`) and rerun the script from the top. If the analysis runs
 correctly from a fresh session, it is reproducible; if it needs objects that exist
 only because of something you did by hand earlier, you find out immediately rather
 than six months later. Treat the script, not the workspace, as the record of what
@@ -332,14 +341,17 @@ renv::restore()
 
 `renv::status()` reports whether the lockfile and the library agree.
 
-`renv.lock` records only packages actually loaded in the project, so it captures
-what you use rather than everything installed.
+By default `renv::snapshot()` records only the packages your project's code
+actually uses: it scans your scripts and Quarto files for `library()`,
+`require()` and `pkg::fn()` calls. Installing a package is not enough; if no
+file in the project uses it, it will not appear in `renv.lock`. This means the
+lockfile captures what you use rather than everything installed.
 
 :::{.callout-note}
 
 `renv` is a large step towards reproducibility, not a complete guarantee. It
-records, but does not by itself reinstall, the R version you used (though the
-version is noted in `renv.lock`). For stronger guarantees, tools such as `rig`
+notes the R version you used in `renv.lock`, but it does not reinstall that
+version for you. For stronger guarantees, tools such as `rig`
 (switching R versions) or Docker (capturing the whole environment) exist, but they
 are beyond today's scope. For most analysis projects, a project plus `here()` plus
 `renv` is enough.
@@ -354,10 +366,14 @@ initialise a project environment
 ::::
 ::::{.task-container}
 
-In a fresh project, run `renv::init()`, then `renv::install("janitor")`, then
-`renv::snapshot()`. Open `renv.lock` in a text editor and find the entry for
+In a fresh project, run `renv::init()`, then `renv::install("janitor")`. Before
+you snapshot, create a script (for example `R/scripts/01_clean.R`) containing
+`library(janitor)` and save it: renv only records packages your code uses. Now
+run `renv::snapshot()`. Open `renv.lock` in a text editor and find the entry for
 `janitor`. What information is recorded about it, and why would a collaborator need
 that exact information to reproduce your analysis?
+
+What happens if you run `renv::snapshot()` *without* the script?
 
 ::::
 :::
@@ -365,8 +381,7 @@ that exact information to reproduce your analysis?
 :::{.callout-note}
 
 **Where this leaves us.** We now have a project that runs anywhere, reads its data
-by relative path, starts from a blank slate, and pins its package versions. That
-is the foundation. Everything from here assumes you are working inside such a
+by relative path, starts from a blank slate, and pins its package versions. Everything from here assumes you are working inside such a
 project. The rest of the day fills it with well-organised analytical code.
 
 :::

@@ -1,4 +1,4 @@
-#  Block 2: Github Automations {.unnumbered}
+# Block 2: GitHub Automations {.unnumbered}
 
 
 ```{r}
@@ -7,16 +7,9 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-```{r}
-#| include: false
-
 library(usethis)
 library(gitcreds)
 library(renv)
-
 ```
 
 
@@ -48,7 +41,10 @@ renv::snapshot()
 ```
 
 `renv::init()` creates the project library and the `renv.lock` file; `renv::snapshot()`
-records the currently loaded packages (`tidyverse`, `palmerpenguins`) into the lockfile.
+records the packages your code *uses* into the lockfile. renv finds them by scanning your
+project's scripts and Quarto documents for `library()` calls and `pkg::fn()` usages, so here
+it records `tidyverse` and `palmerpenguins` because `analysis.qmd` loads them. Packages
+that are merely installed, or loaded at the console, are not recorded.
 Commit `renv.lock` and the `renv/` infrastructure through the Git pane before proceeding.
 
 ::: {.callout-note}
@@ -81,25 +77,26 @@ established in Block 1.
 Before writing any code, it is worth understanding what these tools are and why you would
 use both.
 
-**A git hook** is a script that fires automatically when a specific git event occurs — in
+**A git hook** is a script that fires automatically when a specific git event occurs: in
 this case, when you run `git commit`. It runs on your own machine, before the commit
 completes. If the script fails, the commit is blocked and you see an error message
 explaining why. This makes hooks ideal for catching problems *before* they leave your
 machine.
 
 **GitHub Actions** is a set of instructions stored in your repository that GitHub's
-servers execute automatically when a specified event occurs — in this case, when you push.
-To understand what "GitHub's servers" means in practice: imagine a brand-new computer with
-nothing installed — no R, no packages, no files. GitHub provides that computer, downloads
+servers execute automatically when a specified event occurs: in this case, when you push.
+In practice, "GitHub's servers" means a brand-new computer with nothing installed: no R,
+no packages, no files. GitHub provides that computer, downloads
 your repository onto it, and follows your instructions step by step. This is what is meant
 by a "clean environment": there are no local settings, no previously installed packages,
-and no assumptions about your machine. If your code works there, it will work anywhere.
+and no assumptions about your machine. If your code works there, it does not depend on
+anything that exists only on your machine.
 
-The two tools are complementary rather than interchangeable. The hook catches problems
+The two tools do different jobs. The hook catches problems
 locally before they are committed. Actions verifies that your code works in a clean
 environment after they are pushed. Together they form two checkpoints:
 
-```markdown
+```text
 You write code
 ↓
 git commit 
@@ -116,7 +113,7 @@ git push
 ### A note on YAML
 
 The GitHub Actions workflow file is written in YAML (rhymes with "camel"). YAML is a
-format for writing structured configuration — think of it as a way of expressing a nested
+format for writing structured configuration; think of it as a way of expressing a nested
 list using indentation rather than brackets. You do not need to learn YAML deeply for this
 tutorial; the file is fully annotated and you only need to make small edits to adapt it to
 your project. The one rule that matters: **indentation is significant**. Use spaces, not
@@ -157,7 +154,7 @@ renv::snapshot()
 
 **Check your branch name.** In the Git pane, your current branch name is shown at the
 top. If it says `main`, you are ready to proceed. If it says `master` or something else,
-note the name — you will need to substitute it in the workflow file in Part 2.
+note the name, because you will need to substitute it in the workflow file in Part 2.
 
 **Confirm your penguins Quarto document.** Your project should contain `analysis.qmd`,
 the document carrying the body-mass-against-flipper-length figure you built in Block 1.
@@ -169,9 +166,9 @@ If you have not renamed it yet, do so now so that the tasks below match.
 
 ### Why this matters
 
-`renv` tracks your project's package dependencies in `renv.lock`. When you install,
-update, or remove a package, `renv.lock` must be updated with `renv::snapshot()` to
-reflect the change. If you forget, anyone who restores from your lockfile — including
+`renv` tracks your project's package dependencies in `renv.lock`. When your code starts
+using a new package, or you update or remove one, `renv.lock` must be updated with
+`renv::snapshot()` to reflect the change. If you forget, anyone who restores from your lockfile — including
 yourself on a new machine, or GitHub Actions — will get a different set of packages. This
 is one of the most common reproducibility failures in R projects and one of the easiest
 to prevent automatically.
@@ -181,7 +178,7 @@ to prevent automatically.
 Every time you run `git commit`, the hook calls `renv::status()`. If your installed
 packages and `renv.lock` are out of sync, the commit is blocked and you are told to run
 `renv::snapshot()`. If they are in sync, the commit proceeds normally. You do not interact
-with the hook directly — it fires on its own.
+with the hook directly; it runs on its own.
 
 ### Setting up the hook with usethis
 
@@ -195,11 +192,9 @@ First, install `usethis` if you do not have it:
 install.packages("usethis")
 ```
 
-Make the following file
+Create a file called scripts/hooks/pre-commit.sh containing the following:
 
-scripts/hooks/pre-commit.sh:
-
-```markdown
+```bash
 #!/usr/bin/env bash
 
 echo "--- Checking renv synchronisation..."
@@ -216,21 +211,22 @@ echo "--- Checking renv synchronisation..."
 :::{.callout-warning}
 This script assumes `Rscript` is available on your system PATH, which is the
 default on macOS and Linux. On Windows, R is not always added to the PATH. If
-the hook fails with a "command not found" error, you 
+the hook fails with a "command not found" error,
 replace `Rscript` in the script above with the full path to your installation:
 
-```{r,eval = FALSE}
-file.path(R.home("bin"), "R") # find your R.exe
+```{r}
+#| eval: false
+file.path(R.home("bin"), "Rscript") # find your Rscript.exe
 ```
 
-for example `"/c/Program Files/R/R-4.5.3/bin/x64/Rscript"`. Adjust the version
+For example, `"/c/Program Files/R/R-4.6.1/bin/x64/Rscript"`. Adjust the version
 number to match your installed version of R.
 
-```markdown
+```bash
 #!/usr/bin/env bash
 
 echo "--- Checking renv synchronisation..."
-"/c/Program Files/R/R-4.5.3/bin/x64/Rscript" --no-save --no-restore-data -e '
+"/c/Program Files/R/R-4.6.1/bin/x64/Rscript" --no-save --no-restore-data -e '
   if (!isTRUE(renv::status()$synchronized)) {
     message("\nrenv is out of sync with renv.lock.\nRun renv::snapshot() then commit again.\n")
     quit(status = 1)
@@ -257,7 +253,7 @@ usethis::use_git_hook(
 executable. You do not need to use the terminal for any of this.
 
 > **What is `.git/`?** Every git repository contains a hidden folder called `.git/` that
-> stores git's internal data — your commit history, configuration, and hooks. You will not
+> stores git's internal data: your commit history, configuration, and hooks. You will not
 > normally interact with it directly. It does not appear in RStudio's Files pane because
 > it is hidden; you can see it in your operating system's file explorer if you enable
 > hidden files.
@@ -266,12 +262,13 @@ executable. You do not need to use the terminal for any of this.
 
 We will now deliberately trigger the hook on your penguins repository so you can see it
 work. Your existing figure colours the points by species; suppose you decide to format the
-body-mass axis with thousands separators, which the `scales` package provides. Installing
-`scales` without snapshotting is exactly the kind of desync the hook is designed to catch.
+body-mass axis with thousands separators, which the `scales` package provides. Using
+`scales` in your document without snapshotting is the kind of mismatch the hook is
+designed to catch.
 
 :::{.task}
 ::::{.task-header}
-**Task: watch the hook block a commit — this commit is meant to fail**
+**Watch the hook block a commit — this commit is meant to fail**
 ::::
 
 ::::{.task-container}
@@ -313,8 +310,9 @@ This task deliberately triggers the hook so you can see it work. The first commi
 
    Save the file.
 
-3. The act of installing `scales` **without snapshotting** is what has put your library
-   out of sync with `renv.lock`. Stage both files in the Git pane and attempt to commit.
+3. Your document now uses `scales` (via `library(scales)`), but `renv.lock` does not
+   record it: you have not snapshotted. That is what puts the project out of sync. Stage
+   the file in the Git pane and attempt to commit.
 
 4. The commit is **blocked**. The hook reports that `renv` is out of sync and tells you to
    run `renv::snapshot()`.
@@ -326,9 +324,11 @@ This task deliberately triggers the hook so you can see it work. The first commi
 ::::
 :::
 
-The point to take from step 3 is that the block was caused by the un-snapshotted install,
-not by editing the document. Saving a file never trips the hook; an installed package
-missing from `renv.lock` does.
+The point to take from step 3 is that the block was caused by code that *uses* a package
+missing from `renv.lock`, not by the install itself. renv's default (`"implicit"`)
+snapshot only records packages your code uses, so installing `scales` and never using it
+would not trip the hook; adding `library(scales)` (or a `scales::label_comma()` call)
+without snapshotting does.
 
 ::: {.callout-warning}
 ## Bypassing the hook
@@ -340,16 +340,16 @@ single commit, leaving it in place for the next one:
 git commit --no-verify -m "your message"
 ```
 
-Use this as an escape hatch, not a routine. A hook you bypass by habit checks nothing.
+Keep this for occasional use: a hook you bypass by habit checks nothing.
 RStudio's Commit button has no equivalent tick box, so a bypass must be done at the
-terminal — which is a useful piece of friction.
+terminal, which adds a useful bit of friction.
 :::
 
 ::: {.callout-note}
 ### Removing the hook permanently
 If you want to disable the check altogether, delete or rename the hook file at
 `.git/hooks/pre-commit` in your operating system's file explorer (it is hidden by
-default). This is reversible only by recreating the hook with
+default). A deleted hook can only be restored by recreating it with
 `usethis::use_git_hook()`, so prefer `--no-verify` for one-off cases and reserve removal
 for when you no longer want the check at all.
 :::
@@ -357,7 +357,7 @@ for when you no longer want the check at all.
 
 ## Publishing to the web with GitHub Pages
 
-GitHub Pages serves web pages at a public URL of the form https://your-username.github.io/your-repo/. With no Action and no configuration file, you can publish your rendered penguins document by committing the HTML and letting Pages serve it. This is the simplest possible way to put your analysis on the web.
+GitHub Pages serves web pages at a public URL of the form https://your-username.github.io/your-repo/. With no Action and no configuration file, you can publish your rendered penguins document by committing the HTML and letting Pages serve it. This is the simplest way to put your analysis on the web.
 Pages does not render Quarto; it only serves files that already exist in your repository. So the process is: `render index.qmd` to `index.html` locally, commit that HTML, and point Pages at it. Pages looks for a file named index.html at the repository root as the default page, which is why the document must be named index.qmd.
 
 ::: {.callout-warning}
@@ -366,14 +366,14 @@ Anything published to Pages is publicly visible on the open web, including the r
 
 ::: {.task}
 :::: {.task-header}
-Task: publish your penguins analysis to the web
+Publish your penguins analysis to the web
 ::::
 :::: {.task-container}
 
-Rename analysis.qmd to index.qmd in RStudio's Files pane. If later parts refer to analysis.qmd, keep a copy, since the index name is specific to Pages.
+Rename `analysis.qmd` to `index.qmd` in RStudio's Files pane. The index name is what Pages needs, and the rest of this tutorial uses `index.qmd` from here on.
 Render it locally. In the terminal:
 
-```markdown 
+```bash
 quarto render index.qmd
 ```
 
@@ -383,7 +383,7 @@ On GitHub.com, open your repository's Settings, click Pages in the left sidebar,
 
 Commit and push both files:
 
-```markdown   
+```bash
 git add index.qmd index.html
 git commit -m "docs: publish penguins analysis to Pages"
 git push
@@ -414,7 +414,7 @@ The `usethis` package provides `use_github_action()`, which sets up common GitHu
 workflows with a single R function call. Running it without arguments shows you the
 available options:
 
-```
+```r
 usethis::use_github_action()
 ```
 
@@ -427,28 +427,26 @@ workflows without writing YAML from scratch. The r-lib/actions repository
 ([https://github.com/r-lib/actions](https://github.com/r-lib/actions)) lists all
 available options and their corresponding `use_github_action()` calls.
 
-### Step 1: Enable write permissions in your repository
+### Step 1: Give the workflow only the permissions it needs
 
-GitHub Actions needs permission to write to your repository. Granting this now avoids a
-common failure mode later.
-
-1. Go to your repository on GitHub.com
-2. Click **Settings** in the top navigation bar
-3. Click **Actions** in the left sidebar, then **General**
-4. Scroll to *Workflow permissions*
-5. Select **Read and write permissions**
-6. Click **Save**
+Each workflow run gets a temporary token (`GITHUB_TOKEN`) that controls what it may do to
+your repository. Rather than granting write access to every workflow through the
+repository settings, declare what *this* workflow needs with a `permissions:` key in the
+workflow file itself. The rendering workflow below only reads your files and uploads an
+artefact, so it asks for `contents: read`. You do not need to change anything under
+**Settings → Actions**. The one workflow later in this tutorial that pushes to the
+repository asks for `contents: write` in its own file.
 
 ### Step 2: Pin your R version, then create the workflow file
 
 Because this workflow restores your exact packages from `renv.lock`, it must run on the R
 version those packages were recorded under. Find yours by running `R.version.string` at
-the console and note the number, for example `4.5.2`.
+the console and note the number, for example `4.6.1`.
 
 Create the following folder structure in your project. You can do this in RStudio's Files
 pane: New Folder → `.github`, then inside that New Folder → `workflows`.
 
-```
+```text
 .github/
   workflows/
     render-quarto.yml
@@ -469,6 +467,10 @@ on:
   push:
     branches: ["main"]
 
+# Least privilege: this workflow only needs to read the repository.
+permissions:
+  contents: read
+
 jobs:
   render:
     runs-on: ubuntu-latest
@@ -476,14 +478,14 @@ jobs:
     steps:
       # Step 1: Download your repository files onto GitHub's machine.
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Step 2: Install R. Set the version to match your renv.lock,
       # i.e. the number from R.version.string on your machine.
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: "4.5.2"   # set to YOUR version from R.version.string
+          r-version: "4.6.1"   # set to YOUR version from R.version.string
           use-public-rspm: true
 
       # Step 3: Install renv and restore the exact packages from renv.lock.
@@ -504,7 +506,7 @@ jobs:
 
       # Step 6: Save the rendered output so you can download it.
       - name: Upload rendered output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rendered-analysis
           path: index.html
@@ -513,18 +515,18 @@ jobs:
 
 Because `setup-renv` restores from `renv.lock`, and your lockfile now contains
 `tidyverse`, `palmerpenguins`, and `scales` from Part 1, there is no `packages:` block to
-edit. This is the payoff of the renv approach: the workflow's package list and your
+edit. This is the advantage of the renv approach: the workflow's package list and your
 project's package list cannot drift apart, because they are the same file.
 
 :::{.callout-warning}
-The workflow file refers to `analysis.qmd` and `analysis.html`. If your Quarto file has a
+The workflow file refers to `index.qmd` and `index.html`. If your Quarto file has a
 different name, change both the `.qmd` and `.html` references everywhere they appear,
 including the upload path. A mismatch produces a failure whose cause is not obvious from
 the log.
 :::
 
 :::{.callout-note}
-The `@v2` and `@v4` suffixes pin each action to a major version, which protects
+The `@v2` and `@v7` suffixes pin each action to a major version, which protects
 you from unexpected breaking changes. These major versions are occasionally
 superseded; if a workflow begins to fail after working previously, check the
 action's repository for a newer version.
@@ -536,11 +538,11 @@ action's repository for a newer version.
 If the `r-version` you pin differs from the version recorded in `renv.lock`,
 `setup-renv` may rebuild packages from source, which makes the first run noticeably
 slower and can occasionally fail on a package that needs system libraries. Setting
-`r-version` from your own `R.version.string`, as Step 2 instructs, is the mitigation.
+`r-version` from your own `R.version.string`, as Step 2 instructs, avoids this.
 
-If we set up a workflow that was `renv` and `R` version agnostic:
+A workflow that does not depend on `renv` or on a specific `R` version looks like this:
 
-````markdown
+```yaml
 # The name shown in the Actions tab on GitHub.
 name: Render penguins analysis
 
@@ -551,14 +553,23 @@ on:
   push:
     branches: ["main"]
 
+permissions:
+  contents: read
+
 jobs:
   render:
     runs-on: ubuntu-latest
 
+    # This repository still contains renv's .Rprofile, which would otherwise
+    # activate renv (and its project library) whenever R starts.
+    # Turning the autoloader off makes R use the packages installed below.
+    env:
+      RENV_CONFIG_AUTOLOADER_ENABLED: "false"
+
     steps:
       # Step 1: Download your repository files onto GitHub's machine.
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Step 2: Install R. 'release' tracks the current release version,
       # so there is no version number to maintain here.
@@ -569,7 +580,7 @@ jobs:
           use-public-rspm: true
 
       # Step 3: Install the packages your document needs.
-      # List every package loaded in analysis.qmd here.
+      # List every package loaded in index.qmd here.
       - name: Install R packages
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
@@ -584,18 +595,21 @@ jobs:
 
       # Step 5: Render the penguins document.
       - name: Render Quarto document
-        run: quarto render analysis.qmd
+        run: quarto render index.qmd
 
       # Step 6: Save the rendered output so you can download it.
       - name: Upload rendered output
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rendered-analysis
-          path: analysis.html
+          path: index.html
           retention-days: 7
+```
 
-
-````
+Note the `RENV_CONFIG_AUTOLOADER_ENABLED` line. Your repository still contains the
+`.Rprofile` that `renv::init()` created, and without that line R would activate renv on
+start-up and look for packages in the renv project library (which this workflow never
+restores) rather than the ones it installs.
 
 :::
 
@@ -603,7 +617,7 @@ jobs:
 
 Save the file, then commit and push using the Git pane or terminal:
 
-```
+```bash
 git add .github/workflows/render-quarto.yml
 git commit -m "chore: add Quarto rendering workflow"
 git push
@@ -630,7 +644,7 @@ When the run completes with a green tick:
 
 1. Scroll to the bottom of the run page
 2. Under **Artefacts**, click **rendered-analysis**
-3. A zip file downloads containing `analysis.html`
+3. A zip file downloads containing `index.html`
 
 This is your penguins document, rendered on GitHub's servers from the exact package
 versions in your lockfile, without any action on your part beyond pushing a commit.
@@ -644,7 +658,7 @@ failing step to see the full log. The four most common causes are:
 
 **`renv.lock` is not committed**
 
-```
+```text
 Error in renv::restore() : renv.lock does not exist
 ```
 
@@ -652,17 +666,17 @@ Fix: run `renv::snapshot()` locally, commit `renv.lock`, and push again.
 
 **A package used in the document is not in `renv.lock`**
 
-```
+```text
 Error in library(somepackage) : there is no package called 'somepackage'
 ```
 
 Fix: install the package locally, run `renv::snapshot()`, commit the updated `renv.lock`,
-and push. This is precisely the situation Part 1's hook is designed to prevent before the
+and push. This is the situation Part 1's hook is designed to prevent before the
 commit ever leaves your machine.
 
 :::{.callout-note}
 
-Renv looks for explicit library() in your scripts and Quarto documents. If you load a package with library() but forget to snapshot, the workflow will fail with this error. If you load a package without library() — for example, using `dplyr::filter()` without loading dplyr — the workflow will not know to install it and will fail with a different error: "could not find function 'filter'". In either case, the fix is the same: install the package locally, snapshot, commit, and push.
+renv finds the packages your project uses by scanning your scripts and Quarto documents for both `library()` calls and `pkg::fn()` usages, so `dplyr::filter()` counts as using dplyr just as `library(dplyr)` does. Either way, if the package is used but you forgot to snapshot, it is missing from `renv.lock`, `setup-renv` does not install it, and the render fails with "there is no package called" (for `pkg::fn()`, the message comes from `loadNamespace()`). The fix is the same: run `renv::snapshot()` locally, commit `renv.lock`, and push.
 
 :::
 
@@ -696,10 +710,9 @@ Neither replaces the other.
 
 ## Going further: running code on a schedule
 
-So far, the workflow has been triggered by a push — useful for testing, but not always
-the most natural fit. For many analytical tasks, a scheduled run is more appropriate: a
-report that refreshes every morning, or a data file that is updated weekly, without you
-having to do anything at all.
+So far, the workflow has been triggered by a push. That is useful for testing, but for
+many analytical tasks a scheduled run is more appropriate: a report that refreshes every
+morning, or a data file that is updated weekly, without you having to do anything.
 
 GitHub Actions supports scheduled runs using what are called **cron jobs**. A cron
 expression is a compact way of specifying a time schedule. Replace the `on: push:`
@@ -715,7 +728,8 @@ on:
 The five fields in a cron expression represent, in order: minute, hour, day of month,
 month, and day of week. An asterisk means "every". So `0 9 * * *` means: at minute 0 of
 hour 9, every day of every month. The time is always in UTC, which is one hour behind
-British Summer Time and five hours ahead of Eastern Time — adjust accordingly.
+British Summer Time (and the same as UK time in winter), and four to five hours ahead of
+US Eastern Time depending on daylight saving. Adjust accordingly.
 
 The syntax is not intuitive to read or write from memory. The website
 [crontab.guru](https://crontab.guru) translates cron expressions into plain English and
@@ -730,7 +744,7 @@ Some useful examples:
 | `*/30 * * * *` | Every 30 minutes |
 | `0 9 * * 1-5` | Weekdays at 9:00am UTC |
 
-You can also combine a schedule with a push trigger, so the workflow runs both on demand
+You can also combine a schedule with a push trigger, so the workflow runs both when you push
 and on a timer:
 
 ```yaml
@@ -751,18 +765,26 @@ alternative is to have the workflow commit the rendered file back into the repos
 directly, making it a permanent part of your commit history and accessible at a fixed
 URL.
 
-Add the following step after the render step, replacing the upload-artifact step:
+Pushing needs write access, so first change the workflow's `permissions:` block from
+`contents: read` to:
+
+```yaml
+permissions:
+  contents: write
+```
+
+Then add the following step after the render step, replacing the upload-artifact step:
 
 ```yaml
       - name: Commit rendered output to repository
         run: |
-          # Set the git identity for this commit.
-          # These details appear in the commit history.
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
+          # Set the git identity for this commit. This is GitHub's own
+          # Actions bot account, so the commit shows as made by github-actions[bot].
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           # Stage the rendered file.
-          git add analysis.html
+          git add index.html
 
           # Commit it. The || handles the case where nothing has changed:
           # if there is no new output, git commit would normally fail with
@@ -771,14 +793,16 @@ Add the following step after the render step, replacing the upload-artifact step
           # continue without failing the workflow.
           git commit -m "chore: update rendered analysis" || echo "No changes to commit"
 
-          # Push the commit back to GitHub.
-          git push origin || echo "No changes to commit"
+          # Push the commit back to GitHub. No || here: if the push fails,
+          # the workflow should fail so that you find out.
+          git push
 ```
 
-This pattern is particularly useful for scheduled workflows: the workflow runs on a timer,
+This pattern suits scheduled workflows: the workflow runs on a timer,
 re-renders the document with current data, and pushes the updated HTML back to the
-repository automatically. The `||` operator is a bash pattern worth understanding — it
-means "or", and separates a command from a fallback to run if the first command fails.
+repository automatically. In bash, the `||` operator means "or": it separates a command
+from a fallback to run if the first command fails.
+Use it only where failure is harmless (nothing to commit), never on the push itself.
 
 Note that this approach writes to your repository's main branch directly, which adds
 commits generated by GitHub Actions to your history. Whether this is desirable depends on
@@ -804,8 +828,8 @@ listed explicitly in the workflow file:
 ```
 
 This is less reproducible than `renv` because it installs the latest available version of
-each package rather than the exact version you used locally. For your own projects — such
-as the penguins repository you have built here — renv and `setup-renv` is the better
+each package rather than the exact version you used locally. For your own projects (such
+as the penguins repository you have built here), renv and `setup-renv` is the better
 choice. For adapting workflows from others who do not use renv, `setup-r-dependencies` is
 what you will encounter.
 

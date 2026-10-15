@@ -7,23 +7,16 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-```{r setup-cr}
-#| include: false
-library(tidyverse)
 library(knitr)
 library(kableExtra)
-library(here)
 ```
 
-> **Materials:** The project folder from the course OSF page (https://osf.io/jgeq9/). It contains the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` (+ rendered `.html`), and four `.jpg` figures — all in a single folder.
+> **Materials:** The project folder from the course OSF page (https://osf.io/jgeq9/). It contains the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` (+ rendered `.html`), and four loose image files, all in a single folder.
 
 > **Prerequisite:** The reproducibility chapter, taught this morning. You have already cleaned this dataset and met the `9999` "not recorded" sentinel; this afternoon we review the analysis code.
 
 :::{.callout-note}
-**Before we start:** Open `ANALYSIS.R` from https://osf.io/jgeq9/ in RStudio and read it once through before the session begins. This is an analysis script for the *C. elegans* experiment from this morning — and it is the script we will review.
+**Before we start:** Open `ANALYSIS.R` from https://osf.io/jgeq9/ in RStudio and read it once through before the session begins. This is an analysis script for the *C. elegans* experiment from this morning, and it is the script we will review.
 :::
 
 ---
@@ -32,9 +25,9 @@ library(here)
 
 *⏱ ~15 minutes*
 
-This morning, in the reproducibility chapter, you ran the many-analysts activity: the same *C. elegans* reproduction dataset, the same broad question, meaningfully different results across the room. That illustrated the problem of **underspecified methods** — analytical decisions that are not documented produce variable, non-transparent science. You then cleaned the raw data and built a documented project.
+This morning, in the reproducibility chapter, you ran the many-analysts activity: the same *C. elegans* reproduction dataset, the same broad question, meaningfully different results across the room. That illustrated the problem of **underspecified methods**: analytical decisions that are not documented produce variable, non-transparent science. You then cleaned the raw data and built a documented project.
 
-Code review addresses a related but distinct failure: **the code does not actually do what the analyst thinks it does**. It is possible to write a fully specified, well-documented analysis plan, implement it in R, and still have the code contain errors that silently produce wrong results. No amount of pre-registration prevents this — only someone actually reading the code can catch it.
+Code review addresses a related but distinct failure: **the code does not actually do what the analyst thinks it does**. It is possible to write a fully specified, well-documented analysis plan, implement it in R, and still have the code contain errors that silently produce wrong results. No amount of pre-registration prevents this; only someone actually reading the code can catch it.
 
 The paper for this chapter:
 
@@ -71,7 +64,7 @@ Keep the results visible. We will return to them.
 
 *⏱ ~20 minutes*
 
-Ivimey-Cook et al. (2023) organise what a code reviewer should evaluate around four questions — the **4Rs** (Figure 1 of the paper):
+Ivimey-Cook et al. (2023) organise what a code reviewer should evaluate around four questions, the **4Rs** (Figure 1 of the paper):
 
 ```{r 4rs-table}
 #| echo: false
@@ -92,11 +85,11 @@ tribble(
 
 **Reported.** A reviewer should be able to hold the methods section in one hand and the code in the other and verify they describe the same analysis. `ANALYSIS.R` has no header and almost no comments: a reviewer cannot tell what the intended analysis is, why one worm is dropped, or which of the three models that get fitted is meant to be *the* result. Its variable names (`block`, `total_offspring`) also drift from the data dictionary you wrote this morning (`B`, `TO`).
 
-**Run.** Can the code be executed on a different machine, in a clean R session? `ANALYSIS.R` reads its data from an absolute OneDrive path, and lines 23–24 call `libray()` — a typo for `library()` — so the script does not even parse to the end.
+**Run.** Can the code be executed on a different machine, in a clean R session? `ANALYSIS.R` reads its data from an absolute OneDrive path, and lines 23–24 call `libray()`, a typo for `library()`, so the script does not even run to the end.
 
 **Reliable.** The hardest R. Code can run without error and still produce a wrong result every time. In `ANALYSIS.R`: an operator-precedence slip changes which worms are analysed; the `9999` "not recorded" sentinel you met this morning is never handled; and a count outcome is fitted with a Gaussian model. None of these throw an error.
 
-**Reproducible.** Given the same data and code, does re-running produce the reported outputs? `ANALYSIS.R` fits three models, designates none of them as the answer, saves no model output to disk, and writes a figure called `final2.jpg` — the "2" hinting at undocumented earlier versions.
+**Reproducible.** Given the same data and code, does re-running produce the reported outputs? `ANALYSIS.R` fits three models, designates none of them as the answer, saves no model output to disk, and writes a figure called `final2.jpg`, whose "2" hints at undocumented earlier versions.
 
 :::{.task}
 ::::{.task-header}
@@ -123,7 +116,7 @@ Open `ANALYSIS.R`. Without running it, type into the chat one specific example f
 
 ### The script to review
 
-`ANALYSIS.R` from https://osf.io/jgeq9/ is a **real** analysis script for the *C. elegans* strain × diet experiment — the same experiment you cleaned this morning. It is reproduced here for reference:
+`ANALYSIS.R` from https://osf.io/jgeq9/ is a **real** analysis script for the *C. elegans* strain × diet experiment, the same experiment you cleaned this morning. It is reproduced here for reference:
 
 ```{r bad-script}
 #| eval: false
@@ -209,23 +202,22 @@ ggsave(filename = "final2.jpg", path = "~/Library/CloudStorage/OneDrive-Universi
 ```
 
 :::{.callout-note}
-**A bridge from this morning.** `ANALYSIS.R` analyses the same experiment as the reproducibility chapter, but its author used different names: `block` for `B`, and `total_offspring` for `TO`. That drift between code and data dictionary is itself a small *Reported* problem — but to keep the review readable we use the script's own names below.
+**A bridge from this morning.** `ANALYSIS.R` analyses the same experiment as the reproducibility chapter, but its author used different names: `block` for `B`, and `total_offspring` for `TO`. That drift between code and data dictionary is itself a small *Reported* problem, but to keep the review readable we use the script's own names below.
 :::
 
 
-#### **Step 1: First read (3 minutes)**
+### Step 1 — First read (3 minutes)
 
 Read the script end to end without annotating. Ask yourself:
 
 - What does this script try to do?
 - What is the intended analysis?
 - What immediately strikes you as wrong?
-- Could the style be improved? (e.g. would using Air or styler help, see Extra Material, Addins intro to R)
+- Could the style be improved? Would an automatic code formatter such as [styler](https://styler.r-lib.org/) or [Air](https://posit-dev.github.io/air/) help?
 
 Then move to the checklist.
 
-
-##### The 4Rs review checklist
+#### The 4Rs review checklist
 
 Work through the script systematically. Record ✅ Pass / ❌ Fail / ⚠️ Unclear for each item, and write one sentence describing the issue.
 
@@ -264,7 +256,14 @@ tribble(
 ```
 
 
-#### **Step 2: Complete the checklist (15 minutes)**
+### Step 2 — Complete the checklist (15 minutes)
+
+:::{.task}
+::::{.task-header}
+**Activity: complete the checklist (15 minutes)**
+::::
+
+::::{.task-container}
 
 Work through `ANALYSIS.R` against every item. Record your verdict and a one-sentence note.
 
@@ -273,8 +272,12 @@ Then type into the chat:
 - Your verdict for the three items you think are most consequential
 - One issue you found that is not on the checklist
 
+::::
+:::
 
-##### The problems — revealed
+`r hide("Solution")`
+
+#### The problems — revealed
 
 ```{r problems-table}
 #| echo: false
@@ -288,7 +291,7 @@ tribble(
   "P6", "Reliable",     "32",          "pivot_longer(cols = 3:5) selects columns by position. If the column order ever changes, the wrong columns are reshaped — with no error.",                          "High",
   "P7", "Reliable / Reported","32",    "filter(worm_id != 5) silently drops one worm with no comment, reason, or logged count.",                                                                          "High",
   "P8", "Reliable",     "34",          "complete.cases() on 'total offspring' removes only NA. It does NOT handle the 9999 'not recorded' sentinel from the raw data (reproducibility chapter): 9999s enter the models as real offspring counts of 9999.", "Critical",
-  "P9", "Reliable",     "67",          "anova(m1a, m1b, m1c) compares two lmer models and an lm in one call. The mixed models are REML-fitted, so a likelihood-ratio test of different fixed effects is invalid, and mixing model classes is meaningless.", "Critical",
+  "P9", "Reliable",     "67",          "anova(m1a, m1b, m1c) puts two lmer models and an lm in one call. R silently refits the mixed models with ML, reorders all three by number of parameters and tests each against the next. That chain compares m1a with m1c, which are not nested (they differ in both fixed and random effects), so that row's test is meaningless; no hypothesis says which comparison matters.", "Critical",
   "P10","Reliable",     "49–65",       "total_offspring is a count, but all three models are Gaussian (lmer / lm). A count GLMM (Poisson or negative binomial) is not considered; no residual or distributional checks.", "High",
   "P11","Reliable",     "71–77",       "geom_smooth(method = 'lm') is drawn over a categorical x (as.factor(strain)) — a regression line through factor levels is meaningless. stat_summary(..., shape = 0) passes shape to an errorbar geom that ignores it.", "Medium",
   "P12","Reproducible", "49–67, 79",   "Three models are fitted but none is designated as the result and no model output is saved to disk. The figure is saved as final2.jpg (the '2' implies undocumented earlier versions). No sessionInfo(), no renv, no versions; full.dat / full_dat / Na are confusingly similar names.", "Medium"
@@ -298,13 +301,22 @@ tribble(
   kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover"))
 ```
 
-**P1, P4, and P8 are the most consequential.** P1 means the script does not even run to the end — the `libray` typo halts it before any analysis happens. But fixing the typo does not make the script correct. P4 is the dangerous one: the precedence slip silently changes *which worms are in the analysis*, and the code looks perfectly reasonable. P8 is the direct callback to this morning — `complete.cases()` removes `NA`, but `9999` is a number, not `NA`, so every "not recorded" worm enters the models as if it produced 9,999 offspring, wrecking every group mean. None of P4, P8, P10 or P12 throws an error: the script (once it runs) produces numbers, and the numbers are wrong.
+**P1, P4, and P8 are the most consequential.** P1 means the script does not even run to the end: the `libray` typo halts it before any analysis happens. But fixing the typo does not make the script correct. P4 is the dangerous one: the precedence slip silently changes *which worms are in the analysis*, and the code looks perfectly reasonable. P8 is the direct callback to this morning: `complete.cases()` removes `NA`, but `9999` is a number, not `NA`, so every "not recorded" worm enters the models as if it produced 9,999 offspring, wrecking every group mean. None of P4, P8, P10 or P12 throws an error: the script (once it runs) produces numbers, and the numbers are wrong.
 
+`r unhide()`
 
-#### **Step 3: Write the review (12 minutes)**
+### Step 3 — Write the review (12 minutes)
 
-Write a structured code review of `ANALYSIS.R` as if emailing it to the author. Be kind but direct. Organise by R, reference line numbers, and suggest a concrete fix for each issue.
+:::{.task}
+::::{.task-header}
+**Activity: write the review (12 minutes)**
+::::
 
+::::{.task-container}
+
+Write a structured code review of `ANALYSIS.R` as if emailing it to the author. Be kind but direct. Organise by R, reference line numbers, and suggest a concrete fix for each issue. Use this template:
+
+```
 CODE REVIEW: ANALYSIS.R
 Reviewer: [your name]  |  Date: [today]  |  Approx. time: [X] minutes
 
@@ -325,18 +337,22 @@ REPRODUCIBLE
 
 RECOMMENDATION
 [ ] Ready to submit  [ ] Minor revision  [ ] Major revision required
+```
 
 When done, paste your SUMMARY and your RECOMMENDATION into the chat.
+
+::::
+:::
 
 
 :::{.callout-note}
 **Debrief (5 minutes):**
 
-1. Did everyone identify P8 (the 9999 sentinel)? This is the same lesson as this morning — and the error with the largest effect on the result — yet the code runs without complaint. What does that say about automatic testing vs human review?
+1. Did everyone identify P8 (the 9999 sentinel)? This is the same lesson as this morning, and the error with the largest effect on the result, yet the code runs without complaint. What does that say about automatic testing vs human review?
 
-2. Did anyone give "ready to submit"? P4 and P8 together mean the analysis is not just poorly documented — its central estimate is numerically wrong. Would this have passed peer review as written?
+2. Did anyone give "ready to submit"? P4 and P8 together mean that, beyond being poorly documented, the analysis gives a numerically wrong central estimate. Would this have passed peer review as written?
 
-3. P12 (which of the three models is the answer?) — is there any way a journal reviewer reading only the paper would catch this without seeing the code?
+3. P12: which of the three models is the answer? Is there any way a journal reviewer reading only the paper would catch this without seeing the code?
 :::
 
 ---
@@ -345,7 +361,7 @@ When done, paste your SUMMARY and your RECOMMENDATION into the chat.
 
 *⏱ ~25 minutes*
 
-Finding the problems is only half of code review; the point is to fix them. The good news is that the fix is not exotic. Most of the twelve problems disappear once the script is rewritten as a **plain, linear, well-commented analysis** — relative paths, a documented sample, the sentinel handled, one model fitted and saved deliberately. You do not need clever abstractions or a pile of custom functions to make code reviewable. A flat script that a reviewer can read top to bottom is usually the easiest thing to check.
+Finding the problems is only half of code review; the point is to fix them, and the fix is not exotic. Most of the twelve problems disappear once the script is rewritten as a **plain, linear, well-commented analysis**: relative paths, a documented sample, the sentinel handled, and one model fitted and saved deliberately. You do not need clever abstractions or a pile of custom functions to make code reviewable. A flat script that a reviewer can read top to bottom is usually the easiest thing to check.
 
 ### A corrected version
 
@@ -379,11 +395,13 @@ dat <- read_csv(here("data", "processed", "celegans_clean.csv"),
                 show_col_types = FALSE) |>
   mutate(
     strain = factor(strain, levels = c("empty_vector", "daf")),
-    diet      = factor(diet),
-    B         = factor(B)
+    diet   = factor(diet),
+    B      = factor(B)
   )
 
 # -- 2. Select the analysis sample ------------------------------------ fixes P4, P7
+# No worm is dropped here without a reason (P7): every exclusion is made,
+# and logged, in 01_data_cleaning.R.
 # Keep the two strains of interest AND require diet to be recorded.
 # The parentheses are the fix for P4: the original wrote
 #   strain == "daf" | strain == "empty_vector" & !is.na(diet)
@@ -410,7 +428,7 @@ p <- ggplot(dat, aes(x = strain, y = TO, colour = diet)) +
   geom_jitter(width = 0.15, alpha = 0.3) +
   stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.3) +
   stat_summary(fun = mean, geom = "point", size = 3) +
-  labs(x = "strain (RNAi)", y = "Total offspring", colour = "Diet") +
+  labs(x = "Strain (RNAi)", y = "Total offspring", colour = "Diet") +
   theme_classic()
 
 ggsave(here("figures", "offspring_by_strain.png"), p,
@@ -446,19 +464,19 @@ Type your answers into the chat.
 
 ### Tidy the project, not just the script
 
-`ANALYSIS.R` reads its data from one folder and writes its outputs back to the same folder. Look at what is actually *in* that folder on the OSF page: the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` and its rendered `.html`, and four loose `.jpg` figures — everything in one flat directory.
+`ANALYSIS.R` reads its data from one folder and writes its outputs back to the same folder. Look at what is actually *in* that folder on the OSF page: the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` and its rendered `.html`, and four loose image files, all in one flat directory.
 
-That is exactly the messy structure you saw at the start of the reproducibility chapter, and exactly what the TADA folder structure fixes. Three things a reviewer should flag:
+That is exactly the messy structure you saw at the start of the reproducibility chapter, and the folder structure you built there fixes it. Three things a reviewer should flag:
 
-- **`old_code.R` should not be there.** It is a superseded earlier version. Dead code left in the project root invites a collaborator to run the wrong script. Move it to an `archive/` folder, or delete it — version control already remembers it.
-- **The four `.jpg` figures are loose.** Generated outputs belong in `figures/`, produced by the code, not committed by hand next to the scripts.
-- **There is no README.** You built one this morning, in the reproducibility chapter; that same `README.md` belongs in the project root here — it is what lets a reviewer answer the *Reported* questions at all.
+- **`old_code.R` should not be there.** It is a superseded earlier version. Dead code left in the project root invites a collaborator to run the wrong script. Move it to an `archive/` folder, or delete it (version control already remembers it).
+- **The four image files are loose.** Generated outputs belong in `figures/`, produced by the code, not committed by hand next to the scripts.
+- **There is no README.** You built one this morning, in the reproducibility chapter; that same `README.md` belongs in the project root here; it is what lets a reviewer answer the *Reported* questions at all.
 
-Re-using the structure you created in the reproducibility chapter — `data/raw`, `data/processed`, `analysis/`, `figures/`, `results/` — makes the project navigable and makes the *Run* check ("can I tell which script to run, and in what order?") answerable at a glance.
+Re-using the structure you created in the reproducibility chapter (`data/raw`, `data/processed`, `analysis/`, `figures/`, `results/`) makes the project navigable and makes the *Run* check ("can I tell which script to run, and in what order?") answerable at a glance.
 
 ### Reviewing the whole archive: the SORTEE stages
 
-The 4Rs are a lens for reviewing a *script*. The SORTEE Guidelines (Pick et al. 2026) provide the complementary lens for reviewing a whole *archive* — the data, the code and the metadata together — as six ordered **Stages of Review**:
+The 4Rs are a lens for reviewing a *script*. The SORTEE Guidelines (Pick et al. 2026) provide the complementary lens for reviewing a whole *archive* (the data, the code and the metadata together) as six ordered **Stages of Review**:
 
 ```{r sortee-stages}
 #| echo: false
@@ -479,10 +497,10 @@ tribble(
 
 The stages build on each other: Stages 1–2 deliver **data re-use**, Stages 1–4 deliver **transparency**, and all six together deliver **full computational reproducibility**.
 
-**DCQC** — the SORTEE Data and Code Quality Control Shiny app (https://github.com/SORTEE/DCQC) — does **not** check anything automatically. It is a structured walk-through: it takes a reviewer (a journal data editor, or you, reviewing your own archive before submission) through these six stages in order, recording the outcome of each. Think of it as the counterpart, for the whole data-and-code package, of the 4Rs checklist you used on the script.
+**DCQC**, the SORTEE Data and Code Quality Control Shiny app (https://github.com/SORTEE/DCQC), does **not** check anything automatically. It is a structured walk-through: it takes a reviewer (a journal data editor, or you, reviewing your own archive before submission) through these six stages in order, recording the outcome of each. Think of it as the counterpart, for the whole data-and-code package, of the 4Rs checklist you used on the script.
 
 :::{.callout-note}
-**What no tool can do for you.** DCQC *structures* the review; it does not pass judgement. Stage 5 ("does the code run?") and Stage 6 ("do the results reproduce?") still require *you* to run the code. And the 4Rs *Reliable* question — does the code do what the analyst intended? — is the one neither DCQC nor Copilot can answer. That is the human reading you did in Part 3.
+**What no tool can do for you.** DCQC *structures* the review; it does not pass judgement. Stage 5 ("does the code run?") and Stage 6 ("do the results reproduce?") still require *you* to run the code. And the 4Rs *Reliable* question (does the code do what the analyst intended?) is the one neither DCQC nor an AI assistant can answer for you. That is the human reading you did in Part 3.
 :::
 
 ---
@@ -493,18 +511,18 @@ The stages build on each other: Stages 1–2 deliver **data re-use**, Stages 1�
 
 ### Setting up a code review group
 
-Most code review never happens because no one organises it. Ivimey-Cook et al. (2023) — drawing on their experience building SORTEE's peer code review club — distilled five practical considerations for getting a group off the ground. They aren't novel, but they're the ones that decide whether a group survives past meeting three or quietly dies.
+Most code review never happens because no one organises it. Ivimey-Cook et al. (2023), drawing on their experience building SORTEE's peer code review club, set out five practical considerations for getting a group off the ground. They aren't novel, but they're the ones that decide whether a group survives past meeting three or quietly dies.
 
 1. **Start collaborating early.** Review works best when it's continuous, not a one-off pre-submission check. Build in regular sessions from project kickoff and use GitHub issues or pull requests to anchor discussion to specific lines rather than vague impressions.
 2. **Set a clear goal for each session.** "Learn together" and "find the bug in my analysis before I submit" need different time, different reviewers and different rules. Decide which one you're doing before people show up.
-3. **Normalise errors and make it judgement-free.** There is no such thing as bad code (Barnes 2010) and there are usually multiple defensible ways to solve the same problem (Silberzahn et al. 2018; Gould et al. 2023). The fastest way to kill a group is to let it become a place where the most confident voice rewrites everyone else's style.
+3. **Normalise errors and make it judgement-free.** There is no such thing as bad code (Barnes 2010) and there are usually multiple defensible ways to solve the same problem (Silberzahn et al. 2018; Gould et al. 2025). The fastest way to kill a group is to let it become a place where the most confident voice rewrites everyone else's style.
 4. **Mind the group size.** Small (even 1-on-1) is better for focused review of specific code; larger groups work for general principles and discussion. Pick on purpose.
-5. **Think about credit up front.** A reviewer who catches a meaningful bug deserves more than a thank-you — MeRIT acknowledgement (Nakagawa et al. 2023) or co-authorship where the fix changes the conclusions. Agree the default *before* the first review, not after.
+5. **Think about credit up front.** A reviewer who catches a meaningful bug deserves more than a thank-you: MeRIT acknowledgement (Nakagawa et al. 2023) or co-authorship where the fix changes the conclusions. Agree the default *before* the first review, not after.
 
 :::{.callout-tip}
 **Plan your group** *(~5 min — type in chat)*
 
-Without overthinking it, commit to specifics on the following five questions. Two-line answers are fine — the point is to write them down, because *"we should review each other's code"* without specifics is a sentence that ages badly.
+Without overthinking it, commit to specifics on the following five questions. Two-line answers are fine; the point is to write them down, because *"we should review each other's code"* without specifics is a sentence that ages badly.
 
 1. **Who** — name 2–4 people you'd actually invite in the next month.
 2. **What** — readability/learning, or pre-submission error-checking? (Pick one for the first meeting.)
@@ -528,6 +546,8 @@ Then: "Based on `ANALYSIS.R` — which of the 12 problems is most likely to appe
 
 And: "The one change I will make to my workflow before my next submission is..."
 :::
+
+---
 
 ## Glossary
 
@@ -559,7 +579,7 @@ tribble(
 - **Ivimey-Cook, E.R., et al. (2023).** Implementing code review in the scientific workflow. *Journal of Evolutionary Biology*, 36, 1347–1356. https://doi.org/10.1111/jeb.14230
 - **Ivimey-Cook, E.R., et al. (2025).** TADA! https://doi.org/10.32942/X2D93K
 - **Pick, J.L., et al. (2026).** SORTEE Guidelines. https://doi.org/10.24072/pcjournal.687
-- **Gould, E., et al. (2023).** Same data, different analysts. *EcoEvoRxiv*. https://doi.org/10.32942/X2BP4S
+- **Gould, E., et al. (2025).** Same data, different analysts: variation in effect sizes due to analytical decisions in ecology and evolutionary biology. *BMC Biology*, 23, 35. https://doi.org/10.1186/s12915-024-02101-x
 - **Trisovic, A., et al. (2022).** A large-scale study on research code quality and execution. *Scientific Data*. https://doi.org/10.1038/s41597-022-01143-6
 - **SORTEE DCQC app:** https://github.com/SORTEE/DCQC
 - **Course OSF page:** https://osf.io/jgeq9/ — `ANALYSIS.R` is the script reviewed in this chapter

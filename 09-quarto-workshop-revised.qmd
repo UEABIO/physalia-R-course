@@ -1,4 +1,4 @@
-# Quarto {.unnumbered}
+# Block 1: Quarto {.unnumbered}
 
 
 
@@ -8,16 +8,6 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-```{r}
-#| warning: false
-#| message: false
-#| echo: false
-
-
-library(tidyverse)
 library(janitor)
 library(lubridate)
 library(gt)
@@ -25,7 +15,6 @@ library(kableExtra)
 library(palmerpenguins)
 
 penguins <- palmerpenguins::penguins
-
 ```
 
 ```{r}
@@ -90,13 +79,13 @@ All in **one file** that renders to professional documents.
 
 ### Two concrete benefits
 
-Quarto's value for scientists rests on two specific mechanisms, not a vague notion of "reproducibility":
+For scientists, Quarto's value comes from two specific mechanisms rather than a general appeal to "reproducibility":
 
 1. **Outputs are generated from code, never copied.** Every figure, table, and reported number in the document is produced by the code that sits alongside it. There is no manual step where a value is transcribed from the console into the write-up, which removes an entire class of copy-paste error. When the data or analysis changes, re-rendering updates every output at once.
 
 2. **Rendering requires a clean, self-contained run.** To render, a Quarto document must contain all the code it depends on and must run from an empty session. This is the practical core of literate programming (Knuth, 1984): a document that renders is, by construction, one that runs start to finish without hidden state left over from interactive work. If your analysis relies on an object you created by hand in the console, the render fails, and that failure is the document telling you it is not yet reproducible.
 
-The second point is worth stressing during the session, because new users frequently break their own documents by working interactively and then cannot render. The clean-session requirement is a feature, not an obstacle.
+The second point matters in practice, because new users often break their own documents by working interactively and then cannot render. The clean-session requirement is there to catch exactly this.
 
 ### Quick Example
 
@@ -160,7 +149,7 @@ The line below the chunk uses an *inline code expression*: backticks containing 
 
 ### The Three Parts of a Quarto Document
 
-A `.qmd` file is structured almost the opposite way round to a `.R` script. In a `.R` script, everything is treated as code unless you comment it out with `#`. In a Quarto document, everything after the YAML is treated as *text* unless you place it inside a code chunk. Understanding this inversion is the key to reading the rest of the document.
+A `.qmd` file is structured almost the opposite way round to a `.R` script. In a `.R` script, everything is treated as code unless you comment it out with `#`. In a Quarto document, everything after the YAML is treated as *text* unless you place it inside a code chunk. Keep this inversion in mind for the rest of this chapter.
 
 Every Quarto document has three components:
 
@@ -241,8 +230,8 @@ Edit your document
 ::::
 ::::{.task-container}
 
-1. Edit the basic YAML, making sure to add the `echo:false` argument
-2. Click **Render** button
+1. Edit the basic YAML, adding `echo: false` under `execute:` as shown above
+2. Click the **Render** button
 3. What changed?
 ::::
 :::
@@ -259,7 +248,7 @@ folder sits, and you will understand the one path rule that is specific to
 
 ### File Organization That Works
 
-```
+```text
 my-research-project/
 ├── my-research-project.Rproj
 ├── data/
@@ -287,15 +276,16 @@ is what lets relative paths resolve.
 With a Project, this works on any machine and survives the folder being moved
 or shared:
 
-```{r, eval = F, echo =T}
-
+```{r}
+#| eval: false
 data <- read_csv("data/raw-data.csv")
 ```
 
 Without one, an absolute path breaks the moment the project is moved, shared,
 or opened by a collaborator:
 
-```{r, eval = F, echo =T}
+```{r}
+#| eval: false
 # Breaks for anyone who is not you, on a folder that is not yours
 data <- read_csv("/Users/YourName/Documents/SomeFolder/data/raw-data.csv")
 ```
@@ -304,8 +294,8 @@ data <- read_csv("/Users/YourName/Documents/SomeFolder/data/raw-data.csv")
 
 > If you reference a file, use a **relative path** from your project root.
 
-**Good:** `here("data", "my-data.csv")`
-**Bad:** `"C:/Users/Phil/Documents/Research/data/my-data.csv"`
+- **Good:** `here("data", "my-data.csv")`
+- **Bad:** `"C:/Users/Phil/Documents/Research/data/my-data.csv"`
 
 The `here` package is the most reliable way to write a relative path, for the
 reason set out next.
@@ -328,10 +318,10 @@ library(here)
 data <- read_csv(here("data", "raw-data.csv"))
 ```
 
-Option 2 is the more robust choice and the one assumed in the rest of this
+Option 2 is the more reliable choice and the one assumed in the rest of this
 session, because it keeps reports in their own folder without breaking paths.
 Whichever you choose, be consistent across every `.R` and `.qmd` file in the
-project, or you will hit path errors. This wrinkle becomes concrete in the
+project, or you will hit path errors. You will see this in practice in the
 final exercise, where a script sourced into a report only resolves its paths
 correctly because it uses `here()`.
 
@@ -345,8 +335,6 @@ rule, and the `.qmd` working-directory trap.
 ---
 
 ## 4. Rendering Outputs
-
-**Teaching: 5 minutes | Practice: 5 minutes**
 
 ### Two Essential Formats
 
@@ -382,7 +370,7 @@ format: pdf
 - Consistent formatting
 - Required for some journals
 
-**Note:** PDF requires a LaTeX installation. TinyTeX is the recommended lightweight option, installable with `quarto install tinytex` in the terminal console.
+**Note:** PDF requires a LaTeX installation. TinyTeX is the recommended lightweight option, installable with `quarto install tinytex` in the terminal.
 
 ### Multiple Formats
 
@@ -402,7 +390,7 @@ format:
 
 HTML output uses a default Bootstrap theme that is perfectly adequate but generic. If you want a different look without writing any CSS, Quarto bundles the full set of Bootswatch themes and you switch between them with a single line in the YAML:
 
-```
+```yaml
 ---
 title: "My Report"
 format:
@@ -425,7 +413,7 @@ A few worth knowing:
 - darkly — dark background, useful for presentations or screen reading
 
 The full list lives at https://bootswatch.com. Setting theme: changes colours, fonts, spacing, and the appearance of code blocks, callouts, and tables all at once, which is usually all the customisation a scientific report needs.
-If you do want finer control, you can pass two themes together: a base Bootswatch theme plus a small SCSS file containing your overrides. This is genuinely useful for institutional branding but is out of scope for today; the Quarto documentation on HTML theming covers it.
+If you do want finer control, you can pass two themes together: a base Bootswatch theme plus a small SCSS file containing your overrides. This is useful for institutional branding but out of scope for today; the Quarto documentation on HTML theming covers it.
 
 ### Practice
 
@@ -491,7 +479,7 @@ You almost always want to set both. `fig-width` controls how the figure is drawn
 
 #### A common control: `fig-asp`
 
-Rather than setting width and height separately, set `fig-width` and use `fig-asp` for the height-to-width ratio. A value of `0.618` (the golden ratio) or `0.8` produces well-proportioned figures without needing to think in absolute heights.
+Rather than setting width and height separately, set `fig-width` and use `fig-asp` for the height-to-width ratio. A value of `0.618` (1/golden ratio; the golden ratio itself is 1.618) or `0.8` produces well-proportioned figures without needing to think in absolute heights.
 
 #### Worked example
 
@@ -636,13 +624,13 @@ summary_stats <- penguins |>
     .by = species
   )
 
-kable(summary_stats)
+knitr::kable(summary_stats)
 ```
 
 ````
 
-```{r, eval = T, echo = F}
-
+```{r}
+#| echo: false
 summary_stats <- penguins |>
   summarise(
     mean_mass = round(mean(body_mass_g, na.rm = TRUE), 0),
@@ -651,8 +639,7 @@ summary_stats <- penguins |>
     .by = species
   )
 
-kable(summary_stats)
-
+knitr::kable(summary_stats)
 ```
 
 Note the use of `.by = species` for per-operation grouping rather than the older `group_by()` then `ungroup()` pattern.
@@ -682,7 +669,8 @@ penguins |>
 
 ````
 
-```{r, eval = T, echo = F}
+```{r}
+#| echo: false
 library(gt)
 
 penguins |>
@@ -725,13 +713,13 @@ Create a document with:
 
 A caption and a cross-reference do two different jobs. The caption is the text that travels with the figure or table; the cross-reference is the mechanism that lets you point to it from your prose and have the number resolve automatically. Quarto ties them together through a single chunk label, so once the label is in place both jobs are done at once.
 
-A note on what belongs in a caption. The four-element legend structure (descriptive sentence, methods and sample, statistical model and result, visual components) is precisely what should go inside the `fig-cap` or `tbl-cap` string. The captions you write here should still describe neutrally and in the past tense, and should avoid stating results as a substitute for describing the figure.
+What goes inside the `fig-cap` or `tbl-cap` string is the four-element legend structure set out in the box below (descriptive sentence, methods and sample, statistical model and result, visual components). Captions should describe the figure neutrally and in the past tense, and should not state results in place of describing it.
 
-:::{.callout-info collapse = "true"}
+:::{.callout-note collapse = "true"}
 
 ## Figure legends
 
-A figure for a journal or lab report is not complete without its legend. The legend exists so that the figure can be understood without the reader returning to the body text. The discipline is to write it as four elements, always in this order.
+A figure for a journal or lab report is not complete without its legend. The legend exists so that the figure can be understood without the reader returning to the body text. Write it as four elements, always in this order.
 
 ### The four elements
 
@@ -756,15 +744,15 @@ For each of the four elements, a good and a bad example. The bad examples cluste
 
 | Verdict | Example |
 |---|---|
-| Good | Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing body mass were excluded, giving final sample sizes of 151 Adelie, 68 Chinstrap, and 124 Gentoo individuals. |
+| Good | Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing body mass were excluded, giving final sample sizes of 151 Adelie, 68 Chinstrap, and 123 Gentoo individuals. |
 | Bad | Data from a survey. (*No source, no sample size, no exclusions.*) |
-| Bad | n = 343. (*Total only; per-group sample sizes are missing, and the source and exclusion criteria are not stated.*) |
+| Bad | n = 342. (*Total only; per-group sample sizes are missing, and the source and exclusion criteria are not stated.*) |
 
 **Element 3 — Statistical model and result:**
 
 | Verdict | Example |
 |---|---|
-| Good | A one-way ANOVA indicated a significant effect of species on body mass (F(2, 340) = 343.6, p < 0.001). Pairwise contrasts were Tukey-adjusted. |
+| Good | A one-way ANOVA indicated a significant effect of species on body mass (F(2, 339) = 343.6, p < 0.001). Pairwise contrasts were Tukey-adjusted. |
 | Bad | Species differed significantly. (*No test, no test statistic, no degrees of freedom, no p-value, no adjustment method.*) |
 | Bad | ANOVA showed differences (p < 0.05). (*Test named but no F-statistic; reports a threshold rather than the exact p-value; no multiple-comparisons adjustment named.*) |
 
@@ -776,20 +764,20 @@ Note: if the figure is descriptive only and no statistical test has been perform
 |---|---|
 | Good | The shaded region shows a kernel density estimate of the distribution; the central box shows the interquartile range with the median indicated by a horizontal line and whiskers extending to 1.5 × IQR; individual observations are displayed as jittered points. |
 | Bad | Shows a raincloud plot. (*Names the type but defines nothing.*) |
-| Bad | Boxplots of body mass. (*Misnames the figure — it is not a boxplot — and defines none of the layers.*) |
+| Bad | Boxplots of body mass. (*Misnames the figure, which is not a boxplot, and defines none of the layers.*) |
 
 ### A worked example
 
-> **Figure 1.** Body mass (g) of three penguin species (*Pygoscelis adeliae*, *P. chinstrap*, and *P. papua*) in the Palmer Archipelago, Antarctica. Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing body mass values were excluded, giving final sample sizes of 151 Adelie, 68 Chinstrap, and 124 Gentoo individuals. The shaded region shows a kernel density estimate of the distribution; the central box shows the interquartile range with the median indicated by a horizontal line; individual observations are displayed as jittered points.
+> **Figure 1.** Body mass (g) of three penguin species (*Pygoscelis adeliae*, *P. antarcticus*, and *P. papua*) in the Palmer Archipelago, Antarctica. Data are from the Palmer Penguins dataset (Horst, Hill and Gorman, 2020); observations with missing body mass values were excluded, giving final sample sizes of 151 Adelie, 68 Chinstrap, and 123 Gentoo individuals. The shaded region shows a kernel density estimate of the distribution; the central box shows the interquartile range with the median indicated by a horizontal line; individual observations are displayed as jittered points.
 
 
-This legend uses three of the four elements (descriptive sentence, methods and sample, visual components). The statistical-model element is omitted because the figure is descriptive — no model has been fitted to these data. Were a model present, the third element would sit between methods and visual components.
+This legend uses three of the four elements (descriptive sentence, methods and sample, visual components). The statistical-model element is omitted because the figure is descriptive: no model has been fitted to these data. Were a model present, the third element would sit between methods and visual components.
 
 :::
 
 ### Why cross-references matter
 
-Instead of *"see the figure below"* or *"Table 1 shows..."*, write `@fig-scatter shows a clear relationship`, which renders as **"Figure 1 shows a clear relationship"**. Hard-coding a number such as "Table 1" creates a maintenance problem: insert a table earlier in the document and every subsequent reference is silently wrong. The benefits of the cross-reference approach are that numbers update automatically when items are added or removed, links are clickable in HTML output, and references never go stale.
+Instead of *"see the figure below"* or *"Table 1 shows..."*, write `@fig-scatter shows a clear relationship`, which renders as **"Figure 1 shows a clear relationship"**. Hard-coding a number such as "Table 1" creates a maintenance problem: insert a table earlier in the document and every subsequent reference is silently wrong. With cross-references, the numbers update automatically when items are added or removed, so references never go stale, and in HTML output they are clickable links.
 
 A cross-reference has two halves: a chunk label carrying the correct prefix (`fig-` for figures, `tbl-` for tables, `sec-` for sections), and an `@`-reference to that label in the surrounding text. Both halves must be present for the reference to resolve. A label without an `@`-reference produces a numbered item that nothing points to; an `@`-reference without a matching label renders as a literal, unresolved `@fig-name` in the output. If a reference is not resolving, check that the prefix on the label matches the prefix in the `@`-reference exactly.
 
@@ -820,13 +808,14 @@ For tables, the caption is set through the `tbl-cap` chunk option. The example b
 
 ```{r}`r ''`
 #| label: tbl-descriptive
-#| tbl-cap: "Descriptive statistics for four penguin body measurements, reported as group means and standard deviations. Sample sizes were 151 Adelie, 68 Chinstrap, and 124 Gentoo individuals after excluding observations with missing values."
+#| tbl-cap: "Descriptive statistics for four penguin body measurements, reported as group means and standard deviations. Sample sizes were 151 Adelie, 68 Chinstrap, and 123 Gentoo individuals after excluding observations with missing values."
 penguins |>
   summarise(
     across(
-      c(culmen_length_mm, culmen_depth_mm, flipper_length_mm, body_mass_g),
+      c(bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g),
       list(mean = \(x) mean(x, na.rm = TRUE), sd = \(x) sd(x, na.rm = TRUE))
-    )
+    ),
+    .by = species
   ) |>
   knitr::kable(digits = 1)
 ```
@@ -837,7 +826,7 @@ The summary statistics (@tbl-descriptive) describe the central tendency and spre
 
 ### Referencing sections
 
-Sections are cross-referenced by attaching an explicit identifier with the `sec-` prefix in braces after the heading. This requires `number-sections: true` in the document or project YAML, otherwise the reference has no number to resolve to.
+Sections are cross-referenced by attaching an explicit identifier with the `sec-` prefix in braces after the heading. This requires `number-sections: true` in the document or project YAML; otherwise the reference has no number to resolve to.
 
 ```markdown
 # Methods {#sec-methods}
@@ -849,15 +838,22 @@ As described in @sec-methods, the data were filtered before modelling.
 
 ### Practice
 
-Using `02-qmd-figures-chunks.qmd`:
+:::{.task}
+::::{.task-header}
+Captions and cross-references
+::::
+::::{.task-container}
+Using the document you built in the Section 5 exercise:
 
-1. Add `fig-` and `tbl-` labels to your figures and tables, and write a caption for each following the four-element legend structure from Block 6.
+1. Add `fig-` and `tbl-` labels to your figures and tables, and write a caption for each following the four-element legend structure in the *Figure legends* box above.
 
 2. Reference each item in your text using `@fig-name` and `@tbl-name`.
 
 3. Render the document and confirm that the numbering is automatic and that the in-text references resolve to the correct numbers.
 
 4. Insert a new figure earlier in the document, re-render, and confirm that all subsequent numbers and references update without further editing.
+::::
+:::
 
 ---
 
@@ -866,7 +862,7 @@ Using `02-qmd-figures-chunks.qmd`:
 
 ### Why extensions exist
 
-Default Quarto covers the common formats, but you will eventually want something the base install does not provide: a journal's required layout, a custom callout style, or an output format a publisher mandates. Rather than editing Quarto's internals, the community packages these additions as *extensions*. An extension is a self-contained folder of templates, styles, and filters that you install into your project and then reference from the YAML.
+Default Quarto covers the common formats, but you will eventually want something the base install does not provide: a journal's required layout, a custom callout style, or an output format a publisher mandates. The community packages these additions as *extensions*, so you do not need to edit Quarto's internals. An extension is a self-contained folder of templates, styles, and filters that you install into your project and then reference from the YAML.
 
 Extensions install locally into a `_extensions/` folder beside your `.qmd` file, so they travel with the project and do not depend on anything installed system-wide. This keeps your work reproducible: a colleague who clones your project gets the extension too.
 
@@ -894,7 +890,7 @@ format:
 
 The most useful extensions for scientists are journal article templates, maintained under the `quarto-journals` organisation on GitHub (https://github.com/quarto-journals). These reproduce the formatting required by specific publishers, so you can write in Quarto and render directly to a submission-ready PDF.
 
-Rather than installing one piecemeal, you can start a new project pre-populated with a template:
+Instead of adding a template to an existing project, you can start a new project pre-populated with one:
 
 ```bash
 quarto use template quarto-journals/jss
@@ -916,7 +912,14 @@ quarto remove <extension>  # uninstall
 
 You will not write your own extension today, and most scientists never need to. The practical skill is recognising that if a format or style you need already exists, you can install it in one command rather than fighting the defaults. Browse the full listing at https://quarto.org/docs/extensions/ when a specific need arises.
 
-**Take-home:** find the template for a journal in your field, install it, and render the example document.
+:::{.task}
+::::{.task-header}
+Take-home: a journal template
+::::
+::::{.task-container}
+Find the template for a journal in your field, install it, and render the example document.
+::::
+:::
 
 ---
 
@@ -973,15 +976,15 @@ This is the most common failure and follows directly from the clean-session requ
 
 ## 9. Consolidation Exercise: From Raw Data to Sourced Report (20 minutes)
 
-**Goal:** Reproduce a full project workflow — directory setup, a standalone
-analysis script, and a Quarto report that sources it — using a dataset you
+**Goal:** Reproduce a full project workflow (directory setup, a standalone
+analysis script, and a Quarto report that sources it) using a dataset you
 have not seen before.
 
-This exercise deliberately combines the project-organisation rules from
+This exercise combines the project-organisation rules from
 Section 3 with the figure, caption, and cross-reference skills from Sections
 5 and 6.
 
-### Part A — Set up a project (from the previous workshop)
+### Part A — Set up a project
 
 1. File → New Project → New Directory → Quarto Project.
 
@@ -989,20 +992,14 @@ Section 3 with the figure, caption, and cross-reference skills from Sections
 
 3. Confirm the `.Rproj` file sits at the project root and that you have it open.
 
-````markdown
-
+```text
 my-research-project/
 ├── my-research-project.Rproj
 ├── data/
-│   
 ├── reports/
-
-├── scripts/
+└── scripts/
     └── make-figure.R
-
-
-
-````
+```
 
 ### Part B — Import and explore an unfamiliar dataset
 
@@ -1012,7 +1009,7 @@ my-research-project/
 #| eval: true
 #| echo: false
 downloadthis::download_link(
-  link = "https://raw.githubusercontent.com/UEABIO/physalia-R-course/refs/heads/2026-qmd/files/darwin.csv",
+  link = "https://raw.githubusercontent.com/UEABIO/physalia-R-course/refs/heads/main/files/darwin.csv",
   button_label = "Download darwin.csv",
   button_type = "success",
   has_icon = TRUE,
@@ -1054,22 +1051,21 @@ The dataset has 15 matched pairs and three columns:
 
 Create `scripts/make-figure.R` containing only:
 
-```{r, eval = F, echo = T}
+```{r}
+#| eval: false
+library(tidyverse)
+library(here)
 
-    library(tidyverse)
-    library(here)
+data <- read_csv(here("data", "darwin.csv"))
 
-    data <- read_csv(here("data", "darwin.csv"))
-
-    # Make a plot of your choosing
-    plot <- 
-
+# Make a plot of your choosing
+plot <- 
 ```
 
-Note two things. The path uses `here()`, not a bare relative path —
-this is required, because when the script is sourced from a `.qmd` the
-working directory is the report's folder, not the project root. And the
-plot is *assigned to an object* (`mass_plot`); it is not printed. Sourcing
+Note two things. First, the path uses `here()` rather than a bare relative
+path. This is required, because when the script is sourced from a `.qmd` the
+working directory is the report's folder, not the project root. Second, the
+plot is *assigned to an object* (`plot`); it is not printed. Sourcing
 the script creates the object but draws nothing.
 
 ### Part D — Source the script into a Quarto report
@@ -1080,8 +1076,8 @@ in a later chunk, print the object with a caption and cross-reference it:
 ````markdown
 
 ```{r}`r ''`
-    #| include: false
-    source(here::here("scripts", "make-figure.R"))
+#| include: false
+source(here::here("scripts", "make-figure.R"))
 ```
 
 ````
@@ -1089,31 +1085,29 @@ in a later chunk, print the object with a caption and cross-reference it:
 ````markdown
 
 ```{r}`r ''`
-    #| label: fig-relationship
-    #| fig-cap: "[Write a four-element legend here.]"
-    #| fig-width: 7
-    #| fig-asp: 0.8
-    
+#| label: fig-relationship
+#| fig-cap: "[Write a four-element legend here.]"
+#| fig-width: 7
+#| fig-asp: 0.8
 plot
 ```
 
-````
+@fig-relationship shows the relationship between the two variables.
 
-    @fig-relationship shows the relationship between the two variables.
+````
 
 ### Success criteria
 
 - The report renders from a clean session (Session → Restart R, then Render).
 - The figure appears, sourced from the external script, not redefined in the .qmd.
-- The caption follows the four-element legend structure and @fig- resolves to a number.
+- The caption follows the four-element legend structure and `@fig-` resolves to a number.
 - Removing `here()` from the script and re-rendering reproduces the path error
-  from Section 3 — then putting it back fixes it. (Do this last, deliberately,
+  from Section 3; putting it back fixes it. (Do this last, deliberately,
   to see the trap.)
+
 ---
 
 ## Next Steps & Resources
-
-You now have the essential skills to create reproducible scientific documents with Quarto.
 
 ### To Continue Learning
 

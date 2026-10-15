@@ -7,16 +7,7 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-
-```{r}
-#| include: false
-
-
 library(palmerpenguins)
-library(tidyverse)
 library(ggdist)
 library(ggrepel)
 library(ggtext)
@@ -26,26 +17,21 @@ library(colorBlindness)
 library(ggview)
 library(ragg)
 library(scales)
-library(here)
-
-
 ```
 
+The base `ggplot2` grammar covers most chart types but makes several common visualisation tasks awkward. The extension packages below fill the gaps:
 
- 
-The base `ggplot2` grammar covers most of the chart types but leaves several common visualisation needs awkward. Four extension packages plug the gaps directly:
+- `ggdist` for distributional plots (raincloud, half-eye, point-interval); this is how you put *"show the raw data wherever sample size permits"* from Block 1 into practice.
 
-- `ggdist` for distributional plots (raincloud, half-eye, point-interval) — this is the implementation of *"show the raw data wherever sample size permits"* from Block 1.
+- `colorspace` and `colorBlindness` for palettes and accessibility checking; these put the encoding hierarchy and the accessibility principle from Block 1 into practice.
 
-- `colorspace` and `colorBlindness` for palettes and accessibility checking — these operationalise the encoding hierarchy (Block 1) and the accessibility principle (Block 1).
+- `ggrepel` and `ggtext` for direct labelling and rich text; these are the tools for the *direct labelling* and *highlighting* techniques in the audience table (Block 2).
 
-- `ggrepel` and `ggtext` for direct labelling and rich text — these are the toolkit for the *direct labelling* and *highlighting* techniques in the audience matrix (Block 2).
+- `patchwork` for multi-panel composition, the natural alternative to `facet_wrap()` when subplots differ in chart type rather than data subset.
 
-- `patchwork` for multi-panel composition — the natural alternative to `facet_wrap()` when subplots differ in chart type rather than data subset.
+Statistical annotation (significance brackets, p-value labels on figures) is not covered in this workshop. The principled approach is to fit a model with `emmeans` or equivalent and use `ggpubr::stat_pvalue_manual()` to render the contrasts. In a half-day workshop on visualisation principles, we leave statistical annotation to the wider statistical training in your programme.
 
-Statistical annotation (significance brackets, p-value labels on figures) is not covered in this workshop. The principled approach is to fit a model with `emmeans` or equivalent and use `ggpubr::stat_pvalue_manual()` to render the contrasts; the relevant skill file documents the canonical pattern. For a half-day workshop covering the visualisation principles, statistical annotation has been left to the wider statistical training in your programme.
-
-Each segment below follows the same pattern: a brief problem statement, a worked example that the facilitator walks through with running commentary, and a short *try later* note pointing to a modification you can attempt in your own time. Participants are encouraged to run each code chunk in their session as the facilitator walks through it; the active modifications are deliberately deferred so that the in-session pace stays brisk and the cognitive load of typing under time pressure is removed. The deferred tasks are written out in full in an *In your own time* subsection at the end of each segment, with collapsed solutions for self-marking.
+Each segment is short: a problem and a worked example to run along with the facilitator (the *In your own time* tasks are for after the session). Keep moving, because the block ends with a 🏆 **capstone challenge** where you race to recreate a published-style figure from scratch, on data you have not seen. There is a bonus after that: making a multi-panel figure interactive.
 
 ## Distributions with ggdist
 
@@ -83,24 +69,28 @@ penguins_complete |>
         panel.grid.major.x = element_blank())
 ```
 
-Three things to notice. First, the cloud, the box, and the points are three separate layers stacked in a specific order — clouds at the back, box in the middle, points on top. Second, `justification = -0.2` shifts the cloud off the centre line so the box and points sit beside it rather than underneath. Third, the boxplot's outlier points are hidden with `outlier.shape = NA` because all the raw data are already shown as jittered points; leaving them on would double-count.
+Three things to notice. First, the cloud, the box, and the points are three separate layers stacked in a specific order: clouds at the back, box in the middle, points on top. Second, `justification = -0.2` shifts the cloud off the centre line so the box and points sit beside it rather than underneath. Third, the boxplot's outlier points are hidden with `outlier.shape = NA` because all the raw data are already shown as jittered points; leaving them on would double-count.
 
 :::{.callout-tip}
-**Try later.** Swap the `geom_boxplot()` layer for `ggdist::stat_pointinterval()` and observe the change. `stat_pointinterval` shows the median and two intervals (by default, 50% and 95%); look at the function help to see how to control which intervals are drawn.
+**Try later.** Swap the `geom_boxplot()` layer for `ggdist::stat_pointinterval()` and observe the change. `stat_pointinterval` shows the median and two intervals (by default, 66% and 95%); look at the function help to see how to control which intervals are drawn.
 :::
-
-The raincloud applies the *"show the raw data wherever sample size permits"* principle from Block 1 directly: the cloud shows distribution shape, the box shows summary statistics, and the jittered points show every individual observation. No information is hidden behind a summary.
 
 ### In your own time
 
-:::{.callout-important}
-Modify the worked example to flip the orientation (raincloud horizontal rather than vertical) and to use `ggdist::stat_pointinterval()` instead of the boxplot. `stat_pointinterval` shows the median and a range — work out from the documentation what range it shows by default.
+:::{.task}
+::::{.task-header}
+Horizontal raincloud with point intervals
+::::
+::::{.task-container}
+Modify the worked example to flip the orientation (raincloud horizontal rather than vertical) and to use `ggdist::stat_pointinterval()` instead of the boxplot. `stat_pointinterval` shows the median and a range; work out from the documentation which range it shows by default.
+::::
 :::
 
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 penguins_complete |> 
   ggplot(aes(y = species, x = body_mass_g, fill = species, colour = species)) +
   ggdist::stat_halfeye(
@@ -127,7 +117,7 @@ penguins_complete |>
 
 ## Accessible colour with colorspace and colorBlindness
 
-The principles from Block 1 are operationalised by two packages. `colorspace` constructs the palette; `colorBlindness` verifies it. Use the pair together — palette without verification leaves accessibility to chance.
+Two packages put the Block 1 principles into practice: `colorspace` builds the palette and `colorBlindness` checks it. Use them together, because a palette you have not checked leaves accessibility to chance.
 
 ```{r}
 #| eval: true
@@ -147,24 +137,30 @@ fig <- penguins_complete |>
 colorBlindness::cvdPlot(fig)
 ```
 
-The five-panel grid shows: the original, deuteranopia, protanopia, tritanopia, and a desaturated version. The figure passes if all groups remain distinguishable in all five panels. If any panel fails — typically deuteranopia or protanopia for red-green sensitive figures — strengthen the redundant encoding (shape or linetype), choose a more separated palette, or fall back to direct labelling.
+The four-panel grid shows: the original, deuteranopia, protanopia, and a desaturated (greyscale) version. The figure passes if all groups remain distinguishable in all four panels. If any panel fails (typically deuteranopia or protanopia for red-green sensitive figures), strengthen the redundant encoding (shape or linetype), choose a more separated palette, or fall back to direct labelling.
 
 :::{.callout-tip}
 **Try later.** Build the same scatter plot *without* `shape = species` in the mapping, and rerun `cvdPlot()`. Compare the two outputs honestly. The greyscale panel is the most revealing: groups distinguishable only by colour collapse to indistinguishable shades of grey.
 :::
 
-This segment is the encoding hierarchy from Block 1 made operational: position handles the two continuous variables (rank 1), colour hue handles the categorical (rank 2 for categorical data), and shape is added redundantly (rank 3) so that the figure does not depend on colour alone.
+This is the encoding hierarchy from Block 1 in practice: position handles the two continuous variables (rank 1), colour hue handles the categorical (rank 2 for categorical data), and shape is added redundantly (rank 3) so that the figure does not depend on colour alone.
 
 ### In your own time
 
-:::{.callout-important}
+:::{.task}
+::::{.task-header}
+Redundant encoding under simulated CVD
+::::
+::::{.task-container}
 Build a scatter plot from `penguins_complete` using only `bill_length_mm` and `bill_depth_mm`, colour mapped to species, and *without* shape mapped redundantly. Run `colorBlindness::cvdPlot()`. Now add `shape = species` to the mapping and rerun. Compare the two outputs honestly. Which encoding survives the desaturation test?
+::::
 :::
 
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 # Without redundant shape encoding
 fig_no_shape <- penguins_complete |> 
   ggplot(aes(x = bill_length_mm, y = bill_depth_mm, colour = species)) +
@@ -191,7 +187,7 @@ The figure with redundant shape encoding survives the desaturated panel because 
 
 A figure legend separates the colour key from the data: the reader's eye has to travel from the data layer to the legend and back, holding a mapping in working memory. **Direct labelling** puts the group name on the data itself, so the eye reads the label as part of the data. For talks, posters, and public engagement, direct labelling is almost always clearer.
 
-The challenge is that labels placed at data points overlap each other. `ggrepel::geom_text_repel()` solves this by moving labels iteratively until they no longer collide, with connector lines preserved.
+The problem is that labels placed at data points overlap each other. `ggrepel::geom_text_repel()` solves this by moving labels iteratively until they no longer collide, with connector lines preserved.
 
 ```{r}
 #| eval: true
@@ -222,7 +218,7 @@ penguins_complete |>
   theme(legend.position = "none")
 ```
 
-`ggtext` is the companion package for **rich text**: it allows markdown formatting inside titles, axis labels, and legend entries, and supports inline colour. This is what lets you write a title like `"**Gentoo** penguins are <span style='color:#009E73;'>**substantially heavier**</span> than Adelie and Chinstrap"` directly. To enable rich text on a theme element, set it to `ggtext::element_markdown()`.
+`ggtext` is the companion package for **rich text**: it allows markdown formatting inside titles, axis labels, and legend entries, and supports inline colour. This is what lets you write a title like `"**Gentoo** penguins are <span style='color:#5F96C2;'>**substantially heavier**</span> than Adelie and Chinstrap"` directly. To enable rich text on a theme element, set it to `ggtext::element_markdown()`.
 
 ```{r}
 #| eval: true
@@ -237,7 +233,7 @@ penguins_complete |>
                colour = "grey20") +
   colorspace::scale_fill_discrete_qualitative(palette = "Dark2") +
   labs(
-    title = "<span style='color:#009E73;'>**Gentoo**</span> penguins are substantially heavier than <span style='color:#E69F00;'>**Adelie**</span> and <span style='color:#56B4E9;'>**Chinstrap**</span>",
+    title = "<span style='color:#5F96C2;'>**Gentoo**</span> penguins are substantially heavier than <span style='color:#C87A8A;'>**Adelie**</span> and <span style='color:#6B9D59;'>**Chinstrap**</span>",
     x = NULL,
     y = "Body mass (g)"
   ) +
@@ -246,24 +242,32 @@ penguins_complete |>
         plot.title = ggtext::element_markdown(size = 13, lineheight = 1.2))
 ```
 
-Inline colour in the title removes the need for a separate legend entirely. The colours in the title match the fills in the data, and the reader makes the mapping in a single saccade.
+Inline colour in the title removes the need for a separate legend entirely. The hex codes in the title are the three `Dark2` colours used for the fills (`colorspace::qualitative_hcl(3, palette = "Dark2")` returns them), so the colours in the title match the fills in the data, and the reader makes the mapping in a single saccade.
 
 :::{.callout-tip}
 **Try later.** Modify the rich-text title so that only **Gentoo** is highlighted in colour and the other species names appear in plain text. Add a subtitle (using `ggtext::element_markdown()` on `plot.subtitle`) that gives the sample sizes for each species. Inline colour in subtitles works the same way as in titles.
 :::
 
-These techniques are the practical implementation of the *direct labelling* and *highlighting* rows in the audience matrix from Block 2. Direct labelling and inline-coloured titles are the toolkit you reach for when designing for posters, talks, or public engagement — contexts where the reader cannot afford the eye-travel to a separate legend.
+These techniques put the *direct labelling* and *highlighting* rows of the audience table from Block 2 into practice. Reach for direct labels and inline-coloured titles when designing for posters, talks, or public engagement, where the reader cannot afford the eye-travel to a separate legend.
 
 ### In your own time
 
-:::{.callout-important}
-Take the rich-text title in the worked example and modify it so that only **Gentoo** is highlighted in colour (in `#009E73`), and the other two species names appear in plain text. Then add a subtitle that gives the sample sizes for each species. The subtitle should also be rich text, so you will need to set `plot.subtitle = ggtext::element_markdown()` in `theme()`.
+:::{.task}
+::::{.task-header}
+Highlight one species in a rich-text title
+::::
+::::{.task-container}
+Take the rich-text title in the worked example and modify it so that only **Gentoo** is highlighted in colour (in `#5F96C2`, its `Dark2` fill), and the other two species names appear in plain text. Then add a subtitle that gives the sample sizes for each species. The subtitle should also be rich text, so you will need to set `plot.subtitle = ggtext::element_markdown()` in `theme()`.
+::::
 :::
 
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
+n_species <- count(penguins_complete, species)
+
 penguins_complete |> 
   ggplot(aes(x = species, y = body_mass_g, fill = species)) +
   ggdist::stat_halfeye(adjust = 0.5, justification = -0.2,
@@ -272,8 +276,9 @@ penguins_complete |>
                colour = "grey20") +
   colorspace::scale_fill_discrete_qualitative(palette = "Dark2") +
   labs(
-    title = "<span style='color:#009E73;'>**Gentoo**</span> penguins are substantially heavier than Adelie and Chinstrap",
-    subtitle = "*Pygoscelis* spp., Palmer Archipelago (n = 151 Adelie, 68 Chinstrap, 124 Gentoo)",
+    title = "<span style='color:#5F96C2;'>**Gentoo**</span> penguins are substantially heavier than Adelie and Chinstrap",
+    subtitle = paste0("*Pygoscelis* spp., Palmer Archipelago (n = ",
+                      paste(n_species$n, n_species$species, collapse = ", "), ")"),
     x = NULL,
     y = "Body mass (g)"
   ) +
@@ -353,7 +358,7 @@ When you combine plots with patchwork and set guides = "collect", patchwork gath
 
 - First, decide which single legend should represent the shared variable across all panels, and choose the panel whose legend carries the most visual encoding, since that legend can serve as a complete key for the others. 
 
-- Second, actively suppress the legends on the remaining panels with guides(<aesthetic> = "none").
+- Second, suppress the legends on the remaining panels with guides(<aesthetic> = "none").
 
 ```{r}
 #| eval: true
@@ -401,24 +406,30 @@ p1 + p2 + p3 +
 
 :::
 
-The `&` operator applies its right-hand side to every subplot, including those added later — use it for global theme settings like legend position and tag formatting. The `+` operator applies only to the most recently added subplot.
+The `&` operator applies its right-hand side to every subplot, including those added later, so use it for global theme settings like legend position and tag formatting. The `+` operator applies only to the most recently added subplot.
 
 :::{.callout-tip}
 **Try later.** Change the layout string so that panels A and C are stacked on the left and panel B occupies the full right column (`"AB\nCB\n"`). 
 :::
 
-Multi-panel composition is the workhorse for figures that combine multiple aspects of one analysis into a single deliverable. A typical journal "Figure 1" with three panels labelled A, B, C is almost always a `patchwork` composition, not a `facet_wrap()`. The layout string makes the composition editable: a reviewer who asks you to rearrange the panels does not require you to rewrite the code, only to edit the letters.
+Use multi-panel composition for figures that combine several aspects of one analysis into a single figure. A typical journal "Figure 1" with three panels labelled A, B, C is almost always a `patchwork` composition, not a `facet_wrap()`. The layout string makes the composition easy to edit: if a reviewer asks you to rearrange the panels, you change the letters rather than rewrite the code.
 
 ### In your own time
 
-:::{.callout-important}
+:::{.task}
+::::{.task-header}
+Rearrange the patchwork layout
+::::
+::::{.task-container}
 Take the three-panel composition from the worked example. Change the `layout` string so that panel A spans the entire top row, and panels B and C share the bottom row. Then change `tag_levels = "A"` to `tag_levels = "i"` (lowercase Roman numerals) and observe the change. Finally, change `tag_levels` to `c("A", "i")` for nested tagging and see what happens.
+::::
 :::
 
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 layout <- "
 AA
 BC
@@ -443,5 +454,187 @@ p1 + p2 + p3 +
 
 
 `r unhide()`
+
+## 🏆 Capstone challenge: recreate this figure
+
+Time to put the whole block together on data you have not seen. `CO2` is built into R: CO~2~ uptake by 12 grass plants from **Quebec** and **Mississippi**, half of them chilled overnight, each measured at seven CO~2~ concentrations. Here is your target:
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-height: 5
+#| fig-width: 10
+co2_pal <- c(Quebec = "#1B9E77", Mississippi = "#D95F02")
+
+co2_ends <- CO2 |>
+  filter(conc == max(conc)) |>
+  summarise(uptake = mean(uptake), .by = Type) |>
+  mutate(conc = 1000)
+
+target_a <- CO2 |>
+  ggplot(aes(conc, uptake, colour = Type, group = Plant, linetype = Treatment)) +
+  geom_line(alpha = 0.7) +
+  geom_point(size = 1.2) +
+  ggrepel::geom_text_repel(
+    data = co2_ends, aes(conc, uptake, label = Type, colour = Type),
+    inherit.aes = FALSE, nudge_x = 80, direction = "y", hjust = 0,
+    fontface = "bold", segment.colour = NA) +
+  scale_colour_manual(values = co2_pal, guide = "none") +
+  scale_x_continuous(limits = c(0, 1250), breaks = seq(0, 1000, 250)) +
+  labs(x = "Ambient CO<sub>2</sub> (mL L<sup>-1</sup>)",
+       y = "CO<sub>2</sub> uptake (µmol m<sup>-2</sup> s<sup>-1</sup>)",
+       linetype = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(axis.title.x = ggtext::element_markdown(),
+        axis.title.y = ggtext::element_markdown(),
+        legend.position = "bottom", panel.grid.minor = element_blank())
+
+target_b <- CO2 |>
+  ggplot(aes(Treatment, uptake, colour = Type)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.6),
+             alpha = 0.6) +
+  stat_summary(fun = median, geom = "crossbar", width = 0.25,
+               position = position_dodge(0.6), linewidth = 0.4) +
+  scale_colour_manual(values = co2_pal, guide = "none") +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid.minor = element_blank())
+
+(target_a + target_b + plot_layout(widths = c(2, 1))) +
+  plot_annotation(
+    tag_levels = "A",
+    title = "Chilling cuts CO<sub>2</sub> uptake in <span style='color:#D95F02'>**Mississippi**</span> grasses far more than in <span style='color:#1B9E77'>**Quebec**</span> ones",
+    theme = theme(plot.title = ggtext::element_markdown(size = 13)))
+```
+
+:::{.task}
+::::{.task-header}
+Recreate the figure: how far can you get? (solo race, 15 minutes)
+::::
+::::{.task-container}
+
+Everyone starts at Bronze. Post 🥉, 🥈 or 🥇 in the chat each time you clear a tier. The first Gold screenshot wins. Stuck? Post your error message in the chat; anyone who helps fix it gets a shout-out.
+
+- 🥉 **Bronze — panel B.** Raw points for each Treatment, dodged by Type, with a median bar, in the two Type colours. *Hint:* `position_jitterdodge()` and `stat_summary(geom = "crossbar")`.
+- 🥈 **Silver — panel A.** One line per plant, colour by Type, linetype by Treatment, and **direct labels** instead of a colour legend. *Hint:* `group = Plant`, and `ggrepel` on a small data frame of line ends.
+- 🥇 **Gold — the full figure.** Both panels side by side (A twice as wide), tagged A and B, with the coloured rich-text title and proper sub/superscripts in the axis titles. *Hint:* `patchwork`, `plot_annotation()` and `ggtext::element_markdown()`.
+
+::::
+:::
+
+`r hide("Solution: Bronze")`
+
+```{r}
+#| eval: false
+co2_pal <- c(Quebec = "#1B9E77", Mississippi = "#D95F02")
+
+CO2 |>
+  ggplot(aes(Treatment, uptake, colour = Type)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.6),
+             alpha = 0.6) +
+  stat_summary(fun = median, geom = "crossbar", width = 0.25,
+               position = position_dodge(0.6), linewidth = 0.4) +
+  scale_colour_manual(values = co2_pal) +
+  theme_minimal(base_size = 11)
+```
+
+`r unhide()`
+
+`r hide("Solution: Silver and Gold")`
+
+The full code for the target figure. Silver is `target_a`; Gold adds the composition at the end.
+
+```{r}
+#| eval: false
+co2_ends <- CO2 |>
+  filter(conc == max(conc)) |>
+  summarise(uptake = mean(uptake), .by = Type) |>
+  mutate(conc = 1000)
+
+target_a <- CO2 |>
+  ggplot(aes(conc, uptake, colour = Type, group = Plant, linetype = Treatment)) +
+  geom_line(alpha = 0.7) +
+  geom_point(size = 1.2) +
+  ggrepel::geom_text_repel(
+    data = co2_ends, aes(conc, uptake, label = Type, colour = Type),
+    inherit.aes = FALSE, nudge_x = 80, direction = "y", hjust = 0,
+    fontface = "bold", segment.colour = NA) +
+  scale_colour_manual(values = co2_pal, guide = "none") +
+  scale_x_continuous(limits = c(0, 1250), breaks = seq(0, 1000, 250)) +
+  labs(x = "Ambient CO<sub>2</sub> (mL L<sup>-1</sup>)",
+       y = "CO<sub>2</sub> uptake (µmol m<sup>-2</sup> s<sup>-1</sup>)",
+       linetype = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(axis.title.x = ggtext::element_markdown(),
+        axis.title.y = ggtext::element_markdown(),
+        legend.position = "bottom", panel.grid.minor = element_blank())
+
+target_b <- CO2 |>
+  ggplot(aes(Treatment, uptake, colour = Type)) +
+  geom_point(position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.6),
+             alpha = 0.6) +
+  stat_summary(fun = median, geom = "crossbar", width = 0.25,
+               position = position_dodge(0.6), linewidth = 0.4) +
+  scale_colour_manual(values = co2_pal, guide = "none") +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid.minor = element_blank())
+
+(target_a + target_b + plot_layout(widths = c(2, 1))) +
+  plot_annotation(
+    tag_levels = "A",
+    title = "Chilling cuts CO<sub>2</sub> uptake in <span style='color:#D95F02'>**Mississippi**</span> grasses far more than in <span style='color:#1B9E77'>**Quebec**</span> ones",
+    theme = theme(plot.title = ggtext::element_markdown(size = 13)))
+```
+
+`r unhide()`
+
+## Bonus: linked, interactive panels with ggiraph
+
+Block 2 introduced `ggiraph` for a single plot. It also works on a whole `patchwork` composition, and that is where it gets fun: give every panel the same `data_id`, and hovering in *one* panel highlights the same group in *all* of them.
+
+```{r}
+#| message: false
+#| warning: false
+library(ggiraph)
+
+i1 <- penguins_complete |>
+  ggplot(aes(x = species, y = body_mass_g, colour = species,
+             data_id = species,
+             tooltip = paste0(species, ": ", body_mass_g, " g"))) +
+  geom_jitter_interactive(width = 0.2, alpha = 0.6) +
+  labs(x = NULL, y = "Body mass (g)")
+
+i2 <- penguins_complete |>
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm, colour = species,
+             data_id = species,
+             tooltip = paste0(species, ": ", bill_length_mm, " × ", bill_depth_mm, " mm"))) +
+  geom_point_interactive(alpha = 0.7) +
+  labs(x = "Bill length (mm)", y = "Bill depth (mm)")
+
+i3 <- penguins_complete |>
+  count(species, island) |>
+  ggplot(aes(x = island, y = n, fill = species,
+             data_id = species, tooltip = paste0(species, " on ", island, ": ", n))) +
+  geom_col_interactive(position = position_dodge2(preserve = "single")) +
+  labs(x = NULL, y = "Count")
+
+linked <- (i1 + i2) / i3 &
+  colorspace::scale_fill_discrete_qualitative(palette = "Dark2") &
+  colorspace::scale_colour_discrete_qualitative(palette = "Dark2") &
+  theme_minimal(base_size = 11) &
+  theme(legend.position = "none")
+
+girafe(ggobj = linked, width_svg = 8, height_svg = 6,
+       options = list(opts_hover(css = "stroke:black;stroke-width:1.5px;"),
+                      opts_hover_inv(css = "opacity:0.15;")))
+```
+
+Hover over any Gentoo point or bar and watch the other two panels follow. (Panel A is a strip of raw points rather than a boxplot: `geom_boxplot_interactive()` tags each box by its group *number*, not its species, so it would not link up.) The recipe is the same one you already know: interactive geoms, a shared `data_id`, then `girafe()`. Everything else (the `patchwork` layout, `&` for shared settings, the `Dark2` palette) is unchanged from the static version.
+
+:::{.callout-tip}
+**Try later.** Add `opts_selection(type = "single")` to the `options` list and click a group instead of hovering. Then save the figure for a lab website with `htmlwidgets::saveWidget(girafe(ggobj = linked), "linked_penguins.html")`.
+:::
 
 

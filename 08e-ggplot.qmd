@@ -7,16 +7,7 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-
-```{r}
-#| include: false
-
-
 library(palmerpenguins)
-library(tidyverse)
 library(ggdist)
 library(ggrepel)
 library(ggtext)
@@ -26,16 +17,11 @@ library(colorBlindness)
 library(ggview)
 library(ragg)
 library(scales)
-library(here)
-
-
 ```
-
-
 
 The on-screen plot pane is rarely the same physical size as the saved figure. A font that looks correct at 10pt in the RStudio viewer will appear smaller in the saved PDF because the viewer renders at 72 dpi and the PDF embeds at the dimensions you specify. This is the single most common source of "the figure looks fine on my screen but is unreadable in the manuscript" problems.
 
-Two extensions and one discipline solve this.
+Two extensions and one habit solve this.
 
 ## ggview for canvas-size preview
 
@@ -68,15 +54,15 @@ For one-off iteration, `canvas()` is lighter than the older `camcorder` package,
 
 ## The ragg graphics device
 
-`ggsave()` is the interface for writing figures; under the hood it calls a graphics device to do the rendering. For raster output (PNG, JPG, TIFF), `ragg::agg_png` is the modern recommended device because it renders text with better antialiasing, accesses system fonts without `extrafont` or `showtext`, and — importantly for version control — writes no timestamp into the file. Identical code produces byte-identical output, so `git diff` works as expected.
+`ggsave()` is the interface for writing figures; under the hood it calls a graphics device to do the rendering. For raster output (PNG, JPG, TIFF), `ragg::agg_png` is the modern recommended device because it renders text with better antialiasing, accesses system fonts without `extrafont` or `showtext`, and, importantly for version control, writes no timestamp into the file. Identical code produces byte-identical output, so `git diff` works as expected.
 
-To set `ragg` as the plot pane backend in Positron or RStudio (≥1.4), go to *Settings → Graphics → Backend: AGG*. For Quarto documents, set `knitr::opts_chunk$set(dev = "ragg_png")` in the setup chunk.
+To set `ragg` as the plot pane backend in RStudio (≥1.4), go to *Tools → Global Options → General → Graphics → Backend: AGG*. For Quarto documents, set `knitr::opts_chunk$set(dev = "ragg_png")` in the setup chunk.
 
 ## The two-format default
 
 Save publication figures in two formats:
 
-- **PDF** for inclusion in LaTeX manuscripts and final journal submission. Vector, infinitely scalable, the default for serious typesetting.
+- **PDF** for inclusion in LaTeX manuscripts and final journal submission. A vector format that scales to any size, and the default for serious typesetting.
 - **PNG at 300 dpi** via `ragg::agg_png` for slides, posters, and quick previews.
 
 ```{r}
@@ -101,42 +87,56 @@ ggplot2::ggsave(
 )
 ```
 
-`bg = "white"` is needed for PNG output because the `ggplot2` default is transparent, which causes display issues in many viewers.
+`bg = "white"` is a safe default for PNG output. Without it, `ggsave()` takes the background from the theme's `plot.background`; themes such as `theme_minimal()` have no background fill, so the PNG comes out transparent, which causes display issues in many viewers.
 
 :::{.callout-warning}
 Always specify `width`, `height`, `units`, and `dpi` explicitly. Never rely on `ggsave()` defaults. The defaults rarely match the dimensions of the figure you actually want.
 :::
 
+:::{.callout-note}
+**Interactive figures** (the `ggiraph` examples from Blocks 2 and 4) are web pages, not images, so `ggsave()` cannot write them. Save them as HTML with `htmlwidgets::saveWidget(girafe(ggobj = fig), "fig.html")`, and always save a static PDF/PNG of the same plot as well, for the manuscript.
+:::
 
-# Day 3 Block 6: Three questions for every figure {.unnumbered}
+
+## Three questions for every figure
 
 Every figure you produce, in every context, should answer three questions. If it cannot, it is not finished.
 
 1. **Does the visual impression match the data?** Honest axes, appropriate encoding, no distortion. The reader should reach the same conclusion from the figure that they would reach from the underlying numbers.
 
-2. **Who is the audience and does the design serve them?** Complexity, annotation density, and font size calibrated to the reader. A journal figure is not a poster figure is not a public engagement figure.
+2. **Who is the audience and does the design serve them?** Complexity, annotation density, and font size calibrated to the reader. A journal figure, a poster figure and a public engagement figure each need a different design.
 
 3. **Is the figure self-contained?** Labels, units, a legend that defines every visual layer, and ideally the script that produced it, so a future reader (including yourself) can reconstruct what you did and why.
 
-These three questions are the standard. The principles, the extensions, and the discipline of this workshop are all in service of being able to answer *yes* to each one.
+**Final check: true or false?**
+
+- A bar chart of means may start its y-axis at any value, as long as it is labelled. `r torf(FALSE)`
+- Colour should never be the only cue that distinguishes groups. `r torf(TRUE)`
+- `theme_barbie()` is fine for a journal figure if the reviewers like pink. `r torf(FALSE)`
+- An interactive `ggiraph` figure can replace the static figure in a PDF manuscript. `r torf(FALSE)`
+- Setting `base_size` scales every text element in the figure together. `r torf(TRUE)`
 
 ## Take-home exercise
 
-The workshop has given you the principles, the extensions, and the discipline. The integration — applying everything to your own data — is now homework. The aim is to produce one publication-ready figure from a dataset you brought, using the techniques from Blocks 1 to 6.
+Your homework is to apply everything from the workshop to your own data. The aim is to produce one publication-ready figure from your own dataset, using the techniques from Blocks 1 to 5.
 
-## The task
-
+:::{.task}
+::::{.task-header}
+Take-home: one publication-ready figure
+::::
+::::{.task-container}
 Choose a dataset from your own research with at least one continuous variable, one categorical grouping, and a sample size of at least thirty observations. Produce one publication-ready figure that applies the principles and extensions from this workshop:
 
-1. **Block 1.** Variable types determine the chart. Honest axes. Accessible palette via `colorspace`. The encoding hierarchy applied — most important variable to position, most important categorical to colour hue with shape redundantly.
-2. **Block 2.** Audience-appropriate framing — pick journal/lab report unless you have a specific other audience in mind. Descriptive title and full legend.
+1. **Block 1.** Variable types determine the chart. Honest axes. Accessible palette via `colorspace`. The encoding hierarchy applied: most important variable to position, most important categorical to colour hue with shape redundantly.
+2. **Block 2.** Audience-appropriate framing: pick journal/lab report unless you have a specific other audience in mind. Descriptive title and full legend.
 3. **Block 3.** A `theme_project()` (or equivalent) applied; scales formatted with `scales::breaks_pretty()` and an appropriate `scales::label_*()` function for the units.
 4. **Block 4.** At least one extension used appropriately (raincloud distribution display, direct labelling with `ggrepel` or `ggtext`, or multi-panel composition with `patchwork`).
 5. **Block 5.** Save the figure as both PDF and PNG using `ragg::agg_png` for the PNG; verify with `colorBlindness::cvdPlot()` before saving.
+::::
+:::
 
 
-
-## A skeleton to adapt
+### A skeleton to adapt
 
 ```{r}
 #| eval: false

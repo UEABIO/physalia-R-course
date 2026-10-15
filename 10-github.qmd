@@ -1,4 +1,4 @@
-#  Block 1: Github {.unnumbered}
+# Block 1: GitHub {.unnumbered}
 
 
 ```{r}
@@ -7,34 +7,27 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-```{r}
-#| include: false
-
 library(usethis)
 library(gitcreds)
-
 ```
 
 
-# Why version control?
+## Why version control?
 
 Git is a **version-control system**: a tool that records the history of changes
 to a set of files so that any previous state can be recovered. It was originally
 built for collaborative software development, but it is now standard
-infrastructure in data science and reproducible research.
+in data science and reproducible research.
 
 For an R user working alone, Git provides three concrete benefits. It records a
 complete history of your analysis, so a mistake can always be undone by
 returning to an earlier state. Paired with a remote host such as GitHub, it
 gives you an off-site backup. And when you publish, the full provenance of your
-results — data, scripts, figures and reports — is available to others.
+results (data, scripts, figures and reports) is available to others.
 
 For a team, Git adds a fourth benefit: it is a mechanism for combining the work
 of several people on the same files without overwriting one another, and for
-reconciling the inevitable conflicts in a controlled way.
+reconciling conflicts in a controlled way.
 
 A well-organised project under version control keeps every component together
 and tracked:
@@ -44,7 +37,7 @@ and tracked:
 - 📊 Figures
 - 📝 Reports
 
-# The mental model {#sec-model}
+## The mental model {#sec-model}
 
 You do not need to understand Git's internals to use it well, but you do need
 one mental model.
@@ -60,7 +53,7 @@ tracks. Within it, a file passes through three states:
    labelled snapshot into the repository's history.
 
 The everyday loop is therefore `modify → add → commit`, repeated whenever you
-reach a natural stopping point. A useful discipline is to commit each time you
+reach a natural stopping point. A good habit is to commit each time you
 complete a discrete task, so that each commit corresponds to one coherent change.
 
 ```{r}
@@ -83,7 +76,7 @@ git commit -m "A short, descriptive message"   # snapshot the staged files
 ```
 :::
 
-## Local versus remote
+### Local versus remote
 
 Everything above describes the **local** workflow, where the repository lives
 only on your machine. A local repository can also be connected to a **remote**
@@ -111,13 +104,13 @@ git pull    # download remote commits to the local repo
 ```
 :::
 
-# One-time setup {#sec-setup}
+## One-time setup {#sec-setup}
 
 Before creating your first repository, three things must be in place: Git must be
 installed, Git must know who you are, and Git must be able to authenticate to
 GitHub on your behalf. You do this once per machine.
 
-## Install Git and create a GitHub account
+### Install Git and create a GitHub account
 
 - [Install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
   on your machine.
@@ -130,12 +123,13 @@ You can confirm that RStudio can see your Git installation under
 should be shown.
 :::
 
-## Introduce yourself to Git
+### Introduce yourself to Git
 
 Git labels every commit with a name and email. Set these once, using the
 `usethis` package:
 
 ```{r}
+#| eval: false
 library(usethis)
 use_git_config(
   user.name  = "Jane Doe",
@@ -149,11 +143,11 @@ line is:
 ::: {.callout-note}
 ```bash
 git config --global user.name 'Jane Doe'
-git config --global user.email 'jane@example.com'
+git config --global user.email 'jane@example.org'
 ```
 :::
 
-## Authenticate with a Personal Access Token {#sec-pat}
+### Authenticate with a Personal Access Token {#sec-pat}
 
 GitHub no longer accepts account passwords for Git operations; it uses a
 **Personal Access Token (PAT)** instead. The recommended workflow for R users
@@ -164,7 +158,8 @@ manager rather than in any file.
 pre-selected. Give the token a descriptive name, set an expiry, and generate it.
 Leave the page open and copy the token to your clipboard.
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 usethis::create_github_token()
 ```
 
@@ -172,14 +167,16 @@ usethis::create_github_token()
 store, from which `usethis`, `gh` and `gert` retrieve it automatically. Paste
 the token when prompted.
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 gitcreds::gitcreds_set()
 ```
 
 **Step 3 — verify.** Either of these confirms that a valid, discoverable token
 is in place and reports its scopes:
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 usethis::gh_token_help()
 usethis::git_sitrep()
 ```
@@ -195,48 +192,48 @@ legacy `GITHUB_PAT` line in `.Renviron`, delete it, as it can interfere with the
 credential-store approach.
 :::
 
-# Create a repository (GitHub first) {#sec-create}
+## Create a repository (GitHub first) {#sec-create}
 
-There are several ways to start a repository. The "GitHub first" approach —
-create the remote repository, then clone it locally — is the most reliable
-because it lets GitHub configure the link between local and remote for you,
-avoiding a common class of setup errors.
+There are several ways to start a repository. The "GitHub first" approach
+(create the remote repository, then clone it locally) is the most reliable,
+because GitHub configures the link between local and remote for you, which
+avoids a common class of setup errors.
 
-## Create the remote repository
+### Create the remote repository
 
 1. Log in at [github.com](https://github.com/).
-2. Click the **+** in the top-right corner, then **New repository**.
-3. **Template:** none.
-4. **Name:** e.g. `my-first-repo`.
+2. Click the **+** (*Create something new*) in the top-right corner, then **New repository**.
+3. **Choose a template:** leave as *No template*.
+4. **Owner:** your account. **Repository name:** e.g. `my-first-repo`.
 5. **Description:** a short, human-readable summary.
 6. **Visibility:** Public.
-7. **Initialise with:** nothing (you will configure everything from R).
-8. **Copy the repository URL** before leaving the page.
+7. **README, `.gitignore` and licence:** leave all of these off (you will configure everything from R).
+8. Click **Create repository**, then **copy the repository URL** from the Quick Setup page.
 
-## Clone into RStudio
+### Clone into RStudio
 
 In RStudio: **File → New Project → Version Control → Git**. Paste the repository
 URL into the "Repository URL" field, choose a parent folder, and click
 **Create Project**.
 
 The resulting folder is simultaneously a Git repository, a clone linked to your
-GitHub remote, and an RStudio Project. The clone also includes a `.gitignore`
+GitHub remote, and an RStudio Project. RStudio also adds a `.gitignore`
 file listing files Git should not track (for example `.Rhistory`).
 
 ::: {.callout-tip}
 Open `.gitignore` and read it. Adding a filename here keeps that file local and
-prevents it from ever being pushed to GitHub — useful for large data, cached
-output, or anything sensitive.
+prevents it from ever being pushed to GitHub. This is useful for large data,
+cached output, or anything sensitive.
 :::
 
-# The solo local cycle {#sec-local}
+## The solo local cycle {#sec-local}
 
 This section covers the `modify → add → commit` loop entirely on your own machine.
 
 ::: {.callout-warning}
 ## Install packages first, but never inside a script
 The exercise below uses `tidyverse` and `palmerpenguins`. Install them once at
-the console with `install.packages(c("tidyverse", "palmerpenguins"))` — or
+the console with `install.packages(c("tidyverse", "palmerpenguins"))`, or
 `renv::install()` if you use `renv`. Never place `install.packages()` inside a
 script or Quarto document, as it would re-download the packages on every run.
 Note the package is `palmerpenguins`, with a trailing **s**.
@@ -245,7 +242,7 @@ Note the package is `palmerpenguins`, with a trailing **s**.
 
 :::{.task}
 ::::{.task-header}
-**Task: track some changes**
+**Track some changes**
 ::::
 
 ::::{.task-container}
@@ -277,12 +274,12 @@ library(palmerpenguins)
 
 :::{.callout-note}
 
-For html you need to embed resources if you wish to share a single file, otherwise things like images will be contained in a separate folder
+For HTML output, you need to embed resources if you want to share a single file; otherwise, things like images are kept in a separate folder.
 
 :::
 
 
-## See what has changed
+### See what has changed
 
 The RStudio Git pane lists every file that has been added, modified or deleted
 since the last commit. An icon indicates the kind of change:
@@ -331,7 +328,7 @@ Added text is shown on a green background and removed text on red. If you have a
 colour-vision deficiency, the line numbers in the two left-hand columns indicate
 which side each change belongs to.
 
-## Stage and commit
+### Stage and commit
 
 A **commit** is a labelled snapshot of your project at a moment in time. Git
 gives each commit a unique identifier and records who made it and when.
@@ -340,8 +337,8 @@ gives each commit a unique identifier and records who made it and when.
 ## Commit your changes
 - In the Git pane, tick the checkbox beside the file to **stage** it.
 
-- Click **Commit**, write a descriptive message — phrase it as what the change
-  does, e.g. *"Add setup chunk loading tidyverse and palmerpenguins"* — and
+- Click **Commit**, write a descriptive message (phrase it as what the change
+  does, e.g. *"Add setup chunk loading tidyverse and palmerpenguins"*), and
   confirm.
 
 :::
@@ -362,7 +359,7 @@ is **ahead** of the remote.
 knitr::include_graphics("images/local-commit.png")
 ```
 
-## The solo remote cycle 
+## The solo remote cycle
 
 ### Push
 
@@ -378,18 +375,19 @@ state at that point and view the file differences.
 
 ### Make a change on GitHub, then pull
 
-You can also edit directly on GitHub. Doing so creates a divergence that you must
-then bring back down to your local copy.
+You can also edit directly on GitHub. Your local copy is then out of date, and you
+must pull the change down to it.
 
 :::{.task}
 ::::{.task-header}
-**Task: : add a README and pull it**
+**Add a README and pull it**
 ::::
 
 ::::{.task-container}
 - On the repository main page, click **Add a README**.
 - Write a short description (READMEs are written in Markdown).
-- Enter a commit message at the bottom and click **Commit new file**.
+- Click **Commit changes...**, enter a commit message in the dialog, and click
+  **Commit changes**.
 - Back in RStudio, click **Pull** (the blue down-arrow). The README should
   appear among your local files.
 ::::
@@ -398,26 +396,26 @@ then bring back down to your local copy.
 ::: {.callout-warning}
 ## Pull before you start, to avoid merge conflicts
 Changes made on GitHub exist only on the remote until you pull them. If you edit
-a file locally while your copy is out of date, you risk a **merge conflict** —
+a file locally while your copy is out of date, you risk a **merge conflict**:
 Git cannot reconcile two incompatible versions of the same lines and asks you to
 resolve it by hand. To avoid this, **pull at the start of every session** before
 doing anything else. The message is usually "Already up to date", but the habit
 is worth keeping.
 :::
 
-# Working with branches {#sec-branches}
+## Working with branches {#sec-branches}
 
 A **branch** is an independent line of development. Branches let you work on a
 new analysis, a manuscript section, or a bug fix without disturbing the stable
 `main` branch. When the work is ready, you **merge** it back into `main`.
 
-## Create a branch on GitHub
+### Create a branch on GitHub
 
 
 :::{.task}
 
 ::::{.task-header}
-**Task: create a branch**
+**Create a branch**
 ::::
 
 ::::{.task-container}
@@ -438,7 +436,7 @@ knitr::include_graphics("images/NewBranch.png")
 :::
 
 
-## Work on the branch in RStudio
+### Work on the branch in RStudio
 
 - Click **Pull** to retrieve the new branch.
 - In the Git pane, use the branch drop-down (next to **New Branch**) to switch
@@ -476,7 +474,7 @@ penguins |>
 
 :::
 
-## Merge via a pull request
+### Merge via a pull request
 
 Back on GitHub, your pushed branch is offered for comparison. Merging it into
 `main` is done through a **pull request (PR)**, which records the proposed change
@@ -531,7 +529,7 @@ Keep branches short-lived and focused. You must resolve any merge conflicts by
 hand, and that is far simpler when a branch contains one small, coherent change.
 :::
 
-# Collaborating on a repository {#sec-collab}
+## Collaborating on a repository {#sec-collab}
 
 Collaboration takes one of two forms, depending on whether you have write access.
 
@@ -543,7 +541,7 @@ same file at once**, which is the usual source of merge conflicts.
 **Without write access** (typical when contributing to a stranger's project, for
 example fixing a bug in an open-source package), you **fork** the repository.
 A fork is a personal copy under your own account, to which you have full access.
-You work in the fork as normal — modify, add, commit, push — and then open a
+You work in the fork as normal (modify, add, commit, push) and then open a
 **pull request** to propose your changes to the original. The owner may accept,
 reject, or request changes.
 
@@ -555,13 +553,13 @@ reject, or request changes.
 knitr::include_graphics("images/fork.png")
 ```
 
-## Exercise: contribute to someone else's repository
+### Exercise: contribute to someone else's repository
 
 
 :::{.task}
 
 ::::{.task-header}
-**Task: fork, edit, and open a pull request**
+**Fork, edit, and open a pull request**
 ::::
 
 ::::{.task-container}
@@ -586,15 +584,16 @@ knitr::include_graphics("images/fork.png")
 
 ::: {.callout-note}
 ## Open the pull request
-1. On your fork, click **Open pull request**.
-2. Click **Create pull request**.
-3. Add a title and message, then submit.
+1. On your fork, find the banner saying your branch is ahead of the original,
+   open the **Contribute** menu, and choose **Open a pull request**.
+2. On the comparison page, click **Create pull request**.
+3. Add a title and description, then click **Create pull request** again to submit.
 :::
 
 The repository owner receives a notification and can review, comment on, and
 choose whether to merge your contribution.
 
-# General workflow habits {#sec-habits}
+## General workflow habits {#sec-habits}
 
 ::: {.callout-tip}
 - **Pull at the start of every session**, to retrieve the current state from
@@ -607,10 +606,10 @@ choose whether to merge your contribution.
   of your project.
 :::
 
-# Publishing and reuse {#sec-publish}
+## Publishing and reuse {#sec-publish}
 
 
-## A profile README
+### A profile README
 
 A profile README is displayed at the top of your GitHub profile page and lets
 you introduce yourself: your work and interests, contributions you are proud of,
@@ -630,10 +629,10 @@ Useful guides:
 
 - <https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme>
 
-## Releases, tags, and a DOI
+### Releases, tags, and a DOI
 
-A **tag** marks a specific commit as a fixed point — a version release, a
-manuscript submission, or any milestone. Unlike a branch, a tag does not move as
+A **tag** marks a specific commit as a fixed point, such as a version release, a
+manuscript submission, or any other milestone. Unlike a branch, a tag does not move as
 new commits are added, so it permanently records the exact state of your project
 at that moment. See GitHub's guide to
 [managing releases](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository).
@@ -641,7 +640,7 @@ at that moment. See GitHub's guide to
 Once a project is a well-organised repository, generating a permanent DOI is
 close to a one-click process through [Zenodo](https://zenodo.org/) or
 [Figshare](https://figshare.com/). Each release can carry its own DOI, letting
-you cite distinct stages — a preprint and a peer-reviewed version, for example —
+you cite distinct stages (a preprint and a peer-reviewed version, for example)
 in your papers.
 
 ```{r}
@@ -655,7 +654,7 @@ knitr::include_graphics("images/zenodo-badge.png")
 
 ::: {.callout-tip}
 ## A note on template repositories
-When you created your first repository you were told to set **Template: none**.
+When you created your first repository you were told to leave **Choose a template** as *No template*.
 A *template repository* is an existing repository whose files and folder
 structure GitHub copies as the starting point for a new one, which is useful
 when you repeatedly create projects with the same layout (a standard folder
@@ -669,7 +668,7 @@ RStudio and Quarto, which are a separate mechanism.
 :::
 
 
-# Glossary {#sec-glossary}
+## Glossary {#sec-glossary}
 
 ```{r}
 #| label: glossary
@@ -698,12 +697,12 @@ tribble(
   kable()
 ```
 
-# Further reading
+## Further reading
 
 - [Happy Git and GitHub for the useR](https://happygitwithr.com/), Jenny Bryan
   et al. — the definitive reference for the workflow taught here.
 
-# Bonus exercise: resolving merge conflicts
+## Bonus exercise: resolving merge conflicts
 
 Practise handling merge conflicts in a collaborative setting using
 [this NCEAS exercise](https://learning.nceas.ucsb.edu/2023-04-coreR/session_10.html).

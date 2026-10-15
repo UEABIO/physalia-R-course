@@ -11,12 +11,12 @@ library(kableExtra)
 ```
 
 
-> **Materials:** The same project folder from <https://osf.io/jgeq9/> you reviewed by hand this afternoon (`ANALYSIS.R`, the data files). You will also need your completed P1–P12 findings from Block 2 and the `README.md` you started in the reproducibility chapter. For the README activity you are provided with the `research-readme` skill, bundled as a single unit: the `SKILL.md`, its two helper scripts (`describe_csv.R`, `scan_packages.R`), and `readme_template.md`. Finally you need an AI assistant: ideally an agent (GitHub Copilot in VS Code, in agent or edit mode), but a plain chat window (Claude.ai, ChatGPT, or Copilot Chat) is a fully supported fallback.
+> **Materials:** The same project folder from <https://osf.io/jgeq9/> you reviewed by hand on Day 2 (`ANALYSIS.R`, the data files). You will also need your completed P1–P12 findings from the Code Review chapter (Day 2, Block 2) and the `README.md` you built with READMEBuilder in the Reproducibility chapter (Day 2, Block 1). For the README activity you are provided with the `research-readme` skill, bundled as a single folder: `SKILL.md`, its two helper scripts (`scripts/describe_csv.R`, `scripts/scan_packages.R`), and `references/readme_template.md`. Finally you need an AI assistant: ideally an agent (GitHub Copilot in VS Code in Agent mode, or Posit Assistant in Positron or RStudio), but a plain chat window (Claude.ai, ChatGPT, or Copilot Chat) is a fully supported fallback.
 
-> **Prerequisite:** Block 2 (Code Review), completed this afternoon. You already hold the answer key — the twelve problems P1–P12 in `ANALYSIS.R`. This session is not about finding those problems again. It is about whether an AI can find them, and whether *you* can tell when it is wrong.
+> **Prerequisite:** the Code Review chapter (Day 2, Block 2). You already hold the answer key: the twelve problems P1–P12 in `ANALYSIS.R`. You will not be hunting for those problems again. This session asks whether an AI can find them, and whether *you* can tell when it is wrong.
 
 :::{.callout-note}
-**The honest framing for this session.** This afternoon's chapter stated plainly that the *Reliable* question — does the code do what the analyst intended? — is the one neither DCQC nor an AI assistant can answer for you. This session does not retract that. It asks a narrower, defensible question: AI is fast and high-recall on the *mechanical* checks (does it run, are paths absolute, are packages unused) and useful for *drafting* a review, but you remain accountable for everything it claims. We deliberately use a script whose bugs you already catalogued this morning, because that answer key is the instrument that lets you grade the machine.
+**The honest framing for this session.** The Code Review chapter stated plainly that the *Reliable* question (does the code do what the analyst intended?) is the one neither DCQC nor an AI assistant can answer for you. This session does not retract that. It makes a narrower, defensible claim: AI is fast and high-recall on the *mechanical* checks (does it run, are paths absolute, are packages unused) and useful for *drafting* a review, but you remain accountable for everything it claims. We deliberately use a script whose bugs you already catalogued on Day 2, because that answer key is the instrument that lets you grade the machine.
 :::
 
 ---
@@ -25,7 +25,7 @@ library(kableExtra)
 
 *⏱ ~15 minutes*
 
-This afternoon you performed a manual 4Rs review. It was thorough but slow. The appeal of an AI reviewer is speed and recall: it reads every line, never tires, and flags the unused `xgboost` import you might skim past. The danger is the mirror image. It produces fluent, confident output that is sometimes wrong, and it is wrong in a specific, dangerous pattern.
+On Day 2 you performed a manual 4Rs review. It was thorough but slow. The appeal of an AI reviewer is speed and recall: it reads every line, never tires, and flags the unused `xgboost` import you might skim past. The danger is the mirror image. It produces fluent, confident output that is sometimes wrong, and it is wrong in a specific, dangerous pattern.
 
 Map AI capability onto the 4Rs you already know:
 
@@ -44,7 +44,7 @@ tribble(
   column_spec(1, bold = TRUE)
 ```
 
-The evidence supports this division of labour rather than wholesale delegation. Large-scale deployment of machine-learning code review at Google found the comments useful but requiring human triage, with a false-positive rate that had to be actively suppressed before developers would trust the tool (Frömmgen et al. 2024). Evaluations of large language models on defect detection find that they identify surface and some logic defects but systematically miss semantic and context-dependent ones, while generating plausible-sounding false reports (Tufano et al. 2024). The practical consequence for you: **treat every AI finding as a claim to verify, not a result to accept**, and treat the *absence* of a finding as no evidence the bug is absent.
+The evidence supports this division of labour rather than wholesale delegation. When Google deployed an LLM-based reviewer of coding best practices to tens of thousands of developers, the share of its comments developers rated useful plateaued at around half, and the team had to suppress whole categories of non-actionable comments and tune confidence thresholds because otherwise the tool risked losing developers' trust (Vijayvergiya et al. 2024). A detailed manual study of automated code-review tools found that each succeeds on some kinds of change and fails on others, and that a general-purpose LLM (ChatGPT) did poorly at writing review comments of the kind a human reviewer writes (Tufano et al. 2024). The practical consequence for you: **treat every AI finding as a claim to verify, not a result to accept**, and treat the *absence* of a finding as no evidence the bug is absent.
 
 :::{.callout-tip}
 **Opening poll** *(type in chat)*
@@ -70,7 +70,7 @@ The single biggest determinant of a useful AI review is the instruction you give
 ### The four things a good review prompt contains
 
 1. **A role and a standard.** "You are a critical code reviewer for an ecology journal applying the 4Rs framework (Reported, Run, Reliable, Reproducible)." This anchors the output to a structure you can check.
-2. **The intended analysis.** The AI cannot judge *Reported* or *Reliable* without knowing what the code is *supposed* to do. State the model from the OSF page: `TO ~ strain * diet + (1 | B)`, where `TO` is a count. Without this, it cannot know that a Gaussian `lmer` is the wrong family (P10).
+2. **The intended analysis.** The AI cannot judge *Reported* or *Reliable* without knowing what the code is *supposed* to do. State the model from the OSF page: `TO ~ strain * diet + (1 | B)`, where `TO` is a count. Tell it too that `ANALYSIS.R` uses different names for the same variables (`total_offspring` for `TO`, `block` for `B`; the name drift you met in the Code Review chapter), or it may report the mismatch instead of the analysis. Without the model, it cannot know that a Gaussian `lmer` is the wrong family (P10).
 3. **An anti-sycophancy instruction.** Models default to affirmation. "Do not praise. For each issue give the line number, the R it violates, the severity, and a concrete fix. If you are uncertain, say so rather than guessing." This measurably changes output toward specificity.
 4. **A demand for honest uncertainty.** "Flag anything you cannot verify by reading alone — for example whether the data contain a sentinel value — as *needs human or data check*, not as pass or fail." This is the instruction that surfaces P8.
 
@@ -85,15 +85,18 @@ Working alone or in pairs, write a single prompt you will give your AI. It must 
 
 
 `r hide("Working Draft")`
-```
+
+```text
 You are a critical code reviewer for an evolutionary-biology journal.
 Review the attached R script using the 4Rs framework: Reported, Run,
 Reliable, Reproducible.
 
 The intended analysis (from the pre-registration) is:
   total offspring (a COUNT: non-negative integer, often overdispersed)
-  modelled as: TO ~ strain * diet + (1 | block)
-  with block as a random effect.
+  modelled as: TO ~ strain * diet + (1 | B)
+  with block (B) as a random effect.
+In ANALYSIS.R these variables are named total_offspring (TO) and
+block (B).
 
 Rules:
 - Do NOT praise the code. Report only problems.
@@ -106,6 +109,7 @@ Rules:
 - If you are uncertain about a finding, say so explicitly.
 Organise your output by the four Rs.
 ```
+
 `r unhide()`
 
 ::::
@@ -118,31 +122,31 @@ Organise your output by the four Rs.
 
 *⏱ ~30 minutes*
 
-You will reach the same place by one of two routes. Read your path; the deliverable, a verified review, is identical.
+You will reach the same place by one of two routes. Follow your path; the deliverable, a verified review, is the same for both.
 
-### Path A — Agent (GitHub Copilot - IDE or Web)
+### Path A — In-IDE assistant (Copilot in VS Code, or Posit Assistant)
 
-If you have Copilot agent or edit mode working:
+If you have an in-IDE assistant working:
 
 1. Open the project folder (the whole OSF download), so the agent can see every file, not just `ANALYSIS.R`.
-2. Open Copilot Chat, switch to **agent** (or **edit**) mode, and add `ANALYSIS.R` to the context (drag it in, or reference it with `#ANALYSIS.R`).
+2. Open the chat and add `ANALYSIS.R` to the context (in Copilot, drag it in or reference it with `#ANALYSIS.R`). **Ask** mode is the safest choice for a review, because it cannot edit files; **Agent** mode can also read across the project on its own, but then the next instruction matters.
 3. Paste your Part 2 prompt.
 4. **Do not let it edit the file.** Your task is a *review*, not a fix. If the agent offers to rewrite `ANALYSIS.R`, decline. You want its findings, which you will verify, not a silent rewrite you cannot check.
 
 :::{.callout-note}
-**What the agent can and cannot do here.** Copilot's agent mode runs inside the editor and can read across files, which helps with *Reproducible* and project-structure issues. But it will not, by default, execute R and confirm the script runs against the data, and even where it can open a terminal it will not have your packages installed. So *Run* and *Reproducible* claims from the agent remain predictions, not demonstrations. Treat "it would run" as a hypothesis you test by actually sourcing the script.
+**What the agent can and cannot do here.** An in-IDE agent runs on your machine: it can read across files, which helps with *Reproducible* and project-structure issues, and in Agent mode it can ask to run commands in your terminal, with your R installation and whatever packages you have installed. But it only knows the script runs if it actually runs it and you see the output; a review written from reading alone is a prediction. (`ANALYSIS.R` also loads about twenty packages, P3, so a run on your machine may stop at the first one you do not have.) Treat "it would run" as a hypothesis you test by actually sourcing the script in a clean session.
 :::
 
 ### Path B — Chat fallback (any chat window)
 
-If you have no agent (an authentication wall, no VS Code, Copilot not provisioned), a plain chat window does almost as well for a single script:
+If you have no in-IDE assistant (an authentication wall, no Copilot or Posit Assistant set up), a plain chat window does almost as well for a single script:
 
 1. Open `ANALYSIS.R` in any editor, select all, copy.
 2. Paste the *whole script* into the chat, then paste your Part 2 prompt below it.
 3. Send.
 
 :::{.callout-warning}
-**The fallback's specific failure mode.** A chat window cannot run anything. If you ask "does this code run?" it will *predict* an answer in fluent prose that sounds as though it executed the code. It did not. Phrase the request as "identify what would *prevent* this running", and treat any claim about reproduced results as fiction. This is itself the lesson: the gap between Path A and Path B is exactly the gap between SORTEE Stages 1–4 (transparency, checkable by reading) and Stages 5–6 (reproducibility, checkable only by running).
+**The fallback's specific failure mode.** A chat window cannot run anything. If you ask "does this code run?" it will *predict* an answer in fluent prose that sounds as though it executed the code. It did not. Phrase the request as "identify what would *prevent* this running", and treat any claim about reproduced results as fiction. This is itself the lesson: the gap between Path A and Path B is the gap between SORTEE Stages 1–4 (transparency, checkable by reading) and Stages 5–6 (reproducibility, checkable only by running).
 :::
 
 :::{.task}
@@ -153,7 +157,7 @@ If you have no agent (an authentication wall, no VS Code, Copilot not provisione
 ::::{.task-container}
 
 1. Run your prompt (Path A or B) and read the AI's review.
-2. Open your **P1–P12 findings from the previous session** beside it, and score the AI:
+2. Open your **P1–P12 findings from the Code Review chapter** beside it, and score the AI:
    - **Hits:** which of P1–P12 did it correctly identify?
    - **Misses:** which did it miss entirely? Pay special attention to P4 (precedence) and P8 (sentinel), the silent, consequential ones.
    - **False positives:** what did it flag that is *not* a real problem, or that it described wrongly?
@@ -165,11 +169,11 @@ If you have no agent (an authentication wall, no VS Code, Copilot not provisione
 :::{.callout-note}
 **Debrief (5 minutes):**
 
-1. Did the AI catch P8 (the 9999 sentinel)? It can only catch it if your prompt *told it the sentinel exists* — the AI cannot see the raw data values from the script alone. What does that say about the limits of reviewing code without the data?
+1. Did the AI catch P8 (the 9999 sentinel)? It can only catch it if your prompt *told it the sentinel exists*, because the AI cannot see the raw data values from the script alone. What does that say about the limits of reviewing code without the data?
 
 2. Whose AI produced a confident false positive? Confident wrongness is the failure mode that matters most: a missed bug you might catch later, but a fabricated bug wastes a reviewer's time and erodes trust in the tool.
 
-3. Compare hit rates across the room. Did better prompts (Part 2) produce better reviews? That is the actionable finding.
+3. Compare hit rates across the room. Did better prompts (Part 2) produce better reviews?
 :::
 
 ---
@@ -179,13 +183,28 @@ If you have no agent (an authentication wall, no VS Code, Copilot not provisione
 *⏱ ~25 minutes*
 
 The second deliverable is the documentation that makes the *Reported* and
-*Run* questions answerable at all: a README. This afternoon you noted that the
-OSF folder has none. We will generate one with AI, using the `research-readme`
-skill provided in today's materials, which bundles the `SKILL.md`, the two
-helper scripts (`describe_csv.R`, `scan_packages.R`), and the
-`readme_template.md`. Both paths read the skill: Copilot in agent mode
-consumes `SKILL.md` directly, and chat-window users extract its structure and
-template by hand.
+*Run* questions answerable at all: a README. In the Code Review chapter you
+noted that the OSF folder has none, and in the Reproducibility chapter you
+built one by hand with READMEBuilder for your restructured project. Here we
+generate one with AI for the OSF folder as it stands, using the
+`research-readme` skill provided in today's materials, and you can compare it
+with the README you wrote. Both paths read the skill: an in-IDE agent loads
+`SKILL.md` directly, and chat-window users extract its structure and template
+by hand.
+
+Put the skill folder in your copy of the project at
+`.agents/skills/research-readme/`, the one location both Copilot and Posit
+Assistant read (Block 6). Its layout is:
+
+```text
+.agents/skills/research-readme/
+├── SKILL.md
+├── scripts/
+│   ├── describe_csv.R
+│   └── scan_packages.R
+└── references/
+    └── readme_template.md
+```
 
 We run this in two passes, deliberately. The first pass shows you the failure
 mode; the second shows you the fix.
@@ -209,25 +228,27 @@ phrases them.
 
 #### Step 1 — Generate the inputs yourself (R, not AI)
 
-In R, run the two helper scripts from the materials:
+In R, from the project root, run the two helper scripts from the skill:
 
 ```{r readme-inputs}
 #| eval: false
-source("describe_csv.R")
+skill_dir <- ".agents/skills/research-readme"
+
+source(file.path(skill_dir, "scripts", "describe_csv.R"))
 describe_project_csvs(".")   # per-column type and range for every CSV
 
-source("scan_packages.R")
+source(file.path(skill_dir, "scripts", "scan_packages.R"))
 print_lockfile("renv.lock")  # R version and pinned versions, or a finding if absent
 ```
 
-This project has no `renv.lock`. The updated `scan_packages.R` reports that
+This project has no `renv.lock`. `scan_packages.R` reports that
 absence as an explicit finding rather than erroring, so you transcribe its
 output into the dependency section rather than letting the AI guess versions.
 You cannot pin versions you never recorded, and the README should say so.
 
 Note the output of `describe_project_csvs(".")` for the offspring column: its
 range will read as something like `2 to 9999`, because the `9999` sentinel
-(P8 from this afternoon) is a real numeric value and the summary reports
+(P8 from the Code Review chapter) is a real numeric value and the summary reports
 observable facts only. The skill is correct not to flag it, since judging
 plausibility is your job, not the tool's. That honest, uninterpreted range is
 itself the cue: an offspring count of 9999 is the visible trace of the
@@ -235,11 +256,11 @@ sentinel you catalogued earlier. Carry that into the audit step below.
 
 #### Step 2 — Hand the AI the specification and the inputs
 
-On the agent path, point Copilot at the skill and the project folder and let
+On the agent path, invoke the skill (`/research-readme`) with the project folder open and let
 its five-stage workflow run. On the chat path, paste the README structure from
 `readme_template.md` together with the *output you just generated*. A prompt:
 
-```
+```text
 Draft a research README.md for this analysis repository accompanying
 a paper, using exactly the sections in readme_template.md, in order.
 
@@ -249,7 +270,8 @@ package versions. Where a value is missing, insert a visible placeholder:
 
 Here are the per-column summaries: [paste describe_project_csvs output]
 Dependencies: there is no renv.lock. [paste print_lockfile output]
-The intended run order is: 01_data_cleaning.R then 02_analysis.R.
+Scripts: ANALYSIS.R is the only analysis script; old_code.R is
+superseded and is not run.
 
 Add an AI declaration stating an AI assisted in drafting this README,
 naming the model, dated today. Make no claims about AI use elsewhere.
@@ -275,7 +297,7 @@ Generate the README via Pass 2, then audit it against three of the skill's
 rules:
 
 1. **No fabrication:** pick one fact in the draft. Can you trace it to an
-   input you gave? If not, it is invented — flag it.
+   input you gave? If not, it is invented: flag it.
 2. **Describe, do not interpret:** did the AI assign any units or meanings you
    did not supply? Check the offspring column specifically: did the `2 to
    9999` range survive into the table honestly, or did the AI "tidy" it into
@@ -298,10 +320,11 @@ not edit them during the session.
 
 :::{.callout-note collapse="true"}
 
-### `describe_csv.R` 
+### `scripts/describe_csv.R`
 
-```{r, eval = FALSE}
-# describe_csv.R ----
+```{r}
+#| eval: false
+# scripts/describe_csv.R ----
 # Purpose: produce a simple one-row-per-column table describing a CSV file:
 # column name, parsed type, and a brief range (numeric) or distinct-value
 # count (other). Reports the type readr assigns, so it matches what the
@@ -354,10 +377,11 @@ describe_project_csvs <- function(project_dir) {
 
 :::{.callout-note collapse="true"}
 
-### `scan_packages.R` (graceful failure when no lockfile)
+### `scripts/scan_packages.R` (graceful failure when no lockfile)
 
-```{r, eval = FALSE}
-# scan_packages.R ----
+```{r}
+#| eval: false
+# scripts/scan_packages.R ----
 # Purpose: read renv.lock and print the R version and the package versions it
 # pins. If no lockfile exists, report that explicitly as a finding rather than
 # erroring. Used by: research-readme skill, Stage 4.
@@ -387,26 +411,23 @@ read_lockfile <- function(lock_path = "renv.lock") {
 print_lockfile <- function(lock_path = "renv.lock") {
   info <- read_lockfile(lock_path)
   if (!info$found) {
-    cat(str_glue(
-      "No {lock_path} found.\n",
+    cat(
+      "No ", lock_path, " found.\n",
       "FINDING: dependencies are not pinned; versions were not recorded.\n",
-      "README placeholder: ",
-      "<!-- TODO: supply R version and key package versions ",
-      "-- not provided; do not leave in final submission -->\n"
-    ))
+      "README placeholder for {{DEPENDENCIES}}:\n",
+      "<!-- TODO: supply R version and key package versions -- not provided -->\n",
+      sep = ""
+    )
     return(invisible(NULL))
   }
-  cat(str_glue("R version: {info$r_version}\n\n"))
+  cat("R version: ", info$r_version, "\n\n", sep = "")
   print(info$packages, n = Inf)
 }
 ```
 :::
 
 :::{.callout-note collapse="true"}
-### `SKILL.md` 
-
-This replaces the second paragraph of Stage 4 so that the script, not the
-agent, owns the missing-lockfile finding.
+### `SKILL.md`
 
 ```markdown
 ---
@@ -416,15 +437,13 @@ description: >-
   accompany a paper. Use when the user asks to "write a README" for an
   analysis project, "document this repository for a paper", "make a README
   for my research code", or to prepare code for journal submission or
-  archiving (Zenodo, Figshare, OSF). Imports the doc-coauthoring
-  context-gathering workflow and adds research-specific sections: project
-  metadata with DOIs and ORCIDs, automatic per-file variable summaries for
-  tabular data, an ordered script list, an R version and package dependency
-  table scanned from the code, and an AI declaration. The agent works
-  conversationally and produces only README.md; it does not edit any other
-  file in the project. Do NOT use for general software README files, where
-  the documentation skill is the better fit, nor for auditing code, which
-  belongs to the code-review skill.
+  archiving (Zenodo, Figshare, OSF). Gathers context conversationally and
+  produces research-specific sections: project metadata with DOIs and
+  ORCIDs, automatic per-file variable summaries for CSV data, an ordered
+  script list, an R version and package dependency table read from
+  renv.lock, and an AI declaration. Produces only README.md; it does not
+  edit any other file in the project. Do NOT use for general software
+  README files, nor for auditing code.
 ---
 
 # Research README generator
@@ -436,12 +455,10 @@ journals and immutable archives require: persistent identifiers, ORCIDs,
 funder acknowledgement, per-variable descriptions with units, an explicit
 script run-order, and a reproducible dependency record.
 
-The skill imports the three-stage co-authoring workflow from the
-`doc-coauthoring` skill (Context Gathering, then Refinement & Structure, then
-Reader Testing) and applies it to a fixed README structure. Where
-`doc-coauthoring` lets the user define the sections, this skill fixes them,
-because the target is a standardised research README rather than a free-form
-document.
+The skill follows a three-phase co-authoring pattern (Context Gathering,
+then Refinement & Structure, then Reader Testing) applied to a fixed README
+structure. The sections are fixed rather than chosen by the user, because the
+target is a standardised research README rather than a free-form document.
 
 ## Operating constraints
 
@@ -452,23 +469,22 @@ short of the user explicitly retracting them.
    agent must not edit, reformat, rename, or delete any `.R`, `.Rmd`,
    `.qmd`, data, or configuration file, and must not "fix" anything it finds
    in them. If the agent notices an apparent error in project code or data,
-   it records the observation in the README's open-questions area or reports
-   it in chat, and leaves the file untouched.
+   it reports the observation in chat and leaves the file untouched.
 2. **The agent does not fabricate metadata.** DOIs, ORCIDs, funder grant
    numbers, collection dates, variable units, and affiliations are supplied
    by the user or read from a file the user points to. If a value is
    unknown, the agent inserts an explicit placeholder (see *Placeholders*)
    rather than inventing one.
 3. **Auto-summaries describe; they do not interpret.** When the agent
-   summarises a tabular file it reports observable facts (column type,
-   range, levels, count of missing values). It does not state what a
+   summarises a tabular file it reports observable facts (column type, and
+   range or count of distinct values). It does not state what a
    variable means, its units, or whether a value is plausible. Those are
    user input.
 4. **The agent works conversationally and writes the file directly.** It
-   does not build an app, a Shiny gadget, or an HTML tool. The "browse",
-   "drag", and "live preview" affordances in the requirements are delivered
-   as conversational equivalents: the agent lists files, proposes an order,
-   and shows the rendered Markdown in chat for confirmation.
+   does not build an app, a Shiny gadget, or an HTML tool. Requests to
+   "browse", "drag", or "preview" are met with conversational equivalents:
+   the agent lists files, proposes an order, and shows the rendered Markdown
+   in chat for confirmation.
 
 ## Before executing
 
@@ -480,10 +496,9 @@ folder, different licence), re-present the plan.
 
 ## Workflow
 
-The skill runs five stages. Stages 1 to 4 are Context Gathering in the
-`doc-coauthoring` sense: the agent gathers what it can mechanically, then
-asks targeted questions to fill gaps. Stage 5 combines Refinement &
-Structure with Reader Testing. Do not skip a stage; if a stage yields
+The skill runs five stages. Stages 1 to 4 are Context Gathering: the agent
+gathers what it can mechanically, then asks targeted questions to fill gaps.
+Stage 5 combines Refinement & Structure with Reader Testing. Do not skip a stage; if a stage yields
 nothing (for example, no tabular files), record that and move on.
 
 ### Stage 1 — Project information
@@ -540,17 +555,18 @@ reports the complete pinned environment, including transitive dependencies a
 reader never calls directly, which is the correct artefact for restoring the
 environment exactly.
 
-If no `renv.lock` is present, do not guess versions or scan the installed
-library. Insert a placeholder noting that the project is not using `renv` and
-that the user should supply the R version and key package versions by hand,
-or run `renv::init()` and `renv::snapshot()` before submission.
+If no `renv.lock` is present, `scripts/scan_packages.R` reports this as a
+finding and prints the placeholder to use. Transcribe its output into the
+`{{DEPENDENCIES}}` section; do not guess versions or scan the installed
+library. In chat, suggest the user supply the R version and key package
+versions by hand, or run `renv::init()` and `renv::snapshot()` before
+submission.
 
 ### Stage 5 — Assemble, preview, and reader-test
 
 Assemble `README.md` using the template in `references/readme_template.md`.
 Render the assembled Markdown in chat for the user to review (the
-conversational equivalent of live preview). Apply the `doc-coauthoring`
-Reader Testing stage: check the document against a reader who has only the
+conversational equivalent of live preview). Then reader-test it: check the document against a reader who has only the
 repository and the paper, and confirm they could locate the data, run the
 scripts in order, restore the package environment, and understand every
 variable. Surface any section still holding a placeholder. On confirmation,
@@ -563,8 +579,10 @@ description and the abstract; instructions for obtaining data, restoring the
 environment, and running the scripts in order; an author list with ORCIDs,
 affiliations, and funding; a per-file section with the variable table
 (auto-summary plus user description and unit) and collection dates and
-locations; the ordered script list with descriptions; an R version line and
-the full package dependency table; and an AI declaration.
+locations; the ordered script list with descriptions; the dependencies
+section (`{{DEPENDENCIES}}`: the R version and full package table when
+`renv.lock` exists, otherwise the finding and placeholder from
+`scripts/scan_packages.R`); and an AI declaration.
 
 ## AI declaration
 
@@ -579,16 +597,18 @@ exactly what the user states and nothing more.
 Any unknown value is written as a visible placeholder so it cannot be mistaken
 for fact, in the form:
 
-Unlicensed code and a missing code/data DOI are flagged as blocking for
+    <!-- TODO: supply [field] -- not provided -->
+
+where `[field]` names the missing item (for example `code DOI` or `unit for
+mass_g`). Unlicensed code and a missing code/data DOI are flagged as blocking for
 submission, consistent with archiving requirements, but the agent still
 writes the file with placeholders so the user has a working draft.
 
 ## Scope boundaries
 
-This skill does not audit code quality or reproducibility; that is the
-`code-review` skill. It does not generate figures; that is the project's
-figure skill. If asked to do either mid-run, the agent declines and names
-the appropriate skill.
+This skill does not audit code quality or reproducibility, and it does not
+generate figures. If asked to do either mid-run, the agent declines, says
+that this is outside the skill, and records the request in chat.
 
 ## References
 
@@ -600,11 +620,11 @@ the appropriate skill.
 :::
 
 :::{.callout-note collapse="true"}
-### `readme_template.md` — Dependencies block (conditional on a lockfile)
+### `references/readme_template.md`
 
-The hard-coded block is replaced with a single token so it resolves to either
-the pinned table or the stated finding, keeping the rendered README honest in
-both states.
+The *Dependencies* section is a single token, `{{DEPENDENCIES}}`, so it
+resolves to either the pinned table or the stated finding, keeping the
+rendered README honest in both states.
 
 ```markdown
 # {{TITLE}}
@@ -668,12 +688,21 @@ Run in the following order:
 
 ## Dependencies
 
-Built under R {{R_VERSION}}, with package versions pinned in `renv.lock`.
+{{DEPENDENCIES}}
+
+<!--
+With renv.lock, {{DEPENDENCIES}} is rendered as:
+
+Built under R <version>, with package versions pinned in `renv.lock`.
 Restore the environment with `renv::restore()`.
 
 | Package | Version |
 |---------|---------|
-{{PACKAGE_ROWS}}
+| ...     | ...     |
+
+Without renv.lock, it is the finding and placeholder printed by
+scripts/scan_packages.R.
+-->
 
 ## AI declaration
 
@@ -708,6 +737,6 @@ tribble(
 
 - **Ivimey-Cook, E.R., et al. (2023).** Implementing code review in the scientific workflow. *Journal of Evolutionary Biology*, 36, 1347–1356. <https://doi.org/10.1111/jeb.14230>
 - **Ivimey-Cook, E.R., et al. (2025).** TADA! Simple guidelines to improve analytical code sharing for transparency and reproducibility. *EcoEvoRxiv*. <https://doi.org/10.32942/X2D93K>
-- **Frömmgen, A., et al. (2024).** Resolving code review comments with machine learning. *arXiv* 2405.13565. *(Verify identifier and author list before publication.)*
-- **Tufano, R., et al. (2024).** On evaluating large language models for code review and defect detection. *arXiv* preprint. *(Verify identifier and author list before publication.)*
+- **Tufano, R., Dabić, O., Mastropaolo, A., Ciniselli, M., & Bavota, G. (2024).** Code review automation: strengths and weaknesses of the state of the art. *arXiv* 2401.05136. <https://doi.org/10.48550/arXiv.2401.05136>
+- **Vijayvergiya, M., et al. (2024).** AI-assisted assessment of coding practices in modern code review. In *Proceedings of the 1st ACM International Conference on AI-Powered Software (AIware 2024)*. <https://doi.org/10.1145/3664646.3665664> (preprint: arXiv 2405.13565)
 - **Course OSF page:** <https://osf.io/jgeq9/>

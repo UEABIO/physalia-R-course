@@ -73,21 +73,25 @@ x       # still 1
 ```
 
 This isolation is a feature: a function's behaviour depends only on its arguments,
-not on whatever happens to be lying around in your session. That is precisely why
+not on whatever happens to be lying around in your session. That is why
 functions are more reproducible than loose script lines.
 
 :::{.callout-note}
 
 ## The superassignment operator
 
-The superassigment operator or `<<-` is used for **lexical scoping** it *will* modify the variable in a parent environment. If no such variable exists it will create one!
+The superassignment operator `<<-` breaks this isolation. Instead of creating a
+local variable, it searches the enclosing (parent) environments for an existing
+variable of that name and modifies the first one it finds, here the global `x`. If
+no such variable exists anywhere, it creates one in the global environment! Because
+a function that uses `<<-` changes things outside itself, avoid it in analysis code.
 
 ```{r}
 #| eval: false
 x <- 1
 
 fn <- function(y) {
-  x <<- x * 2   # a local copy; the global x is untouched
+  x <<- x * 2   # no local copy: this modifies the global x
   x + y
 }
 
@@ -129,7 +133,8 @@ The conversion is `(fahr - 32) * 5 / 9`.
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 fahr_to_celsius <- function(fahr) {
   (fahr - 32) * 5 / 9
 }
@@ -140,10 +145,14 @@ fahr_to_celsius <- function(fahr) {
 
 ### Argument order and naming
 
-Arguments are matched first by exact name, then by position. This means
+Arguments are matched first by exact name, then by partial name (a unique
+prefix, so `exp = 3` would match `exponent`), then by position. This means
 the order you write arguments in the call matters only when you rely on
-position rather than naming them.
+position rather than naming them. Partial matching is best avoided: always
+write argument names in full.
 
+```{r}
+#| eval: false
 power <- function(base, exponent) {
   base ^ exponent
 }
@@ -151,6 +160,7 @@ power <- function(base, exponent) {
 power(2, 3)                       # 8, matched by position
 power(exponent = 3, base = 2)     # 8, matched by name, order irrelevant
 power(2, exponent = 3)            # 8, mixed: name some, position the rest
+```
 
 Naming arguments at the call site makes code easier to read and protects
 against errors when a function has several parameters. Relying on position
@@ -174,7 +184,8 @@ arguments and forwards them unchanged to the inner function. This lets a
 wrapper expose the full flexibility of the function it wraps without
 listing every argument.
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 
 # A wrapper around mean() that removes missing values by default,
 # but still forwards any other arguments the caller supplies.
@@ -183,8 +194,8 @@ mean_clean <- function(x, ...) {
 }
 
 v <- c(1, 2, 3, 4, 5, 6, 7, 8, 100, NA)
-mean_clean(v)                # 2.333..., na.rm handled for you
-mean_clean(v, trim = 0.25)   # trim passed through via ...
+mean_clean(v)                # 15.11..., na.rm handled for you
+mean_clean(v, trim = 0.25)   # 5, trim passed through via ...
 ```
 
 :::{.task}
@@ -200,9 +211,12 @@ pass any other argument through with `...`.
 
 `r hide("Solution")`
 
+```{r}
+#| eval: false
 round2 <- function(x, digits = 2, ...) {
   round(x, digits = digits, ...)
 }
+```
 
 `r unhide()`
 
@@ -218,15 +232,18 @@ that live in `R/functions/`, is **roxygen2** format: documentation lines beginni
 #| eval: false
 #' Convert Fahrenheit to Celsius
 #'
-#'  # a roxygen2 comment line (note the apostrophe)
-#' @param fahr Numeric. Temperature in degrees Fahrenheit.   # documents one argument
-#' @return Numeric. Temperature in degrees Celsius.          # documents what comes back
-#' @examples                                                 # starts an examples block
-#' fahr_to_celsius(32)   # 0
+#' @param fahr Numeric. Temperature in degrees Fahrenheit.
+#' @return Numeric. Temperature in degrees Celsius.
+#' @examples
+#' fahr_to_celsius(32)
 fahr_to_celsius <- function(fahr) {
   (fahr - 32) * 5 / 9
 }
 ```
+
+Every documentation line starts with `#'` (note the apostrophe). The first line is
+the title; `@param` documents one argument; `@return` documents what comes back;
+`@examples` starts a block of example calls.
 
 You do not need to build a package or run `roxygenise()` to benefit from this. The
 block is readable as plain text, and writing it forces you to state the function's
@@ -247,8 +264,9 @@ b <- 5
 if (a > b) 20 else 10      # 10 -- a single TRUE/FALSE only
 ```
 
-The trap: `if` evaluates only the first element of a vector and, in current R,
-errors if given a longer one. For element-wise choices use `ifelse()`:
+The trap: `if` expects a single `TRUE` or `FALSE`. Older versions of R used only
+the first element of a longer vector; current R gives an error. For element-wise
+choices, use `ifelse()` or, as here, `if_else()`:
 
 ```{r}
 #| eval: false
@@ -270,8 +288,26 @@ dplyr::case_when(
 ```
 
 A worked conditional function: report a p-value in the conventional style, "p <
-0.001" below the threshold and "p = 0.XXX" otherwise. The naive version uses `if`
-and breaks on a vector; the fix is the vectorised `if_else()`.
+0.001" below the threshold and "p = 0.XXX" otherwise. The naive version uses `if`,
+works for a single value, and breaks on a vector:
+
+```{r}
+#| error: true
+report_p_naive <- function(p, digits = 3) {
+  if (p < 0.001) {
+    "p < 0.001"
+  } else {
+    paste("p =", round(p, digits))
+  }
+}
+
+report_p_naive(0.045)              # fine for one value
+report_p_naive(c(0.0005, 0.045))   # errors on a vector
+```
+
+The fix is the vectorised `if_else()`. We also swap `round()` for `sprintf()`,
+because `round(0.05, 3)` gives `0.05`, dropping the trailing zero, whereas
+`sprintf("%.3f", 0.05)` always prints three decimal places:
 
 ```{r}
 #| eval: false
@@ -284,18 +320,18 @@ report_p <- function(p, digits = 3) {
   dplyr::if_else(
     p < 0.001,
     "p < 0.001",
-    paste("p =", round(p, digits))
+    paste("p =", sprintf("%.*f", digits, p))
   )
 }
 
-report_p(c(0.0005, 0.045))   # "p < 0.001"  "p = 0.045"
+report_p(c(0.0005, 0.045, 0.05))   # "p < 0.001" "p = 0.045" "p = 0.050"
 ```
 
 :::{.callout-note}
 
 **Rule of thumb.** If you have copied a line and changed one small thing in it
-more than about three times, write a function instead. Fewer lines, less
-repetition, and one place to make a change. And keep function definitions in a
+more than about three times, write a function instead. You get fewer lines, less
+repetition and a single place to make a change. Keep function definitions in a
 separate script (`R/functions/`), sourced into the analysis. This sets up the
 refactor we do next.
 
@@ -307,11 +343,11 @@ We now meet the analysis the rest of the day improves. Set up the data file once
 
 ```{r}
 #| eval: false
-if (!dir.exists(here::here("data"))) dir.create(here::here("data"))
+dir.create(here::here("data", "raw"), recursive = TRUE, showWarnings = FALSE)
 
 readr::write_csv(
   palmerpenguins::penguins_raw,
-  here::here("data", "penguins.csv")
+  here::here("data", "raw", "penguins_raw.csv")
 )
 ```
 
@@ -327,11 +363,14 @@ library(tidyverse)
 library(broom)
 library(here)
 
-penguins_raw <- readr::read_csv(here("data", "penguins.csv"),
+penguins_raw <- readr::read_csv(here("data", "raw", "penguins_raw.csv"),
                                 show_col_types = FALSE)
 
 penguins_clean <- penguins_raw |>
   janitor::clean_names() |> 
+  dplyr::rename(bill_length_mm = culmen_length_mm,
+                bill_depth_mm  = culmen_depth_mm) |>
+  dplyr::mutate(species = stringr::word(species, 1)) |>   # "Adelie", not "Adelie Penguin (...)"
   tidyr::drop_na(body_mass_g, flipper_length_mm, species)
 
 # Adelie ----
@@ -409,11 +448,12 @@ The bugs are symptoms. The structural problems are the disease:
 - **Three near-identical blocks.** The species blocks share more than 90 per cent
   of their code. Every change must be made in three places.
 - **Object names by suffix.** `adelie`, `mod_adelie`, `coefs_adelie`, `p_adelie`,
-  four objects per species, filling the namespace with pairs a human must track.
+  four objects per species, filling the namespace with names a human must track.
 - **Implicit ordering.** The script must run top to bottom. Change
   `penguins_clean` and rerun only the modelling block, and the figures fall out of
   sync with the coefficients.
-- **No verification.** The filter typo and the CI mismatch both pass silently.
+- **No verification.** Nothing checks the inputs: the filter typo passes the
+  filter silently, and the CI mismatch never errors at all.
 
 :::{.callout-note}
 
@@ -468,18 +508,17 @@ when refactoring.
 The Gentoo typo (`"gentoo"` instead of `"Gentoo"`) silently filtered to zero rows. `lm()` then failed with:
 
 ```
-Error in `lm.fit()`:
-! 0 (non-NA) cases
+Error in lm.fit(x, y, offset = offset, singular.ok = singular.ok, ...) : 
+  0 (non-NA) cases
 ```
 
 This error points at the model, not the filter where the real problem was. Without input validation, you are left hunting backwards through the code to find why the data is empty.
 
-A well-designed function catches this *before* anything goes wrong, using `stop()` to abort immediately with a message that names the actual problem:
+A well-designed function catches this *before* anything goes wrong. `stop()` aborts immediately with a message that names the actual problem:
 
 ```{r}
-#| eval: false
 fit_species_model <- function(data, sp) {
-# Validate sp before doing any work -- fail fast with a useful messag
+  # Validate sp before doing any work -- fail fast with a useful message
   if (!sp %in% unique(data$species)) {
     stop(
       "Species '", sp, "' is not in the data. ",
@@ -497,26 +536,16 @@ fit_species_model <- function(data, sp) {
 
 Now the same typo produces:
 
-```
-Error in `fit_species_model()`:
-! Species 'gentoo' is not in the data. Available species: Adelie, Chinstrap, Gentoo
+```{r}
+#| error: true
+fit_species_model(penguins_clean, "gentoo")
 ```
 
 Three things make this a good error message:
 
-1. **It says what went wrong** — the species name was not recognised.
-2. **It shows what was received** — `'gentoo'`, so you can see the typo immediately.
-3. **It says how to fix it** — lists the valid options.
-
-```{r}
-#| eval: false
-fit_species_model(penguins_clean, "gentoo")
-# Error in fit_species_model(penguins_clean, "gentoo"):
-#   Species 'gentoo' is not in the data.
-#   Available species: Adelie, Chinstrap, Gentoo
-```
-
-The error arrives immediately, names the problem, and lists the valid options.
+1. **It says what went wrong**: the species name was not recognised.
+2. **It shows what was received**: `'gentoo'`, so you can see the typo immediately.
+3. **It says how to fix it**: it lists the valid options.
 
 
 ### Stage 3: document and add a default
@@ -576,7 +605,7 @@ write its labels once:
 make_scatter_plot <- function(data, sp) {
   data |>
     dplyr::filter(species == sp) |>
-    ggplot2::ggplot(aes(flipper_length_mm, body_mass_g)) +
+    ggplot2::ggplot(ggplot2::aes(flipper_length_mm, body_mass_g)) +
     ggplot2::geom_point(alpha = 0.6) +
     ggplot2::geom_smooth(method = "lm") +
     ggplot2::labs(title = sp, x = "Flipper length (mm)", y = "Body mass (g)") +
@@ -618,7 +647,8 @@ when *not* to write a function
 
 Should this be turned into a function? Justify your answer.
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 penguins_clean |> dplyr::filter(species == "Adelie") |> dplyr::summarise(n = dplyr::n())
 ```
 
@@ -661,7 +691,7 @@ my-project.Rproj
 |   |- processed/    # outputs of cleaning
 |- R/
 |   |- functions/    # function definitions only
-|   |- scripts/      # or numbered analysis scripts in R/
+|   |- scripts/      # numbered analysis scripts
 |- outputs/
 |   |- figures/
 |   |- tables/
@@ -679,9 +709,9 @@ testing and, eventually, pipelining.
 
 It's functions all the way down...
 
-A function factory is a function that builds and returns other functions. You give the factory some configuration, and it hands back a new function with that configuration baked in and ready to use. If you have ever written nearly identical unit converters, threshold checkers, or formatters and felt that the repetition was unnecessary, function factories are the tool for collapsing those variants into a single recipe.
+A function factory is a function that builds and returns other functions. You give the factory some configuration, and it hands back a new function with that configuration baked in and ready to use. If you have ever written nearly identical unit converters, threshold checkers, or formatters and felt that the repetition was unnecessary, a function factory lets you collapse those variants into a single recipe.
 
-The mechanism rests on lexical scoping. When a function is defined inside another function, it keeps a reference to the environment in which it was born. So if the outer function had a variable called factor, the inner function can still see it long after the outer call has finished. That preserved environment is called a closure, and it is what allows the manufactured functions to remember the settings you gave them. In practice, you write the factory once and produce as many specialised functions as you need:
+The mechanism rests on lexical scoping. When a function is defined inside another function, it keeps a reference to the environment in which it was created. So if the outer function had a variable called factor, the inner function can still see it long after the outer call has finished. That preserved environment is called a closure, and it is what allows the manufactured functions to remember the settings you gave them. In practice, you write the factory once and produce as many specialised functions as you need:
 
 ```{r}
 #| eval: false
@@ -696,16 +726,16 @@ g_to_kg  <- make_converter(1 / 1000)
 mm_to_cm <- make_converter(1 / 10)
 
 penguins_clean |>
-  drop_na(body_mass_g, culmen_length_mm) |>
+  drop_na(body_mass_g, bill_length_mm) |>
   mutate(
     body_mass_kg   = g_to_kg(body_mass_g),
-    culmen_length_cm = mm_to_cm(culmen_length_mm)
+    bill_length_cm = mm_to_cm(bill_length_mm)
   ) |>
-  select(species, body_mass_kg, culmen_length_cm)
+  select(species, body_mass_kg, bill_length_cm)
 
 ```
 
-The point to internalise is that g_to_kg and mm_to_cm are distinct functions, each carrying its own value of factor bound at the moment the factory was called. That persistent enclosing environment is the closure, and a function factory is simply a function that exploits it to produce configured functions on demand, which is useful when you want to avoid repeating yourself across many similar transformations or to pre-configure behaviour (a threshold, a unit, a reference mean) once and reuse it.
+The point to take away is that g_to_kg and mm_to_cm are distinct functions, each carrying its own value of factor, bound at the moment the factory was called. That persistent enclosing environment is the closure. A function factory is simply a function that uses it to produce configured functions on demand. This is useful when you want to avoid repeating yourself across many similar transformations, or to pre-configure behaviour (a threshold, a unit, a reference mean) once and reuse it.
 
 
 ## Part E: testing functions
@@ -789,7 +819,7 @@ write a test
 
 `make_scatter_plot()` returns a ggplot object. Write two tests:
 
-1. That the function returns a ggplot object. Hint: `ggplot2::is.ggplot()` returns
+1. That the function returns a ggplot object. Hint: `ggplot2::is_ggplot()` returns
    `TRUE` for any ggplot.
 2. That the plot only contains data for the requested species. Hint: the data
    passed to a ggplot is stored at `p$data`; check the `species` column.
@@ -800,9 +830,13 @@ write a test
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
+# Add to the top of the test file:
+# source(here::here("R", "functions", "plotting_functions.R"))
+
 test_that("make_scatter_plot returns a ggplot", {
-  expect_true(ggplot2::is.ggplot(make_scatter_plot(test_data, "Adelie")))
+  expect_true(ggplot2::is_ggplot(make_scatter_plot(test_data, "Adelie")))
 })
 
 test_that("make_scatter_plot only plots the requested species", {

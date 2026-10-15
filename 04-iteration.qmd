@@ -52,7 +52,7 @@ This type-safety is the reason to prefer `map_*()` over base `sapply()`.
 `sapply()` guesses the output type and can return a vector, a matrix or a list
 depending on the input, so a function that worked on Tuesday can silently return
 a different shape on Wednesday. `map_dbl()` either returns a double vector or
-errors. Predictability beats convenience.
+errors.
 
 :::
 
@@ -80,15 +80,15 @@ for (i in seq_along(vec_list)) {
 means
 ```
 
-`purrr::map_dbl(df_list, mean)` collapses all of this into one call. The loop is
+`purrr::map_dbl(vec_list, mean)` collapses all of this into one call. The loop is
 not wrong, and understanding it is worth doing, but three jobs are now yours
 rather than the function's: choosing the container type, sizing it, and preserving
 names. Growing the vector instead of pre-allocating (`means <- c(means, ...)`
 inside the loop) copies the whole object on every iteration, which turns linear
 work into quadratic and is the classic loop performance trap. `map_dbl()` handles
-the container, the sizing and the names, and fixes the return type. The honest
-contrast is delegated bookkeeping, not raw speed: a correctly pre-allocated loop
-and `map_dbl()` run in comparable time.
+the container, the sizing and the names, and fixes the return type. The gain is
+that the bookkeeping is done for you; speed is about the same, because a correctly
+pre-allocated loop and `map_dbl()` run in comparable time.
 
 :::
 
@@ -227,8 +227,20 @@ pmap_dbl(list(sizes, widths, heights), \(s, w, h) s * w * h)  # 10 36 84
 
 ```
 
+`imap(.x, .f)` is `map2()` with the element's name (or its position, if the
+input is unnamed) supplied as the second argument:
 
-:::{.callout-note collapse = "true"}
+```{r}
+#| eval: false
+purrr::imap_chr(vec_list, \(x, nm) paste0(nm, ": mean ", mean(x)))
+#>              a              b              c 
+#>  "a: mean 5.5" "b: mean 15.5" "c: mean 25.5" 
+```
+
+
+:::{.callout-note collapse="true"}
+
+## `pmap()` over the rows of a data frame
 
 ```{r}
 # pmap walks any number of inputs in parallel. A data frame is just a named
@@ -255,11 +267,13 @@ effect and return their input invisibly, so the console is not flooded with outp
 ```{r}
 #| eval: false
 # Write each split of the data to its own file, silently
-peng_split <- penguins_clean |> 
-  dplyr::group_by(species) |> 
-  dplyr::group_split()
+peng_grouped <- penguins_clean |> 
+  dplyr::group_by(species)
 
-names(peng_split) <- c("Adelie", "Chinstrap", "Gentoo")
+peng_split <- dplyr::group_split(peng_grouped)
+
+# name each list element after its species, taken from the data itself
+names(peng_split) <- dplyr::group_keys(peng_grouped)$species
 
 
 purrr::walk2(
@@ -272,7 +286,10 @@ purrr::walk2(
 
 :::{.callout-note}
 
-Note the slightly different approach to walk, here we split the data into a list and used `walk` in a previous example we used `group_walk`a variant designed explicitly to work on data after `group_by`
+Note the slightly different approach here: we split the data into a named list
+and passed it to `walk2()`. In the earlier file-writing example we used
+`group_walk()` instead, a variant designed to work directly on data after
+`group_by()`.
 
 :::
 
@@ -290,11 +307,12 @@ species_data <- penguins_clean |>
 
 species_data
 # # A tibble: 3 x 2
-#   species   data
-#   <fct>     <list>
-# 1 Adelie    <tibble [146 x 7]>
-# 2 Gentoo    <tibble [119 x 7]>
-# 3 Chinstrap <tibble [68 x 7]>
+# # Groups:   species [3]
+#   species   data               
+#   <chr>     <list>             
+# 1 Adelie    <tibble [151 x 16]>
+# 2 Gentoo    <tibble [123 x 16]>
+# 3 Chinstrap <tibble [68 x 16]> 
 
 ```
 
@@ -322,11 +340,12 @@ species_models <- species_data |>
 
 species_models
 # # A tibble: 3 x 5
-#   species   data              model  coefs            n_obs
-#   <fct>     <list>            <list> <list>           <int>
-# 1 Adelie    <tibble [146x7]>  <lm>   <tibble [2x7]>     146
-# 2 Gentoo    <tibble [119x7]>  <lm>   <tibble [2x7]>     119
-# 3 Chinstrap <tibble [68x7]>   <lm>   <tibble [2x7]>      68
+# # Groups:   species [3]
+#   species   data                model  coefs            n_obs
+#   <chr>     <list>              <list> <list>           <int>
+# 1 Adelie    <tibble [151 x 16]> <lm>   <tibble [2 x 7]>   151
+# 2 Gentoo    <tibble [123 x 16]> <lm>   <tibble [2 x 7]>   123
+# 3 Chinstrap <tibble [68 x 16]>  <lm>   <tibble [2 x 7]>    68
 ```
 
 Three things to notice. The `model` cell holds a fitted `lm` per species; the
@@ -393,8 +412,8 @@ fit_species_model <- function(data, sp, conf_level = 0.95) {
 
 `fit_model()` and `tidy_model()` now exist independently and compose. The old
 public interface survives as a wrapper, so existing callers and the tests from
-Block 3 still pass with no edits. That is what a good refactor looks like:
-behaviour preserved, internals improved, tests green.
+Block 3 still pass with no edits. The behaviour is unchanged and only the
+internals have improved, which is what a refactor should achieve.
 
 ### The iteration, rewritten
 
@@ -417,7 +436,7 @@ coefficient_table <- species_models |>
   tidyr::unnest(coefs)
 ```
 
-This is the destination. The modelling logic that was three copy-pasted blocks in
+The modelling logic that was three copy-pasted blocks in
 Block 1, then three function calls in Block 3, is now one pipeline that applies the
 same function to every group.
 
@@ -439,7 +458,8 @@ tidied coefficient table, using the nest pattern.
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 island_coefs <- penguins_clean |>
   dplyr::group_by(island) |>
   tidyr::nest() |>
@@ -478,7 +498,8 @@ them together with `patchwork::wrap_plots()`. Hint: build each plot inside
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 species_plots <- penguins_clean |>
   dplyr::group_by(species) |>
   tidyr::nest() |>

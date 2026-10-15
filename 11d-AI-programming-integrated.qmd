@@ -1,4 +1,4 @@
-# Block 4: Github Copilot Chat in Ask mode  {.unnumbered}
+# Block 4: GitHub Copilot Chat in Ask mode {.unnumbered}
 
 
 ```{r}
@@ -7,32 +7,28 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-```{r}
-#| include: false
-library(tidyverse)
 library(webexercises)
 ```
 
-Github Copilot Chat uses the same underlying AI model as inline completion, but for a different kind of help. Inline completion is best when you are actively writing code and want quick suggestions or continuations, which are usually included in standard Copilot usage. Chat is better for higher-level tasks such as planning an approach, understanding an error, or discussing design decisions, and these features are more likely to be usage-limited or *metered* because they require more computation. The two tools complement each other rather than replace one another.
+GitHub Copilot Chat comes with the same Copilot plan as inline completion, but it gives a different kind of help, and it does not necessarily use the same model: the chat model and the inline-completion model are configured separately. Inline completion is best when you are actively writing code and want quick suggestions or continuations. Chat is better for higher-level tasks such as planning an approach, understanding an error, or discussing design decisions. Chat requests need more computation, so they are the part of Copilot most likely to run into your plan's usage limits (at the time of writing, October 2026, a monthly allowance of GitHub AI Credits). The two tools complement each other rather than replace one another.
 
 *⏱ ~30 minutes*
 
 
 ## What Chat sees, and what it does not
 
-Here Github Copilot Chat differs fundamentally from a general chatbot such as ChatGPT, and the difference is easy to get wrong. ChatGPT sees *only the text you paste*; it has no connection to your files. Github Copilot is integrated with your editor and repository and can draw on context you did not paste. How much it draws on, and whether it can act on your machine can vary depending on set-up. Three matter for this workshop, and they are not equivalent.
+Here GitHub Copilot Chat differs from a general chatbot such as ChatGPT, and the difference is easy to get wrong. A general chatbot sees what you paste or upload, plus whatever you have connected it to through its own connectors; it has no built-in link to your editor or your R session. GitHub Copilot is integrated with your repository and editor and can draw on context you did not paste. How much it draws on, and whether it can act on your machine, depends on where you use it. Three surfaces matter for this workshop, and they are not equivalent.
 
 - **Browser Chat on github.com**: open your repository on github.com and select the Copilot icon. It works in the context of that repository and can reach its files, but it has no connection to your local machine, runs no code, and cannot see your R session. This is the one that behaves the same for everyone.
 
-- **Positron**: Positron also uses GitHub Copilot, signed in with your GitHub account, unless you configure a different provider such as an Anthropic API key. It is delivered through a Positron-modified build of the Copilot Chat extension, and the difference that matters is the context it adds. Positron hands Copilot context about your interactive data science work, such as your loaded data, plots, **and console history**, and in agent mode it can execute code in the console and view the output. So although the model is Copilot, in Positron it is fed your session, and the "cannot see your data" assumption does not hold the way it does in browser Chat.
+- **VS Code Chat panel**: Copilot Chat is built into VS Code. It can see your open files, and you can add context explicitly: type `#` in the chat box to reference a file or `#codebase` for the whole workspace, or use the **Add Context** button. It does not see the objects in your R session unless you paste them, or unless an agent runs code for you.
 
-- Your `copilot-instructions.md`, if present, is loaded automatically into every Copilot Chat request in that workspace. Exactly what is pulled in automatically has changed between versions and differs across surfaces, so the reliable habit is to set the context yourself with the references above rather than to assume (*see Part 5*).
+- **Positron Chat panel**: Positron's built-in chat is now **Posit Assistant**, which replaced the deprecated Positron Assistant and is the default AI experience from Positron 2026.07. It is not Copilot Chat: it runs on a model provider you choose, either Posit's own subscription or a bring-your-own provider such as GitHub Copilot. The difference that matters is the context it adds. Posit Assistant is given context about your interactive data science work, such as your loaded data, plots, **and console history**, and it can run code. So in Positron the "cannot see your data" assumption does not hold the way it does in browser Chat. See the [Posit Assistant documentation](https://positron.posit.co/assistant.html).
+
+Separately from the surface, your repository's `.github/copilot-instructions.md`, if present, is added automatically to Copilot Chat requests in that repository or workspace (*see Block 6*). Exactly what else is pulled in automatically has changed between versions and differs across surfaces, so the reliable habit is to set the context yourself (by pasting, attaching, or `#`-referencing) rather than to assume.
 
 
-For these exercises we should run them in [Browser Chat](https://github.com/copilot) and be on **Ask mode**
+Run these exercises in [Browser Chat](https://github.com/copilot), in **Ask mode**.
 
 ```{r}
 #| echo: false
@@ -41,31 +37,37 @@ knitr::include_graphics("images/github-chat.png")
 ```
 
 :::{.callout-note}
-An assistant can describe your data confidently for two different reasons: 1) it has been given real information about your session, 2) or it is recalling something from training data. Only the first is reliable.
+An assistant can describe your data confidently for two different reasons: (1) it has been given real information about your session, or (2) it is recalling something from training data. Only the first is reliable.
 
 It has real information when one of these holds: you pasted the output (`glimpse()`, `summary()`, the printed result), or the data sits in a file it can read.
 
-In Positron the IDE injects your session context (look for the Console session tab); or, in agent mode, it can run code and read the output.
+In Positron, Posit Assistant is given your session context, and it can run code and read the output.
 
-It is guessing from training data when none of those apply, which is always the case in browser Chat on github.com. Tells: it substitutes a well-known dataset (mtcars, iris, penguins) you never mentioned, or asserts column names, factor levels, or values you never supplied.
+It is guessing from training data when none of those apply, which is the case in browser Chat on github.com unless the data file is in the repository or you have pasted its structure. Tells: it substitutes a well-known dataset (mtcars, iris, penguins) you never mentioned, or asserts column names, factor levels, or values you never supplied.
 
 Even when context is supplied, the model's claim about what it can see is unreliable, and the context may be structure rather than actual values. Verify any data-specific claim against your real object.
 
 :::
 
 
-**Browser Chat** (all IDEs, including RStudio): navigate to your repository on [github.com](github.com) and click the Copilot icon in the top right. This is the one that works for everyone.
+**Browser Chat** (all IDEs, including RStudio): navigate to your repository on [github.com](https://github.com) and click the Copilot icon in the top right. This is the one that works for everyone.
 
-**In-IDE Chat panel** (Positron and VS Code only): open the Copilot panel in the sidebar, and use the `#` references above to control what it sees. Use  quick actions as slash commands. Type `/` in the chat pane or in inline chat to see the list, pick one, and optionally add instructions before sending. The commands shipped with the Assistant include `/fix` to propose a correction, `/explain` to describe what code does, `/doc` to add documentation, and `/exportQuarto` to turn a chat into a Quarto document. They are designed especially for inline chat, where they act on the code you have selected. The Assistant can also trigger them from plain language: asking "can you convert this to Quarto?" invokes the export without your typing the command. 
+**In-IDE Chat panel** (VS Code and Positron): open the chat view, and use `#` references or **Add Context** to control what it sees. Both also offer slash commands: type `/` in the chat box to see the list for your editor. In VS Code these include `/explain` to describe what code does and `/fix` to propose a correction, which act on the code you have selected. Posit Assistant in Positron has its own set, such as `/plan` to draft a plan before changing code and `/new` to start a fresh conversation.
 
-RStudio users should use the browser Chat throughout this block. Positron and VS Code users may use either; the exercises work in both, subject to the context caveat above.
+RStudio users should use the browser Chat throughout this block. RStudio's own Posit Assistant chat is not part of your Copilot plan, so we do not use it here. Positron and VS Code users may use either browser or in-IDE chat; the exercises work in both, subject to the context caveat above.
 
 
 ## Exercise 1: Reading a stack trace
 
-This exercise demonstrates the dependency of Chat's answer quality on the context you supply.
+:::{.task}
+::::{.task-header}
+Exercise 1: Reading a stack trace
+::::
+::::{.task-container}
 
-**For Positron disable current session context to see the different responses you get**
+This exercise shows how much the quality of Chat's answers depends on the context you supply.
+
+**If you use in-IDE chat in Positron, start from a session without `voles` loaded (or use browser Chat), so that the session context does not hand over the answer.**
 
 **1. Open a fresh Chat session. Paste only the following error message and ask "What does this error mean?":**
 
@@ -78,7 +80,7 @@ Caused by error:
 
 Read the answer. It will be reasoning from the error alone.
 
-*Try* setting the type of model in the drop-down Github separates these by complexity.
+*Try* changing the model in the model picker below the prompt box, if your plan allows it, and compare the answers. (At the time of writing, Copilot Free and Copilot Student offer only Auto, where Copilot chooses the model for you.)
 
 **2. Now open a new Chat session and paste the same error along with the code that produced it and the output of `glimpse(voles)`:**
 
@@ -109,10 +111,10 @@ The data structure is:
 What is wrong?
 ```
 
-Read this answer. It will name the specific bug (a missing `_g` suffix on `mass_post`) and propose the fix. 
+Read this answer. It will name the specific bug (a missing `_g` suffix on `mass_post`) and propose the fix.
 
 
-**3. Now open a new Chat session and attach the file from the repository and try pasting the error message:**
+**3. Now open a new Chat session, attach the file from the repository, and try pasting the error message:**
 
 ```{r}
 #| echo: false
@@ -120,17 +122,13 @@ Read this answer. It will name the specific bug (a missing `_g` suffix on `mass_
 knitr::include_graphics("images/context-button.png")
 ```
 
- With the file itself in context, Copilot can see the
-column names directly, so it should again identify the missing `_g` suffix,
-this time without your having pasted `glimpse()` output. The lesson is not
-that one route is correct and the others wrong, but that the answer is only
-as good as the context, and that context reaches the model by more than one
-route: what you paste, and what the surface can already read.
+With the file itself in context, Copilot can see the column names directly, so it should again identify the missing `_g` suffix, this time without your having pasted `glimpse()` output. No one route is the correct one. The answer is only as good as the context, and context reaches the model by more than one route: what you paste, and what the surface can already read.
 
-Compare the three answers. The first reasons from the error text alone and
-can only guess. The second and third both locate the specific bug, because
-both were given the column names, one by your paste and one by reading the
-file.
+Compare the three answers. The first reasons from the error text alone and can only guess. The second and third both locate the specific bug, because both were given the column names, one by your paste and one by reading the file.
+
+::::
+:::
+
 
 ## How much of your data to show
 
@@ -138,11 +136,11 @@ The contents of your data can reach the model by three routes, and each is a dis
 
 - You paste it into the chat: an error, an output, a printed result.
 
-- It reads a data file that sits in a repository or workspace it can see. Browser Chat on github.com works in the context of the repository you open it from, so a committed voles.csv is within reach; the VS Code extension can surface project files through workspace indexing.
+- It reads a data file that sits in a repository or workspace it can see. Browser Chat on github.com works in the context of the repository you open it from, so a committed `voles_metabolism.csv` is within reach; in VS Code, Copilot can search your workspace when you use `#codebase`.
 
-- The IDE injects your session context. In Positron, the assistant is given context about your interactive data science work, such as your loaded data, plots, and console history, so a data frame already in memory can reach it without a paste. Positron
+- The IDE injects your session context. In Positron, Posit Assistant is given context about your interactive data science work, such as your loaded data, plots, and console history, so a data frame already in memory can reach it without a paste.
 
-Describing your data to Chat is therefore a recurring task, but it is not the only way your data is exposed. Before you decide what to show, know what the surface can already reach: a data file committed to the repo, or a tibble loaded in a Positron session, may have been disclosed already.
+Describing your data to Chat is a recurring task, but pasting is not the only way your data is exposed. Before you decide what to show, know what the surface can already reach: a data file committed to the repo, or a tibble loaded in a Positron session, may have been disclosed already.
 
 When you do describe a data frame deliberately, three commands reveal increasing amounts:
 
@@ -154,6 +152,12 @@ When you do describe a data frame deliberately, three commands reveal increasing
 
 
 ## Exercise 2: Refining an approach question
+
+:::{.task}
+::::{.task-header}
+Exercise 2: Refining an approach question
+::::
+::::{.task-container}
 
 Run this in browser Chat, or with no analysis file referenced. If your script is open in the editor, Copilot may infer the design from it, and the first answer will be less generic than described below. The refinement in step 2 still helps in that case, because your scientific question and your design intent are not written in any file; they exist only in your head until you state them.
 
@@ -180,20 +184,20 @@ alongside any inferential test. Given this design, what is a defensible
 primary analysis, and what are the main threats to its validity?
 ```
 
-**3. In a new chat session, add the raw data file as context ** 
+**3. In a new chat session, add the raw data file as context.**
 
-Try asking the first vague question
+Try asking the first, vague question again:
 
 ```
 I have a dataset with pre and post measurements. How should I analyse it?
 ```
 
-Compare all three answers? Which was best?
+Compare all three answers. Which was best?
 
- Even though the question is the same vague one from step 1,
-the file in context supplies the design that the prompt omits: column names,
-types, and the treatment arms. The answer should narrow accordingly, closer
-to step 2 than to step 1, without your having stated the design in prose.
+Even though the question is the same vague one from step 1, the file in context supplies the design that the prompt omits: column names, types, and the treatment arms. The answer should narrow accordingly, closer to step 2 than to step 1, without your having stated the design in prose.
+
+::::
+:::
 
 
 ## When to use Chat versus inline
@@ -209,17 +213,16 @@ A short decision rule covers most cases:
 | Planning the structure of a script | No | Yes |
 | Refactoring more than a few lines | No | Yes |
 
-The rule is not strict; both tools have considerable overlap. The principle is: inline for typing, Chat for thinking.
+The rule is not strict; the two tools overlap considerably. The principle is: inline for typing, Chat for thinking.
 
 
 ## Check your understanding
 
-**Which statement best describes the context available to in-IDE Copilot
-Chat in Ask mode, compared with a general chatbot such as ChatGPT?**
+**Which statement best describes the context available to Copilot Chat in Ask mode, in the browser on github.com or in your IDE?**
 
 `r longmcq(c(
-  "Like ChatGPT, it sees only the text you paste into the prompt",
-  answer = "It is integrated with your editor and project, so beyond what you paste it can draw on open files, a workspace index, files you reference, and, in Positron, injected session context",
+  "It sees only the text you paste into the prompt, nothing else",
+  answer = "Beyond what you paste, it can draw on the repository or project it is opened from and on files you attach or reference; what else it sees (open files, your R session) depends on the surface",
   "It has full automatic access to every file in the repository and to your running R session, on every surface",
   "It can always execute your R code to read the data directly"
 ))`

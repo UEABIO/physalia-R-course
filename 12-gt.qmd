@@ -7,52 +7,33 @@ source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
 library(here)
-```
-
-
-```{r}
-#| warning: false
-#| message: false
-#| echo: false
-load(here::here("files", "chapter5.RData"))
-library(tidyverse)
 library(janitor)
+load(here::here("files", "chapter5.RData"))
 ```
 
 
 
-In this chapter, we will accomplish two main objectives:
+In this chapter, we will:
 
-1. Acquire fundamental principles for creating improved tables.
+1. Learn some basic principles for making better tables.
 
 2. Apply these principles using the `gt` package.
-Naturally, to put these ideas into practice, we'll utilize the fantastic penguins dataset from `palmerpenguins` since I have a preference for penguins.
 
-PROS: Why `gt`? Has a grammar of tables, like `ggplot2`, supports HTML, Latex and RTF, followstidyverse conventions.
+To put these ideas into practice, we'll use the penguins dataset from `palmerpenguins`, because I like penguins.
 
-CONS: Still quite new, syntax is changing and developing. 
+PROS: Why `gt`? Has a grammar of tables, like `ggplot2`, supports HTML, LaTeX and RTF, follows tidyverse conventions.
 
-For these tutorials we will use the `gt` package and helpers provided by `gtExtras`.
+CONS: Lots of functions and options to learn, and some older tutorials use arguments that have since been deprecated (for example `vars()`), so check the [function reference](https://gt.rstudio.com/reference/index.html) if code you find online does not run.
 
-To follow along when you run a section of code, look for the output in the **Viewer Pane**
+For these tutorials we will use the `gt` package. The companion package `gtExtras` adds many more helpers (sparklines, themes, icons) if you want to go further.
 
-```{r}
-#| echo: false
-
-library(gt)
-library(gtExtras)
-
-```
+To follow along when you run a section of code, look for the output in the **Viewer Pane**.
 
 ```{r}
-#| eval: false
-
 library(gt)
-library(gtExtras)
-
 ```
 
-Let's use this dataset to tally the penguins. These counts will provide us with a straightforward dataset to use for practicing table construction. You will need your cleaned penguins dataframe from Day One.
+First, tally the penguins. These counts give us a simple dataset for practising table construction. You will need your cleaned penguins dataframe from Day One.
 
 ```{r}
 
@@ -67,7 +48,7 @@ penguin_counts
 
 ```
 
-In a real table, the data might be restructured for better readability. While there's nothing inherently wrong with the long (i.e., containing many rows) data format, this format is excellent for data analysis. However, in a table intended for human readers, rather than machines, you'd likely opt for a wider format.
+For a real table, you would probably restructure the data to make it easier to read. There's nothing wrong with the long (i.e., containing many rows) data format, which is excellent for data analysis. However, in a table intended for human readers, rather than machines, you'd likely opt for a wider format.
 
 ```{r}
 penguin_counts_wider <- penguin_counts |> 
@@ -83,7 +64,7 @@ penguin_counts_wider
 
 ```
 
-Here are six guidelines that will guide us as we make tables:
+We will follow six guidelines as we make tables:
 
 1. Avoid gridlines
 
@@ -100,7 +81,7 @@ Here are six guidelines that will guide us as we make tables:
 ### Avoid vertical lines 
 
 
-Vertical lines can make our data look cramped. Fortunately, it appears that `gt` adheres to this principle by default. Hence, all we need to do is supply our dataset, `penguin_counts_wider`, to the `gt()` function. 
+Vertical lines can make our data look cramped. Fortunately, `gt` follows this principle by default, so all we need to do is supply our dataset, `penguin_counts_wider`, to the `gt()` function. 
 
 
 ```{r}
@@ -112,11 +93,11 @@ penguin_counts_wider |>
 
 ### Use better column names and make them stand out
 
-The [`cols_*()` functions](https://gt.rstudio.com/reference/index.html#section-modify-columns) allow for modifications of entire columns.
+The [`cols_*()` functions](https://gt.rstudio.com/reference/index.html#modifying-columns) allow for modifications of entire columns.
 
-We can control the column labels, cell alignment, column width and placement plus can combine multiple columns with `cols_*()` functions.
+We can control the column labels, cell alignment, column width and placement, and combine multiple columns, with the `cols_*()` functions.
 
-To modify the column names, you can employ the "layer" named `cols_layer()`. Similar to how {ggplot2} operates with layers, {gt} follows a similar approach. To make any adjustments to the table, you simply transfer it from one layer to the next, which can be done conveniently through piping. With this understanding, we can label the columns just as we did previously.
+To modify the column names, use the "layer" called `cols_label()`. Like {ggplot2}, {gt} works in layers: to adjust the table, you pass it from one layer to the next with the pipe.
 
 ```{r}
 penguin_counts_wider |> 
@@ -134,11 +115,11 @@ penguin_counts_wider |>
 
 ```
 
-However, labeling the columns in this manner may not be the most effective approach. Let's explore an alternative method. First, we can create what are known as "spanners," which are merged columns. 
+However, there is a better way to label these columns. First, we can create what are known as "spanners", which are merged columns. 
 
-We can modify the look of table parts more generally with [tab_*()] functions 
+We can modify the look of table parts more generally with [`tab_*()` functions](https://gt.rstudio.com/reference/index.html#creating-or-modifying-parts-of-a-table).
 
-Here we can generate column spanners with `tab_spanner()` layers, with one layer dedicated to each spanner. You can also control text formatting of labels with Markdown or HTML syntax. This can be used on any text in a **gt** table. Here I have applied some `md` to put my spanners in **bold**.
+Here we generate column spanners with `tab_spanner()` layers, one layer for each spanner. You can also control text formatting of labels with Markdown or HTML syntax. This can be used on any text in a **gt** table. Here I have applied some `md` to put my spanners in **bold**.
 
 ```{r}
 penguin_counts_wider |> 
@@ -168,7 +149,7 @@ penguin_counts_wider |>
   )
 ```
 
-As you can see, tab_spanner() always requires two arguments label and columns. For the columns argument I have shown you three ways to get the job done:
+As you can see, tab_spanner() always requires two arguments: label and columns. For the columns argument I have shown you three ways to get the job done:
 
 1. Vector of column numbers
 
@@ -176,9 +157,9 @@ As you can see, tab_spanner() always requires two arguments label and columns. F
 
 3. tidyselect helpers
 
-First, we no longer need the species labels in the actual column names, as the spanners already provide that information. To update the column names, we can employ a handy trick that will save us from tedious typing.
+Next, we no longer need the species labels in the actual column names, as the spanners already provide that information. To update the column names, we can use a trick that saves a lot of typing.
 
-Begin by creating a named vector that establishes a connection between the original column names, which include species labels, and the desired column names that exclude those labels. For example:
+Create a named vector that maps the original column names, which include species labels, to the desired column names without those labels. For example:
 
 ```{r}
 
@@ -189,7 +170,7 @@ desired_colnames <- colnames(penguin_counts_wider) |>
 names(desired_colnames) <- names(penguin_counts_wider)
 ```
 
-With this named vector in place, proceed to rename the columns using it in the .list argument in `cols_label()`
+Then rename the columns by passing this named vector to the .list argument of `cols_label()`:
 
 ```{r}
 penguin_counts_wider |> 
@@ -212,7 +193,7 @@ penguin_counts_wider |>
 ```
 
 
-Finally we should add a title to our table. We can do this with `tab_header()`
+Finally we should add a title to our table. We can do this with `tab_header()`:
 
 ```{r}
 penguin_counts_wider |> 
@@ -238,7 +219,7 @@ penguin_counts_wider |>
 
 ```
 
-We could if we wanted wrap this into a simple function - as the headers and titles will not change across this tutorial:
+Because the headers and titles will not change for the rest of this tutorial, we can wrap them in a simple function:
 
 ```{r}
 labels_and_title <- function(gt_tbl){
@@ -275,15 +256,15 @@ Align all text within a column using `cols_align()`. Most commonly we left-align
 
 Here's why these default alignments make sense:
 
-- Numbers to the Right: Numeric values, such as counts, are usually aligned to the right because this aligns the decimal points and makes it easier to compare and perform calculations with numbers. It also allows for neat alignment of digits, which is particularly important when working with large datasets.
+- Numbers to the Right: Numeric values, such as counts, are usually aligned to the right because this lines up the decimal points and makes numbers easier to compare and calculate with. It also keeps the digits neatly aligned, which matters most with large datasets.
 
-- Text to the Left: Text data, like character vectors, is aligned to the left by default. This is because text doesn't have decimal points or numeric values to compare, and left-aligning text provides a clean and uniform appearance. It makes the start of the text easily scannable and helps maintain readability, even for lengthy text entries.
+- Text to the Left: Text data, like character vectors, is aligned to the left by default. Text has no decimal points or numeric values to line up, and left-aligning it makes the start of each entry easy to scan, even for long entries.
 
-- Center Alignment for Factors: Factors (categorical data) are aligned to the center by default. This is a compromise between left and right alignment. While the factor's entries are characters, they represent categories and are often used for grouping or sorting. Center alignment ensures that the category labels are visually centered in the available space, making it easier to identify the category while maintaining a visually appealing table.
+- Centre Alignment for Factors: Factors (categorical data) are centred by default, as a compromise between left and right alignment. A factor's entries are text, but they represent categories and are often used for grouping or sorting. Centring the labels makes each category easy to pick out.
 
-These default alignments are well-established conventions in table formatting and help readers quickly interpret and work with tabular data. They follow a balance between readability, aesthetics, and the nature of the data being presented.
+These defaults follow well-established conventions in table formatting and help readers interpret tabular data quickly.
 
-Island is currently coded as a factor, we could recode this in our data, or we can use the `cols_align()` layer:
+In our data both `island` and `year` are character columns, so `gt` left-aligns them by default (if `island` were a factor, as it is in `palmerpenguins::penguins`, it would be centred). We could recode these in our data, or we can set the alignment explicitly with the `cols_align()` layer. Here we right-align `year` and make sure `island` is left-aligned:
 
 ```{r}
 
@@ -294,13 +275,13 @@ penguin_counts_wider |>
   cols_align(align = 'right', columns = 'year') |> 
   cols_align(
     align = 'left', 
-    columns = where(is.factor)
+    columns = island
   ) 
 ```
 
 ### Move columns around
 
-Move columns to the start or end or wherever you like with `cols_move_*()` functions
+Move columns to the start or end or wherever you like with `cols_move_*()` functions:
 
 ```{r}
 penguin_counts_wider |> 
@@ -310,15 +291,15 @@ penguin_counts_wider |>
   cols_align(align = 'right', columns = 'year') |> 
   cols_align(
     align = 'left', 
-    columns = where(is.factor)
+    columns = island
   ) |> 
-  cols_move_to_start(columns = vars(year))
+  cols_move_to_start(columns = year)
 ```
 
 
 ### Avoid repetitive information
 
-Removing repetitive columns and using additional rows to group data can indeed enhance the readability of a table. In the context of the `gt` package, achieving this is straightforward. Here's how you can do it with `group_name_col()` Specifying which group to use and which columns to apply this grouping to:
+Removing repetitive columns and using extra rows to group the data makes a table easier to read. In `gt` this is straightforward. Here's how to do it with `group_name_col()`, specifying which group to use and which columns to apply this grouping to:
 
 ```{r}
 penguin_counts_wider |> 
@@ -349,7 +330,7 @@ penguin_counts_wider |>
 
 ### Remove missing numbers
 
-If we want to remove zeroes from our table, we could use `dplyr` functions
+If we want to remove zeroes from our table, we could use `dplyr` functions:
 
 ```{r}
 penguin_counts_wider |> 
@@ -365,7 +346,7 @@ penguin_counts_wider |>
 
 ```
 
-Or we can accomplish the same thing by adding a `sub_zero()` layer
+Or we can accomplish the same thing by adding a `sub_zero()` layer:
 
 ```{r}
 
@@ -384,8 +365,8 @@ penguin_counts_wider |>
 
 ### Add summaries
 
-If we think it is necessary we could even add some summaries to the tables with `summary_rows()`.
-Sub-zero doesn't seem to work in the summaries, so we have to include a workaround:
+If needed, we can also add summaries to the table with `summary_rows()`.
+Sub-zero doesn't seem to work in the summaries, so we need a workaround:
 
 ```{r}
 penguin_counts_wider |> 
@@ -412,9 +393,9 @@ penguin_counts_wider |>
 
 ### Stylise
 
-With the additional information incorporated into the table, it has grown in length, which may not be ideal. To address this, we can make the table more concise by decreasing the row heights. 
+With the summaries added, the table has grown longer. We can make it more compact by decreasing the row heights.
 
-To achieve this, we can adjust the so-called `data_row.padding` to 2 pixels. You can accomplish this using the `tab_options()` function, which is a central layer for styling the table. Similarly, there are padding options available for `summary_row` and `row_group`. While we're at it, it's a good idea to enhance the table's appearance by applying a predefined theme using `opt_stylize()`.
+To do this, set `data_row.padding` to 2 pixels with the `tab_options()` function, which is the main layer for styling the table. There are similar padding options for `summary_row` and `row_group`. While we're at it, we can also apply a predefined theme with `opt_stylize()`.
 
 ```{r}
 penguin_counts_wider |> 
@@ -448,7 +429,7 @@ penguin_counts_wider |>
 
 ### Use appropriate colour
 
-So far, our table hasn’t used any color. We’ll add some now to highlight outlier values. 
+So far, our table hasn't used any colour. We'll add some now to highlight the largest values. 
 
 ```{r}
 penguin_counts_wider |> 
@@ -485,7 +466,7 @@ penguin_counts_wider |>
 
 
 
-If we repeat this code for each column, we generate the result shown below
+If we repeat this code for each column, we get the result shown below:
 
 ```{r}
 #| echo: false
@@ -557,7 +538,7 @@ penguin_counts_wider |>
 
 ### Heatmap
 
-We can add a heatmap to our cells to more clearly show the differences. This will require us to set a colour palette and apply a conditional colouring using `data_color()`
+We can colour the cells as a heatmap to show the differences more clearly. This needs a colour palette and conditional colouring with `data_color()`:
 
 ```{r}
 
@@ -590,10 +571,12 @@ data_color(palette = c("#FEF0D9", "#990000"), domain = c(0,30))
 
 ### Data visualisations
 
-In this chapter, we’re going to learn how to add fancy elements like plots, icon and images to `gt` tables. 
+Next, we're going to add plots to a `gt` table.
 
 
-You can actually add any ggplot you want to your table. For example, we could look at our penguins from the last chapter again. Here’s a table about their weight and its distribution (visualized with a violin plot.)
+You can add any ggplot you want to your table. For example, we could look at our penguins again and build a table about their weight and its distribution (visualised with a violin plot).
+
+Start by computing the numeric values.
 
 ```{r}
 filtered_penguins <- palmerpenguins::penguins |>
@@ -618,65 +601,18 @@ penguin_weights |>
 
 ```
 
-To create this table, let us begin with the basics. Let’s compute the numeric values first.
+:::{.task}
+::::{.task-header}
+A violin plot for one species
+::::
+::::{.task-container}
 
-```{r}
-#| echo: false
-filtered_penguins <- palmerpenguins::penguins |>
-    filter(!is.na(sex))
-
-penguin_weights <- filtered_penguins |>
-  group_by(species) |>
-  summarise(
-    Min = min(body_mass_g),
-    Mean = mean(body_mass_g) |> round(digits = 2),
-    Max = max(body_mass_g)
-  ) |>
-  mutate(species = as.character(species)) |>
-  rename(Species = species)
-
-plot_density_species <- function(my_species) {
-  full_range <- filtered_penguins |>
-    pull(body_mass_g) |>
-    range()
-
-  filtered_penguins |>
-    filter(species == my_species) |>
-    ggplot(aes(x = body_mass_g, y = species)) +
-    geom_violin(fill = 'dodgerblue4') +
-    theme_minimal() +
-    scale_y_discrete(breaks = NULL) +
-    scale_x_continuous(breaks = NULL) +
-    labs(x = element_blank(), y = element_blank()) +
-    coord_cartesian(xlim = full_range)
-}
-
-penguin_weights |>
-  mutate(Distribution = Species) |> 
-  gt() |>
-  tab_spanner(
-    label = 'Penguin\'s Weight',
-    columns = -Species
-  ) |>
-  text_transform(
-    locations = cells_body(columns = 'Distribution'),
-    fn = function(column) {
-      map(column, plot_density_species) |>
-        ggplot_image(height = px(50), aspect_ratio = 3)
-    }
-  ) 
-  
-
-```
-
-
-Next write a function `plot_violin_species(my_species)` that depends on a penguin species and creates one violin plot.
-
+Next write a function `plot_violin_species(my_species)` that takes a penguin species and creates one violin plot of `body_mass_g` from `filtered_penguins`.
 
 `r hide("Solution")`
 
 ```{r}
-plot_density_species <- function(my_species) {
+plot_violin_species <- function(my_species) {
   full_range <- filtered_penguins |>
     pull(body_mass_g) |>
     range()
@@ -688,18 +624,20 @@ plot_density_species <- function(my_species) {
     theme_minimal() +
     scale_y_discrete(breaks = NULL) +
     scale_x_continuous(breaks = NULL) +
-    labs(x = element_blank(), y = element_blank()) +
+    labs(x = NULL, y = NULL) +
     coord_cartesian(xlim = full_range)
 }
-plot_density_species("Adelie")
+plot_violin_species("Adelie")
 ```
-
 
 `r unhide()`
 
-Notice that I have set the coordinate system of the plot to the full range of the data (regardless of the species). This part is important. Without this trick, the three plots would not share a common x-axis. 
+::::
+:::
 
-Ok, so now we have a function that creates the desired plots. Time to apply it to our table. For this to work, we need an additional column that we can target. So we use `mutate()` to add a new column, then `text_transform()` to turn this column into images, and finally `.fn` argument can be supplied with our function iterated over each species with   `map()`.
+Notice that I have set the coordinate system of the plot to the full range of the data (regardless of the species). Without this, the three plots would not share a common x-axis. 
+
+Now that we have a function that creates the plots, we can apply it to our table. For this to work, we need an additional column that we can target. So we use `mutate()` to add a new column, then `text_transform()` to turn this column into images, and finally supply the `.fn` argument with our function, iterated over each species with `map()`.
 
 ```{r}
 penguin_weights |>
@@ -712,7 +650,7 @@ penguin_weights |>
   text_transform(
     locations = cells_body(columns = 'Distribution'),
     fn = function(column) {
-      map(column, plot_density_species) |>
+      map(column, plot_violin_species) |>
         ggplot_image(height = px(50), aspect_ratio = 3)
     }
   ) 
@@ -723,9 +661,9 @@ penguin_weights |>
 
 Many of the tweaks we made to our table are quite subtle. Changes like removing excess gridlines, bolding header text, right-aligning numeric values, and adjusting the level of precision can often go unnoticed, but if you skip them, your table will be far less effective. Our final product isn’t flashy, but it does communicate clearly.
 
-We used the gt package to make our high-quality table, and as we’ve repeatedly seen, this package has good defaults built in. Often, you don’t need to change much in your code to make effective tables. But no matter which package you use, it’s essential to treat tables as worthy of just as much thought as other kinds of data visualization.
+We used the gt package to make our high-quality table, and as we’ve repeatedly seen, this package has good defaults built in. Often, you don’t need to change much in your code to make effective tables. But whichever package you use, give tables as much thought as any other kind of data visualisation.
 
-Later you’ll learn how to create reports using R Markdown, which can integrate your tables directly into the final document.
+You can put these tables straight into a Quarto document (see the Quarto block on Day 3), where they render as part of your report.
 
 ## Reading
 

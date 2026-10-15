@@ -1,4 +1,4 @@
-# Working with larger data {.unnumbered}
+# Working with larger data {#sec-large-data}
 
 
 ```{r}
@@ -6,12 +6,11 @@
 source("R/booktem_setup.R")
 source("R/my_setup.R")
 library(tidyverse)
-
 library(here)
 ```
 
 
-Throughout this block we use the Portal mammals survey data, distributed as both a
+Throughout this chapter we use the Portal mammals survey data, distributed as both a
 CSV file and a SQLite database. The CSV is around 35,000 rows: small enough to
 inspect, large enough to make timing differences visible.
 
@@ -24,11 +23,13 @@ library(DBI)          # database connections
 library(RSQLite)      # the SQLite driver
 library(microbenchmark)
 
-csv_name <- here::here("data", "surveys.csv")
+csv_name <- here::here("files", "surveys.csv")
 ```
 
 
-```{r, eval = TRUE, echo = FALSE}
+```{r}
+#| eval: true
+#| echo: false
 downloadthis::download_link(
   link = "https://raw.githubusercontent.com/UEABIO/physalia-R-course/refs/heads/2024/surveys.csv",
   button_label = "Download surveys data as csv",
@@ -50,7 +51,7 @@ analysis, and for data larger than available RAM it fails outright.
 Two strategies address this. The first keeps the data in memory but uses a
 structure optimised for speed and low copying: `data.table`. The second leaves the
 data on disk in a database and pulls only what each query needs: a SQLite file
-queried through `dbplyr`. The rest of this block works through each in turn.
+queried through `dbplyr`. The rest of this chapter works through each in turn.
 
 :::{.callout-note}
 
@@ -90,7 +91,7 @@ with its own syntax, covered below.
 
 When a file does not fit in memory, the simplest fix is to read less of it.
 `fread()` exposes two arguments for this. `nrows` caps the number of rows read, and
-`skip` discards rows from the top — or, given a string, starts reading at the first
+`skip` discards rows from the top or, given a string, starts reading at the first
 line matching it.
 
 ```{r}
@@ -154,7 +155,7 @@ ordinary dplyr and translates it to `data.table` code under the hood.
 
 ## Driving `data.table` with dplyr: `dtplyr`
 
-`dtplyr` is the bridge. You wrap a `data.table` in `lazy_dt()`, write the dplyr you
+With `dtplyr`, you wrap a `data.table` in `lazy_dt()`, write the dplyr you
 already know, and call `as_tibble()` (or `collect()`) at the end to trigger
 execution and return a normal tibble.
 
@@ -186,10 +187,11 @@ allData |>
 
 :::{.callout-tip}
 
-Piping a bare `data.table` straight into a dplyr verb appears to work because
-recent dtplyr quietly converts it to a `lazy_dt()` for you, with a warning. Do not
-rely on this. Make the `lazy_dt()` step explicit so it is clear where the
-translation begins and so the laziness is visible to anyone reading the code.
+Piping a bare `data.table` straight into a dplyr verb *does* work, but not in the
+way you might hope: there is no automatic conversion to `lazy_dt()` and no warning.
+Because a `data.table` is also a `data.frame`, dplyr simply runs its ordinary
+data-frame methods, so you get dplyr speed rather than `data.table` speed. Make the
+`lazy_dt()` step explicit; it is what switches on the translation.
 
 :::
 
@@ -242,9 +244,9 @@ allData |>
   show_query()
 ```
 
-The generated query is close to the hand-written version. It will not be character
--for-character identical — dtplyr introduces intermediate steps to honour dplyr
-semantics — but it uses the same `[i, j, by]` machinery, which is where the speed
+The generated query is close to the hand-written version. It will not be identical
+character for character, because dtplyr introduces intermediate steps to honour dplyr
+semantics, but it uses the same `[i, j, by]` machinery, which is where the speed
 comes from.
 
 `r unhide()`
@@ -288,7 +290,7 @@ surveys
 
 Note the `[?? x 9]`: R reports nine columns but an unknown number of rows. It has
 not counted them, because doing so would mean reading the whole table. This
-laziness is the entire point — R fetches only what a query demands.
+laziness is the point: R fetches only what a query needs.
 
 ## Querying with `dbplyr`
 
@@ -369,8 +371,8 @@ FROM surveys
 WHERE hindfoot_length > 20
 ```
 
-Then, going the other way, write the dbplyr pipeline below and use `show_query()`
-to predict the SQL before you run it:
+Then, going the other way, write the dbplyr pipeline below, predict the SQL it will
+generate, and check your prediction with `show_query()`:
 
 ```{r}
 #| eval: false
@@ -419,22 +421,30 @@ library(purrr)
 
 db <- dbConnect(SQLite(), here::here("data", "surveys.sqlite"))
 
-# Write one chunk: read `n` rows starting after `skip`, append to the table
-write_chunk <- function(skip_rows, n = 5000) {
-  chunk <- fread(csv_name, skip = skip_rows, nrows = n, showProgress = FALSE)
+# Read the column names once, from the header line only
+col_names <- names(fread(csv_name, nrows = 0))
+n <- 5000
+
+# Write one chunk: skip the header plus `skip_rows` data rows, read `n` rows,
+# and append them to the table
+write_chunk <- function(skip_rows) {
+  chunk <- fread(csv_name, skip = skip_rows + 1, nrows = n, header = FALSE,
+                 col.names = col_names, showProgress = FALSE)
   dbWriteTable(db, "surveys", chunk, append = TRUE)
 }
 
-# Offsets for each chunk, then write them all
-skips <- seq(0, by = 5000, length.out = 8)
+# Offsets for each chunk (the file has 35,549 data rows), then write them all
+skips <- seq(0, by = n, length.out = 8)
 walk(skips, write_chunk)
 
 dbDisconnect(db)
 ```
 
-In real use you would read column names from the header once and reuse them, since
-`skip` discards the header along with the data rows. The pattern, though, is the
-general one: never hold more than one chunk in memory at a time.
+Only the first line of the file holds the column names, so we read them once and
+pass them to every chunk with `header = FALSE`. Without this, every chunk after the
+first loses its names and `dbWriteTable()` refuses to append it. The `+ 1` in `skip`
+steps over that header line. The general pattern is to never hold more
+than one chunk in memory at a time.
 
 :::{.callout-note}
 

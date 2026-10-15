@@ -1,4 +1,3 @@
-source("renv/activate.R")
 
 source("R/booktem_setup.R")
 # load webexercises before each chapter

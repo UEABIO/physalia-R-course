@@ -23,7 +23,13 @@ library(palmerpenguins)
 library(janitor)
 
 penguins_clean <- penguins_raw |>
-  janitor::clean_names()
+  janitor::clean_names() |>
+  # match the names used in palmerpenguins::penguins
+  dplyr::rename(bill_length_mm = culmen_length_mm,
+                bill_depth_mm  = culmen_depth_mm) |>
+  # "Adelie Penguin (Pygoscelis adeliae)" -> "Adelie"
+  dplyr::mutate(species = stringr::word(species, 1)) |>
+  tidyr::drop_na(body_mass_g, flipper_length_mm, species)
 ```
 
 ## A 5-minute refresher (diagnostic, not teaching)
@@ -40,7 +46,7 @@ penguins_clean |> dplyr::mutate(mass_kg = body_mass_g / 1000)     # new column?
 penguins_clean |> dplyr::summarise(m = mean(body_mass_g, na.rm = TRUE), .by = species)
 ```
 
-If those four lines hold no surprises, you have everything you need for the day.
+If those five lines hold no surprises, you have everything you need for the day.
 Note the modern `.by = species` argument to `summarise()`: it groups for that one
 operation and returns an ungrouped result, which avoids the classic forgotten
 `ungroup()` bug.
@@ -138,7 +144,8 @@ standard deviation of every numeric column, with names like `mean_body_mass_g` a
 
 `r hide("Solution")`
 
-```{r, eval = FALSE}
+```{r}
+#| eval: false
 penguins_clean |>
   dplyr::summarise(
     dplyr::across(
@@ -152,8 +159,8 @@ penguins_clean |>
 ```
 
 When `.fns` is a named list, `{.fn}` in `.names` expands to each function's name.
-This is the whole quarter-page of repeated `mean_x =`, `sd_x =` lines replaced by
-four lines that cannot drift out of step with each other.
+This replaces a quarter-page of repeated `mean_x =`, `sd_x =` lines with four
+lines that cannot drift out of step with each other.
 
 
 `r unhide()`
@@ -258,17 +265,10 @@ usually holds a single value. It can instead hold an entire tibble.
 `group_by()` followed by `nest()` collapses each group's rows into one cell:
 
 ```{r}
-#| eval: false
 penguins_clean |>
   tidyr::drop_na(body_mass_g, flipper_length_mm) |>
   dplyr::group_by(species) |>
   tidyr::nest()
-# # A tibble: 3 x 2
-#   species   data
-#   <chr>     <list>
-# 1 Adelie    <tibble [...]>
-# 2 Gentoo    <tibble [...]>
-# 3 Chinstrap <tibble [...]>
 ```
 
 The `data` column is a **list-column**: each cell is a tibble holding one species'
@@ -306,19 +306,16 @@ the work ahead.
 :::{.callout-note}
 
 **Where this leaves us.** We can now operate on many columns at once, reshape
-between long and wide, slice by order, and collapse groups into list-columns. The
-data-handling toolkit is complete. The rest of the day is about the *code that
+between long and wide, slice by order, and collapse groups into list-columns. The rest of the day is about the *code that
 acts on the data*: functions, iteration, and generalisation.
 
 :::
 
-### Other key packages 
-
 ## Data validation with `tidylog` and `assertr` {#sec-validate}
 
-Robust data analysis depends on making every transformation visible and ensuring assumptions about the data are actually met. Two useful tools for this are `tidylog`, which reports what `dplyr` is doing, and `assertr`, which enforces explicit checks during a pipeline.
+A robust analysis makes every transformation visible and checks that your assumptions about the data actually hold. Two useful tools for this are `tidylog`, which reports what `dplyr` is doing, and `assertr`, which enforces explicit checks during a pipeline.
 
-We’ll use a small simulated dataset of insect reproduction to illustrate both ideas.
+We'll use a small simulated dataset of insect reproduction to illustrate both ideas.
 
 ```{r}
 #| message: false
@@ -350,34 +347,26 @@ female_egg_data$eggs_hatched[3] <- female_egg_data$eggs_laid[3] + 5
 
 ## Making transformations visible with `tidylog`
 
-When `tidylog` is loaded, standard `dplyr` verbs report what they change. This is particularly helpful in pipelines where rows are filtered or variables are modified without otherwise obvious trace.
+When `tidylog` is loaded, standard `dplyr` verbs report what they change. This is particularly helpful in pipelines where rows are filtered or variables are modified without leaving any obvious trace.
 
-```{r, eval = FALSE}
+```{r}
+#| message: true
 female_egg_data_clean <- female_egg_data |>
   filter(age_days > 0) |>
   mutate(eggs_per_day = eggs_laid / age_days)
 ```
 
-```{r, echo = FALSE}
-female_egg_data_clean <- female_egg_data |>
-  filter(age_days > 0) |>
-  mutate(eggs_per_day = eggs_laid / age_days) |> 
-  head()
-```
-
-Instead of silently dropping rows or creating variables, the console output summarises exactly what was removed or added, making the workflow easier to audit and debug.
+Rows are no longer dropped, or variables created, in silence: the console output summarises exactly what was removed or added, which makes the workflow easier to audit and debug.
 
 ---
 
 ## Enforcing assumptions with `assertr`
 
-While `tidylog` improves transparency, `assertr` ensures that data meet expectations before analysis continues.
+`tidylog` shows you what happened to the data; `assertr` checks that the data meet your expectations before the analysis continues.
 
 The core idea is that validation lives *inside your pipeline*, right next to the data it is checking. If an assertion fails, the pipeline stops and tells you exactly what went wrong and in which rows. If everything passes, execution continues as normal.
 
-## Data validation with `assertr`
-
-Again, we will use the `female_egg_data_clean` dataset.
+We will use the `female_egg_data_clean` dataset created above.
 
 ```{r}
 glimpse(female_egg_data_clean)
@@ -387,18 +376,19 @@ glimpse(female_egg_data_clean)
 
 `verify()` is the simplest function. It evaluates a logical expression against the whole dataframe and stops if it is FALSE. Think of it as `stopifnot()` with better error messages and pipeline compatibility.
 
-```{r, eval = FALSE}
-#| error: true
+```{r}
+#| results: hide
 # Check that all rows of eggs laid are positive — this should pass
+# (verify() returns the data unchanged, so we hide the printed tibble)
 female_egg_data_clean |>
   verify(eggs_laid > 0)
 ```
 
-```{r, eval = FALSE}
+```{r}
 #| error: true
-# Check something that will fail — no female should produce more than 1000 offspring
+# Check something that will fail — no female can hatch more eggs than she laid
 female_egg_data_clean |>
-  verify(eggs_hatched > 1000)
+  verify(eggs_hatched <= eggs_laid)
 ```
 
 :::{.callout-note}
@@ -409,8 +399,8 @@ female_egg_data_clean |>
 
 `assert()` applies a predicate function to one or more columns and reports which rows fail. This is more useful for checking individual variables.
 
-```{r, eval = FALSE}
-#| error: true
+```{r}
+#| eval: false
 # Check that eggs_hatched is within a plausible biological range
 female_egg_data_clean |>
   assert(within_bounds(30, 60), eggs_hatched)
@@ -426,8 +416,8 @@ female_egg_data_clean |>
 
 You can check multiple columns at once by listing them:
 
-```{r, eval = FALSE}
-#| error: true
+```{r}
+#| eval: false
 # Check both egg measurements are within plausible ranges
 female_egg_data_clean |>
   assert(within_bounds(0, 150), eggs_laid, eggs_hatched)
@@ -435,7 +425,7 @@ female_egg_data_clean |>
 
 ### Built-in predicates
 
-`assertr` ships with several predicate functions designed to work with `assert()`:
+`assertr` ships with several predicates. The first four are used directly with `assert()`; the last two are *predicate generators*, which must be used with `insist()` (see below):
 
 ```{r}
 #| echo: false
@@ -447,70 +437,67 @@ tribble(
   "not_na",             "Value is not NA",                          "`not_na`",
   "is_uniq",            "Value is unique across rows",              "`is_uniq`",
   "in_set(...)",        "Value belongs to an expected set",         '`in_set("A", "B", "C")`',
-  "within_n_sds(n)",    "Value is within n standard deviations of the mean", "`within_n_sds(3)`",
-  "within_n_mads(n)",   "Value is within n median absolute deviations (more robust to outliers)", "`within_n_mads(3)`"
+  "within_n_sds(n)",    "Value is within n standard deviations of the mean", "`insist(within_n_sds(3), x)`",
+  "within_n_mads(n)",   "Value is within n median absolute deviations (more robust to outliers)", "`insist(within_n_mads(3), x)`"
 ) |>
   kbl(booktabs = TRUE) |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover"))
 ```
 
-`within_n_sds()` and `within_n_mads()` are particularly useful for flagging potential outliers without hard-coding exact bounds:
+### `insist()` — generate bounds from the data itself
+
+`insist()` is like `assert()`, but instead of a fixed predicate it takes a *predicate generator*: a function that first looks at the whole column (for example, to compute its mean and standard deviation) and then returns a predicate with bounds built from those values. That predicate is applied to every value in the column. `within_n_sds()` and `within_n_mads()` are predicate generators, so they work with `insist()`, not `assert()` (with `assert()` they stop with an error). They are particularly useful for flagging potential outliers without hard-coding exact bounds:
 
 ```{r}
 #| error: true
 # Flag any eggs_laid values more than 3 SDs from the mean
- female_egg_data_clean |>
-  assert(within_n_sds(3), body_mass)
+female_egg_data_clean |>
+  insist(within_n_sds(3), eggs_laid)
 
 # within_n_mads is more robust to skewed distributions
 female_egg_data_clean |>
-  assert(within_n_mads(3), body_mass)
-```
-
-### `insist()` — generate bounds from the data itself
-
-`insist()` is like `assert()`, but the predicate is applied to a *function* of the data rather than a fixed bound. This is useful when you want to flag statistical outliers without specifying exact cutoffs in advance:
-
-```{r}
-#| error: true
-# Same as within_n_sds but written through insist()
-female_egg_data_clean |>
-  insist(within_n_sds(3), eggs_laid)
+  insist(within_n_mads(3), eggs_laid)
 ```
 
 ### `assert_rows()` — check row-level conditions
 
 Sometimes the condition is not about a single column but about a combination of values across columns in the same row. `assert_rows()` handles this. It applies a row-reduction function first, then checks the result.
 
-```{r, eval = FALSE}
-#| error: true
+```{r}
+#| eval: false
 # Check that no row has more than 2 missing values across the numeric columns
 female_egg_data_clean |>
   assert_rows(num_row_NAs, within_bounds(0, 2),
               eggs_laid, eggs_hatched, age_days, body_mass)
 ```
 
-`num_row_NAs` counts the number of NAs per row across the specified columns. You can supply your own row-reduction function — it just needs to return a single value per row.
+`num_row_NAs` counts the number of NAs per row across the specified columns. You can supply your own row-reduction function; it just needs to return a single value per row.
 
 ### Chaining assertions
 
-The real power comes from chaining multiple checks together in a single pipeline. All assertions run before any error is thrown, so you get a complete picture of what is wrong rather than having to fix one thing at a time.
+You can chain several checks together in a single pipeline. By default the pipeline stops at the first failing check. If you wrap the checks in `chain_start()` and `chain_end()`, every assertion runs and the errors are reported together at the end, so you get a complete picture of what is wrong rather than having to fix one thing at a time.
 
 ```{r}
 #| error: true
-female_egg_data_clean %>%
+female_egg_data_clean |>
+  chain_start() |>
   # Structural checks
-  verify(ncol(.) == 7) %>% #adding %>% maggritr pipe to use (.)
-  verify(nrow(.) > 0) |>
+  verify(has_all_names("female_id", "treatment", "eggs_laid", "eggs_hatched")) |>
+  verify(length(female_id) > 0) |>   # at least one row
   # Column-level checks
   assert(in_set("A", "B"), treatment) |>
-  assert(within_bounds(0, 135), eggs_laid) |>
-  assert(within_bounds(0, 32), age_days) |>
-  assert(within_bounds(0, 10), body_mass) 
+  assert(within_bounds(0, 100), eggs_laid) |>
+  assert(within_bounds(1, 30), age_days) |>
+  assert(within_bounds(0, 10), body_mass) |>
+  chain_end(error_fun = error_stop)
 ```
 
+:::{.callout-tip}
+You may see examples such as `verify(nrow(.) > 0)`. The `.` placeholder only works with the magrittr pipe `%>%`; with the native pipe `|>` it gives "object '.' not found". Refer to a column instead, as above, or use `has_all_names()` to check structure.
+:::
+
 :::{.callout-note}
-The body mass column in the data contains negative values, which is why `within_bounds()` fails. This is a good example of why assertions are useful: they force you to make explicit decisions about what you consider valid data.
+Two checks fail: the `eggs_laid` value of 120 we introduced earlier, and the body mass column, which contains negative values. This is a good example of why assertions are useful: they force you to make explicit decisions about what you consider valid data.
 :::
 
 ### Using `assertr` in a cleaning pipeline
@@ -524,9 +511,14 @@ The natural place for `assertr` checks is immediately after loading raw data and
 #| eval: false
 # ── Load and validate raw data ─────────────────────────────────────────────────
 dat_raw <- read_csv(here("data", "raw", "penguins_raw.csv")) |>
+  janitor::clean_names() |>
+  rename(bill_length_mm = culmen_length_mm,
+         bill_depth_mm  = culmen_depth_mm) |>
+  mutate(species = stringr::word(species, 1)) |>
 
-  # Validate structure before touching anything
-  verify(ncol(.) >= 8) |>
+  # Validate structure before cleaning
+  verify(has_all_names("species", "island", "bill_length_mm", "bill_depth_mm",
+                       "flipper_length_mm", "body_mass_g", "sex")) |>
   assert(in_set("Adelie", "Chinstrap", "Gentoo"), species) |>
   assert(within_bounds(2500, 6500), body_mass_g) |>
 
@@ -536,7 +528,7 @@ dat_raw <- read_csv(here("data", "raw", "penguins_raw.csv")) |>
 
 # ── Validate cleaned data ──────────────────────────────────────────────────────
   assert(not_na, bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g) |>
-  verify(nrow(.) > 100)
+  verify(length(species) > 100)   # more than 100 rows retained
 
 cat("Data validated and cleaned:", nrow(dat_raw), "rows retained\n")
 ```
@@ -553,4 +545,4 @@ Together, `tidylog` and `assertr` support a workflow where:
 - key assumptions are tested during the pipeline
 - failures are caught early and clearly explained
 
-This combination helps ensure that analysis code is both transparent and self-validating, reducing the risk of unnoticed data issues propagating into results.
+Used together, they help make analysis code transparent and self-checking, and reduce the risk that unnoticed data problems carry through into your results.
