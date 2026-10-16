@@ -97,6 +97,15 @@ div.csl-indent {
     "search-label": "Search"
   }
 }</script>
+<script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+  } catch (e) {}
+})();
+</script>
 
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
@@ -104,6 +113,7 @@ div.csl-indent {
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
 </head>
 
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
@@ -414,6 +424,12 @@ div.csl-indent {
  <span class="menu-text">Block 5: Saving figures correctly</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -474,7 +490,7 @@ div.csl-indent {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11b-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 2: AI - Inline completions</span></a>
+ <span class="menu-text">Block 2: Inline completion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -527,7 +543,7 @@ div.csl-indent {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -606,14 +622,19 @@ div.csl-indent {
 
 
 <div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" data-line-spacing="2" role="list">
+<div id="ref-filazzola2022" class="csl-entry" role="listitem">
+Filazzola, A., &amp; Lortie, C. (2022). A call for clean code to
+effectively communicate science. <em>Methods in Ecology and
+Evolution</em>, <em>13</em>(10), 2119–2128. <a href="https://doi.org/10.1111/2041-210X.13961">https://doi.org/10.1111/2041-210X.13961</a>
+</div>
 <div id="ref-R-fs" class="csl-entry" role="listitem">
 Hester, J., Wickham, H., &amp; Csárdi, G. (2026). <em>Fs: Cross-platform
 file system operations based on libuv</em>. <a href="https://fs.r-lib.org">https://fs.r-lib.org</a>
 </div>
 <div id="ref-R-colorspace" class="csl-entry" role="listitem">
 Ihaka, R., Murrell, P., Hornik, K., Fisher, J. C., Stauffer, R., Wilke,
-C. O., McWhite, C. D., &amp; Zeileis, A. (2025). <em>Colorspace: A
-toolbox for manipulating and assessing colors and palettes</em>. <a href="https://colorspace.R-Forge.R-project.org/">https://colorspace.R-Forge.R-project.org/</a>
+C. O., McWhite, C. D., &amp; Zeileis, A. (2026). <em>Colorspace: A
+toolbox for manipulating and assessing colors and palettes</em>. <a href="https://zeileis.codeberg.page/colorspace/">https://zeileis.codeberg.page/colorspace/</a>
 </div>
 <div id="ref-R-esquisse" class="csl-entry" role="listitem">
 Meyer, F., &amp; Perrier, V. (2025). <em>Esquisse: Explore and visualize
@@ -628,7 +649,7 @@ Pedersen, T. L. (2025). <em>Patchwork: The composer of plots</em>. <a href="http
 </div>
 <div id="ref-R-plotly" class="csl-entry" role="listitem">
 Sievert, C., Parmer, C., Hocking, T., Chamberlain, S., Ram, K.,
-Corvellec, M., &amp; Despouy, P. (2025). <em>Plotly: Create interactive
+Corvellec, M., &amp; Despouy, P. (2026). <em>Plotly: Create interactive
 web graphics via plotly.js</em>. <a href="https://plotly-r.com">https://plotly-r.com</a>
 </div>
 <div id="ref-R-ggh4x" class="csl-entry" role="listitem">
@@ -887,6 +908,110 @@ function move_sidebar() {
 }
 move_sidebar();
 window.onresize = move_sidebar;
+</script>
+<script>
+// Colour palette picker: a swatch button next to the dark-mode toggle.
+// The choice is stored in this browser only (localStorage).
+(function () {
+  var KEY = "advancing-r-palette";
+  var palettes = [
+    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
+    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+  ];
+
+  function current() {
+    return document.documentElement.getAttribute("data-palette") || "classic";
+  }
+
+  function apply(id) {
+    if (id === "classic") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+    });
+  }
+
+  function build(container, n) {
+    var wrap = document.createElement("div");
+    wrap.className = "palette-picker";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-toggle";
+    btn.id = "palette-toggle-" + n;
+    btn.title = "Change colour palette";
+    btn.setAttribute("aria-label", "Change colour palette");
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.id = "palette-menu-" + n;
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
+      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 8) + "px";
+    }
+    function open() {
+      menu.hidden = false;
+      place();
+      btn.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    var toggle = container.querySelector(".quarto-color-scheme-toggle");
+    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+  }
+
+  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
+    if (!c.querySelector(".palette-picker")) build(c, n);
+  });
+})();
 </script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {

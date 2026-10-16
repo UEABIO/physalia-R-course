@@ -228,8 +228,8 @@ For each call, say whether the column reference is data-masking or tidy-selectio
 9. **Mixed.** `across()` takes a tidy-selection in `.cols` and applies a function
    in a data-masking context: the bridge case.
 
-The trickiest are 4 and 5 (different contexts at different argument positions)
-and 9 (`across()` as the bridge).
+The trickiest are 5 and 9: both mix the two contexts in one call (different
+contexts at different argument positions), and 9 uses `across()` as the bridge.
 
 
 `r unhide()`
@@ -387,9 +387,10 @@ summarise_by_string <- function(data, var_name) {
 summarise_by_string(penguins_clean, "body_mass_g")
 ```
 
-For *output* column names built from an argument, R's grammar forbids a string on
-the left of `=`. The **walrus operator** `:=` allows it, combined with glue-style
-name injection:
+For *output* column names built from an argument, `=` is not enough: with `=` the
+name is used literally, so `"{{ var }}_mean" = …` makes a column called
+`{{ var }}_mean`. The **walrus operator** `:=` lets rlang fill in `{{ var }}`,
+using glue-style name injection:
 
 ```{r}
 #| eval: false
@@ -412,8 +413,8 @@ summarise_dynamic(penguins_clean, body_mass_g)
 ```
 
 Two things happen on the left of `:=`. `"{{ var }}_mean"` is glue-style injection,
-replacing `{{ var }}` with the argument's name; `:=` is the assignment that accepts
-a string on its left. Both are needed.
+replacing `{{ var }}` with the argument's name; `:=` is the assignment that lets
+rlang do that injection (with `=` the name is used literally). Both are needed.
 
 ## Choosing the pattern
 
@@ -432,7 +433,7 @@ Activity 5: choose the pattern
 ::::{.task-container}
 
 For each scenario, name the correct forwarding pattern, then write the function.
-All four group by `species`.
+(a), (b) and (d) group by `species`.
 
 (a) `var` arrives as a **bare name**; compute its mean (data-masking).
 
@@ -550,7 +551,7 @@ fit_model <- function(data) {
 
 :::{.task}
 ::::{.task-header}
-Generalise fit_model
+Generalise `fit_model`
 ::::
 ::::{.task-container}
 

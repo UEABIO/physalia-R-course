@@ -108,11 +108,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-submit-button-title": "Submit",
     "search-label": "Search"
   }
-}</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+}</script><script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+  } catch (e) {}
+})();
+</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
 </head>
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -416,6 +425,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 5: Saving figures correctly</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -476,7 +491,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11b-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 2: AI - Inline completions</span></a>
+ <span class="menu-text">Block 2: Inline completion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -529,7 +544,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -903,7 +918,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>We use the classic <code>group_by() |&gt; nest()</code> rather than the newer <code>nest(.by = species)</code>. Both give the same result; the explicit grouping step is clearer and backward-compatible.</p>
+<p>We use the classic <code>group_by() |&gt; nest()</code> rather than the newer <code>nest(.by = species)</code>. Both nest the data the same way, but only the first leaves the result grouped by <code>species</code> (which is why we <code>ungroup()</code> before unnesting below). The explicit grouping step is clearer and backward-compatible.</p>
 </div>
 </div>
 <section id="applying-a-function-to-each-cell" class="level3"><h3 class="anchored" data-anchor-id="applying-a-function-to-each-cell">Applying a function to each cell</h3>
@@ -988,11 +1003,11 @@ Note
 <span id="cb19-11"><a href="#cb19-11" aria-label="11"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(species, coefs) <span class="sc">|&gt;</span></span>
 <span id="cb19-12"><a href="#cb19-12" aria-label="12"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The modelling logic that was three copy-pasted blocks in Block 1, then three function calls in Block 3, is now one pipeline that applies the same function to every group.</p>
+<p>The modelling logic that began as three copy-pasted blocks in Block 3, and became three function calls by the end of that block, is now one pipeline that applies the same function to every group.</p>
 </section><section id="activity-iterate-over-a-different-grouping" class="level3"><h3 class="anchored" data-anchor-id="activity-iterate-over-a-different-grouping">Activity: iterate over a different grouping</h3>
 <div class="task">
 <div class="task-header">
-<p>iterate over a different grouping</p>
+<p>Iterate over a different grouping</p>
 </div>
 <div class="task-container">
 <p>The penguins data has an <code>island</code> column (“Biscoe”, “Dream”, “Torgersen”). Fit a separate <code>body_mass_g ~ flipper_length_mm</code> model for each island and produce a tidied coefficient table, using the nest pattern.</p>
@@ -1292,6 +1307,109 @@ function move_sidebar() {
 }
 move_sidebar();
 window.onresize = move_sidebar;
+</script><script>
+// Colour palette picker: a swatch button next to the dark-mode toggle.
+// The choice is stored in this browser only (localStorage).
+(function () {
+  var KEY = "advancing-r-palette";
+  var palettes = [
+    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
+    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+  ];
+
+  function current() {
+    return document.documentElement.getAttribute("data-palette") || "classic";
+  }
+
+  function apply(id) {
+    if (id === "classic") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+    });
+  }
+
+  function build(container, n) {
+    var wrap = document.createElement("div");
+    wrap.className = "palette-picker";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-toggle";
+    btn.id = "palette-toggle-" + n;
+    btn.title = "Change colour palette";
+    btn.setAttribute("aria-label", "Change colour palette");
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.id = "palette-menu-" + n;
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
+      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 8) + "px";
+    }
+    function open() {
+      menu.hidden = false;
+      place();
+      btn.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    var toggle = container.querySelector(".quarto-color-scheme-toggle");
+    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+  }
+
+  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
+    if (!c.querySelector(".palette-picker")) build(c, n);
+  });
+})();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

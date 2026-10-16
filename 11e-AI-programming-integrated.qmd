@@ -18,7 +18,7 @@ In Block 4 you used Chat in Ask mode: you asked a question, it answered, and not
 
 ## Three surfaces, before we start
 
-This workshop puts the same ideas in front of you through three different tools, and they do not all offer the same modes or honour the same files. You met this distinction in Block 4 for context; it returns here for actions, and it is the single thing most likely to make an exercise behave differently for the person next to you. Hold the three apart from the outset.
+This workshop puts the same ideas in front of you through three different tools, and they do not all offer the same modes or honour the same files. You met this distinction in Block 4 for context; it returns here for actions, and it is the single thing most likely to make an exercise behave differently for other participants. Hold the three apart from the outset.
 
 - **Web-based GitHub Chat** on github.com. It works in the context of the repository you open it from and can read its committed files, but it has no connection to your machine and runs no local code. Its agent is the **Copilot cloud agent**, which acts on the remote, on its own branch. This is the surface that behaves the same for everyone, which is why several exercises specify it.
 
@@ -31,7 +31,7 @@ The blunt version: the cloud agent lives on github.com and is the same for every
 
 ## Ask, Plan, Agent
 
-Beneath the surface differences, chat assistants offer more than one *mode*, and they differ in what the assistant is permitted to do, not in how clever it is. At the time of writing, Copilot Chat in VS Code offers **Ask**, **Plan** and **Agent**; Posit Assistant offers the same three ideas (an Ask mode, a `/plan` command, and its default agent behaviour). VS Code also used to offer an **Edit** mode that changed only the files you named; it was deprecated in VS Code 1.126 (June 2026), and that kind of change is now made in Agent mode. If you see Edit mode in an older tutorial, read it as "Agent mode restricted to named files".
+Beneath the surface differences, chat assistants offer more than one *mode*, and they differ in what the assistant is permitted to do, not in how clever it is. At the time of writing, Copilot Chat in VS Code offers **Ask**, **Plan** and **Agent**; Posit Assistant offers the same three ideas (an Ask mode, a `/plan` command, and its default agent behaviour). VS Code also used to offer an **Edit** mode that changed only the files you named; it was deprecated in VS Code 1.110 (March 2026) and removed in 1.126 (June 2026), and that kind of change is now made in Agent mode. If you see Edit mode in an older tutorial, read it as "Agent mode restricted to named files".
 
 - **Ask mode** answers in prose. It can read context and write code into the reply, but it changes nothing for you. Everything it suggests, you apply by hand. This is the mode you used throughout Block 4, and it is available on every surface, including web-based GitHub Chat.
 
@@ -113,6 +113,8 @@ scripts/01_load_data.R. Change no other file.
 
 Now you are offered a plan, not a change: which file it will edit, where, and how it will check the result. Read it before approving. Nothing has changed yet; the decision to go ahead is still yours, and you can narrow or correct the plan first. When you approve, it carries the plan out and you see the diff against that one file.
 
+**Discard the change.** Read the diff, then throw it away so that step 3 starts from a clean repository. In a terminal at the project root, run `git restore .` to undo changes to tracked files and `git clean -fd` to remove any new files and folders (this deletes untracked files, which is why you committed first). Or use the Git pane: **Discard All Changes** in the Source Control view in VS Code or Positron, or select the changed files and click **Revert** in RStudio's Git pane. `git status` should then report a clean working tree.
+
 **3. Agent mode.** Now the task grows beyond a single edit. Rather than name a change, you state an outcome that spans the pipeline: a new derived variable, a plot that uses it, and the surrounding work needed to keep everything running. This is the kind of job that distinguishes an agent from an editor, because no one file is named and the agent must read the project, decide what to touch, and verify its own work.
 
 This step has two routes. Use the in-IDE route if you are in Copilot in VS Code or Posit Assistant; use the cloud-agent route only if your Copilot plan includes the cloud agent (see the availability note above). The goal is the same for both; what differs is where the work happens and how it comes back to you.
@@ -129,6 +131,8 @@ the pipeline still run end to end.
 
 Watch what it does in your working directory. It cannot satisfy this from one edit: it must locate the loading step, decide whether the derived column belongs there or in a new script, write the plotting code in a new file, and run the pipeline to confirm nothing downstream broke. It works in a loop, editing then running then reading the result, and you see each change land in your working tree as it goes. This is why you committed first: every file the agent writes or alters is a diff you can inspect, accept, or revert. Read the diff before you keep it; the agent's confidence that the pipeline "still runs" is its claim, and a claim is not a check until you have seen the output yourself.
 
+**Discard the change.** Once you have read the diff, discard it as you did after step 2 (`git restore .` and `git clean -fd`, or the Git pane equivalent), so your repository is clean again for Block 6.
+
 *Cloud agent route.* On github.com, hand the same goal to the Copilot cloud agent. The mechanics are worth seeing once, because a pull request is how an agent's work reaches a real project.
 
 1. Open the **Agents** panel on github.com (or start from Copilot Chat on your repository), choose your fork, and give it the same goal as above. There is no separate "agent mode" switch on github.com: starting a task from the Agents panel *is* handing it to the cloud agent. You can also assign a GitHub Issue to Copilot, but for this exercise prompting it directly is enough.
@@ -141,7 +145,7 @@ Watch what it does in your working directory. It cannot satisfy this from one ed
 
 5. Open the pull request and read the **Files changed** tab. This is the diff: every line the agent added or removed, across every file it touched. Read it as you would a colleague's contribution, because that is what it is. Check that the derived column is computed correctly, that the plot uses the right variables, and that nothing unrelated was changed.
 
-6. If you are satisfied, **merge** the pull request, which brings the changes into your main branch on the remote; then `git pull` locally to bring them to your machine. If you are not satisfied, you can comment on the pull request to ask the agent to revise it, or simply close it and discard the branch. Nothing reaches your main branch, or your local working tree, until you choose to merge.
+6. In a real project, if you are satisfied, you would **merge** the pull request, which brings the changes into your main branch on the remote; then `git pull` locally to bring them to your machine. If you are not satisfied, you can comment on the pull request to ask the agent to revise it, or simply close it and discard the branch. Nothing reaches your main branch, or your local working tree, until you choose to merge. For this exercise, close the pull request without merging once you have read it, so your repository is clean again for Block 6. If you did merge it, ask the instructor how to revert the merge before you start Block 6.
 
 The review step is built into the cloud agent's flow: it never edits your working files directly, and its work arrives on a branch as a proposal you approve rather than a change you discover. The in-IDE agent gives you speed and immediacy; the cloud agent gives you a review gate by default.
 

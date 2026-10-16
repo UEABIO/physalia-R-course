@@ -44,12 +44,12 @@ The workshop runs in seven in-session blocks across three and a half hours inclu
 | Block | Duration | Focus |
 |---|---|---|
 | 1. Foundations and graph crimes | 50 min | Spot-it and guess-the-value games, colour, data-ink, 🏆 crime scene investigation |
-| 2. Choosing the right figure | 35 min | Chart selection, audience, descriptive vs explanatory, interactive figures |
+| 2. Choosing the right figure | 35 min | Chart selection, audience, descriptive vs explanatory, interactive figures, 🏆 guess the audience |
 | 3. Themes and scales | 35 min | `theme()`, `element_*()`, `theme_project()`, 🏆 the ThemePark Ugly-Off, `scales` package |
 | Break | 15 min |  |
 | 4. Extensions in action | 40 min | `ggdist`, `colorspace`, `ggrepel`, `ggtext`, `patchwork`, 🏆 recreate-this-figure capstone |
 | 5. Saving figures correctly | 10 min | `ggview`, `ragg`, two-format save |
-| 6. Writing figure legends | 20 min | The four-element legend |
+| 6. Writing figure legends | 20 min | The four-element legend, legend triage game, 🏆 legend repair |
 | 7. Three questions for every figure | 5 min | Closing reflection |
 | **Take-home exercise** | (own time) | Apply the workshop to your own data |
 
@@ -63,7 +63,9 @@ Before you arrive, please install the packages loaded in the setup chunk above. 
 
 Our visual system did not evolve to read graphs. Some visual features are detected before conscious attention engages: a red dot among grey dots, a single triangle in a sea of circles, an unusually large shape in a field of small ones. This is called **pre-attentive processing** (Healey and Enns, 2012). If you encode important information as a feature the eye picks up automatically, readers see it without having to search. Encoding the same information as a subtle change in line style or a slightly different shade requires the reader to look for it.
 
-**Game: spot it.** The facilitator shares one tab at a time. Each hides one odd point among 80. Type **found** in the chat the moment you see it (no scrolling ahead!).
+## Game: spot it
+
+The facilitator shares one tab at a time. Each hides one odd point among 80. Type **found** in the chat the moment you see it (no scrolling ahead!).
 
 ```{r}
 #| include: false
@@ -205,7 +207,7 @@ B is what % of A? `r fitb(71, num = TRUE, tol = 5)`
 
 The answers were 62%, 38%, 45% and 71%. Look back at the chat: most people find Round 1 easy, get scattered on Round 2, scatter further on Round 3 (people judge circles by *width*, not area, so they overestimate small ones), and are close to guessing on Round 4.
 
-You have just re-run Cleveland and McGill's (1984) experiment. People read the same ratio most accurately as **position on a common scale**, then length, angle, area, colour lightness and colour hue. For categorical data, position is still best but colour hue rises to second, with shape third.
+You have just played a version of Cleveland and McGill's (1984) experiment (Rounds 3 and 4 go beyond what they tested). People read the same ratio most accurately as **position on a common scale**, then length, angle, area, colour lightness and colour hue. Mackinlay (1986) extended the ranking to categorical data: position is still best, but colour hue rises to second. Shape is weaker but useful as a redundant cue.
 
 `r unhide()`
 
@@ -279,11 +281,11 @@ penguins_complete |>
 
 :::
 
-Two continuous variables to position (rank 1), one categorical to colour hue (rank 2) and shape (rank 3) redundantly. The figure works on a colour monitor, in greyscale print, and for a reader with colour vision deficiency. Treat this as the minimum for every figure.
+Two continuous variables to position (rank 1), one categorical to colour hue (rank 2 for categorical data), with shape added as a redundant cue. The figure works on a colour monitor, in greyscale print, and for a reader with colour vision deficiency. Treat this as the minimum for every figure.
 
 ## Colour as a tool
 
-Colour is pre-attentive, which makes it the second-most powerful encoding for categorical data. It is also the encoding most often misused. Three palette types exist, each for a different data structure:
+Colour hue is the second-most powerful encoding for categorical data, and it is pre-attentive, so readers pick it up without searching. It is also the encoding most often misused. Three palette types exist, each for a different data structure:
 
 | Palette type | Data structure | Example use |
 |---|---|---|
@@ -305,7 +307,7 @@ The package `colorspace` (Zeileis et al., 2020) provides palette generators for 
 #| eval: true
 #| fig-height: 3
 #| fig-width: 8
-# Categorical (Dark2) — for discrete groups with no order
+# Categorical (Dark2): for discrete groups with no order
 colorspace::swatchplot(
   colorspace::qualitative_hcl(8, palette = "Dark2")
 )
@@ -414,9 +416,9 @@ knitr::include_graphics("images/T_bar.png")
 
 `r hide("The verdicts")`
 
-- **Example 1 — guilty of distortion.** The y-axis starts at 80, so Japan's 84 looks twice the height of Spain's 82 when the real difference is under 3%. The 15-colour legend adds nothing the axis labels could not. *Sentence:* start the axis at zero, or show points on a sensible range, and drop the legend.
-- **Example 2 — guilty of distortion.** The axis starts at 120, so a \$123M opening looks almost nothing next to \$177M. *Sentence:* bars from zero, or a dot plot with labelled values.
-- **Bonus — guilty of everything.** The "error bars" are the capital letter **T** typed above each bar. They show no variability at all, on top of a dynamite plot that hides the raw data. *Sentence:* plot the raw points with a real interval.
+- **Example 1: guilty of distortion.** The y-axis starts at 80, so Japan's 84 looks twice the height of Spain's 82 when the real difference is under 3%. The 15-colour legend adds nothing the axis labels could not. *Sentence:* start the axis at zero, or show points on a sensible range, and drop the legend.
+- **Example 2: guilty of distortion.** The axis starts at 120, so a \$123M opening looks almost nothing next to \$177M. *Sentence:* bars from zero, or a dot plot with labelled values.
+- **Bonus: guilty of everything.** The "error bars" are the capital letter **T** typed above each bar. They show no variability at all, on top of a dynamite plot that hides the raw data. *Sentence:* plot the raw points with a real interval.
 
 `r unhide()`
 
@@ -428,7 +430,7 @@ Crime scene investigation (solo race, 12 minutes)
 ::::
 ::::{.task-container}
 
-The code below was found at a crime scene. It uses `chickwts`, a dataset built into R: the weight of chicks after six weeks on one of six feed supplements. Copy it into RStudio and run it. There are **at least seven** graph crimes in it.
+The code below was found at a crime scene. It uses `chickwts`, a dataset built into R: the weight of chicks after six weeks on one of six feed supplements. Copy it into RStudio and run it. There are **at least eight** graph crimes in it.
 
 1. **Investigate (4 min).** Post each crime in the chat as you spot it. The first person to post a *new* crime gets the point, so be quick, and don't repeat one already posted.
 2. **Rehabilitate (8 min).** Rewrite the code into an honest, accessible figure in your own RStudio.

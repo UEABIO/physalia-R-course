@@ -21,7 +21,7 @@ library(scales)
 
 The base `ggplot2` grammar covers most chart types but makes several common visualisation tasks awkward. The extension packages below fill the gaps:
 
-- `ggdist` for distributional plots (raincloud, half-eye, point-interval); this is how you put *"show the raw data wherever sample size permits"* from Block 1 into practice.
+- `ggdist` for distributional plots (raincloud, half-eye, point-interval); this is how you put *"show the raw data wherever sample size permits"* from Block 2 into practice.
 
 - `colorspace` and `colorBlindness` for palettes and accessibility checking; these put the encoding hierarchy and the accessibility principle from Block 1 into practice.
 
@@ -70,10 +70,6 @@ penguins_complete |>
 ```
 
 Three things to notice. First, the cloud, the box, and the points are three separate layers stacked in a specific order: clouds at the back, box in the middle, points on top. Second, `justification = -0.2` shifts the cloud off the centre line so the box and points sit beside it rather than underneath. Third, the boxplot's outlier points are hidden with `outlier.shape = NA` because all the raw data are already shown as jittered points; leaving them on would double-count.
-
-:::{.callout-tip}
-**Try later.** Swap the `geom_boxplot()` layer for `ggdist::stat_pointinterval()` and observe the change. `stat_pointinterval` shows the median and two intervals (by default, 66% and 95%); look at the function help to see how to control which intervals are drawn.
-:::
 
 ### In your own time
 
@@ -139,11 +135,7 @@ colorBlindness::cvdPlot(fig)
 
 The four-panel grid shows: the original, deuteranopia, protanopia, and a desaturated (greyscale) version. The figure passes if all groups remain distinguishable in all four panels. If any panel fails (typically deuteranopia or protanopia for red-green sensitive figures), strengthen the redundant encoding (shape or linetype), choose a more separated palette, or fall back to direct labelling.
 
-:::{.callout-tip}
-**Try later.** Build the same scatter plot *without* `shape = species` in the mapping, and rerun `cvdPlot()`. Compare the two outputs honestly. The greyscale panel is the most revealing: groups distinguishable only by colour collapse to indistinguishable shades of grey.
-:::
-
-This is the encoding hierarchy from Block 1 in practice: position handles the two continuous variables (rank 1), colour hue handles the categorical (rank 2 for categorical data), and shape is added redundantly (rank 3) so that the figure does not depend on colour alone.
+This is the encoding hierarchy from Block 1 in practice: position handles the two continuous variables (rank 1), colour hue handles the categorical (rank 2 for categorical data), and shape is added as a redundant cue so that the figure does not depend on colour alone. Shape is a weaker encoding on its own, but as a backup it is what keeps the groups apart in the greyscale panel.
 
 ### In your own time
 
@@ -173,7 +165,7 @@ colorBlindness::cvdPlot(fig_no_shape)
 # With redundant shape encoding
 fig_with_shape <- fig_no_shape +
   aes(shape = species) +
-  labs(shape = "Species")
+  labs(colour = "Species", shape = "Species")
 
 colorBlindness::cvdPlot(fig_with_shape)
 ```
@@ -187,7 +179,7 @@ The figure with redundant shape encoding survives the desaturated panel because 
 
 A figure legend separates the colour key from the data: the reader's eye has to travel from the data layer to the legend and back, holding a mapping in working memory. **Direct labelling** puts the group name on the data itself, so the eye reads the label as part of the data. For talks, posters, and public engagement, direct labelling is almost always clearer.
 
-The problem is that labels placed at data points overlap each other. `ggrepel::geom_text_repel()` solves this by moving labels iteratively until they no longer collide, with connector lines preserved.
+The problem is that labels placed at data points overlap each other. `ggrepel::geom_text_repel()` and `ggrepel::geom_label_repel()` solve this by moving labels iteratively until they no longer collide, with connector lines preserved. The example below uses `geom_label_repel()`, which draws each label on a small background box.
 
 ```{r}
 #| eval: true
@@ -243,10 +235,6 @@ penguins_complete |>
 ```
 
 Inline colour in the title removes the need for a separate legend entirely. The hex codes in the title are the three `Dark2` colours used for the fills (`colorspace::qualitative_hcl(3, palette = "Dark2")` returns them), so the colours in the title match the fills in the data, and the reader makes the mapping in a single saccade.
-
-:::{.callout-tip}
-**Try later.** Modify the rich-text title so that only **Gentoo** is highlighted in colour and the other species names appear in plain text. Add a subtitle (using `ggtext::element_markdown()` on `plot.subtitle`) that gives the sample sizes for each species. Inline colour in subtitles works the same way as in titles.
-:::
 
 These techniques put the *direct labelling* and *highlighting* rows of the audience table from Block 2 into practice. Reach for direct labels and inline-coloured titles when designing for posters, talks, or public engagement, where the reader cannot afford the eye-travel to a separate legend.
 
@@ -352,20 +340,22 @@ p1 + p2 + p3 +
 :::{.callout-note collapse = "true"}
 ## guides
 
-When you combine plots with patchwork and set guides = "collect", patchwork gathers legends from every panel and merges any it considers identical. 
+When you combine plots with patchwork and set `guides = "collect"`, patchwork gathers legends from every panel and merges any it considers identical. 
 
 "Identical" is strict: the guides must share the same aesthetic, scale, breaks and title. If your panels encode the same grouping variable through different aesthetics (say fill in one panel and colour plus shape in another) or through different scales, patchwork treats them as distinct and shows one legend per panel rather than a single shared key. 
 
 - First, decide which single legend should represent the shared variable across all panels, and choose the panel whose legend carries the most visual encoding, since that legend can serve as a complete key for the others. 
 
-- Second, suppress the legends on the remaining panels with guides(<aesthetic> = "none").
+- Second, suppress the legends on the remaining panels with `guides(<aesthetic> = "none")`.
+
+Without step two you get this. The three panels below use different aesthetics and scales and none of them suppresses its legend, so patchwork collects three separate legends:
 
 ```{r}
 #| eval: true
 #| message: false
 #| warning: false
 #| fig-height: 6
-p1 <- penguins_complete |> 
+q1 <- penguins_complete |> 
   ggplot(aes(x = species, y = body_mass_g, fill = species)) +
   ggdist::stat_halfeye(adjust = 0.5, justification = -0.2,
                        .width = 0, point_colour = NA, alpha = 0.8) +
@@ -374,7 +364,7 @@ p1 <- penguins_complete |>
   labs(x = NULL, y = "Body mass (g)") +
   theme_minimal(base_size = 11)
 
-p2 <- penguins_complete |> 
+q2 <- penguins_complete |> 
   ggplot(aes(x = bill_length_mm, y = bill_depth_mm,
              colour = species, shape = species)) +
   geom_point(alpha = 0.7) +
@@ -382,7 +372,7 @@ p2 <- penguins_complete |>
   labs(x = "Bill length (mm)", y = "Bill depth (mm)") +
   theme_minimal(base_size = 11)
 
-p3 <- penguins_complete |> 
+q3 <- penguins_complete |> 
   count(species, island) |> 
   ggplot(aes(x = species, y = n, fill = island)) +
   geom_col(position = "dodge") +
@@ -391,13 +381,13 @@ p3 <- penguins_complete |>
   theme_minimal(base_size = 11)
 
 # Edit the letter grid below to rearrange panels.
-# Letters refer to plots in the order they are added (A = p1, B = p2, C = p3).
+# Letters refer to plots in the order they are added (A = q1, B = q2, C = q3).
 layout <- "
 AB
 CC
 "
 
-p1 + p2 + p3 +
+q1 + q2 + q3 +
   patchwork::plot_layout(design = layout, guides = "collect") +
   patchwork::plot_annotation(tag_levels = "A") &
   theme(legend.position = "bottom",
@@ -406,7 +396,7 @@ p1 + p2 + p3 +
 
 :::
 
-The `&` operator applies its right-hand side to every subplot, including those added later, so use it for global theme settings like legend position and tag formatting. The `+` operator applies only to the most recently added subplot.
+The `&` operator applies its right-hand side to every subplot already in the composition, so use it for global theme settings like legend position and tag formatting. The `+` operator applies only to the most recently added subplot.
 
 :::{.callout-tip}
 **Try later.** Change the layout string so that panels A and C are stacked on the left and panel B occupies the full right column (`"AB\nCB\n"`). 
@@ -516,9 +506,9 @@ Recreate the figure: how far can you get? (solo race, 15 minutes)
 
 Everyone starts at Bronze. Post 🥉, 🥈 or 🥇 in the chat each time you clear a tier. The first Gold screenshot wins. Stuck? Post your error message in the chat; anyone who helps fix it gets a shout-out.
 
-- 🥉 **Bronze — panel B.** Raw points for each Treatment, dodged by Type, with a median bar, in the two Type colours. *Hint:* `position_jitterdodge()` and `stat_summary(geom = "crossbar")`.
-- 🥈 **Silver — panel A.** One line per plant, colour by Type, linetype by Treatment, and **direct labels** instead of a colour legend. *Hint:* `group = Plant`, and `ggrepel` on a small data frame of line ends.
-- 🥇 **Gold — the full figure.** Both panels side by side (A twice as wide), tagged A and B, with the coloured rich-text title and proper sub/superscripts in the axis titles. *Hint:* `patchwork`, `plot_annotation()` and `ggtext::element_markdown()`.
+- 🥉 **Bronze: panel B.** Raw points for each Treatment, dodged by Type, with a median bar, in the two Type colours. *Hint:* `position_jitterdodge()` and `stat_summary(geom = "crossbar")`.
+- 🥈 **Silver: panel A.** One line per plant, colour by Type, linetype by Treatment, and **direct labels** instead of a colour legend. *Hint:* `group = Plant`, and `ggrepel` on a small data frame of line ends.
+- 🥇 **Gold: the full figure.** Both panels side by side (A twice as wide), tagged A and B, with the coloured rich-text title and proper sub/superscripts in the axis titles. *Hint:* `patchwork`, `plot_annotation()` and `ggtext::element_markdown()`.
 
 ::::
 :::

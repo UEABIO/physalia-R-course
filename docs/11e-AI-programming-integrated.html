@@ -108,11 +108,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-submit-button-title": "Submit",
     "search-label": "Search"
   }
-}</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+}</script><script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+  } catch (e) {}
+})();
+</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
 </head>
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -416,6 +425,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 5: Saving figures correctly</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -476,7 +491,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11b-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 2: AI - Inline completions</span></a>
+ <span class="menu-text">Block 2: Inline completion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -529,7 +544,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -610,7 +625,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header><p>In Block 4 you used Chat in Ask mode: you asked a question, it answered, and nothing on your machine or in your repository changed unless you copied the answer out yourself. This block introduces the shift that the rest of the workshop depends on, from an assistant that <em>advises</em> to an agent that <em>acts</em>. The configuration files you write in Block 6 exist because of this shift, so it is worth being precise about what changes, where it changes, and why it matters.</p>
 <p><em>⏱ ~30 minutes</em></p>
 <section id="three-surfaces-before-we-start" class="level2"><h2 class="anchored" data-anchor-id="three-surfaces-before-we-start">Three surfaces, before we start</h2>
-<p>This workshop puts the same ideas in front of you through three different tools, and they do not all offer the same modes or honour the same files. You met this distinction in Block 4 for context; it returns here for actions, and it is the single thing most likely to make an exercise behave differently for the person next to you. Hold the three apart from the outset.</p>
+<p>This workshop puts the same ideas in front of you through three different tools, and they do not all offer the same modes or honour the same files. You met this distinction in Block 4 for context; it returns here for actions, and it is the single thing most likely to make an exercise behave differently for other participants. Hold the three apart from the outset.</p>
 <ul>
 <li><p><strong>Web-based GitHub Chat</strong> on github.com. It works in the context of the repository you open it from and can read its committed files, but it has no connection to your machine and runs no local code. Its agent is the <strong>Copilot cloud agent</strong>, which acts on the remote, on its own branch. This is the surface that behaves the same for everyone, which is why several exercises specify it.</p></li>
 <li><p><strong>GitHub Copilot Chat in VS Code</strong>. The in-editor Copilot. It reads Copilot’s instruction files (<code>.github/copilot-instructions.md</code>, and also an <code>AGENTS.md</code> in the repository), runs in your local session and, in Agent mode, acts on your files.</p></li>
@@ -618,7 +633,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p>The blunt version: the cloud agent lives on github.com and is the same for everyone; Copilot in VS Code is the Copilot-aligned local agent; Posit Assistant is a separate local agent with its own configuration discovery. The one file both local agents read is <code>AGENTS.md</code>, which Block 6 returns to. Where a step depends on which tool you are using, it says so.</p>
 </section><section id="ask-plan-agent" class="level2"><h2 class="anchored" data-anchor-id="ask-plan-agent">Ask, Plan, Agent</h2>
-<p>Beneath the surface differences, chat assistants offer more than one <em>mode</em>, and they differ in what the assistant is permitted to do, not in how clever it is. At the time of writing, Copilot Chat in VS Code offers <strong>Ask</strong>, <strong>Plan</strong> and <strong>Agent</strong>; Posit Assistant offers the same three ideas (an Ask mode, a <code>/plan</code> command, and its default agent behaviour). VS Code also used to offer an <strong>Edit</strong> mode that changed only the files you named; it was deprecated in VS Code 1.126 (June 2026), and that kind of change is now made in Agent mode. If you see Edit mode in an older tutorial, read it as “Agent mode restricted to named files”.</p>
+<p>Beneath the surface differences, chat assistants offer more than one <em>mode</em>, and they differ in what the assistant is permitted to do, not in how clever it is. At the time of writing, Copilot Chat in VS Code offers <strong>Ask</strong>, <strong>Plan</strong> and <strong>Agent</strong>; Posit Assistant offers the same three ideas (an Ask mode, a <code>/plan</code> command, and its default agent behaviour). VS Code also used to offer an <strong>Edit</strong> mode that changed only the files you named; it was deprecated in VS Code 1.110 (March 2026) and removed in 1.126 (June 2026), and that kind of change is now made in Agent mode. If you see Edit mode in an older tutorial, read it as “Agent mode restricted to named files”.</p>
 <ul>
 <li><p><strong>Ask mode</strong> answers in prose. It can read context and write code into the reply, but it changes nothing for you. Everything it suggests, you apply by hand. This is the mode you used throughout Block 4, and it is available on every surface, including web-based GitHub Chat.</p></li>
 <li><p><strong>Plan mode</strong> researches the task and returns a step-by-step plan: which files it would touch, in what order, and how it would check the result. It does not change your code while it plans; you review and amend the plan, and only when you approve it does the work begin. (In Posit Assistant, the plan is written to a Markdown plan file, which is the one file it writes while planning.)</p></li>
@@ -729,6 +744,7 @@ Warning
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>Add a column mass_change that is mass_post_g minus mass_pre_g to</span>
 <span id="cb2-2"><a href="#cb2-2" aria-label="2"></a>scripts/01_load_data.R. Change no other file.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Now you are offered a plan, not a change: which file it will edit, where, and how it will check the result. Read it before approving. Nothing has changed yet; the decision to go ahead is still yours, and you can narrow or correct the plan first. When you approve, it carries the plan out and you see the diff against that one file.</p>
+<p><strong>Discard the change.</strong> Read the diff, then throw it away so that step 3 starts from a clean repository. In a terminal at the project root, run <code>git restore .</code> to undo changes to tracked files and <code>git clean -fd</code> to remove any new files and folders (this deletes untracked files, which is why you committed first). Or use the Git pane: <strong>Discard All Changes</strong> in the Source Control view in VS Code or Positron, or select the changed files and click <strong>Revert</strong> in RStudio’s Git pane. <code>git status</code> should then report a clean working tree.</p>
 <p><strong>3. Agent mode.</strong> Now the task grows beyond a single edit. Rather than name a change, you state an outcome that spans the pipeline: a new derived variable, a plot that uses it, and the surrounding work needed to keep everything running. This is the kind of job that distinguishes an agent from an editor, because no one file is named and the agent must read the project, decide what to touch, and verify its own work.</p>
 <p>This step has two routes. Use the in-IDE route if you are in Copilot in VS Code or Posit Assistant; use the cloud-agent route only if your Copilot plan includes the cloud agent (see the availability note above). The goal is the same for both; what differs is where the work happens and how it comes back to you.</p>
 <p><em>In-IDE agent (default route).</em> Switch the Chat panel to Agent mode and give it the goal:</p>
@@ -738,6 +754,7 @@ Warning
 <span id="cb3-4"><a href="#cb3-4" aria-label="4"></a>mass_change by treatment_arm. Make sure the loading step and the rest of</span>
 <span id="cb3-5"><a href="#cb3-5" aria-label="5"></a>the pipeline still run end to end.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Watch what it does in your working directory. It cannot satisfy this from one edit: it must locate the loading step, decide whether the derived column belongs there or in a new script, write the plotting code in a new file, and run the pipeline to confirm nothing downstream broke. It works in a loop, editing then running then reading the result, and you see each change land in your working tree as it goes. This is why you committed first: every file the agent writes or alters is a diff you can inspect, accept, or revert. Read the diff before you keep it; the agent’s confidence that the pipeline “still runs” is its claim, and a claim is not a check until you have seen the output yourself.</p>
+<p><strong>Discard the change.</strong> Once you have read the diff, discard it as you did after step 2 (<code>git restore .</code> and <code>git clean -fd</code>, or the Git pane equivalent), so your repository is clean again for Block 6.</p>
 <p><em>Cloud agent route.</em> On github.com, hand the same goal to the Copilot cloud agent. The mechanics are worth seeing once, because a pull request is how an agent’s work reaches a real project.</p>
 <ol type="1">
 <li><p>Open the <strong>Agents</strong> panel on github.com (or start from Copilot Chat on your repository), choose your fork, and give it the same goal as above. There is no separate “agent mode” switch on github.com: starting a task from the Agents panel <em>is</em> handing it to the cloud agent. You can also assign a GitHub Issue to Copilot, but for this exercise prompting it directly is enough.</p></li>
@@ -745,7 +762,7 @@ Warning
 <li><p>It then works through the goal on that branch, committing as it goes: reading the data, editing the loading step, adding the plotting script, and running the pipeline to check it. You can follow its progress in the session log while it runs, and steer or stop it from the Agents page if it heads the wrong way.</p></li>
 <li><p>When it finishes, you can review its changes and ask for refinements before anything is proposed for merging; ask it for a <strong>pull request</strong> (or include “open a pull request” in your first prompt). A pull request is a proposed merge: a named, reviewable bundle of commits asking to be brought into your main branch. This is the unit you review, not the individual edits.</p></li>
 <li><p>Open the pull request and read the <strong>Files changed</strong> tab. This is the diff: every line the agent added or removed, across every file it touched. Read it as you would a colleague’s contribution, because that is what it is. Check that the derived column is computed correctly, that the plot uses the right variables, and that nothing unrelated was changed.</p></li>
-<li><p>If you are satisfied, <strong>merge</strong> the pull request, which brings the changes into your main branch on the remote; then <code>git pull</code> locally to bring them to your machine. If you are not satisfied, you can comment on the pull request to ask the agent to revise it, or simply close it and discard the branch. Nothing reaches your main branch, or your local working tree, until you choose to merge.</p></li>
+<li><p>In a real project, if you are satisfied, you would <strong>merge</strong> the pull request, which brings the changes into your main branch on the remote; then <code>git pull</code> locally to bring them to your machine. If you are not satisfied, you can comment on the pull request to ask the agent to revise it, or simply close it and discard the branch. Nothing reaches your main branch, or your local working tree, until you choose to merge. For this exercise, close the pull request without merging once you have read it, so your repository is clean again for Block 6. If you did merge it, ask the instructor how to revert the merge before you start Block 6.</p></li>
 </ol>
 <p>The review step is built into the cloud agent’s flow: it never edits your working files directly, and its work arrives on a branch as a proposal you approve rather than a change you discover. The in-IDE agent gives you speed and immediacy; the cloud agent gives you a review gate by default.</p>
 <p>Whichever route you took, notice the autonomy you handed over: you specified an outcome and the agent chose the steps, the files, and the order. The agent decides just as much on both routes. What differs is where its decisions take effect: live in your working tree, or on a branch behind a pull request you approve first.</p>
@@ -754,16 +771,16 @@ Warning
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>What is the key difference between Ask mode and Agent mode in GitHub Copilot?</strong></p>
-<div id="radio_CLQDNQWVVO" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_CLQDNQWVVO" value=""><span>Agent mode uses a more capable underlying model than Ask mode</span></label><label><input type="radio" autocomplete="off" name="radio_CLQDNQWVVO" value="answer"><span>Ask mode answers without changing anything, whereas Agent mode can decide which files to change and which commands to run, and carries those actions out</span></label><label><input type="radio" autocomplete="off" name="radio_CLQDNQWVVO" value=""><span>Ask mode is free and Agent mode is always paid</span></label><label><input type="radio" autocomplete="off" name="radio_CLQDNQWVVO" value=""><span>Agent mode can only be used on github.com, never in an IDE</span></label>
+<div id="radio_OIHPZWKCYM" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_OIHPZWKCYM" value=""><span>Agent mode uses a more capable underlying model than Ask mode</span></label><label><input type="radio" autocomplete="off" name="radio_OIHPZWKCYM" value="answer"><span>Ask mode answers without changing anything, whereas Agent mode can decide which files to change and which commands to run, and carries those actions out</span></label><label><input type="radio" autocomplete="off" name="radio_OIHPZWKCYM" value=""><span>Ask mode is free and Agent mode is always paid</span></label><label><input type="radio" autocomplete="off" name="radio_OIHPZWKCYM" value=""><span>Agent mode can only be used on github.com, never in an IDE</span></label>
 </div>
 <p><strong>Where does the in-IDE agent apply its changes, compared with the cloud agent on github.com?</strong></p>
-<div id="radio_OYTGOUKYBJ" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_OYTGOUKYBJ" value=""><span>Both apply changes only as a pull request you review before merging</span></label><label><input type="radio" autocomplete="off" name="radio_OYTGOUKYBJ" value="answer"><span>The in-IDE agent edits the files in your local working directory in real time, whereas the cloud agent works on a branch on the remote and returns its work for review, usually as a pull request</span></label><label><input type="radio" autocomplete="off" name="radio_OYTGOUKYBJ" value=""><span>Both edit your local files directly with no review step</span></label><label><input type="radio" autocomplete="off" name="radio_OYTGOUKYBJ" value=""><span>The in-IDE agent cannot run commands, only the cloud agent can</span></label>
+<div id="radio_AYWUZUBFEJ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_AYWUZUBFEJ" value=""><span>Both apply changes only as a pull request you review before merging</span></label><label><input type="radio" autocomplete="off" name="radio_AYWUZUBFEJ" value="answer"><span>The in-IDE agent edits the files in your local working directory in real time, whereas the cloud agent works on a branch on the remote and returns its work for review, usually as a pull request</span></label><label><input type="radio" autocomplete="off" name="radio_AYWUZUBFEJ" value=""><span>Both edit your local files directly with no review step</span></label><label><input type="radio" autocomplete="off" name="radio_AYWUZUBFEJ" value=""><span>The in-IDE agent cannot run commands, only the cloud agent can</span></label>
 </div>
 <p><strong>Why do persistent instruction files matter more once you are using an agent than when you are using Ask mode?</strong></p>
-<div id="radio_TYZSIKPJWB" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_TYZSIKPJWB" value=""><span>Agents cannot read pasted context, so the file is the only way to inform them</span></label><label><input type="radio" autocomplete="off" name="radio_TYZSIKPJWB" value="answer"><span>An agent acts on its assumptions by editing files and running commands unsupervised, so conventions it does not know are applied to your project rather than merely appearing in a reply you can discard</span></label><label><input type="radio" autocomplete="off" name="radio_TYZSIKPJWB" value=""><span>Instruction files are required for Agent mode to function at all</span></label><label><input type="radio" autocomplete="off" name="radio_TYZSIKPJWB" value=""><span>Ask mode ignores instruction files entirely</span></label>
+<div id="radio_OLCIWVVMGB" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_OLCIWVVMGB" value=""><span>Agents cannot read pasted context, so the file is the only way to inform them</span></label><label><input type="radio" autocomplete="off" name="radio_OLCIWVVMGB" value="answer"><span>An agent acts on its assumptions by editing files and running commands unsupervised, so conventions it does not know are applied to your project rather than merely appearing in a reply you can discard</span></label><label><input type="radio" autocomplete="off" name="radio_OLCIWVVMGB" value=""><span>Instruction files are required for Agent mode to function at all</span></label><label><input type="radio" autocomplete="off" name="radio_OLCIWVVMGB" value=""><span>Ask mode ignores instruction files entirely</span></label>
 </div>
 
 
@@ -999,6 +1016,109 @@ function move_sidebar() {
 }
 move_sidebar();
 window.onresize = move_sidebar;
+</script><script>
+// Colour palette picker: a swatch button next to the dark-mode toggle.
+// The choice is stored in this browser only (localStorage).
+(function () {
+  var KEY = "advancing-r-palette";
+  var palettes = [
+    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
+    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+  ];
+
+  function current() {
+    return document.documentElement.getAttribute("data-palette") || "classic";
+  }
+
+  function apply(id) {
+    if (id === "classic") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+    });
+  }
+
+  function build(container, n) {
+    var wrap = document.createElement("div");
+    wrap.className = "palette-picker";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-toggle";
+    btn.id = "palette-toggle-" + n;
+    btn.title = "Change colour palette";
+    btn.setAttribute("aria-label", "Change colour palette");
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.id = "palette-menu-" + n;
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
+      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 8) + "px";
+    }
+    function open() {
+      menu.hidden = false;
+      place();
+      btn.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    var toggle = container.querySelector(".quarto-color-scheme-toggle");
+    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+  }
+
+  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
+    if (!c.querySelector(".palette-picker")) build(c, n);
+  });
+})();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

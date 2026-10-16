@@ -108,11 +108,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-submit-button-title": "Submit",
     "search-label": "Search"
   }
-}</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+}</script><script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+  } catch (e) {}
+})();
+</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
 </head>
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -416,6 +425,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 5: Saving figures correctly</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -476,7 +491,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11b-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 2: AI - Inline completions</span></a>
+ <span class="menu-text">Block 2: Inline completion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -529,7 +544,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -809,7 +824,7 @@ Example
 <li><p><strong>A canary line</strong> you can verify. Instruct Copilot to begin any response that writes R code with a fixed first comment, for example <code># copilot-instructions: active</code>. This is the cheapest possible test of whether the file is being read at all: if the canary is absent, the file is not loading, and you are debugging the wrong thing.</p></li>
 </ol>
 <p>Keep each as a single, simple statement. Four accurate lines you can verify are worth more than two pages of generated prose you cannot.</p>
-<p><strong>Step 5: Commit and push.</strong> Commit <code>.github/copilot-instructions.md</code> and push to your fork on GitHub. This is what makes the file available where it is read most reliably, and it is the point at which users of every IDE converge: from here on, everyone works the same way.</p>
+<p><strong>Step 5: Commit and push.</strong> Commit <code>.github/copilot-instructions.md</code> and push to your fork on GitHub. Pushing makes the file available to every Copilot surface on GitHub.com, as well as to your IDE.</p>
 <p><strong>Step 6: Verify.</strong> Open a fresh chat session, on GitHub.com or in your IDE, and run the same prompt as Step 1:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>Read in data/voles_metabolism.csv and make a quick exploratory plot of</span>
 <span id="cb3-2"><a href="#cb3-2" aria-label="2"></a>mass_post_g by treatment arm.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -928,11 +943,12 @@ Example
 <span id="cb5-3"><a href="#cb5-3" aria-label="3"></a>mass_change by treatment_arm, and make sure the pipeline still runs end to</span>
 <span id="cb5-4"><a href="#cb5-4" aria-label="4"></a>end.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Read the plan it returns before doing anything else. It should name the files it intends to touch, the order it will work in, and how it will check the pipeline. This is the moment to catch a wrong assumption: if it proposes editing the raw data, or putting the plot in the wrong place, or skipping the end-to-end check, you say so now, while nothing has changed. Amend the plan in conversation, then approve it and let it execute. Compare the experience with handing the same goal straight to Agent mode in Block 5: the difference is that you saw the intent before the action, not the action before the review.</p>
+<p><strong>Discard the change.</strong> When it has finished, read the diff, then discard it so the skills exercise starts from a clean repository: run <code>git restore .</code> and <code>git clean -fd</code> in a terminal at the project root, or use the Git pane equivalent, as you did in Block 5. Your committed instruction files are untouched by this, because it only removes uncommitted changes.</p>
 </div>
 </div>
 </section><section id="agent-skills" class="level3"><h3 class="anchored" data-anchor-id="agent-skills">Agent skills</h3>
 <p>A skill is a packaged procedure the assistant loads when a task calls for it, rather than a set of rules attached to a file type or applied to every request. For Copilot it lives in <code>.github/skills/&lt;skill-name&gt;/SKILL.md</code> (or <code>.agents/skills/</code> or <code>.claude/skills/</code>) and carries a <code>name</code> and a <code>description</code> in its front matter; the description is what the assistant reads to decide the skill is relevant, or you invoke it directly by name. Because a skill loads only when needed, it can be longer and carry supporting material, templates, tables, and reference files that an always-on instruction file could not afford to include on every request.</p>
-<p>A caution before the demonstration, following from the orientation at the start of this block. Skills are the one mechanism here that does not transfer cleanly across the tools, and this is why the skills exercise behaves differently from desk to desk:</p>
+<p>A caution before the demonstration, following from the orientation at the start of this block. Skills are the one mechanism here that does not transfer cleanly across the tools, and this is why the skills exercise behaves differently from person to person:</p>
 <ul>
 <li><p><strong>GitHub Copilot loads skills from <code>.github/skills/</code>, <code>.claude/skills/</code> or <code>.agents/skills/</code>.</strong> At the time of writing (October 2026), skills work with the cloud agent, Copilot code review, the Copilot CLI, and agent mode in VS Code; run the exercise below in Agent mode.</p></li>
 <li><p><strong>Posit Assistant loads skills automatically, but from its own list of locations</strong>: <code>.agents/skills/</code> or <code>.posit/assistant/skills/</code> in the project (older versions used <code>.positai/</code>), or other paths you add to <code>skills.paths</code>. It does not look in <code>.github/skills/</code>.</p></li>
@@ -979,12 +995,12 @@ Warning
 <p>Posit has published a series of skills on GitHub <a href="https://github.com/posit-dev/skills/tree/main">here</a>. They are .md files with supporting templates, and they can be used with a range of LLM providers.</p>
 </section></section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>An Agent Skill differs from a workspace-level custom instructions file in that:</strong></p>
-<div id="radio_RQNLQIIFZM" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_RQNLQIIFZM" value=""><span>Skills only work in Posit Assistant, custom instructions work in all IDEs</span></label><label><input type="radio" autocomplete="off" name="radio_RQNLQIIFZM" value="answer"><span>Custom instructions are loaded automatically for every interaction on a reading surface, whereas skills are invoked by name or loaded only when judged relevant</span></label><label><input type="radio" autocomplete="off" name="radio_RQNLQIIFZM" value=""><span>Skills are paid features and custom instructions are free</span></label><label><input type="radio" autocomplete="off" name="radio_RQNLQIIFZM" value=""><span>Custom instructions can include code but skills cannot</span></label>
+<div id="radio_KYDISDJLHQ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_KYDISDJLHQ" value=""><span>Skills only work in Posit Assistant, custom instructions work in all IDEs</span></label><label><input type="radio" autocomplete="off" name="radio_KYDISDJLHQ" value="answer"><span>Custom instructions are loaded automatically for every interaction on a reading surface, whereas skills are invoked by name or loaded only when judged relevant</span></label><label><input type="radio" autocomplete="off" name="radio_KYDISDJLHQ" value=""><span>Skills are paid features and custom instructions are free</span></label><label><input type="radio" autocomplete="off" name="radio_KYDISDJLHQ" value=""><span>Custom instructions can include code but skills cannot</span></label>
 </div>
 <p><strong>What distinguishes Plan mode from Agent mode?</strong></p>
-<div id="radio_MXFXIUHIKY" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_MXFXIUHIKY" value=""><span>Plan mode uses a cheaper model and so produces lower-quality code</span></label><label><input type="radio" autocomplete="off" name="radio_MXFXIUHIKY" value="answer"><span>Plan mode does not change your code; it returns an ordered plan for you to approve before anything executes, whereas Agent mode carries out the work and you review the result</span></label><label><input type="radio" autocomplete="off" name="radio_MXFXIUHIKY" value=""><span>Plan mode can only be used on GitHub.com, Agent mode only in an IDE</span></label><label><input type="radio" autocomplete="off" name="radio_MXFXIUHIKY" value=""><span>Plan mode edits files one at a time, Agent mode edits them all at once</span></label>
+<div id="radio_YJTZFRAMXA" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_YJTZFRAMXA" value=""><span>Plan mode uses a cheaper model and so produces lower-quality code</span></label><label><input type="radio" autocomplete="off" name="radio_YJTZFRAMXA" value="answer"><span>Plan mode does not change your code; it returns an ordered plan for you to approve before anything executes, whereas Agent mode carries out the work and you review the result</span></label><label><input type="radio" autocomplete="off" name="radio_YJTZFRAMXA" value=""><span>Plan mode can only be used on GitHub.com, Agent mode only in an IDE</span></label><label><input type="radio" autocomplete="off" name="radio_YJTZFRAMXA" value=""><span>Plan mode edits files one at a time, Agent mode edits them all at once</span></label>
 </div>
 
 
@@ -1220,6 +1236,109 @@ function move_sidebar() {
 }
 move_sidebar();
 window.onresize = move_sidebar;
+</script><script>
+// Colour palette picker: a swatch button next to the dark-mode toggle.
+// The choice is stored in this browser only (localStorage).
+(function () {
+  var KEY = "advancing-r-palette";
+  var palettes = [
+    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
+    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+  ];
+
+  function current() {
+    return document.documentElement.getAttribute("data-palette") || "classic";
+  }
+
+  function apply(id) {
+    if (id === "classic") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+    });
+  }
+
+  function build(container, n) {
+    var wrap = document.createElement("div");
+    wrap.className = "palette-picker";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-toggle";
+    btn.id = "palette-toggle-" + n;
+    btn.title = "Change colour palette";
+    btn.setAttribute("aria-label", "Change colour palette");
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.id = "palette-menu-" + n;
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
+      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 8) + "px";
+    }
+    function open() {
+      menu.hidden = false;
+      place();
+      btn.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    var toggle = container.querySelector(".quarto-color-scheme-toggle");
+    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+  }
+
+  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
+    if (!c.querySelector(".palette-picker")) build(c, n);
+  });
+})();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

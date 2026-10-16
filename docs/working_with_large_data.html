@@ -108,11 +108,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-submit-button-title": "Submit",
     "search-label": "Search"
   }
-}</script><script src="site_libs/font-awesome-6.7.2/js/script.js"></script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+}</script><script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+  } catch (e) {}
+})();
+</script><script src="site_libs/font-awesome-6.7.2/js/script.js"></script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
 </head>
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -416,6 +425,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 5: Saving figures correctly</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -476,7 +491,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11b-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 2: AI - Inline completions</span></a>
+ <span class="menu-text">Block 2: Inline completion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -529,7 +544,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -679,14 +694,18 @@ Note
 <p>The return types differ, and this matters. <code><a href="https://rdrr.io/r/utils/read.table.html">read.csv()</a></code> returns a <code>data.frame</code>, <code>read_csv()</code> returns a <code>tibble</code>, and <code>fread()</code> returns a <code>data.table</code>. The first two behave identically for our purposes; the <code>data.table</code> is a different object with its own syntax, covered below.</p>
 <section id="reading-only-part-of-a-file" class="level3" data-number="G.2.1"><h3 data-number="G.2.1" class="anchored" data-anchor-id="reading-only-part-of-a-file">
 <span class="header-section-number">G.2.1</span> Reading only part of a file</h3>
-<p>When a file does not fit in memory, the simplest fix is to read less of it. <code>fread()</code> exposes two arguments for this. <code>nrows</code> caps the number of rows read, and <code>skip</code> discards rows from the top or, given a string, starts reading at the first line matching it.</p>
+<p>When a file does not fit in memory, the simplest fix is to read less of it. <code>fread()</code> exposes two arguments for this. <code>nrows</code> caps the number of rows read, and <code>skip</code> discards lines from the top of the file.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a><span class="co"># First 500 rows only</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-label="2"></a><span class="fu">fread</span>(csv_name, <span class="at">nrows =</span> <span class="dv">500</span>, <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-label="3"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a><span class="co"># Start from the first line containing "1986"</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a><span class="fu">fread</span>(csv_name, <span class="at">skip =</span> <span class="st">"1986"</span>, <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a><span class="co"># Skip the header and the first 999 records, so reading starts at record 1000.</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a><span class="co"># The header line has been skipped too, so we supply the column names ourselves</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-label="6"></a>col_names <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">fread</span>(csv_name, <span class="at">nrows =</span> <span class="dv">0</span>))</span>
+<span id="cb3-7"><a href="#cb3-7" aria-label="7"></a><span class="fu">fread</span>(csv_name, <span class="at">skip =</span> <span class="dv">1000</span>, <span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">col.names =</span> col_names,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-label="8"></a>      <span class="at">showProgress =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p><code>skip</code> can also be given a string, and <code>fread()</code> then starts at the first line that contains that text anywhere. This is less useful than it sounds. With <code>skip = "1986"</code>, the first matching line is <em>record</em> number 1986, which was collected in 1979, not the first record from 1986. Because the header line is skipped as well, the columns come back named <code>V1</code> to <code>V9</code>. To keep only certain years, read the file and filter it instead.</p>
 <p>The <code>select</code> argument restricts which columns are read, which often has a larger effect on memory than restricting rows. <code>drop</code> is its complement.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a>three_columns <span class="ot">&lt;-</span> <span class="fu">fread</span>(</span>
@@ -760,7 +779,7 @@ Tip
 <span class="header-section-number">G.4.1</span> Activity: translate a pipeline</h3>
 <div class="task">
 <div class="task-header">
-<p>the same question, three ways</p>
+<p>the same question, two ways</p>
 </div>
 <div class="task-container">
 <p>Using <code>allData</code>, find the mean <code>hindfoot_length</code> per <code>species_id</code> for records after 1985, sorted from largest to smallest mean. Write it (a) as native <code>data.table</code>, (b) as a <code>dtplyr</code> pipeline, then use <code>show_query()</code> to compare your dtplyr code with the <code>data.table</code> it generates. Are they the same?</p>
@@ -797,6 +816,14 @@ Solution
 </section></section><section id="when-the-data-live-on-disk-databases" class="level2" data-number="G.5"><h2 data-number="G.5" class="anchored" data-anchor-id="when-the-data-live-on-disk-databases">
 <span class="header-section-number">G.5</span> When the data live on disk: databases</h2>
 <p><code>data.table</code> still holds everything in memory. Once the data exceed RAM, or when they already sit in a shared database, the better move is to leave them where they are and query across the connection. We use SQLite here because it is a single file with no server to configure, but the same code works against PostgreSQL, MySQL, BigQuery, and others through the common <code>DBI</code> interface.</p>
+<p>First download the Portal mammals database (a SQLite file of about 1 MB) with the button below. Save it as <code>portal_mammals.sqlite</code> in a <code>data</code> folder inside your project, so its path is <code>data/portal_mammals.sqlite</code>.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<a href="https://ndownloader.figshare.com/files/2292171">
+<button class="btn btn-success"><i class="fa fa-save"></i> Download Portal mammals database (SQLite)</button>
+</a>
+</div>
+</div>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a><span class="fu">library</span>(DBI)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-label="2"></a><span class="fu">library</span>(RSQLite)</span>
@@ -857,10 +884,14 @@ Note
 <span id="cb13-4"><a href="#cb13-4" aria-label="4"></a>  <span class="fu">show_query</span>()</span>
 <span id="cb13-5"><a href="#cb13-5" aria-label="5"></a><span class="co"># &lt;SQL&gt;</span></span>
 <span id="cb13-6"><a href="#cb13-6" aria-label="6"></a><span class="co"># SELECT `year`, `species_id`, COUNT(*) AS `n`</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-label="7"></a><span class="co"># FROM `surveys`</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-label="8"></a><span class="co"># WHERE (`year` IN (1998, 1999, 2000))</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-label="9"></a><span class="co"># GROUP BY `year`, `species_id`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb13-7"><a href="#cb13-7" aria-label="7"></a><span class="co"># FROM (</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-label="8"></a><span class="co">#   SELECT `surveys`.*</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-label="9"></a><span class="co">#   FROM `surveys`</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-label="10"></a><span class="co">#   WHERE (`year` IN (1998.0, 1999.0, 2000.0))</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-label="11"></a><span class="co"># ) AS `q01`</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-label="12"></a><span class="co"># GROUP BY `year`, `species_id`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p>This is the real output from dbplyr 2.5.1. dbplyr wraps the filter in a subquery and writes the years as decimals (<code>1998.0</code>), because R numbers are doubles. A person writing the same query by hand would probably write the shorter version in the <code>dbGetQuery()</code> example below, and the database treats the two the same.</p>
 <p>If you prefer to write SQL directly, <code><a href="https://dbi.r-dbi.org/reference/dbGetQuery.html">DBI::dbGetQuery()</a></code> sends a raw query and returns a data frame in one step.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a>DBI<span class="sc">::</span><span class="fu">dbGetQuery</span>(</span>
@@ -901,13 +932,14 @@ Solution
 <span id="cb17-4"><a href="#cb17-4" aria-label="4"></a>  <span class="fu">filter</span>(hindfoot_length <span class="sc">&gt;</span> <span class="dv">20</span>) <span class="sc">|&gt;</span></span>
 <span id="cb17-5"><a href="#cb17-5" aria-label="5"></a>  <span class="fu">collect</span>()</span>
 <span id="cb17-6"><a href="#cb17-6" aria-label="6"></a></span>
-<span id="cb17-7"><a href="#cb17-7" aria-label="7"></a><span class="co"># The second pipeline generates SQL along these lines:</span></span>
-<span id="cb17-8"><a href="#cb17-8" aria-label="8"></a><span class="co"># SELECT *</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-label="9"></a><span class="co"># FROM `surveys`</span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-label="10"></a><span class="co"># WHERE (`year` &gt; 1977 AND `year` &lt; 2000 AND `hindfoot_length` = 30)</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-label="11"></a><span class="co"># ORDER BY `species_id` DESC</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb17-7"><a href="#cb17-7" aria-label="7"></a><span class="co"># show_query() on the second pipeline gives (dbplyr 2.5.1):</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-label="8"></a><span class="co"># &lt;SQL&gt;</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-label="9"></a><span class="co"># SELECT `surveys`.*</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-label="10"></a><span class="co"># FROM `surveys`</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-label="11"></a><span class="co"># WHERE (`year` &gt; 1977.0) AND (`year` &lt; 2000.0) AND (`hindfoot_length` = 30.0)</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-label="12"></a><span class="co"># ORDER BY `species_id` DESC</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Two things to notice. The chained <code><a href="https://rdrr.io/r/stats/filter.html">filter()</a></code> conditions become a single <code>WHERE</code> joined by <code>AND</code>, and <code>arrange(desc(...))</code> becomes <code>ORDER BY ... DESC</code>. The mapping is close enough that reading SQL and reading dplyr reinforce each other.</p>
+<p>Two things to notice. The comma-separated <code><a href="https://rdrr.io/r/stats/filter.html">filter()</a></code> conditions become a single <code>WHERE</code> joined by <code>AND</code>, and <code>arrange(desc(...))</code> becomes <code>ORDER BY ... DESC</code>. The mapping is close enough that reading SQL and reading dplyr reinforce each other.</p>
 </div>
 </section></section><section id="building-a-database-from-a-csv" class="level2" data-number="G.7"><h2 data-number="G.7" class="anchored" data-anchor-id="building-a-database-from-a-csv">
 <span class="header-section-number">G.7</span> Building a database from a CSV</h2>
@@ -1195,6 +1227,109 @@ function move_sidebar() {
 }
 move_sidebar();
 window.onresize = move_sidebar;
+</script><script>
+// Colour palette picker: a swatch button next to the dark-mode toggle.
+// The choice is stored in this browser only (localStorage).
+(function () {
+  var KEY = "advancing-r-palette";
+  var palettes = [
+    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
+    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+  ];
+
+  function current() {
+    return document.documentElement.getAttribute("data-palette") || "classic";
+  }
+
+  function apply(id) {
+    if (id === "classic") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+    });
+  }
+
+  function build(container, n) {
+    var wrap = document.createElement("div");
+    wrap.className = "palette-picker";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-toggle";
+    btn.id = "palette-toggle-" + n;
+    btn.title = "Change colour palette";
+    btn.setAttribute("aria-label", "Change colour palette");
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.id = "palette-menu-" + n;
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
+      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 8) + "px";
+    }
+    function open() {
+      menu.hidden = false;
+      place();
+      btn.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    var toggle = container.querySelector(".quarto-color-scheme-toggle");
+    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+  }
+
+  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
+    if (!c.querySelector(".palette-picker")) build(c, n);
+  });
+})();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

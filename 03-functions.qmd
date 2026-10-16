@@ -72,7 +72,7 @@ fn(2)   # 4
 x       # still 1
 ```
 
-This isolation is a feature: a function's behaviour depends only on its arguments,
+This isolation is a feature: a function's behaviour should depend only on its arguments,
 not on whatever happens to be lying around in your session. That is why
 functions are more reproducible than loose script lines.
 
@@ -171,10 +171,29 @@ is acceptable only for the first one or two well-known arguments.
 Argument order
 ::::
 ::::{.task-container}
-Using the `power()` function above, write three calls that all return 8
-but use position matching, name matching, and a mix of the two.
+Using the `power()` function above, predict what each of these calls returns,
+then run them to check:
+
+```{r}
+#| eval: false
+power(3, 2)
+power(exponent = 3, 2)
+power(e = 2, 5)
+```
 ::::
 :::
+
+`r hide("Solution")`
+
+- `power(3, 2)` returns 9: both arguments are matched by position, so `base = 3`
+  and `exponent = 2`.
+- `power(exponent = 3, 2)` returns 8: `exponent` is matched by name first, and the
+  unnamed 2 fills the remaining argument, `base`.
+- `power(e = 2, 5)` returns 25: `e` is a unique prefix of `exponent`, so partial
+  matching sets `exponent = 2` and `base = 5`. It works, but it is exactly the
+  kind of call to avoid.
+
+`r unhide()`
 
 ### Wrapper functions and passing arguments with ...
 
@@ -413,7 +432,7 @@ all_coefs <- rbind(coefs_adelie, coefs_gentoo, coefs_chinstrap)
 
 :::{.task}
 ::::{.task-header}
-find the bugs
+Find the bugs
 ::::
 ::::{.task-container}
 
@@ -457,7 +476,7 @@ The bugs are symptoms. The structural problems are the disease:
 
 :::{.callout-note}
 
-Filazzola and Lortie (2022), writing on clean code in ecology, frame this as a
+@filazzola2022, writing on clean code in ecology, frame this as a
 *scientific communication* problem rather than a matter of taste: unclear code
 miscommunicates what the analysis did. Small, named functions both communicate
 intent and constrain what the code can do wrong.
@@ -641,7 +660,7 @@ repetition with iteration.
 
 :::{.task}
 ::::{.task-header}
-when *not* to write a function
+When *not* to write a function
 ::::
 ::::{.task-container}
 
@@ -705,13 +724,13 @@ testing and, eventually, pipelining.
 
 :::
 
-## Part D: The function factory
+## Part D: the function factory
 
 It's functions all the way down...
 
 A function factory is a function that builds and returns other functions. You give the factory some configuration, and it hands back a new function with that configuration baked in and ready to use. If you have ever written nearly identical unit converters, threshold checkers, or formatters and felt that the repetition was unnecessary, a function factory lets you collapse those variants into a single recipe.
 
-The mechanism rests on lexical scoping. When a function is defined inside another function, it keeps a reference to the environment in which it was created. So if the outer function had a variable called factor, the inner function can still see it long after the outer call has finished. That preserved environment is called a closure, and it is what allows the manufactured functions to remember the settings you gave them. In practice, you write the factory once and produce as many specialised functions as you need:
+The mechanism rests on lexical scoping. When a function is defined inside another function, it keeps a reference to the environment in which it was created. So if the outer function had a variable called `factor`, the inner function can still see it long after the outer call has finished. That preserved environment is called a closure, and it is what allows the manufactured functions to remember the settings you gave them. In practice, you write the factory once and produce as many specialised functions as you need:
 
 ```{r}
 #| eval: false
@@ -735,7 +754,7 @@ penguins_clean |>
 
 ```
 
-The point to take away is that g_to_kg and mm_to_cm are distinct functions, each carrying its own value of factor, bound at the moment the factory was called. That persistent enclosing environment is the closure. A function factory is simply a function that uses it to produce configured functions on demand. This is useful when you want to avoid repeating yourself across many similar transformations, or to pre-configure behaviour (a threshold, a unit, a reference mean) once and reuse it.
+The point to take away is that `g_to_kg()` and `mm_to_cm()` are distinct functions, each carrying its own value of `factor`, bound at the moment the factory was called. That persistent enclosing environment is the closure. A function factory is simply a function that uses it to produce configured functions on demand. This is useful when you want to avoid repeating yourself across many similar transformations, or to pre-configure behaviour (a threshold, a unit, a reference mean) once and reuse it.
 
 
 ## Part E: testing functions
@@ -813,7 +832,7 @@ Three principles carry most of the value:
 
 :::{.task}
 ::::{.task-header}
-write a test
+Write a test
 ::::
 ::::{.task-container}
 

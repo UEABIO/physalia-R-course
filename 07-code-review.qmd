@@ -11,7 +11,7 @@ library(knitr)
 library(kableExtra)
 ```
 
-> **Materials:** The project folder from the course OSF page (https://osf.io/jgeq9/). It contains the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` (+ rendered `.html`), and four loose image files, all in a single folder.
+> **Materials:** The project folder from the course OSF page (https://osf.io/jgeq9/). It contains the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` (+ rendered `.html`), and five loose image files, all in a single folder.
 
 > **Prerequisite:** The reproducibility chapter, taught this morning. You have already cleaned this dataset and met the `9999` "not recorded" sentinel; this afternoon we review the analysis code.
 
@@ -21,11 +21,11 @@ library(kableExtra)
 
 ---
 
-## Part 1 — Why code review matters {#cr-why}
+## Part 1: Why code review matters {#cr-why}
 
 *⏱ ~15 minutes*
 
-This morning, in the reproducibility chapter, you ran the many-analysts activity: the same *C. elegans* reproduction dataset, the same broad question, meaningfully different results across the room. That illustrated the problem of **underspecified methods**: analytical decisions that are not documented produce variable, non-transparent science. You then cleaned the raw data and built a documented project.
+This morning, in the reproducibility chapter, you ran the many-analysts activity: the same *C. elegans* reproduction dataset, the same broad question, meaningfully different results from different participants. That illustrated the problem of **underspecified methods**: analytical decisions that are not documented produce variable, non-transparent science. You then cleaned the raw data and built a documented project.
 
 Code review addresses a related but distinct failure: **the code does not actually do what the analyst thinks it does**. It is possible to write a fully specified, well-documented analysis plan, implement it in R, and still have the code contain errors that silently produce wrong results. No amount of pre-registration prevents this; only someone actually reading the code can catch it.
 
@@ -39,11 +39,11 @@ Spend five minutes reading the abstract and Figure 1 now.
 
 Errors take three forms, all of which are common:
 
-**Conceptual** — the wrong model for the data type: Gaussian errors on offspring counts (which are non-negative integers and often overdispersed); a fixed effect where a random effect is needed; comparing models that are not comparable.
+**Conceptual**: the wrong model for the data type, such as Gaussian errors on offspring counts (which are non-negative integers and often overdispersed); a fixed effect where a random effect is needed; comparing models that are not comparable.
 
-**Programmatic** — the right model implemented incorrectly: selecting columns by position rather than name; an operator-precedence slip that quietly changes which rows are analysed; a column name that breaks on a round-trip through disk.
+**Programmatic**: the right model implemented incorrectly, such as selecting columns by position rather than name; an operator-precedence slip that quietly changes which rows are analysed; a column name that breaks on a round-trip through disk.
 
-**Syntactic** — misspelled function names, wrong argument orders. These at least cause a visible error rather than a silent wrong result.
+**Syntactic**: misspelled function names, wrong argument orders. These at least cause a visible error rather than a silent wrong result.
 
 :::{.callout-tip}
 **Opening poll** *(type in chat)*
@@ -60,7 +60,7 @@ Keep the results visible. We will return to them.
 
 ---
 
-## Part 2 — The 4Rs framework {#cr-4rs}
+## Part 2: The 4Rs framework {#cr-4rs}
 
 *⏱ ~20 minutes*
 
@@ -110,7 +110,7 @@ Open `ANALYSIS.R`. Without running it, type into the chat one specific example f
 
 ---
 
-## Part 3 — Performing a structured code review {#cr-manual}
+## Part 3: Performing a structured code review {#cr-manual}
 
 *⏱ ~50 minutes*
 
@@ -151,7 +151,7 @@ dat1$block <-  as.numeric(dat1$block)
 dat1$worm_id <- as.numeric(dat1$worm_id)
 dat1$total_offspring <- as.numeric(dat1$total_offspring)
 
-dat2 <- pivot_longer(dat1, cols = 3:5, names_to = "strain", values_to = "total offspring") %>% filter(worm_id != 5)
+dat2 <- pivot_longer(dat1, cols = 3:5, names_to = "treatment", values_to = "total offspring") %>% filter(worm_id != 5)
 
 full.dat <- dat2[complete.cases(dat2$`total offspring`), ]
 
@@ -206,7 +206,7 @@ ggsave(filename = "final2.jpg", path = "~/Library/CloudStorage/OneDrive-Universi
 :::
 
 
-### Step 1 — First read (3 minutes)
+### Step 1: First read (3 minutes)
 
 Read the script end to end without annotating. Ask yourself:
 
@@ -256,7 +256,7 @@ tribble(
 ```
 
 
-### Step 2 — Complete the checklist (15 minutes)
+### Step 2: Complete the checklist (15 minutes)
 
 :::{.task}
 ::::{.task-header}
@@ -277,7 +277,7 @@ Then type into the chat:
 
 `r hide("Solution")`
 
-#### The problems — revealed
+#### The problems revealed
 
 ```{r problems-table}
 #| echo: false
@@ -287,13 +287,13 @@ tribble(
   "P2", "Run",          "26, 36, 38, 79", "Absolute OneDrive paths in read.csv(), write.csv(), the re-read, and ggsave(). The script only runs on the original author's machine.",                          "Critical",
   "P3", "Run / Reported","1–24",       "About 22 library() calls, the great majority unused (xgboost, glmnet, caret, randomForest, rpart, rvest, shiny, plotly, gplots, ggridges, ...). Slows loading, hides the real dependencies, and any one missing package aborts the script. No versions recorded.", "High",
   "P4", "Reliable",     "46",          "Operator-precedence bug. filter(strain == 'daf' | strain == 'empty_vector' & !is.na(diet)): & binds tighter than |, so this keeps daf OR (empty_vector AND diet recorded). daf worms with missing diet slip through; the intended grouping needs parentheses.", "Critical",
-  "P5", "Reliable",     "32, 36–38, 42", "values_to = 'total offspring' creates a column name with a space. After write.csv() then read.csv() (lines 36–38) it becomes total.offspring, so full_dat$total_offspring on lines 42 and 47 silently returns NULL.", "Critical",
+  "P5", "Reliable",     "32, 36–38, 42", "values_to = 'total offspring' creates a column name with a space. After write.csv() then read.csv() (lines 36–38) it becomes total.offspring, so full_dat$total_offspring on line 42 silently returns NULL (the plot shows strain counts, not offspring), and the mutate() on line 47 stops with 'object total_offspring not found'.", "Critical",
   "P6", "Reliable",     "32",          "pivot_longer(cols = 3:5) selects columns by position. If the column order ever changes, the wrong columns are reshaped — with no error.",                          "High",
   "P7", "Reliable / Reported","32",    "filter(worm_id != 5) silently drops one worm with no comment, reason, or logged count.",                                                                          "High",
   "P8", "Reliable",     "34",          "complete.cases() on 'total offspring' removes only NA. It does NOT handle the 9999 'not recorded' sentinel from the raw data (reproducibility chapter): 9999s enter the models as real offspring counts of 9999.", "Critical",
-  "P9", "Reliable",     "67",          "anova(m1a, m1b, m1c) puts two lmer models and an lm in one call. R silently refits the mixed models with ML, reorders all three by number of parameters and tests each against the next. That chain compares m1a with m1c, which are not nested (they differ in both fixed and random effects), so that row's test is meaningless; no hypothesis says which comparison matters.", "Critical",
+  "P9", "Reliable",     "67",          "anova(m1a, m1b, m1c) puts two lmer models and an lm in one call. R refits the mixed models with ML (with only a brief message), reorders all three by number of parameters and tests each against the next. That chain compares m1a with m1c, which are not nested (they differ in both fixed and random effects), so that row's test is meaningless; no hypothesis says which comparison matters.", "Critical",
   "P10","Reliable",     "49–65",       "total_offspring is a count, but all three models are Gaussian (lmer / lm). A count GLMM (Poisson or negative binomial) is not considered; no residual or distributional checks.", "High",
-  "P11","Reliable",     "71–77",       "geom_smooth(method = 'lm') is drawn over a categorical x (as.factor(strain)) — a regression line through factor levels is meaningless. stat_summary(..., shape = 0) passes shape to an errorbar geom that ignores it.", "Medium",
+  "P11","Reliable",     "71–77",       "geom_smooth(method = 'lm') over a categorical x (as.factor(strain)) with colour groups draws nothing at all: each strain × diet group has only one x value, so there is no line to fit. Both stat_summary() calls pass a parameter their geom does not use (shape to the errorbar, width to the point); ggplot2 ignores them with a warning.", "Medium",
   "P12","Reproducible", "49–67, 79",   "Three models are fitted but none is designated as the result and no model output is saved to disk. The figure is saved as final2.jpg (the '2' implies undocumented earlier versions). No sessionInfo(), no renv, no versions; full.dat / full_dat / Na are confusingly similar names.", "Medium"
 ) |>
   kbl(booktabs = TRUE,
@@ -301,11 +301,11 @@ tribble(
   kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover"))
 ```
 
-**P1, P4, and P8 are the most consequential.** P1 means the script does not even run to the end: the `libray` typo halts it before any analysis happens. But fixing the typo does not make the script correct. P4 is the dangerous one: the precedence slip silently changes *which worms are in the analysis*, and the code looks perfectly reasonable. P8 is the direct callback to this morning: `complete.cases()` removes `NA`, but `9999` is a number, not `NA`, so every "not recorded" worm enters the models as if it produced 9,999 offspring, wrecking every group mean. None of P4, P8, P10 or P12 throws an error: the script (once it runs) produces numbers, and the numbers are wrong.
+**P1, P4, and P8 are the most consequential.** P1 means the script does not even run to the end: the `libray` typo halts it before any analysis happens. But fixing the typo does not make the script correct. P4 is the dangerous one: the precedence slip silently changes *which worms are in the analysis*, and the code looks perfectly reasonable. P8 is the direct callback to this morning: `complete.cases()` removes `NA`, but `9999` is a number, not `NA`, so every "not recorded" worm enters the models as if it produced 9,999 offspring, wrecking the means of the groups they fall in. None of P4, P8, P10 or P12 throws an error: once the crashes (P1, P2, P5) are fixed, the script produces numbers, and the numbers are wrong.
 
 `r unhide()`
 
-### Step 3 — Write the review (12 minutes)
+### Step 3: Write the review (12 minutes)
 
 :::{.task}
 ::::{.task-header}
@@ -357,7 +357,7 @@ When done, paste your SUMMARY and your RECOMMENDATION into the chat.
 
 ---
 
-## Part 4 — Fixing the script {#cr-fixing}
+## Part 4: Fixing the script {#cr-fixing}
 
 *⏱ ~25 minutes*
 
@@ -417,7 +417,7 @@ m <- glmer.nb(TO ~ strain * diet + (1 | B), data = dat)
 
 # -- 4. Diagnostics --------------------------------------------------- fixes P10
 plot(m)                                   # residuals vs fitted
-if (isSingular(m)) warning("Model is singular -- check the block random effect.")
+if (isSingular(m)) warning("Model is singular -- check the batch (B) random effect.")
 
 # -- 5. Save the reported model --------------------------------------- fixes P12
 write_csv(tidy(m, conf.int = TRUE),
@@ -464,13 +464,13 @@ Type your answers into the chat.
 
 ### Tidy the project, not just the script
 
-`ANALYSIS.R` reads its data from one folder and writes its outputs back to the same folder. Look at what is actually *in* that folder on the OSF page: the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` and its rendered `.html`, and four loose image files, all in one flat directory.
+`ANALYSIS.R` reads its data from one folder and writes its outputs back to the same folder. Look at what is actually *in* that folder on the OSF page: the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` and its rendered `.html`, and five loose image files, all in one flat directory.
 
-That is exactly the messy structure you saw at the start of the reproducibility chapter, and the folder structure you built there fixes it. Three things a reviewer should flag:
+That is exactly the messy structure you saw in Part 4 of the reproducibility chapter, and the folder structure you built there fixes it. Three things a reviewer should flag:
 
 - **`old_code.R` should not be there.** It is a superseded earlier version. Dead code left in the project root invites a collaborator to run the wrong script. Move it to an `archive/` folder, or delete it (version control already remembers it).
-- **The four image files are loose.** Generated outputs belong in `figures/`, produced by the code, not committed by hand next to the scripts.
-- **There is no README.** You built one this morning, in the reproducibility chapter; that same `README.md` belongs in the project root here; it is what lets a reviewer answer the *Reported* questions at all.
+- **The five image files are loose.** Generated outputs belong in `figures/`, produced by the code, not committed by hand next to the scripts.
+- **There is no README.** You built one this morning in the reproducibility chapter, and that same `README.md` belongs in the project root here. It is what lets a reviewer answer the *Reported* questions at all.
 
 Re-using the structure you created in the reproducibility chapter (`data/raw`, `data/processed`, `analysis/`, `figures/`, `results/`) makes the project navigable and makes the *Run* check ("can I tell which script to run, and in what order?") answerable at a glance.
 
@@ -490,7 +490,7 @@ tribble(
   "6",   "Results can be computationally reproduced by running the code",      "Reproducibility"
 ) |>
   kbl(booktabs = TRUE,
-      caption = "The six SORTEE Stages of Review (Pick, et al. 2026)") |>
+      caption = "The six SORTEE Stages of Review (Pick et al. 2026)") |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover")) |>
   column_spec(1, bold = TRUE)
 ```
@@ -505,7 +505,7 @@ The stages build on each other: Stages 1–2 deliver **data re-use**, Stages 1�
 
 ---
 
-## Part 5 — Building the review habit {#cr-habit}
+## Part 5: Building the review habit {#cr-habit}
 
 *⏱ ~10 minutes*
 
@@ -524,11 +524,11 @@ Most code review never happens because no one organises it. Ivimey-Cook et al. (
 
 Without overthinking it, commit to specifics on the following five questions. Two-line answers are fine; the point is to write them down, because *"we should review each other's code"* without specifics is a sentence that ages badly.
 
-1. **Who** — name 2–4 people you'd actually invite in the next month.
-2. **What** — readability/learning, or pre-submission error-checking? (Pick one for the first meeting.)
-3. **When and where** — cadence and platform (in-person, Zoom, async via GitHub).
-4. **First case** — whose code goes first, and what's the explicit scope of that review (which of the four Rs)?
-5. **Credit** — what's your default acknowledgement, and what triggers escalating to MeRIT or co-authorship?
+1. **Who**: name 2–4 people you'd actually invite in the next month.
+2. **What**: readability/learning, or pre-submission error-checking? (Pick one for the first meeting.)
+3. **When and where**: cadence and platform (in-person, Zoom, async via GitHub).
+4. **First case**: whose code goes first, and what's the explicit scope of that review (which of the four Rs)?
+5. **Credit**: what's your default acknowledgement, and what triggers escalating to MeRIT or co-authorship?
 
 When you've written your five, post the one you're least sure about and we'll workshop it briefly as a group.
 :::
@@ -580,6 +580,9 @@ tribble(
 - **Ivimey-Cook, E.R., et al. (2025).** TADA! https://doi.org/10.32942/X2D93K
 - **Pick, J.L., et al. (2026).** SORTEE Guidelines. https://doi.org/10.24072/pcjournal.687
 - **Gould, E., et al. (2025).** Same data, different analysts: variation in effect sizes due to analytical decisions in ecology and evolutionary biology. *BMC Biology*, 23, 35. https://doi.org/10.1186/s12915-024-02101-x
+- **Barnes, N. (2010).** Publish your computer code: it is good enough. *Nature*, 467, 753. https://doi.org/10.1038/467753a
+- **Nakagawa, S., et al. (2023).** Method Reporting with Initials for Transparency (MeRIT) promotes more granularity and accountability for author contributions. *Nature Communications*, 14, 1788. https://doi.org/10.1038/s41467-023-37039-1
+- **Silberzahn, R., et al. (2018).** Many analysts, one data set. *Advances in Methods and Practices in Psychological Science*, 1, 337–356. https://doi.org/10.1177/2515245917747646
 - **Trisovic, A., et al. (2022).** A large-scale study on research code quality and execution. *Scientific Data*. https://doi.org/10.1038/s41597-022-01143-6
 - **SORTEE DCQC app:** https://github.com/SORTEE/DCQC
 - **Course OSF page:** https://osf.io/jgeq9/ — `ANALYSIS.R` is the script reviewed in this chapter

@@ -108,11 +108,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-submit-button-title": "Submit",
     "search-label": "Search"
   }
-}</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+}</script><script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+  } catch (e) {}
+})();
+</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
 </head>
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -416,6 +425,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 5: Saving figures correctly</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -476,7 +491,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11b-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 2: AI - Inline completions</span></a>
+ <span class="menu-text">Block 2: Inline completion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -529,7 +544,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -669,10 +684,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>For a team, Git adds a fourth benefit: it is a mechanism for combining the work of several people on the same files without overwriting one another, and for reconciling conflicts in a controlled way.</p>
 <p>A well-organised project under version control keeps every component together and tracked:</p>
 <ul>
-<li>🔢 Data</li>
-<li>✍️ Scripts</li>
-<li>📊 Figures</li>
-<li>📝 Reports</li>
+<li>Data</li>
+<li>Scripts</li>
+<li>Figures</li>
+<li>Reports</li>
 </ul></section><section id="sec-model" class="level2"><h2 class="anchored" data-anchor-id="sec-model">The mental model</h2>
 <p>You do not need to understand Git’s internals to use it well, but you do need one mental model.</p>
 <p>A Git <strong>repository</strong> (or <strong>repo</strong>) is a project folder whose change history Git tracks. Within it, a file passes through three states:</p>
@@ -787,15 +802,15 @@ Note
 </div>
 </section><section id="sec-pat" class="level3"><h3 class="anchored" data-anchor-id="sec-pat">Authenticate with a Personal Access Token</h3>
 <p>GitHub no longer accepts account passwords for Git operations; it uses a <strong>Personal Access Token (PAT)</strong> instead. The recommended workflow for R users keeps you inside R and stores the token in your operating system’s credential manager rather than in any file.</p>
-<p><strong>Step 1 — generate a token.</strong> This opens a GitHub page with sensible scopes pre-selected. Give the token a descriptive name, set an expiry, and generate it. Leave the page open and copy the token to your clipboard.</p>
+<p><strong>Step 1: generate a token.</strong> This opens a GitHub page with sensible scopes pre-selected. Give the token a descriptive name, set an expiry, and generate it. Leave the page open and copy the token to your clipboard.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a>usethis<span class="sc">::</span><span class="fu">create_github_token</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Step 2 — store the token.</strong> This registers the token with your OS credential store, from which <code>usethis</code>, <code>gh</code> and <code>gert</code> retrieve it automatically. Paste the token when prompted.</p>
+<p><strong>Step 2: store the token.</strong> This registers the token with your OS credential store, from which <code>usethis</code>, <code>gh</code> and <code>gert</code> retrieve it automatically. Paste the token when prompted.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>gitcreds<span class="sc">::</span><span class="fu">gitcreds_set</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>Step 3 — verify.</strong> Either of these confirms that a valid, discoverable token is in place and reports its scopes:</p>
+<p><strong>Step 3: verify.</strong> Either of these confirms that a valid, discoverable token is in place and reports its scopes:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a>usethis<span class="sc">::</span><span class="fu">gh_token_help</span>()</span>
 <span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>usethis<span class="sc">::</span><span class="fu">git_sitrep</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -863,7 +878,7 @@ Tip
 </div>
 <div class="task">
 <div class="task-header">
-<p><strong>Track some changes</strong></p>
+<p>Track some changes</p>
 </div>
 <div class="task-container">
 <ul>
@@ -955,16 +970,11 @@ Figure&nbsp;6: The diff window highlights additions (green) and deletions (red).
 <p>Added text is shown on a green background and removed text on red. If you have a colour-vision deficiency, the line numbers in the two left-hand columns indicate which side each change belongs to.</p>
 </section><section id="stage-and-commit" class="level3"><h3 class="anchored" data-anchor-id="stage-and-commit">Stage and commit</h3>
 <p>A <strong>commit</strong> is a labelled snapshot of your project at a moment in time. Git gives each commit a unique identifier and records who made it and when.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<div class="task">
+<div class="task-header">
+<p>Commit your changes</p>
 </div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Commit your changes
-</div>
-</div>
-<div class="callout-body-container callout-body">
+<div class="task-container">
 <ul>
 <li><p>In the Git pane, tick the checkbox beside the file to <strong>stage</strong> it.</p></li>
 <li><p>Click <strong>Commit</strong>, write a descriptive message (phrase it as what the change does, e.g.&nbsp;<em>“Add setup chunk loading tidyverse and palmerpenguins”</em>), and confirm.</p></li>
@@ -999,16 +1009,11 @@ Figure&nbsp;7: The Git pane indicates how far ahead of the remote you are.
 </div>
 </section></section><section id="the-solo-remote-cycle" class="level2"><h2 class="anchored" data-anchor-id="the-solo-remote-cycle">The solo remote cycle</h2>
 <section id="push" class="level3"><h3 class="anchored" data-anchor-id="push">Push</h3>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<div class="task">
+<div class="task-header">
+<p>Push your commits</p>
 </div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Push your commits
-</div>
-</div>
-<div class="callout-body-container callout-body">
+<div class="task-container">
 <p>Click <strong>Push</strong> (the green up-arrow) in the Git pane. Nothing appears on GitHub until you push.</p>
 </div>
 </div>
@@ -1017,7 +1022,7 @@ Figure&nbsp;7: The Git pane indicates how far ahead of the remote you are.
 <p>You can also edit directly on GitHub. Your local copy is then out of date, and you must pull the change down to it.</p>
 <div class="task">
 <div class="task-header">
-<p><strong>Add a README and pull it</strong></p>
+<p>Add a README and pull it</p>
 </div>
 <div class="task-container">
 <ul>
@@ -1046,7 +1051,7 @@ Figure&nbsp;7: The Git pane indicates how far ahead of the remote you are.
 <section id="create-a-branch-on-github" class="level3"><h3 class="anchored" data-anchor-id="create-a-branch-on-github">Create a branch on GitHub</h3>
 <div class="task">
 <div class="task-header">
-<p><strong>Create a branch</strong></p>
+<p>Create a branch</p>
 </div>
 <div class="task-container">
 <ul>
@@ -1073,16 +1078,11 @@ Figure&nbsp;8: Creating a branch from the GitHub web interface.
 <li>In the Git pane, use the branch drop-down (next to <strong>New Branch</strong>) to switch to <code>new-plot</code>. This is “checking out” the branch.</li>
 <li>Work proceeds exactly as before: stage, commit, push. Commits go to <code>new-plot</code> and leave <code>main</code> untouched until you merge.</li>
 </ul>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<div class="task">
+<div class="task-header">
+<p>Add a figure on the branch</p>
 </div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Add a figure on the branch
-</div>
-</div>
-<div class="callout-body-container callout-body">
+<div class="task-container">
 <p>Add a chunk that produces a figure, then commit and push it to <code>new-plot</code>.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a></span>
 <span id="cb9-2"><a href="#cb9-2" aria-label="2"></a><span class="in">```{r}</span></span>
@@ -1107,16 +1107,11 @@ Figure&nbsp;8: Creating a branch from the GitHub web interface.
 </div>
 </section><section id="merge-via-a-pull-request" class="level3"><h3 class="anchored" data-anchor-id="merge-via-a-pull-request">Merge via a pull request</h3>
 <p>Back on GitHub, your pushed branch is offered for comparison. Merging it into <code>main</code> is done through a <strong>pull request (PR)</strong>, which records the proposed change and lets it be reviewed before integration.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<div class="task">
+<div class="task-header">
+<p>Open and merge a pull request</p>
 </div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Open and merge a pull request
-</div>
-</div>
-<div class="callout-body-container callout-body">
+<div class="task-container">
 <ul>
 <li>Click <strong>Compare &amp; pull request</strong>.</li>
 <li>On the next page, click <strong>Create pull request</strong>.</li>
@@ -1167,7 +1162,7 @@ Figure&nbsp;11: Deleting a branch after its changes are merged.
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Do I need Branches?
+<span class="screen-reader-only">Note</span>Do I need branches?
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -1194,7 +1189,7 @@ Figure&nbsp;12: A fork is a personal copy of another user’s repository.
 <section id="exercise-contribute-to-someone-elses-repository" class="level3"><h3 class="anchored" data-anchor-id="exercise-contribute-to-someone-elses-repository">Exercise: contribute to someone else’s repository</h3>
 <div class="task">
 <div class="task-header">
-<p><strong>Fork, edit, and open a pull request</strong></p>
+<p>Fork, edit, and open a pull request</p>
 </div>
 <div class="task-container">
 <ol type="1">
@@ -1214,16 +1209,11 @@ Figure&nbsp;12: A fork is a personal copy of another user’s repository.
 </ol>
 </div>
 </div>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<div class="task">
+<div class="task-header">
+<p>Open the pull request</p>
 </div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Open the pull request
-</div>
-</div>
-<div class="callout-body-container callout-body">
+<div class="task-container">
 <ol type="1">
 <li>On your fork, find the banner saying your branch is ahead of the original, open the <strong>Contribute</strong> menu, and choose <strong>Open a pull request</strong>.</li>
 <li>On the comparison page, click <strong>Create pull request</strong>.</li>
@@ -1603,6 +1593,109 @@ function move_sidebar() {
 }
 move_sidebar();
 window.onresize = move_sidebar;
+</script><script>
+// Colour palette picker: a swatch button next to the dark-mode toggle.
+// The choice is stored in this browser only (localStorage).
+(function () {
+  var KEY = "advancing-r-palette";
+  var palettes = [
+    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
+    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+  ];
+
+  function current() {
+    return document.documentElement.getAttribute("data-palette") || "classic";
+  }
+
+  function apply(id) {
+    if (id === "classic") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+    });
+  }
+
+  function build(container, n) {
+    var wrap = document.createElement("div");
+    wrap.className = "palette-picker";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-toggle";
+    btn.id = "palette-toggle-" + n;
+    btn.title = "Change colour palette";
+    btn.setAttribute("aria-label", "Change colour palette");
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.id = "palette-menu-" + n;
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
+      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 8) + "px";
+    }
+    function open() {
+      menu.hidden = false;
+      place();
+      btn.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    var toggle = container.querySelector(".quarto-color-scheme-toggle");
+    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+  }
+
+  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
+    if (!c.querySelector(".palette-picker")) build(c, n);
+  });
+})();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

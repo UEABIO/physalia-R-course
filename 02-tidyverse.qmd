@@ -130,7 +130,7 @@ try removing the `!`, and predict each result before running it.
 
 :::{.task}
 ::::{.task-header}
-one summary, every numeric column
+One summary, every numeric column
 ::::
 ::::{.task-container}
 
@@ -303,14 +303,6 @@ into one tibble. We will unpack `map()` properly in Block 4. For now, notice tha
 "do the same thing to every element of a collection" is the shape of almost all
 the work ahead.
 
-:::{.callout-note}
-
-**Where this leaves us.** We can now operate on many columns at once, reshape
-between long and wide, slice by order, and collapse groups into list-columns. The rest of the day is about the *code that
-acts on the data*: functions, iteration, and generalisation.
-
-:::
-
 ## Data validation with `tidylog` and `assertr` {#sec-validate}
 
 A robust analysis makes every transformation visible and checks that your assumptions about the data actually hold. Two useful tools for this are `tidylog`, which reports what `dplyr` is doing, and `assertr`, which enforces explicit checks during a pipeline.
@@ -334,13 +326,15 @@ female_egg_data <- tibble(
   age_days = sample(1:30, n, replace = TRUE),
   eggs_laid = rpois(n, lambda = 50),
   eggs_hatched = pmin(eggs_laid, rpois(n, lambda = 45)),
-  body_mass  = rnorm(n, mean = 0.2, sd = 5)
+  body_mass  = rnorm(n, mean = 0.2, sd = 0.05)
 )
 
 # introduce a few intentional problems
 female_egg_data$age_days[1] <- 0
 female_egg_data$eggs_laid[2] <- 120
 female_egg_data$eggs_hatched[3] <- female_egg_data$eggs_laid[3] + 5
+female_egg_data$body_mass[4] <- -0.2   # a negative mass
+female_egg_data$body_mass[5] <- 15     # far too heavy
 ```
 
 ---
@@ -372,7 +366,7 @@ We will use the `female_egg_data_clean` dataset created above.
 glimpse(female_egg_data_clean)
 ```
 
-### `verify()` — check a logical condition
+### `verify()`: check a logical condition
 
 `verify()` is the simplest function. It evaluates a logical expression against the whole dataframe and stops if it is FALSE. Think of it as `stopifnot()` with better error messages and pipeline compatibility.
 
@@ -395,7 +389,7 @@ female_egg_data_clean |>
 `verify()` operates on the whole dataframe. It is good for checking structural properties: expected number of rows, expected columns, range constraints you know in advance.
 :::
 
-### `assert()` — check a predicate column by column
+### `assert()`: check a predicate column by column
 
 `assert()` applies a predicate function to one or more columns and reports which rows fail. This is more useful for checking individual variables.
 
@@ -444,7 +438,7 @@ tribble(
   kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover"))
 ```
 
-### `insist()` — generate bounds from the data itself
+### `insist()`: generate bounds from the data itself
 
 `insist()` is like `assert()`, but instead of a fixed predicate it takes a *predicate generator*: a function that first looks at the whole column (for example, to compute its mean and standard deviation) and then returns a predicate with bounds built from those values. That predicate is applied to every value in the column. `within_n_sds()` and `within_n_mads()` are predicate generators, so they work with `insist()`, not `assert()` (with `assert()` they stop with an error). They are particularly useful for flagging potential outliers without hard-coding exact bounds:
 
@@ -459,7 +453,7 @@ female_egg_data_clean |>
   insist(within_n_mads(3), eggs_laid)
 ```
 
-### `assert_rows()` — check row-level conditions
+### `assert_rows()`: check row-level conditions
 
 Sometimes the condition is not about a single column but about a combination of values across columns in the same row. `assert_rows()` handles this. It applies a row-reduction function first, then checks the result.
 
@@ -497,7 +491,7 @@ You may see examples such as `verify(nrow(.) > 0)`. The `.` placeholder only wor
 :::
 
 :::{.callout-note}
-Two checks fail: the `eggs_laid` value of 120 we introduced earlier, and the body mass column, which contains negative values. This is a good example of why assertions are useful: they force you to make explicit decisions about what you consider valid data.
+Two checks fail: the `eggs_laid` value of 120 we introduced earlier, and the two body masses we planted (-0.2 and 15). They are reported as rows 3 and 4 because the filter removed the first row. The other checks pass. This is a good example of why assertions are useful: they force you to make explicit decisions about what you consider valid data.
 :::
 
 ### Using `assertr` in a cleaning pipeline
@@ -546,3 +540,13 @@ Together, `tidylog` and `assertr` support a workflow where:
 - failures are caught early and clearly explained
 
 Used together, they help make analysis code transparent and self-checking, and reduce the risk that unnoticed data problems carry through into your results.
+
+:::{.callout-note}
+
+**Where this leaves us.** We can now operate on many columns at once, reshape
+between long and wide, slice by order, and collapse groups into list-columns. We
+can also make every data step visible with `tidylog` and check our assumptions
+about the data with `assertr`. The rest of the day is about the *code that acts
+on the data*: functions, iteration, and generalisation.
+
+:::

@@ -37,15 +37,18 @@ not set up. Initialise it now, once, at the console:
 ```{r}
 #| eval: false
 renv::init()
-renv::snapshot()
 ```
 
-`renv::init()` creates the project library and the `renv.lock` file; `renv::snapshot()`
-records the packages your code *uses* into the lockfile. renv finds them by scanning your
+`renv::init()` creates the project library, writes the `renv.lock` file and, in RStudio,
+restarts R so that the project library takes over. You do not need to run `renv::snapshot()`
+straight afterwards, because `init()` has already done it. The lockfile records the packages
+your code *uses*. renv finds them by scanning your
 project's scripts and Quarto documents for `library()` calls and `pkg::fn()` usages, so here
 it records `tidyverse` and `palmerpenguins` because `analysis.qmd` loads them. Packages
 that are merely installed, or loaded at the console, are not recorded.
-Commit `renv.lock` and the `renv/` infrastructure through the Git pane before proceeding.
+Commit `renv.lock`, `.Rprofile` and the `renv/` folder through the Git pane before proceeding.
+The `.Rprofile` file is what switches renv on whenever R starts in this project, so it
+needs to be committed too.
 
 ::: {.callout-note}
 With `renv.lock` committed, the "Before you start" checks below will pass rather than
@@ -58,7 +61,7 @@ repository: the hook guards its lockfile, and the Action renders its document.
 ### What you will learn
 
 By the end of this tutorial you will have two automated checks running in your
-penguins project:
+penguins project, and your penguins document published on the web:
 
 1. A **git hook** that runs on your machine every time you commit, checking that your
    `renv.lock` file is up to date.
@@ -67,7 +70,10 @@ penguins project:
    automatically rendering your penguins Quarto document and storing the output for
    download.
 
-Neither requires manual triggering. Both connect directly to the project workflow you
+3. A **GitHub Pages** site that publishes your rendered penguins document at a public
+   web address.
+
+The hook and the workflow need no manual triggering. All three connect directly to the project workflow you
 established in Block 1.
 
 ---
@@ -137,23 +143,25 @@ other tasks.
 
 You should be working in the penguins repository from Block 1, on the `main` branch, with
 the merged figure code present and your Quarto file named `analysis.qmd`. You should also
-have run `renv::init()` and `renv::snapshot()` as set out in the bridge above, and committed
-`renv.lock`.
+have run `renv::init()` as set out in the bridge above, and committed `renv.lock`,
+`.Rprofile` and the `renv/` folder.
 
-**Check that renv.lock is committed.** In RStudio or Positron, open the Git pane (usually
-in the top-right panel). If `renv.lock` appears in the list of changed files, it has not
+**Check that renv.lock is committed.** In RStudio, open the Git pane (usually in the
+top-right panel). In Positron, open the Source Control view from the Activity Bar on the
+left. If `renv.lock` appears in the list of changed files, it has not
 been committed yet. If it does not appear, it is already committed and you are ready to
 proceed.
 
 If `renv.lock` is not yet committed, run the following in R and then commit the result
 using the Git pane:
 
-```r
+```{r}
+#| eval: false
 renv::snapshot()
 ```
 
-**Check your branch name.** In the Git pane, your current branch name is shown at the
-top. If it says `main`, you are ready to proceed. If it says `master` or something else,
+**Check your branch name.** In RStudio's Git pane, your current branch name is shown at the
+top. In Positron, it is shown in the status bar at the bottom left. If it says `main`, you are ready to proceed. If it says `master` or something else,
 note the name, because you will need to substitute it in the workflow file in Part 2.
 
 **Confirm your penguins Quarto document.** Your project should contain `analysis.qmd`,
@@ -162,7 +170,7 @@ If you have not renamed it yet, do so now so that the tasks below match.
 
 
 
-## Part 1: Your first hook — checking renv synchronisation
+## Part 1: Your first hook (checking renv synchronisation)
 
 ### Why this matters
 
@@ -185,14 +193,16 @@ with the hook directly; it runs on its own.
 The `usethis` package provides a function that creates the hook file and sets the correct
 file permissions in a single R call, with no terminal commands required.
 
-First, install `usethis` if you do not have it:
+First, install `usethis` into this project, even if you already have it elsewhere. Now that
+renv is active, R only looks in the project library, so a copy you installed for other
+projects is not visible here:
 
 ```{r}
 #| eval: false
 install.packages("usethis")
 ```
 
-Create a file called scripts/hooks/pre-commit.sh containing the following:
+Create a file called `scripts/hooks/pre-commit.sh` containing the following:
 
 ```bash
 #!/usr/bin/env bash
@@ -268,7 +278,7 @@ designed to catch.
 
 :::{.task}
 ::::{.task-header}
-**Watch the hook block a commit — this commit is meant to fail**
+Watch the hook block a commit (this commit is meant to fail)
 ::::
 
 ::::{.task-container}
@@ -278,7 +288,8 @@ This task deliberately triggers the hook so you can see it work. The first commi
 
 1. Install `scales` at the console (a package you have not yet snapshotted):
 
-   ```r
+   ```{r}
+   #| eval: false
    install.packages("scales")   # or renv::install("scales")
    ```
 
@@ -358,7 +369,7 @@ for when you no longer want the check at all.
 ## Publishing to the web with GitHub Pages
 
 GitHub Pages serves web pages at a public URL of the form https://your-username.github.io/your-repo/. With no Action and no configuration file, you can publish your rendered penguins document by committing the HTML and letting Pages serve it. This is the simplest way to put your analysis on the web.
-Pages does not render Quarto; it only serves files that already exist in your repository. So the process is: `render index.qmd` to `index.html` locally, commit that HTML, and point Pages at it. Pages looks for a file named index.html at the repository root as the default page, which is why the document must be named index.qmd.
+Pages does not render Quarto; it only serves files that already exist in your repository. So the process is: render `index.qmd` to `index.html` locally, commit that HTML, and point Pages at it. Pages looks for a file named `index.html` at the repository root as the default page, which is why the document must be named `index.qmd`.
 
 ::: {.callout-warning}
 Anything published to Pages is publicly visible on the open web, including the rendered document and any data shown in it. Do not publish a repository containing data you would not want public.
@@ -377,14 +388,17 @@ Render it locally. In the terminal:
 quarto render index.qmd
 ```
 
-This produces index.html in your project root.
+This produces `index.html` in your project root.
 
 On GitHub.com, open your repository's Settings, click Pages in the left sidebar, and under Build and deployment → Source select Deploy from a branch. Set Branch to main and the folder to / (root), then Save.
 
-Commit and push both files:
+Commit and push. `git add -A` stages every change, including the removal of
+`analysis.qmd`, so Git records the rename rather than leaving the old file behind. If you
+use the Git pane instead, tick `analysis.qmd`, `index.qmd` and `index.html` before
+committing.
 
 ```bash
-git add index.qmd index.html
+git add -A
 git commit -m "docs: publish penguins analysis to Pages"
 git push
 ```
@@ -395,10 +409,10 @@ Visit https://your-username.github.io/your-repo/. The first build can take a min
 :::
 
 ::: {.callout-note}
-Because Pages serves the committed index.html, you must re-render and re-commit it whenever you change index.qmd; the site does not update on its own. Part 2 shows how a GitHub Action can do the rendering for you on every push, so the published page stays current without manual steps.
+Because Pages serves the committed `index.html`, you must re-render and re-commit it whenever you change `index.qmd`; the site does not update on its own. Part 2 shows how a GitHub Action can render the document for you, and [committing output back to the repository](#commit-back) shows how to have it commit `index.html` on every push, so the published page stays current without manual steps.
 :::
 
-## Part 2: Your first GitHub Action — rendering the penguins document
+## Part 2: Your first GitHub Action (rendering the penguins document)
 
 ### Why this matters
 
@@ -414,7 +428,8 @@ The `usethis` package provides `use_github_action()`, which sets up common GitHu
 workflows with a single R function call. Running it without arguments shows you the
 available options:
 
-```r
+```{r}
+#| eval: false
 usethis::use_github_action()
 ```
 
@@ -643,7 +658,7 @@ are being restored; on subsequent runs, caching makes the renv step much faster.
 When the run completes with a green tick:
 
 1. Scroll to the bottom of the run page
-2. Under **Artefacts**, click **rendered-analysis**
+2. Under **Artifacts**, click **rendered-analysis**
 3. A zip file downloads containing `index.html`
 
 This is your penguins document, rendered on GitHub's servers from the exact package
@@ -659,7 +674,8 @@ failing step to see the full log. The four most common causes are:
 **`renv.lock` is not committed**
 
 ```text
-Error in renv::restore() : renv.lock does not exist
+This project does not contain a lockfile.
+Have you called `snapshot()` yet?
 ```
 
 Fix: run `renv::snapshot()` locally, commit `renv.lock`, and push again.
@@ -727,9 +743,18 @@ on:
 
 The five fields in a cron expression represent, in order: minute, hour, day of month,
 month, and day of week. An asterisk means "every". So `0 9 * * *` means: at minute 0 of
-hour 9, every day of every month. The time is always in UTC, which is one hour behind
+hour 9, every day of every month. By default the time is in UTC, which is one hour behind
 British Summer Time (and the same as UK time in winter), and four to five hours ahead of
-US Eastern Time depending on daylight saving. Adjust accordingly.
+US Eastern Time depending on daylight saving. To use local time instead, add a `timezone:`
+key with an IANA time-zone name under the cron line:
+
+```yaml
+# Run every day at 9:00am UK time, all year round
+on:
+  schedule:
+    - cron: '0 9 * * *'
+      timezone: "Europe/London"
+```
 
 The syntax is not intuitive to read or write from memory. The website
 [crontab.guru](https://crontab.guru) translates cron expressions into plain English and
@@ -757,7 +782,7 @@ on:
 
 ---
 
-## Going further: committing output back to the repository
+## Going further: committing output back to the repository {#commit-back}
 
 The workflow in Part 2 uploads the rendered document as a temporary artefact, which
 GitHub deletes after seven days and which requires a manual download to access. An

@@ -11,11 +11,9 @@ penguins <- readRDS(here("files", "chapter5.RDS"))
 ```
 
 
-## Learning Objectives
+## Learning objectives
 
 By the end of this chapter, you will be able to:
-
-- Prepare and summarise data for advanced plotting.
 
 - Control aesthetics and grouping behaviour in multilayered plots.
 
@@ -76,7 +74,7 @@ penguins |>
 
 ```
 
-> The colour argument needs to go *inside* the relevant `geom()`, as only `aes` is inherited across layers.
+> A fixed colour is a setting, not a mapping, so it goes outside `aes()`, as an argument to the geom (here `geom_point()`).
 
 
 `r unhide()`
@@ -86,7 +84,7 @@ penguins |>
 
 
 
-## Choosing Effective Palettes
+## Choosing effective palettes
 
 :::{.callout-tip}
 Choosing palettes and checking them for colour vision deficiency are covered in more depth in Day 3, Block 1 (Colour and Accessibility) and Block 4 (Accessible colour with colorspace and colorBlindness).
@@ -122,7 +120,7 @@ scale_fill_manual(values = c("Adelie" = "#1b9e77",
 theme_minimal()
 ```
 
-### Using Predefined Palettes from colorspace
+### Using predefined palettes from colorspace
 
 The `colorspace` @R-colorspace package offers curated, perceptually balanced palettes designed for clarity and accessibility.
 
@@ -285,6 +283,8 @@ group = species)) +
 
 ```
 
+Grouping by `individual_id` instead joins up the repeat measurements of the same bird, so each line shows how one penguin's measurements vary between the years it was sampled. Birds that were only measured once have nothing to join to, so they get no line.
+
 ```{r}
 ggplot(penguins, aes(x = culmen_length_mm, y = flipper_length_mm,
 colour = species, group = individual_id)) +
@@ -304,7 +304,7 @@ colour = species)) +
 
 ```
 
-## Scales, Axes and Ordering
+## Scales, axes and ordering
 
 ### Axes limits
 
@@ -561,17 +561,17 @@ penguins |>
 ```
 
 
-### Nested Facets
+### Nested facets
 
 The `ggh4x::facet_nested()` function in the `ggh4x` @R-ggh4x package is used for creating nested or hierarchical faceting in `ggplot2` plots. 
-Nested faceting lets you subdivide facet panels into smaller panels, creating a hierarchy of facets.
+Nested faceting lets you subdivide facet panels into smaller panels, creating a hierarchy of facets. Here we group the species by their broad diet: Adelie and Chinstrap penguins eat mainly krill, while Gentoo penguins eat krill and fish.
 
 ```{r}
 #| warning: false
 library(ggh4x)
 
 penguins |> 
-  mutate(Nester = ifelse(species=="Gentoo", "Crustaceans", "Fish & Krill")) |> 
+  mutate(Nester = ifelse(species == "Gentoo", "Krill and fish", "Mainly krill")) |>
   ggplot(aes(x = culmen_length_mm,
              y = culmen_depth_mm,
              colour = species))+

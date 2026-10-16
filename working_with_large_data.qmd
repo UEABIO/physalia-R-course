@@ -91,17 +91,26 @@ with its own syntax, covered below.
 
 When a file does not fit in memory, the simplest fix is to read less of it.
 `fread()` exposes two arguments for this. `nrows` caps the number of rows read, and
-`skip` discards rows from the top or, given a string, starts reading at the first
-line matching it.
+`skip` discards lines from the top of the file.
 
 ```{r}
 #| eval: false
 # First 500 rows only
 fread(csv_name, nrows = 500, showProgress = FALSE)
 
-# Start from the first line containing "1986"
-fread(csv_name, skip = "1986", showProgress = FALSE)
+# Skip the header and the first 999 records, so reading starts at record 1000.
+# The header line has been skipped too, so we supply the column names ourselves
+col_names <- names(fread(csv_name, nrows = 0))
+fread(csv_name, skip = 1000, header = FALSE, col.names = col_names,
+      showProgress = FALSE)
 ```
+
+`skip` can also be given a string, and `fread()` then starts at the first line that
+contains that text anywhere. This is less useful than it sounds. With
+`skip = "1986"`, the first matching line is *record* number 1986, which was
+collected in 1979, not the first record from 1986. Because the header line is
+skipped as well, the columns come back named `V1` to `V9`. To keep only certain
+years, read the file and filter it instead.
 
 The `select` argument restricts which columns are read, which often has a larger
 effect on memory than restricting rows. `drop` is its complement.
@@ -205,7 +214,7 @@ readability.
 
 :::{.task}
 ::::{.task-header}
-the same question, three ways
+the same question, two ways
 ::::
 ::::{.task-container}
 
@@ -258,6 +267,23 @@ they already sit in a shared database, the better move is to leave them where th
 are and query across the connection. We use SQLite here because it is a single
 file with no server to configure, but the same code works against PostgreSQL,
 MySQL, BigQuery, and others through the common `DBI` interface.
+
+First download the Portal mammals database (a SQLite file of about 1 MB) with the
+button below. Save it as `portal_mammals.sqlite` in a `data` folder inside your
+project, so its path is `data/portal_mammals.sqlite`.
+
+```{r}
+#| eval: true
+#| echo: false
+downloadthis::download_link(
+  link = "https://ndownloader.figshare.com/files/2292171",
+  button_label = "Download Portal mammals database (SQLite)",
+  button_type = "success",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
 
 ```{r}
 #| eval: false
@@ -336,10 +362,18 @@ surveys |>
   show_query()
 # <SQL>
 # SELECT `year`, `species_id`, COUNT(*) AS `n`
-# FROM `surveys`
-# WHERE (`year` IN (1998, 1999, 2000))
+# FROM (
+#   SELECT `surveys`.*
+#   FROM `surveys`
+#   WHERE (`year` IN (1998.0, 1999.0, 2000.0))
+# ) AS `q01`
 # GROUP BY `year`, `species_id`
 ```
+
+This is the real output from dbplyr 2.5.1. dbplyr wraps the filter in a subquery
+and writes the years as decimals (`1998.0`), because R numbers are doubles. A person
+writing the same query by hand would probably write the shorter version in the
+`dbGetQuery()` example below, and the database treats the two the same.
 
 If you prefer to write SQL directly, `DBI::dbGetQuery()` sends a raw query and
 returns a data frame in one step.
@@ -395,15 +429,16 @@ surveys |>
   filter(hindfoot_length > 20) |>
   collect()
 
-# The second pipeline generates SQL along these lines:
-# SELECT *
+# show_query() on the second pipeline gives (dbplyr 2.5.1):
+# <SQL>
+# SELECT `surveys`.*
 # FROM `surveys`
-# WHERE (`year` > 1977 AND `year` < 2000 AND `hindfoot_length` = 30)
+# WHERE (`year` > 1977.0) AND (`year` < 2000.0) AND (`hindfoot_length` = 30.0)
 # ORDER BY `species_id` DESC
 ```
 
-Two things to notice. The chained `filter()` conditions become a single `WHERE`
-joined by `AND`, and `arrange(desc(...))` becomes `ORDER BY ... DESC`. The mapping
+Two things to notice. The comma-separated `filter()` conditions become a single
+`WHERE` joined by `AND`, and `arrange(desc(...))` becomes `ORDER BY ... DESC`. The mapping
 is close enough that reading SQL and reading dplyr reinforce each other.
 
 `r unhide()`

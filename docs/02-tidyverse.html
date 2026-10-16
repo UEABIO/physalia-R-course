@@ -108,12 +108,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-submit-button-title": "Submit",
     "search-label": "Search"
   }
-}</script><script src="site_libs/kePrint-0.0.1/kePrint.js"></script><link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+}</script><script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+  } catch (e) {}
+})();
+</script><script src="site_libs/kePrint-0.0.1/kePrint.js"></script><link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
 </head>
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -417,6 +426,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 5: Saving figures correctly</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -477,7 +492,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11b-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 2: AI - Inline completions</span></a>
+ <span class="menu-text">Block 2: Inline completion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -530,7 +545,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R Basics</span></span></a>
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -607,11 +622,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li>
 <a href="#enforcing-assumptions-with-assertr" id="toc-enforcing-assumptions-with-assertr" class="nav-link" data-scroll-target="#enforcing-assumptions-with-assertr">Enforcing assumptions with <code>assertr</code></a>
   <ul class="collapse">
-<li><a href="#verify-check-a-logical-condition" id="toc-verify-check-a-logical-condition" class="nav-link" data-scroll-target="#verify-check-a-logical-condition"><code>verify()</code> — check a logical condition</a></li>
-  <li><a href="#assert-check-a-predicate-column-by-column" id="toc-assert-check-a-predicate-column-by-column" class="nav-link" data-scroll-target="#assert-check-a-predicate-column-by-column"><code>assert()</code> — check a predicate column by column</a></li>
+<li><a href="#verify-check-a-logical-condition" id="toc-verify-check-a-logical-condition" class="nav-link" data-scroll-target="#verify-check-a-logical-condition"><code>verify()</code>: check a logical condition</a></li>
+  <li><a href="#assert-check-a-predicate-column-by-column" id="toc-assert-check-a-predicate-column-by-column" class="nav-link" data-scroll-target="#assert-check-a-predicate-column-by-column"><code>assert()</code>: check a predicate column by column</a></li>
   <li><a href="#built-in-predicates" id="toc-built-in-predicates" class="nav-link" data-scroll-target="#built-in-predicates">Built-in predicates</a></li>
-  <li><a href="#insist-generate-bounds-from-the-data-itself" id="toc-insist-generate-bounds-from-the-data-itself" class="nav-link" data-scroll-target="#insist-generate-bounds-from-the-data-itself"><code>insist()</code> — generate bounds from the data itself</a></li>
-  <li><a href="#assert_rows-check-row-level-conditions" id="toc-assert_rows-check-row-level-conditions" class="nav-link" data-scroll-target="#assert_rows-check-row-level-conditions"><code>assert_rows()</code> — check row-level conditions</a></li>
+  <li><a href="#insist-generate-bounds-from-the-data-itself" id="toc-insist-generate-bounds-from-the-data-itself" class="nav-link" data-scroll-target="#insist-generate-bounds-from-the-data-itself"><code>insist()</code>: generate bounds from the data itself</a></li>
+  <li><a href="#assert_rows-check-row-level-conditions" id="toc-assert_rows-check-row-level-conditions" class="nav-link" data-scroll-target="#assert_rows-check-row-level-conditions"><code>assert_rows()</code>: check row-level conditions</a></li>
   <li><a href="#chaining-assertions" id="toc-chaining-assertions" class="nav-link" data-scroll-target="#chaining-assertions">Chaining assertions</a></li>
   <li><a href="#using-assertr-in-a-cleaning-pipeline" id="toc-using-assertr-in-a-cleaning-pipeline" class="nav-link" data-scroll-target="#using-assertr-in-a-cleaning-pipeline">Using <code>assertr</code> in a cleaning pipeline</a></li>
   </ul>
@@ -722,7 +737,7 @@ Tip
 </section><section id="activity-one-summary-every-numeric-column" class="level3"><h3 class="anchored" data-anchor-id="activity-one-summary-every-numeric-column">Activity: one summary, every numeric column</h3>
 <div class="task">
 <div class="task-header">
-<p>one summary, every numeric column</p>
+<p>One summary, every numeric column</p>
 </div>
 <div class="task-container">
 <p>Write a single <code>summarise()</code> that returns, for each species, both the mean and the standard deviation of every numeric column, with names like <code>mean_body_mass_g</code> and <code>sd_body_mass_g</code>. Hint: <code>.fns</code> can be a named list of functions.</p>
@@ -868,19 +883,6 @@ Note
 <span id="cb14-12"><a href="#cb14-12" aria-label="12"></a>  purrr<span class="sc">::</span><span class="fu">list_rbind</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>map()</code> reads each file into a list of tibbles; <code>list_rbind()</code> binds that list into one tibble. We will unpack <code>map()</code> properly in Block 4. For now, notice that “do the same thing to every element of a collection” is the shape of almost all the work ahead.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Where this leaves us.</strong> We can now operate on many columns at once, reshape between long and wide, slice by order, and collapse groups into list-columns. The rest of the day is about the <em>code that acts on the data</em>: functions, iteration, and generalisation.</p>
-</div>
-</div>
 </section></section><section id="sec-validate" class="level2"><h2 class="anchored" data-anchor-id="sec-validate">Data validation with <code>tidylog</code> and <code>assertr</code>
 </h2>
 <p>A robust analysis makes every transformation visible and checks that your assumptions about the data actually hold. Two useful tools for this are <code>tidylog</code>, which reports what <code>dplyr</code> is doing, and <code>assertr</code>, which enforces explicit checks during a pipeline.</p>
@@ -900,13 +902,15 @@ Note
 <span id="cb15-12"><a href="#cb15-12" aria-label="12"></a>  <span class="at">age_days =</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, n, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
 <span id="cb15-13"><a href="#cb15-13" aria-label="13"></a>  <span class="at">eggs_laid =</span> <span class="fu">rpois</span>(n, <span class="at">lambda =</span> <span class="dv">50</span>),</span>
 <span id="cb15-14"><a href="#cb15-14" aria-label="14"></a>  <span class="at">eggs_hatched =</span> <span class="fu">pmin</span>(eggs_laid, <span class="fu">rpois</span>(n, <span class="at">lambda =</span> <span class="dv">45</span>)),</span>
-<span id="cb15-15"><a href="#cb15-15" aria-label="15"></a>  <span class="at">body_mass  =</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="fl">0.2</span>, <span class="at">sd =</span> <span class="dv">5</span>)</span>
+<span id="cb15-15"><a href="#cb15-15" aria-label="15"></a>  <span class="at">body_mass  =</span> <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="fl">0.2</span>, <span class="at">sd =</span> <span class="fl">0.05</span>)</span>
 <span id="cb15-16"><a href="#cb15-16" aria-label="16"></a>)</span>
 <span id="cb15-17"><a href="#cb15-17" aria-label="17"></a></span>
 <span id="cb15-18"><a href="#cb15-18" aria-label="18"></a><span class="co"># introduce a few intentional problems</span></span>
 <span id="cb15-19"><a href="#cb15-19" aria-label="19"></a>female_egg_data<span class="sc">$</span>age_days[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb15-20"><a href="#cb15-20" aria-label="20"></a>female_egg_data<span class="sc">$</span>eggs_laid[<span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="dv">120</span></span>
-<span id="cb15-21"><a href="#cb15-21" aria-label="21"></a>female_egg_data<span class="sc">$</span>eggs_hatched[<span class="dv">3</span>] <span class="ot">&lt;-</span> female_egg_data<span class="sc">$</span>eggs_laid[<span class="dv">3</span>] <span class="sc">+</span> <span class="dv">5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb15-21"><a href="#cb15-21" aria-label="21"></a>female_egg_data<span class="sc">$</span>eggs_hatched[<span class="dv">3</span>] <span class="ot">&lt;-</span> female_egg_data<span class="sc">$</span>eggs_laid[<span class="dv">3</span>] <span class="sc">+</span> <span class="dv">5</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-label="22"></a>female_egg_data<span class="sc">$</span>body_mass[<span class="dv">4</span>] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.2</span>   <span class="co"># a negative mass</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-label="23"></a>female_egg_data<span class="sc">$</span>body_mass[<span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="dv">15</span>     <span class="co"># far too heavy</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <hr></section><section id="making-transformations-visible-with-tidylog" class="level2"><h2 class="anchored" data-anchor-id="making-transformations-visible-with-tidylog">Making transformations visible with <code>tidylog</code>
 </h2>
@@ -936,12 +940,12 @@ $ treatment    &lt;chr&gt; "B", "A", "B", "A", "B", "A", "B", "A", "B", "A", "B"
 $ age_days     &lt;dbl&gt; 19, 14, 3, 10, 18, 22, 11, 5, 20, 14, 22, 25, 26, 27, 5, …
 $ eggs_laid    &lt;dbl&gt; 120, 62, 53, 48, 51, 59, 48, 38, 43, 56, 52, 52, 54, 63, …
 $ eggs_hatched &lt;dbl&gt; 47, 67, 28, 36, 49, 46, 48, 38, 43, 47, 38, 52, 54, 50, 4…
-$ body_mass    &lt;dbl&gt; -0.43574303, -9.50759188, 6.10590446, 9.49955431, 5.57006…
+$ body_mass    &lt;dbl&gt; 0.19364257, 0.10292408, -0.20000000, 15.00000000, 0.25370…
 $ eggs_per_day &lt;dbl&gt; 6.315789, 4.428571, 17.666667, 4.800000, 2.833333, 2.6818…</code></pre>
 </div>
 </div>
 <section id="verify-check-a-logical-condition" class="level3"><h3 class="anchored" data-anchor-id="verify-check-a-logical-condition">
-<code>verify()</code> — check a logical condition</h3>
+<code>verify()</code>: check a logical condition</h3>
 <p><code>verify()</code> is the simplest function. It evaluates a logical expression against the whole dataframe and stops if it is FALSE. Think of it as <code><a href="https://rdrr.io/r/base/stopifnot.html">stopifnot()</a></code> with better error messages and pipeline compatibility.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-label="1"></a><span class="co"># Check that all rows of eggs laid are positive — this should pass</span></span>
@@ -978,7 +982,7 @@ Note
 </div>
 </div>
 </section><section id="assert-check-a-predicate-column-by-column" class="level3"><h3 class="anchored" data-anchor-id="assert-check-a-predicate-column-by-column">
-<code>assert()</code> — check a predicate column by column</h3>
+<code>assert()</code>: check a predicate column by column</h3>
 <p><code>assert()</code> applies a predicate function to one or more columns and reports which rows fail. This is more useful for checking individual variables.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-label="1"></a><span class="co"># Check that eggs_hatched is within a plausible biological range</span></span>
@@ -1045,7 +1049,7 @@ Note
 </div>
 </div>
 </section><section id="insist-generate-bounds-from-the-data-itself" class="level3"><h3 class="anchored" data-anchor-id="insist-generate-bounds-from-the-data-itself">
-<code>insist()</code> — generate bounds from the data itself</h3>
+<code>insist()</code>: generate bounds from the data itself</h3>
 <p><code>insist()</code> is like <code>assert()</code>, but instead of a fixed predicate it takes a <em>predicate generator</em>: a function that first looks at the whole column (for example, to compute its mean and standard deviation) and then returns a predicate with bounds built from those values. That predicate is applied to every value in the column. <code>within_n_sds()</code> and <code>within_n_mads()</code> are predicate generators, so they work with <code>insist()</code>, not <code>assert()</code> (with <code>assert()</code> they stop with an error). They are particularly useful for flagging potential outliers without hard-coding exact bounds:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-label="1"></a><span class="co"># Flag any eggs_laid values more than 3 SDs from the mean</span></span>
@@ -1074,7 +1078,7 @@ Column 'eggs_laid' violates assertion 'within_n_mads(3)' 2 times
 </div>
 </div>
 </section><section id="assert_rows-check-row-level-conditions" class="level3"><h3 class="anchored" data-anchor-id="assert_rows-check-row-level-conditions">
-<code>assert_rows()</code> — check row-level conditions</h3>
+<code>assert_rows()</code>: check row-level conditions</h3>
 <p>Sometimes the condition is not about a single column but about a combination of values across columns in the same row. <code>assert_rows()</code> handles this. It applies a row-reduction function first, then checks the result.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-label="1"></a><span class="co"># Check that no row has more than 2 missing values across the numeric columns</span></span>
@@ -1106,14 +1110,10 @@ Column 'eggs_laid' violates assertion 'within_n_mads(3)' 2 times
     verb redux_fn             predicate    column index value
 1 assert       NA within_bounds(0, 100) eggs_laid     1   120
 
-Column 'body_mass' violates assertion 'within_bounds(0, 10)' 101 times
-    verb redux_fn            predicate    column index      value
-1 assert       NA within_bounds(0, 10) body_mass     1 -0.4357430
-2 assert       NA within_bounds(0, 10) body_mass     2 -9.5075919
-3 assert       NA within_bounds(0, 10) body_mass     8 -7.3803381
-4 assert       NA within_bounds(0, 10) body_mass    10 -0.8536709
-5 assert       NA within_bounds(0, 10) body_mass    11 -3.0837146
-  [omitted 96 rows]</code></pre>
+Column 'body_mass' violates assertion 'within_bounds(0, 10)' 2 times
+    verb redux_fn            predicate    column index value
+1 assert       NA within_bounds(0, 10) body_mass     3  -0.2
+2 assert       NA within_bounds(0, 10) body_mass     4  15.0</code></pre>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -1139,7 +1139,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Two checks fail: the <code>eggs_laid</code> value of 120 we introduced earlier, and the body mass column, which contains negative values. This is a good example of why assertions are useful: they force you to make explicit decisions about what you consider valid data.</p>
+<p>Two checks fail: the <code>eggs_laid</code> value of 120 we introduced earlier, and the two body masses we planted (-0.2 and 15). They are reported as rows 3 and 4 because the filter removed the first row. The other checks pass. This is a good example of why assertions are useful: they force you to make explicit decisions about what you consider valid data.</p>
 </div>
 </div>
 </section><section id="using-assertr-in-a-cleaning-pipeline" class="level3"><h3 class="anchored" data-anchor-id="using-assertr-in-a-cleaning-pipeline">Using <code>assertr</code> in a cleaning pipeline</h3>
@@ -1181,6 +1181,19 @@ Note
 <li>failures are caught early and clearly explained</li>
 </ul>
 <p>Used together, they help make analysis code transparent and self-checking, and reduce the risk that unnoticed data problems carry through into your results.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Where this leaves us.</strong> We can now operate on many columns at once, reshape between long and wide, slice by order, and collapse groups into list-columns. We can also make every data step visible with <code>tidylog</code> and check our assumptions about the data with <code>assertr</code>. The rest of the day is about the <em>code that acts on the data</em>: functions, iteration, and generalisation.</p>
+</div>
+</div>
 
 
 </section></main><!-- /main --><script>
@@ -1415,6 +1428,109 @@ function move_sidebar() {
 }
 move_sidebar();
 window.onresize = move_sidebar;
+</script><script>
+// Colour palette picker: a swatch button next to the dark-mode toggle.
+// The choice is stored in this browser only (localStorage).
+(function () {
+  var KEY = "advancing-r-palette";
+  var palettes = [
+    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
+    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+  ];
+
+  function current() {
+    return document.documentElement.getAttribute("data-palette") || "classic";
+  }
+
+  function apply(id) {
+    if (id === "classic") document.documentElement.removeAttribute("data-palette");
+    else document.documentElement.setAttribute("data-palette", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+    });
+  }
+
+  function build(container, n) {
+    var wrap = document.createElement("div");
+    wrap.className = "palette-picker";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-toggle";
+    btn.id = "palette-toggle-" + n;
+    btn.title = "Change colour palette";
+    btn.setAttribute("aria-label", "Change colour palette");
+    btn.setAttribute("aria-haspopup", "true");
+    btn.setAttribute("aria-expanded", "false");
+
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.id = "palette-menu-" + n;
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
+      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = btn.getBoundingClientRect();
+      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 8) + "px";
+    }
+    function open() {
+      menu.hidden = false;
+      place();
+      btn.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() {
+      menu.hidden = true;
+      btn.setAttribute("aria-expanded", "false");
+    }
+
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!wrap.contains(e.target)) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    wrap.appendChild(btn);
+    wrap.appendChild(menu);
+    var toggle = container.querySelector(".quarto-color-scheme-toggle");
+    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+  }
+
+  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
+    if (!c.querySelector(".palette-picker")) build(c, n);
+  });
+})();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right

@@ -19,11 +19,9 @@ In this chapter, we will:
 
 2. Apply these principles using the `gt` package.
 
-To put these ideas into practice, we'll use the penguins dataset from `palmerpenguins`, because I like penguins.
+To put these ideas into practice, we'll use the Palmer penguins data, because I like penguins.
 
-PROS: Why `gt`? Has a grammar of tables, like `ggplot2`, supports HTML, LaTeX and RTF, follows tidyverse conventions.
-
-CONS: Lots of functions and options to learn, and some older tutorials use arguments that have since been deprecated (for example `vars()`), so check the [function reference](https://gt.rstudio.com/reference/index.html) if code you find online does not run.
+Why `gt`? It has a grammar of tables, like `ggplot2` has for plots, it follows tidyverse conventions, and it can output HTML, LaTeX and RTF. The downside is that there are lots of functions and options to learn, and some older tutorials use arguments that have since been deprecated (for example `vars()`), so check the [function reference](https://gt.rstudio.com/reference/index.html) if code you find online does not run.
 
 For these tutorials we will use the `gt` package. The companion package `gtExtras` adds many more helpers (sparklines, themes, icons) if you want to go further.
 
@@ -33,7 +31,29 @@ To follow along when you run a section of code, look for the output in the **Vie
 library(gt)
 ```
 
-First, tally the penguins. These counts give us a simple dataset for practising table construction. You will need your cleaned penguins dataframe from Day One.
+This chapter uses a cleaned version of the penguins data, saved as an R object called `penguins`. Download it with the button below, save it in a `files` folder inside your project, and then load it:
+
+```{r}
+#| eval: true
+#| echo: false
+downloadthis::download_file(
+  path = here::here("files", "chapter5.RData"),
+  output_name = "chapter5",
+  output_extension = ".RData",
+  button_label = "Download penguin data (RData)",
+  button_type = "success",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+```{r}
+#| eval: false
+load(here::here("files", "chapter5.RData"))
+```
+
+First, tally the penguins. These counts give us a simple dataset for practising table construction.
 
 ```{r}
 
@@ -66,7 +86,7 @@ penguin_counts_wider
 
 We will follow six guidelines as we make tables:
 
-1. Avoid gridlines
+1. Avoid vertical lines
 
 2. Use better column names
 
@@ -78,7 +98,7 @@ We will follow six guidelines as we make tables:
 
 6. Add summaries
 
-### Avoid vertical lines 
+## Avoid vertical lines
 
 
 Vertical lines can make our data look cramped. Fortunately, `gt` follows this principle by default, so all we need to do is supply our dataset, `penguin_counts_wider`, to the `gt()` function. 
@@ -91,7 +111,7 @@ penguin_counts_wider |>
 ```
 
 
-### Use better column names and make them stand out
+## Use better column names and make them stand out
 
 The [`cols_*()` functions](https://gt.rstudio.com/reference/index.html#modifying-columns) allow for modifications of entire columns.
 
@@ -250,7 +270,7 @@ penguin_counts_wider |>
 
 ```
 
-### Alignment
+## Alignment
 
 Align all text within a column using `cols_align()`. Most commonly we left-align text with varying length and right-align numbers.
 
@@ -279,7 +299,7 @@ penguin_counts_wider |>
   ) 
 ```
 
-### Move columns around
+## Move columns around
 
 Move columns to the start or end or wherever you like with `cols_move_*()` functions:
 
@@ -297,9 +317,9 @@ penguin_counts_wider |>
 ```
 
 
-### Avoid repetitive information
+## Avoid repetitive information
 
-Removing repetitive columns and using extra rows to group the data makes a table easier to read. In `gt` this is straightforward. Here's how to do it with `group_name_col()`, specifying which group to use and which columns to apply this grouping to:
+Removing repetitive columns and using extra rows to group the data makes a table easier to read. In `gt` this is straightforward. Here's how to do it with two arguments to `gt()`: `groupname_col` says which column to group the rows by, and `rowname_col` says which column to use as the row labels:
 
 ```{r}
 penguin_counts_wider |> 
@@ -328,7 +348,7 @@ penguin_counts_wider |>
 
 ```
 
-### Remove missing numbers
+## Remove missing numbers
 
 If we want to remove zeroes from our table, we could use `dplyr` functions:
 
@@ -363,7 +383,7 @@ penguin_counts_wider |>
 
 ```
 
-### Add summaries
+## Add summaries
 
 If needed, we can also add summaries to the table with `summary_rows()`.
 Sub-zero doesn't seem to work in the summaries, so we need a workaround:
@@ -391,7 +411,7 @@ penguin_counts_wider |>
 
 ```
 
-### Stylise
+## Stylise
 
 With the summaries added, the table has grown longer. We can make it more compact by decreasing the row heights.
 
@@ -427,7 +447,7 @@ penguin_counts_wider |>
 
 
 
-### Use appropriate colour
+## Use appropriate colour
 
 So far, our table hasn't used any colour. We'll add some now to highlight the largest values. 
 
@@ -536,7 +556,7 @@ penguin_counts_wider |>
 ```
 
 
-### Heatmap
+## Heatmap
 
 We can colour the cells as a heatmap to show the differences more clearly. This needs a colour palette and conditional colouring with `data_color()`:
 
@@ -569,7 +589,7 @@ data_color(palette = c("#FEF0D9", "#990000"), domain = c(0,30))
 
 ```
 
-### Data visualisations
+## Data visualisations
 
 Next, we're going to add plots to a `gt` table.
 
@@ -637,7 +657,7 @@ plot_violin_species("Adelie")
 
 Notice that I have set the coordinate system of the plot to the full range of the data (regardless of the species). Without this, the three plots would not share a common x-axis. 
 
-Now that we have a function that creates the plots, we can apply it to our table. For this to work, we need an additional column that we can target. So we use `mutate()` to add a new column, then `text_transform()` to turn this column into images, and finally supply the `.fn` argument with our function, iterated over each species with `map()`.
+Now that we have a function that creates the plots, we can apply it to our table. For this to work, we need an additional column that we can target. So we use `mutate()` to add a new column, then `text_transform()` to turn this column into images, and finally supply the `fn` argument with our function, iterated over each species with `map()`.
 
 ```{r}
 penguin_weights |>
@@ -659,7 +679,7 @@ penguin_weights |>
 
 ## Conclusion
 
-Many of the tweaks we made to our table are quite subtle. Changes like removing excess gridlines, bolding header text, right-aligning numeric values, and adjusting the level of precision can often go unnoticed, but if you skip them, your table will be far less effective. Our final product isn’t flashy, but it does communicate clearly.
+Many of the tweaks we made to our table are quite subtle. Changes like avoiding vertical lines, bolding header text, right-aligning numeric values, and adjusting the level of precision can often go unnoticed, but if you skip them, your table will be far less effective. Our final product isn’t flashy, but it does communicate clearly.
 
 We used the gt package to make our high-quality table, and as we’ve repeatedly seen, this package has good defaults built in. Often, you don’t need to change much in your code to make effective tables. But whichever package you use, give tables as much thought as any other kind of data visualisation.
 
