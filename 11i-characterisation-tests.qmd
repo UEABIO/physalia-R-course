@@ -1,4 +1,4 @@
-# Block 8: Functionalise a script step and prove the result is unchanged {.unnumbered}
+# Block 9: Functionalise a script step and prove the result is unchanged {.unnumbered}
 
 ```{r}
 #| include: false
@@ -9,94 +9,118 @@ library(here)
 library(webexercises)
 ```
 
-You have a computation that already works and you want to tidy it into a reusable
-function. An agent can do that in seconds; doing it yourself takes a little longer.
-Either way, the hard part is the verification rather than the refactor: a change that
-"improves" code can quietly alter its output, so how do you confirm the function
-still does what the script did?
+:::{.callout-note}
+**Last verified:** 9 October 2026, against the Claude Code permissions
+documentation (code.claude.com) and GitHub's documentation on customising the
+Copilot cloud agent's environment (docs.github.com).
+:::
 
-The method this block teaches is to freeze the original result before anything is
-touched. You run the analysis once, save its output to a reference file (an `.rds`),
-and then require the new function to reproduce that reference exactly. This is a
-*characterisation test*: it does not assert the answer is correct, only that it is
-*unchanged*. Step 4 returns to that distinction.
+You have a computation that already works and you want to turn it into a
+reusable function. An agent can do that in seconds. The hard part is not the
+refactor but the verification: a change that "improves" code can quietly alter
+its output, so how do you confirm the function still does what the script did?
 
-The block has four steps. Steps 1, 3 and 4 are a shared spine; Step 2 has three paths
-that differ only in who writes the function and the test:
+The method is to freeze the original result before anything is touched. You run
+the analysis once, save its output to a reference file (an `.rds`), and require
+the new function to reproduce that reference exactly. This is a
+*characterisation test*. It establishes that the output is **unchanged**, not
+that it is **correct**. Step 4 shows why that distinction matters, using a
+missing value that has been in the data all along.
 
-- **Path A: by hand.** You write the function and the test yourself. Slowest, and the
-  one that teaches the verification logic most directly. Start here if testthat is new.
-- **Path B: delegate in two steps.** You instruct an in-IDE agent to do the refactor
-  and the test, in two separate prompts, and you verify between them.
-- **Path C: encode it as a skill.** Conceptual only. You see how the trust rule, once
-  understood, can be bundled into a reusable instruction for an agent, and why that is
-  a sharper knife than it first appears.
+The block has a shared spine and three paths that differ in who writes the
+function and the test:
 
-Paths A and B are the substance. Path C only makes sense once you have done one of
-them, because a skill hides the very boundary the earlier paths make you type out.
+- **Path A: by hand.** You write the function and the test. Slowest, and the
+  path that teaches the verification logic most directly. Start here if
+  testthat is new to you.
+- **Path B: a local agent, in two prompts.** Claude Code, Posit Assistant or
+  Copilot in your IDE does the refactor and then the test, and you verify
+  between them.
+- **Path C: an asynchronous agent.** You describe the work in GitHub issues;
+  the Copilot cloud agent does it remotely and returns pull requests for you to
+  review.
 
-*⏱ ~45 minutes*
+All paths rejoin at Step 4.
+
+*⏱ ~60 minutes*
+
 
 ## The repository layout
 
-```text
+```
 repo/
+├── .claude/settings.json               deny rules (Claude Code)
 ├── .github/
+│   ├── CODEOWNERS                      your review required for protected paths
 │   └── workflows/
-│       ├── r-checks.yml              the independent check (runs on GitHub)
-│       └── copilot-setup-steps.yml   the cloud agent's environment
+│       ├── r-checks.yml                the independent check
+│       └── copilot-setup-steps.yml     the cloud agent's environment
 ├── data/
-│   └── voles_metabolism.csv          the dataset (contains one NA, on purpose)
+│   └── raw/
+│       └── voles_metabolism.csv        contains one NA, on purpose
 ├── scripts/
-│   ├── 01_load_data.R                loads the CSV, runs glimpse()
-│   ├── 02_analysis.R                 the original script; later calls the function
+│   ├── 01_load_data.R
+│   ├── 02_analysis.R
 │   └── functions/
-│       └── summary_functions.R       the extracted function (you or the agent)
+│       ├── load_voles.R
+│       └── summary_functions.R         created in this block
 ├── tests/
+│   ├── make_reference.R                run once, by you
 │   ├── fixtures/
-│   │   ├── make_reference.R          captures the reference
-│   │   └── metabolic_summary.rds     you generate this in Step 1, then freeze it
-│   └── test_summary_functions.R      compares the function against the reference
-└── renv.lock                         pins tidyverse, here, testthat, renv
+│   │   └── metabolic_summary.rds       the frozen reference
+│   └── test_summary_functions.R        created in this block
+└── renv.lock                           pins tidyverse, here, testthat, renv
 ```
 
-The single most important property of this layout: the `.rds` under `tests/fixtures/`
-is generated by you and by nobody else. Everything else in the trust argument follows from that, and it holds identically across all three paths.
+The single most important property of this layout: the file
+`tests/fixtures/metabolic_summary.rds` is created by you, once, and by nobody
+else. Every protection in this block exists to keep that true.
 
-## The original script
 
-`scripts/01_load_data.R` reads the CSV into `voles` and runs `glimpse()`. Its `col_types`
-specification is shown in full because the reference and the test must read the data
-identically; an unspecified type here is the silent mismatch the environment step
-warns about.
+## The original scripts
+
+The data are read by one function that states every column type. The analysis,
+the reference and the test all call it, so they read the data identically. A
+column whose type `read_csv()` guesses differently in one place produces a test
+failure that has nothing to do with the refactor.
 
 ```{r}
 #| eval: false
-# scripts/01_load_data.R
-library(tidyverse)
-library(here)
-
-voles <- readr::read_csv(
-  here::here("data", "voles_metabolism.csv"),
-  col_types = readr::cols(
-    treatment_arm       = readr::col_character(),
-    sex                 = readr::col_character(),
-    metabolic_rate_post = readr::col_double()
+# scripts/functions/load_voles.R ----
+load_voles <- function() {
+  readr::read_csv(
+    here::here("data", "raw", "voles_metabolism.csv"),
+    col_types = readr::cols(
+      subject_id          = readr::col_character(),
+      sex                 = readr::col_character(),
+      treatment_arm       = readr::col_character(),
+      mass_pre_g          = readr::col_double(),
+      mass_post_g         = readr::col_double(),
+      metabolic_rate_post = readr::col_double()
+    )
   )
-)
-
-glimpse(voles)
+}
 ```
-
-`scripts/02_analysis.R` sources it and computes the summary you will functionalise:
 
 ```{r}
 #| eval: false
-# scripts/02_analysis.R — the original, trusted version
+# scripts/01_load_data.R ----
 library(tidyverse)
 library(here)
+source(here("scripts", "functions", "load_voles.R"))
 
-source(here::here("scripts", "01_load_data.R"))
+voles <- load_voles()
+```
+
+Inspect the data with `glimpse(voles)` at the console, not inside the script,
+so that sourcing the script from a test prints nothing.
+
+```{r}
+#| eval: false
+# scripts/02_analysis.R: the original, trusted version ----
+library(tidyverse)
+library(here)
+source(here("scripts", "01_load_data.R"))
 
 metabolic_summary <- voles |>
   group_by(treatment_arm, sex) |>
@@ -108,130 +132,167 @@ metabolic_summary <- voles |>
   )
 ```
 
-Two things to note now and leave alone. First, the dataset contains one missing value
-in `metabolic_rate_post` and this computation has no `na.rm`, so one cell of the result
-will be `NA`. That is deliberate and it matters in Step 4; do not "fix" it yet. Second,
-`group_by()` sorts its grouping keys in the output, whereas the `.by` argument
-introduced in Path A does not. The supplied `voles_metabolism.csv` is ordered so that
-the first appearance of the grouping keys does not match their sorted order, which means
-the unpatched `.by` function produces a genuinely different row arrangement. That fact
-returns in Step 2.
+Two things to notice now and leave alone:
 
-## Step 1 (spine): You capture the reference
+1. The data contain one missing value in `metabolic_rate_post`, and this code has
+   no `na.rm`, so one cell of the result is `NA`. Do not "fix" it yet. Step 4 is
+   about exactly this.
+2. `group_by()` returns groups sorted by their keys. The `.by` argument returns
+   them in order of first appearance in the data. If the two orders differ, a
+   refactor that switches to `.by` changes the row order of the output.
 
-Before anything else, run `scripts/02_analysis.R` yourself and confirm `metabolic_summary`
-looks as you expect, including the one `NA` cell, which is expected. Then run the
-capture script below once and keep the resulting `.rds`. This frozen output is the
-trust anchor. Capture it now, before any refactor: afterwards `02_analysis.R` computes
-the summary through the very function under test, so re-capturing would compare the
-function against itself.
+
+## Step 0 (spine): capture and protect the reference
+
+Before anything else, run `scripts/02_analysis.R` yourself and confirm that
+`metabolic_summary` looks as you expect, including the one `NA` cell. Then run
+the capture script **once**:
 
 ```{r}
 #| eval: false
-# tests/fixtures/make_reference.R
-# Run this BEFORE refactoring, and capture only once.
+# tests/make_reference.R ----
+# Run ONCE, by you, BEFORE any refactoring.
 source(here::here("scripts", "02_analysis.R"))
+dir.create(here::here("tests", "fixtures"), showWarnings = FALSE, recursive = TRUE)
 saveRDS(
   metabolic_summary,
   here::here("tests", "fixtures", "metabolic_summary.rds")
 )
 ```
 
-You now hold the reference. Commit it. The three paths in Step 2 differ only in who
-produces the function and the test that must reproduce it. Pick one path, then rejoin
-at Step 3.
+Commit the reference immediately, so that any later change to it is visible:
 
-## Step 2: Functionalise and test (pick a path)
+```bash
+git add tests/fixtures/metabolic_summary.rds
+git commit -m "Capture reference output before refactoring"
+```
 
-### Path A: Write the function and test yourself
+Capture it now, before the refactor. Afterwards, `02_analysis.R` computes the
+summary through the very function under test, so re-capturing would compare the
+function with itself.
 
-:::{.task}
-::::{.task-header}
-Path A: write the function and the characterisation test
-::::
-::::{.task-container}
+**Protect it.** Each control covers a different route:
 
-Write the function in `scripts/functions/summary_functions.R`. A first attempt that a
-tidy refactor naturally reaches for uses the modern `.by` argument. Start from this
-version; it is deliberately incomplete, and the test you write next will expose why:
+- **Local agent (Claude Code).** Add deny rules to `.claude/settings.json`:
+
+  ```json
+  {
+    "permissions": {
+      "deny": [
+        "Edit(/tests/fixtures/**)",
+        "Edit(/tests/make_reference.R)",
+        "Edit(/data/**)",
+        "Edit(/.github/**)"
+      ]
+    }
+  }
+  ```
+
+  Run `/permissions` to confirm the rules are active, then ask the agent to
+  delete the `.rds` file and check that it is refused.
+
+- **Asynchronous agent (Copilot).** Add a `.github/CODEOWNERS` file naming
+  yourself for the protected paths, and turn on branch protection for `main` so
+  that merging requires your review and a passing `r-checks` run:
+
+  ```
+  /tests/fixtures/      @your-github-username
+  /tests/make_reference.R @your-github-username
+  /.github/             @your-github-username
+  ```
+
+- **Every route.** Git. `git status --short tests/fixtures` should print
+  nothing for the rest of this block.
+
+:::{.callout-warning}
+**What a deny rule does not cover.** Claude Code's deny rules apply to its
+built-in file tools, not to commands it runs through the shell. An agent that
+ran `Rscript tests/make_reference.R` would overwrite your reference without
+touching an edit tool. That is why git, not the deny rule, is the final check,
+and why the checklists below ask you to read the agent's command log.
+:::
+
+You now hold the reference. Pick one path, then rejoin at Step 4.
+
+
+## Path A: write the function and the test yourself
+
+A tidy refactor naturally reaches for the modern `.by` argument. Write this
+first attempt in `scripts/functions/summary_functions.R`:
+
+`r hide("First attempt (deliberately incomplete)")`
 
 ```{r}
 #| eval: false
-# scripts/functions/summary_functions.R — first attempt, deliberately incomplete
+# scripts/functions/summary_functions.R: first attempt ----
 summarise_metabolic_rate <- function(data) {
   data |>
     dplyr::summarise(
       mean_rate = mean(metabolic_rate_post),
-      sd_rate   = sd(metabolic_rate_post),
+      sd_rate   = stats::sd(metabolic_rate_post),
       n         = dplyr::n(),
-      .by = c(treatment_arm, sex)
+      .by       = c(treatment_arm, sex)
     )
 }
 ```
 
-Now write `tests/test_summary_functions.R`: a single `test_that()` block that sources
-the function, reads the data with the same `col_types` as `scripts/01_load_data.R`,
-reads the reference from `tests/fixtures/metabolic_summary.rds`, and compares the two
-with `expect_equal()`. Run it with
-`testthat::test_file(here::here("tests", "test_summary_functions.R"))`.
+`r unhide()`
 
-`r hide("Solution: the test")`
+Now write the test and run it:
 
 ```{r}
 #| eval: false
-# tests/test_summary_functions.R
+# tests/test_summary_functions.R ----
 library(testthat)
+local_edition(3)
+source(here::here("scripts", "functions", "load_voles.R"))
 source(here::here("scripts", "functions", "summary_functions.R"))
 
-test_that("summarise_metabolic_rate reproduces the original summary", {
+test_that("summarise_metabolic_rate() reproduces the original summary", {
   reference <- readRDS(here::here("tests", "fixtures", "metabolic_summary.rds"))
-  voles <- readr::read_csv(
-    here::here("data", "voles_metabolism.csv"),
-    col_types = readr::cols(
-      treatment_arm       = readr::col_character(),
-      sex                 = readr::col_character(),
-      metabolic_rate_post = readr::col_double()
-    )
-  )
-  expect_equal(summarise_metabolic_rate(voles), reference, tolerance = 1e-8)
+  expect_equal(summarise_metabolic_rate(load_voles()), reference, tolerance = 1e-8)
 })
 ```
 
+Run it with
+`testthat::test_file(here::here("tests", "test_summary_functions.R"))`.
+
+`r hide("What happened")`
+
+It fails, and not on the numbers. `.by` returns the groups in order of first
+appearance; the reference, made with `group_by()`, has them sorted. The values
+are right but the rows are in a different order, and `expect_equal()` reports a
+mismatch. Add `dplyr::arrange(treatment_arm, sex)` to the end of the pipeline
+and the test passes. That failure is the lesson in miniature: a change that
+improved the code altered the output, and the characterisation test caught it.
+
+If your test passed first time, the data happen to be stored in sorted order.
+Check with `load_voles() |> dplyr::distinct(treatment_arm, sex)`.
+
 `r unhide()`
 
-`r hide("Explanation: why the first attempt fails")`
+While writing the test, resist one temptation: do not type the expected numbers
+into the test as literals. A test that compares the function with numbers you
+transcribed proves nothing about whether the refactor preserved the original
+computation. The test must *read the `.rds`*.
 
-The test fails, and not on the numbers. Because the supplied dataset is ordered so that first
-appearance differs from sorted order (noted above), `.by` returns the rows in a
-different arrangement from the `group_by()` that produced your reference. The values are
-right; the rows are arranged differently, and `expect_equal()` reports a mismatch.
-Add `dplyr::arrange(treatment_arm, sex)` to the end of the pipeline and it passes.
-That failure is the lesson in miniature: a change that improves the code altered the
-output, and the characterisation test caught it.
+The function you should converge on, with documentation and an argument check:
 
-`r unhide()`
-
-The function you should converge on has a roxygen2 block and an argument check. Write
-it, re-run the test, and then edit `scripts/02_analysis.R` to call
-`summarise_metabolic_rate()` instead of the inline pipeline, so the function actually
-replaces the code it came from.
-
-`r hide("Solution: the final function")`
+`r hide("Refactored function")`
 
 ```{r}
 #| eval: false
-# scripts/functions/summary_functions.R — final
+# scripts/functions/summary_functions.R: refactored ----
 #' Summarise post-treatment metabolic rate by treatment arm and sex
 #'
 #' @param data A data frame with columns treatment_arm, sex and
 #'   metabolic_rate_post.
-#' @return A tibble with one row per treatment_arm and sex, giving the mean,
-#'   standard deviation and n.
+#' @return A tibble with one row per treatment_arm and sex, sorted by both,
+#'   giving the mean, standard deviation and number of rows.
 summarise_metabolic_rate <- function(data) {
   stopifnot(is.data.frame(data))
   required <- c("treatment_arm", "sex", "metabolic_rate_post")
   missing_cols <- setdiff(required, names(data))
-
   if (length(missing_cols) > 0) {
     stop(
       "`data` is missing required column(s): ",
@@ -240,174 +301,289 @@ summarise_metabolic_rate <- function(data) {
     )
   }
 
-  dplyr::group_by(data, treatment_arm, sex) |>
+  data |>
     dplyr::summarise(
       mean_rate = mean(metabolic_rate_post),
-      sd_rate = sd(metabolic_rate_post),
-      n = dplyr::n(),
-      .groups = "drop"
-    )
+      sd_rate   = stats::sd(metabolic_rate_post),
+      n         = dplyr::n(),
+      .by       = c(treatment_arm, sex)
+    ) |>
+    dplyr::arrange(treatment_arm, sex)
 }
 ```
 
 `r unhide()`
 
+Finally, make `scripts/02_analysis.R` call the function, so it genuinely
+replaces the code it came from:
+
+```{r}
+#| eval: false
+# scripts/02_analysis.R: after refactoring ----
+library(tidyverse)
+library(here)
+source(here("scripts", "01_load_data.R"))
+source(here("scripts", "functions", "summary_functions.R"))
+
+metabolic_summary <- summarise_metabolic_rate(voles)
+```
+
+Run the test again; it should still pass. Rejoin at Step 4.
+
+
+## Path B: a local agent, in two prompts
+
+Use this path to let an agent do the work while you verify. Split the job into
+two prompts, not one. A single prompt that writes both the refactor and the test
+lets one misunderstanding (about row order, say) shape both files at once,
+producing a passing test that proves nothing. Separating them stops the test
+inheriting the refactor's assumptions.
+
+**Prompt 1: the refactor only.**
+
+```text
+Move the computation in scripts/02_analysis.R into a documented function
+summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a
+roxygen2 block and an argument check. Make 02_analysis.R call the new function
+instead of the inline pipeline. Do not write any tests, and do not touch
+anything under tests/.
+```
+
+Read what it writes. If it uses `.by` without a trailing `arrange()`, leave that
+for now; the next step will expose it.
+
+**Prompt 2: the test only.**
+
+```text
+Add tests/test_summary_functions.R. It must call local_edition(3), source
+scripts/functions/load_voles.R and scripts/functions/summary_functions.R,
+read tests/fixtures/metabolic_summary.rds, and compare it with
+summarise_metabolic_rate(load_voles()) using expect_equal().
+
+Do not create, regenerate or modify anything under tests/fixtures/, and do not
+run tests/make_reference.R. I captured that reference myself; a reference you
+generate proves nothing.
+```
+
+Before you trust a passing test, check what the agent wrote and did:
+
+1. The test *reads* `tests/fixtures/metabolic_summary.rds`. It does not
+   hard-code expected numbers. If it does, the check is circular whatever the
+   result.
+2. The test calls `summarise_metabolic_rate()`, the function under test, not a
+   reimplementation of the pipeline inside the test.
+3. `git status --short tests/fixtures` prints nothing.
+4. The agent's command log shows no run of `tests/make_reference.R`.
+
+Now run the test yourself. If the function used `.by` without `arrange()`, it
+fails on row order, not values. Have the agent add
+`dplyr::arrange(treatment_arm, sex)` and run again. If it passed first time,
+remove the `arrange()` yourself to see the failure, then restore it. Rejoin at
+Step 4.
+
+
+## Path C: an asynchronous agent (Copilot cloud agent)
+
+The same work can be handed to an agent that runs remotely while you do
+something else. It works on a branch in GitHub's infrastructure and returns a
+pull request. Before you start, check that your Copilot plan includes the coding
+agent, that `copilot-setup-steps.yml` is on your default branch, and that the
+CODEOWNERS file and branch protection from Step 0 are in place.
+
+Keep the two-step discipline by writing **two issues**, and assign the second
+only after you have reviewed and merged the first.
+
+**Issue 1**
+
+```text
+Title: Move the metabolic-rate summary into a function
+
+Move the summary computation in scripts/02_analysis.R into a documented
+function summarise_metabolic_rate() in scripts/functions/summary_functions.R,
+with a roxygen2 block and an argument check. Make 02_analysis.R call it.
+
+Acceptance criteria:
+- Do not add or change anything under tests/, data/ or .github/.
+- The output must be identical to the current output, including row order
+  and the existing NA value.
+```
+
+**Issue 2 (after Issue 1 is merged)**
+
+```text
+Title: Add a characterisation test for summarise_metabolic_rate()
+
+Add tests/test_summary_functions.R. It must call local_edition(3), source
+scripts/functions/load_voles.R and scripts/functions/summary_functions.R, and
+compare summarise_metabolic_rate(load_voles()) with
+tests/fixtures/metabolic_summary.rds using expect_equal().
+
+Acceptance criteria:
+- Do not create, modify or regenerate anything under tests/fixtures/, and do
+  not run tests/make_reference.R.
+- Run the tests and report the result in the pull request description.
+```
+
+Assign each issue to Copilot. When a pull request arrives:
+
+1. Open **Files changed**. Confirm that only the expected files changed. A
+   change under `tests/fixtures/` or `.github/` should not merge, and CODEOWNERS
+   will in any case require your review for it.
+2. Read the test against the four-point checklist in Path B.
+3. Check that the `r-checks` run on the pull request passed.
+4. Pull the branch and run the test on your own machine. The agent's report
+   that "tests pass" is its claim; your run is the check.
+
+If something is wrong, comment on the pull request to ask for a revision, or
+close it. Nothing reaches `main` until you merge.
+
+
+## Step 4 (spine): unchanged is not correct
+
+Your test passes. The function reproduces the reference exactly, **including
+the `NA` cell**. The characterisation test has certified that the refactor
+preserved the original behaviour, and the original behaviour reports a missing
+mean for one group of animals.
+
+Is that the right answer? It depends on what you meant. If you want the mean of
+the animals that were measured, the original code was wrong all along, and the
+refactor faithfully preserved the error. A characterisation test cannot tell
+the difference, because it compares against the past, not against the truth.
+
+:::{.task}
+::::{.task-header}
+Decide, change, and test the change independently
+::::
+::::{.task-container}
+
+**1. Decide.** Suppose you conclude that the mean and standard deviation should
+use the measured animals only. There is a second, quieter problem: `n()` counts
+rows, including the animal with no measurement, so `n` would no longer match the
+number of values behind the mean. A summary that reports a mean of 11 animals
+beside `n = 12` misstates the sample size.
+
+**2. Change the function** (by hand or with your agent):
+
+`r hide("Changed function")`
+
+```{r}
+#| eval: false
+# scripts/functions/summary_functions.R: missing values handled ----
+summarise_metabolic_rate <- function(data) {
+  stopifnot(is.data.frame(data))
+  required <- c("treatment_arm", "sex", "metabolic_rate_post")
+  missing_cols <- setdiff(required, names(data))
+  if (length(missing_cols) > 0) {
+    stop(
+      "`data` is missing required column(s): ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  data |>
+    dplyr::summarise(
+      mean_rate = mean(metabolic_rate_post, na.rm = TRUE),
+      sd_rate   = stats::sd(metabolic_rate_post, na.rm = TRUE),
+      n_used    = sum(!is.na(metabolic_rate_post)),
+      n_missing = sum(is.na(metabolic_rate_post)),
+      .by       = c(treatment_arm, sex)
+    ) |>
+    dplyr::arrange(treatment_arm, sex)
+}
+```
+
+`r unhide()`
+
+**3. Run the characterisation test. It fails, correctly.** The output has
+changed, and the test exists to tell you so.
+
+**4. Add a known-answer test before re-capturing anything.** A known-answer test
+checks the new behaviour against a result you can compute by hand, independent
+of any reference file:
+
+```{r}
+#| eval: false
+# add to tests/test_summary_functions.R ----
+test_that("means ignore missing values and n_used counts measured animals", {
+  toy_df <- tibble::tibble(
+    treatment_arm       = c("Control", "Control", "Control"),
+    sex                 = c("F", "F", "F"),
+    metabolic_rate_post = c(10, 14, NA)
+  )
+  result <- summarise_metabolic_rate(toy_df)
+
+  expect_equal(result$mean_rate, 12)
+  expect_equal(result$n_used, 2)
+  expect_equal(result$n_missing, 1)
+})
+```
+
+**5. Only now, re-capture the reference, as a recorded decision.** Re-run
+`tests/make_reference.R` yourself and commit with a message that states why:
+
+```bash
+git add tests/fixtures/metabolic_summary.rds scripts/functions/summary_functions.R tests/test_summary_functions.R
+git commit -m "Exclude missing metabolic rates from mean and SD; report n_used and n_missing"
+```
+
+Re-capturing compares the function with itself, so it is acceptable only under
+three conditions: you decided it, an independent known-answer test checks the
+new behaviour, and the commit records why. Without those, re-capturing a
+reference to make a failing test pass is the circular verification this whole
+block warns against.
+
 ::::
 :::
 
-While you are writing the test by hand, resist one specific temptation. Do not type
-the expected numbers into the test as literals. If you hard-code the values you saw,
-the test no longer compares against your frozen reference; it compares the function
-against numbers you transcribed, which proves nothing about whether the refactor
-preserved the original computation. The test must *read the `.rds`*. That is the one
-non-negotiable line, and writing it yourself is how you learn why.
+The general rule: characterisation tests protect behaviour you have already
+judged correct. Judging it correct is a separate step, and it is yours.
 
-The `col_types` specification is deliberate, and it matches the one in
-`scripts/01_load_data.R` exactly. Letting `read_csv` guess types can produce a column type
-that differs from the one stored in the reference, causing a mismatch that has nothing
-to do with the refactor. Column types are the finest-grained version of a broader
-concern, the environment the test runs in, which Step 3 addresses. When a
-characterisation test fails, suspect this kind of difference before suspecting the
-code. Rejoin at Step 3.
 
-### Path B: Delegate the two steps to an agent
-
-Use this path if you want an in-IDE agent (Copilot in VS Code, or Posit Assistant) to do
-the work while you verify. The key
-discipline is to split it into two prompts, not one. A single prompt that emits both
-the refactor and the test lets one misunderstanding (about row order, say) propagate
-into both files at once, producing a green result that proves nothing. Separating the
-prompts keeps the verifier from inheriting the refactor's assumptions, which is the
-testing equivalent of keeping the `.rds` out of the agent's hands.
-
-**Prompt 1 (the refactor only):**
-
-```text
-Move the computation in scripts/02_analysis.R into a documented function in
-scripts/functions/summary_functions.R, with a roxygen2 block and an argument check.
-Have 02_analysis.R call the new function instead of the inline pipeline.
-Do not write any tests yet, and do not touch anything under tests/.
-```
-
-Watch the agent edit the files in your editor and read what it writes to
-`scripts/functions/` as it appears. If it uses `.by` without a trailing `arrange()`,
-leave that for now; the next prompt will expose it.
-
-**Prompt 2 (the test only):**
-
-```text
-Add tests/test_summary_functions.R that loads the reference
-tests/fixtures/metabolic_summary.rds, runs summarise_metabolic_rate(), and
-compares with expect_equal().
-
-Do not create, regenerate or modify anything under tests/fixtures/. I captured
-that reference myself; a reference you generate proves nothing.
-```
-
-That last paragraph is the entire trust argument in two sentences. Before you trust
-the green tick, apply this checklist to whatever the agent wrote, reading the lines
-yourself:
-
-1. The test *reads* `tests/fixtures/metabolic_summary.rds` and compares against it. It
-   does not hard-code expected numbers inside the test. If it does, the verification
-   is circular whatever colour the result is.
-2. The test calls `summarise_metabolic_rate()`, the actual function under test, not a
-   reimplementation of the pipeline inside the test body.
-3. Nothing under `tests/fixtures/` was created or changed by the agent (`git status`
-   shows you).
-
-Now run the test with
-`testthat::test_file(here::here("tests", "test_summary_functions.R"))`. If the agent's
-function used `.by` without `arrange()`, it fails on row order, not values, for the
-reason given above. Have the agent add `dplyr::arrange(treatment_arm, sex)` and
-run again. If it passed first time, force the failure yourself by removing the
-`arrange()`, so you see the mechanism rather than taking it on trust. Rejoin at Step 3.
-
-### Path C: Encode the workflow as a skill (concept)
-
-This path is conceptual; you will not build a runnable file here. Notice that the trust
-paragraph you typed in Path B is a *durable convention*: it says the same thing every
-time, regardless of the analysis. Anything you find yourself retyping into every prompt
-is a candidate for a skill (Block 6), a short standing instruction an agent loads and
-follows without being told afresh. A skill for this workflow would say, in essence: when asked
-to functionalise a script, capture the reference only if the human has not provided
-one, never regenerate a fixture under `tests/fixtures/`, refactor and test in separate
-steps, and compare against the human-held reference with `expect_equal()`.
-
-The benefit is obvious: you stop retyping the boundary. The hazard is exactly the same
-sentence read the other way. Once the rule lives in a skill, you no longer type it, no
-longer see it, and a colleague using your skill may never know the entire trust
-argument rests on a single line forbidding the agent from generating its own reference.
-The boundary becomes invisible, and an invisible boundary is precisely what Step 4
-warns against in the statistical domain. A skill is therefore safe to use only once you
-have internalised what Paths A and B make explicit; it is a compression of that
-understanding, not a substitute for it. If you build one later, keep the
-"reference-stays-with-the-human" clause as a visible, commented line, so the boundary
-remains legible to whoever reads the skill next.
-
-## Step 3 (spine): The environment the test runs in
+## The environment the test runs in (spine)
 
 A characterisation test is only as stable as the environment it runs in. The
-`col_types` specification in Path A handles the finest-grained version of that, a
-single column read; the rest of the environment, the R version and the entire package
-set, is handled by `renv.lock` and by the two GitHub Actions workflows the template
-ships. Read them; do not write them.
+column types in `load_voles()` handle the finest-grained part. The R version and
+the package set are handled by two GitHub Actions workflows.
 
-Recall from the GitHub session that GitHub Actions runs automated workflows in response
-to repository events such as a push or a pull request. Two such workflows sit in
-`.github/workflows/`, both placed there for you.
-
-`r-checks.yml` is the independent check. It runs the tests on pushes to `main` and on
-every pull request, from a clean checkout on GitHub's infrastructure. It is the check
-that neither you nor the agent can fake, and a green tick here is the signal you wait
-for at the end.
-
-`copilot-setup-steps.yml` is a different thing, and it is easy to confuse the two
-agents here. If you followed Path B with an **in-IDE agent**, it ran the tests on your
-own machine, in your R session with your `renv` library, and this file played no part.
-`copilot-setup-steps.yml` matters only if you hand the same task to the **Copilot cloud
-agent** on github.com (Block 5), which works in a remote environment you do not see. The
-cloud agent runs the tests in the environment this file builds, and if that environment
-does not restore `renv.lock`, the agent's tests will fail (or, worse, pass) for reasons
-that have nothing to do with the refactor, and the resemblance to your local setup is
-lost. Three requirements are essential:
-
-- The file must be at `.github/workflows/copilot-setup-steps.yml` **on the default
-  branch**. A version that exists only on a feature branch is not used.
-- The job must be named exactly `copilot-setup-steps`. GitHub looks for that job name
-  specifically; rename it and the agent silently falls back to a bare environment
-  without your packages.
-- The job must restore the lockfile, so the agent computes against the same pinned
-  package versions that `r-checks` will later use.
-
-Note the asymmetry between the two ways this goes wrong, because it determines which one
-you must watch for. A misnamed job (or a file not on the default branch) fails loudly and
-safely: the fallback environment lacks your packages, so the tests typically error on the
-first missing function and you notice at once. A lockfile that restores subtly wrong
-versions fails quietly and dangerously: the tests run green against different package
-behaviour and certify invariance against the wrong baseline, which is exactly the failure
-the held `.rds` was meant to rule out. The self-announcing error is the lesser hazard;
-the silent green is the one that defeats your trust anchor.
-
-A conventional form, following the structure in [GitHub's documentation](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/customize-the-agent-environment) and using the `r-lib/actions` setup actions, looks like the following.
-Check this against your actual template file rather than copying it blindly; this
-reproduces the standard pattern (with action versions current at the time of writing,
-October 2026), not necessarily your exact configuration.
-
-:::{.callout-warning}
-This setup steers towards reproducibility because `setup-renv` reads `renv.lock` and
-installs the exact pinned versions, so the agent computes against the same package
-versions that `r-checks.yml` will later use from a clean checkout. This is what makes
-the agent's environment resemble your local IDE and is why the agent's test run and the
-independent check should agree. It is also what might make this workflow more fragile if
-the lockfile is out of step or does not restore packages.
-:::
+`r-checks.yml` is the independent check. It runs the tests from a clean
+checkout on every push to `main` and on every pull request:
 
 ```yaml
-name: Copilot setup steps
+name: r-checks
+on:
+  push:
+    branches: [main]
+  pull_request:
 
-# Run when this file changes (to validate it), and allow manual runs
-# from the Actions tab.
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.2"   # match the R version in renv.lock
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-renv@v2
+      - name: Run tests
+        run: Rscript -e 'testthat::test_dir("tests", stop_on_failure = TRUE)'
+```
+
+It is independent of your machine and of the agent's environment, but it is not
+tamper-proof. A pull request can change the workflow file or the reference it
+checks against. CODEOWNERS and branch protection (Step 0) are what make a
+passing run meaningful: you review every change to those paths before it
+merges.
+
+`copilot-setup-steps.yml` builds the environment the Copilot cloud agent works
+in. Following GitHub's documented pattern:
+
+```yaml
+name: "Copilot Setup Steps"
+
+# Runs when this file changes, so you can see whether setup succeeds,
+# and can be run by hand from the Actions tab.
 on:
   workflow_dispatch:
   push:
@@ -418,60 +594,99 @@ on:
       - .github/workflows/copilot-setup-steps.yml
 
 jobs:
-  copilot-setup-steps:      # this exact name is required
+  # The job must be called copilot-setup-steps or Copilot will not use it.
+  copilot-setup-steps:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
-
+        uses: actions/checkout@v4
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: "renv"       # use the R version recorded in renv.lock
+          r-version: "4.5.2"   # match the R version in renv.lock
           use-public-rspm: true
-
-      - name: Set up renv
+      - name: Restore packages from renv.lock
         uses: r-lib/actions/setup-renv@v2
-        env:
-          RENV_CONFIG_PAK_ENABLED: "true"
-
-      - name: Install Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
 ```
 
-`r-version: "renv"` makes `setup-r` install the R version recorded in `renv.lock`
-(R 4.6.1 is the current release at the time of writing, so a lockfile snapshotted
-this term will usually record that), and `setup-renv` installs exactly the pinned
-package versions, so the agent's tidyverse, here and testthat match yours. The final
-`Install Quarto` step is inherited from the wider template that renders the book; this
-chapter's tests are plain R and do not require it, so do not be surprised that nothing
-here uses it. The practical consequence: when you reach Step 4, the agent's own test run
-and the independent `r-checks` run should agree. If they disagree, suspect the
-environment before suspecting the code.
+Four requirements, each with a different failure mode:
 
-## Step 4 (spine): Push, check, and remember that unchanged is not correct
+- **The job name must be exactly `copilot-setup-steps`.** If it is not, Copilot
+  ignores the file and works without your packages. That failure is usually
+  loud: the tests error on the first missing function.
+- **The file must be on the default branch**, or it is not used.
+- **The runner must be Ubuntu x64 Linux**, the only runner type the cloud agent
+  supports.
+- **The lockfile must be restored.** If it restores the wrong versions, the
+  failure is quiet: tests run and pass against different package behaviour. The
+  frozen reference then certifies sameness against the wrong baseline.
 
-Commit the function, the edited `scripts/02_analysis.R` and the test (but nothing new
-under `tests/fixtures/`), push, and wait for `r-checks` to go green on GitHub. If it
-does, you have shown one thing: the function reproduces the original script's output,
-in a clean environment you did not control.
+When the agent's test run and the independent `r-checks` run disagree, suspect
+the environment before you suspect the code.
 
-Now look again at the reference. One `mean_rate` and one `sd_rate` are `NA`, because
-the original computation had no `na.rm` and the dataset contains one missing value. The
-test passes because the function reproduces that `NA` faithfully. That is what a
-characterisation test is for: it certifies that the output is *unchanged*, not that it
-is *correct*. Whether that group's mean should be `NA`, or computed from the remaining
-animals with `na.rm = TRUE`, is a statistical decision about missing data, and no test
-against the old output can make it for you.
 
-If you decide the behaviour should change, change it deliberately: edit the function,
-watch the characterisation test fail (it should, because the output changed), and check
-the new numbers independently of the function, for example by running the original
-inline pipeline with `na.rm = TRUE` yourself. Only then save that independently computed
-result as the new reference, and commit the new `.rds` with a message saying why. The refactor and the
-behaviour change are separate commits, and the reference is still captured by you. An
-agent that "fixes" the `NA` and regenerates the fixture in one step has done the same
-thing Path C warns about: it has made the boundary between *unchanged* and *correct*
-invisible.
+## From convention to skill
+
+The protective sentence in Path B ("do not create, regenerate or modify
+anything under tests/fixtures/") is a durable convention: it is the same for
+every refactor. Anything you retype into every prompt is a candidate for a
+skill. A skill for this workflow would say: capture the reference only if the
+human has not; never regenerate a fixture; refactor and test in separate steps;
+compare against the human-held reference.
+
+The benefit is that you stop retyping the boundary. The hazard is the same
+sentence read the other way: once the rule lives in a skill, you no longer see
+it, and a colleague using your skill may not know that the whole trust argument
+rests on it. A skill is also only an instruction. The deny rules, CODEOWNERS and
+git checks in this block hold whether or not the agent reads it. Build the skill
+only after you have done Path A or B, and keep the "reference stays with the
+human" clause as a visible line.
+
+
+## Check your understanding
+
+**A characterisation test passes after a refactor. What has it established?**
+
+`r longmcq(c(
+  "That the function's output is correct",
+  answer = "That the function's output is the same as the original code's output, whether or not that output was correct",
+  "That the function is faster than the original code",
+  "That the original code had no bugs"
+))`
+
+**Why must the agent never generate the reference file?**
+
+`r longmcq(c(
+  "Because agents cannot write .rds files",
+  "Because the reference would be too large",
+  answer = "Because a reference produced by the code under test can only confirm that the code agrees with itself",
+  "Because reference files must be written in a different language"
+))`
+
+**You have added Edit deny rules for tests/fixtures/ in Claude Code. Which
+action could still change the reference?**
+
+`r longmcq(c(
+  "Asking the agent to edit the .rds file with its editing tool",
+  answer = "The agent running tests/make_reference.R through the shell",
+  "Opening the .rds file in the IDE",
+  "Running testthat::test_file() on the test file"
+))`
+
+
+:::{.callout-note collapse="true"}
+## Instructor notes
+
+- Check your copy of `voles_metabolism.csv` before teaching: the `.by` failure
+  in Path A appears only if
+  `load_voles() |> dplyr::distinct(treatment_arm, sex)` is not already in sorted
+  order. If it is sorted, reorder the rows of the file once and commit it before
+  the session.
+- Confirm that the file contains exactly one missing value in
+  `metabolic_rate_post`, and note which group it falls in, for the Step 4
+  discussion.
+- Path C depends on account features. Run it once on a participant-type account
+  before the session.
+:::

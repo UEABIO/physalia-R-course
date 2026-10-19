@@ -1,0 +1,744 @@
+# Block 7: Data cleaning and validation with AI {.unnumbered}
+
+```{r}
+#| include: false
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(tidyverse)
+library(here)
+library(webexercises)
+```
+
+:::{.callout-note}
+**Last verified:** 9 October 2026, against the Claude Code documentation
+(code.claude.com) and the Posit Assistant documentation (assistant.posit.co,
+docs version 1.7). Tool behaviour changes quickly; check the linked pages
+before teaching.
+:::
+
+Cleaning is where an AI assistant looks most useful and where its mistakes are
+hardest to see. A cleaning script can run without error, return the right
+columns and produce plausible values while having treated a missing-value code
+as a measurement, kept the same animal twice, or dropped a row nobody noticed.
+None of these raises an error.
+
+This block treats cleaning as four artefacts, each with a different owner:
+
+| Artefact | Owner | Why |
+|---|---|---|
+| Codebook (`docs/codebook.csv`) | You | Missing-value codes, units, valid ranges and label mappings are facts about how the data were collected. They cannot be inferred reliably from the values. |
+| Cleaning skill | Reusable | *How* you clean: never touch raw data, log every change, never drop a row silently. The same for every dataset. |
+| Validation and audit scripts | You, or a separate session | Written from the codebook, independently of the cleaning code, so one misunderstanding cannot pass both. |
+| Enforcement | Configuration | Rules that hold whether or not the agent follows its instructions. |
+
+You will work on a version of the voles data with errors planted in it. Your
+instructor holds the answer key, so at the end you can measure what your
+pipeline caught and what it missed.
+
+*⏱ ~75 minutes*
+
+:::{.callout-important}
+**Why not simply ask the AI to clean the data?** In a 2025 study that gave
+several language models deliberately polluted tables, the models generally
+found missing values in standard formats but struggled with codes such as `-1`,
+rarely detected non-exact duplicates, and performed worse as the proportion of
+errors rose (Spreafico et al., 2025). The study gave the models a 100-row
+sample as text in the prompt rather than asking an agent to write and run
+code, and the models are older than those you will use, so treat it as a map
+of where to look, not a measure of current tools. The error classes it
+identifies are the ones planted in this block's data.
+:::
+
+
+## The repository layout
+
+```
+repo/
+├── .agents/skills/clean-with-codebook/SKILL.md   the skill (single copy)
+├── .claude/
+│   ├── settings.json                  permission rules for Claude Code
+│   └── skills/clean-with-codebook     symbolic link to the folder above
+├── .gitattributes                     stops line-ending changes to raw data
+├── data/
+│   ├── raw/voles_raw.csv              never edited by anyone
+│   └── derived/                       cleaning outputs and logs
+├── docs/
+│   ├── data_note.md                   the data provider's note
+│   └── codebook.csv                   you write this in Step 2
+├── scripts/
+│   ├── 00_profile.R                   provided
+│   ├── 01_clean.R                     written by the agent in Step 4
+│   ├── 02_validate.R                  provided
+│   ├── 03_audit_cleaning.R            provided
+│   └── functions/validate_voles.R     provided, or written in Step 3
+└── tests/
+    ├── fixtures/raw_checksum.txt      you create this in Step 0
+    └── test_cleaning.R                provided
+```
+
+The skill folder is stored once, in `.agents/skills/`, which Posit Assistant
+and GitHub Copilot both read. Claude Code reads `.claude/skills/` and follows
+symbolic links, so a link avoids keeping two copies. On macOS or Linux, from the
+repository root:
+
+```bash
+mkdir -p .claude/skills
+ln -s ../../.agents/skills/clean-with-codebook .claude/skills/clean-with-codebook
+```
+
+On Windows, symbolic links in git need extra configuration. Copying the folder
+is acceptable, but you then have two copies to keep in step.
+
+
+## Step 0: Lock the raw data
+
+Everything later depends on the raw file being exactly what the data provider
+sent. Three controls protect it, and each covers a different route. The
+[enforced-controls block](11f-enforced-controls.qmd) explains each in more depth.
+
+**1. Record a checksum and commit it.** Run this once, yourself:
+
+```{r}
+#| eval: false
+raw_path <- here::here("data", "raw", "voles_raw.csv")
+writeLines(
+  unname(tools::md5sum(raw_path)),
+  here::here("tests", "fixtures", "raw_checksum.txt")
+)
+```
+
+Add this line to `.gitattributes` so git does not convert line endings, which
+would change the checksum on Windows:
+
+```
+data/raw/** -text
+```
+
+**2. Deny edits in the agent's configuration.** For Claude Code, the project
+file `.claude/settings.json` contains:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Edit(/data/raw/**)",
+      "Edit(/docs/codebook.csv)",
+      "Edit(/docs/data_note.md)",
+      "Edit(/scripts/02_validate.R)",
+      "Edit(/scripts/03_audit_cleaning.R)",
+      "Edit(/scripts/functions/**)",
+      "Edit(/tests/**)"
+    ]
+  }
+}
+```
+
+A leading `/` anchors each pattern to the project root. Run `/permissions` to
+confirm the rules are active. Posit Assistant has no documented path rules for
+file edits; use the guard hook from the [enforced-controls block](11f-enforced-controls.qmd) instead.
+
+**3. Test the control, do not assume it.** Ask the agent to add a comment line
+to the top of `data/raw/voles_raw.csv`. It should be refused. Then run the
+tests (Step 5) and confirm the checksum test still passes.
+
+:::{.callout-warning}
+**What each control covers.** The permission rule blocks the agent's
+file-editing tools. It does not cover commands the agent runs through the shell
+or R: an R script that the agent runs is a different route. The checksum test
+catches a change made by *any* route, but only after the fact. On the Copilot
+cloud agent, where you have no local permission file, the checksum test running
+in CI plus branch protection is your control. Use both where you can: one
+prevents, the other detects.
+:::
+
+:::{.callout-note}
+**Data governance.** A deny rule on *editing* does not stop data reaching the
+model provider. If the agent runs a script that prints data, those values enter
+its context. For personal or confidential data, let the agent work on a
+synthetic copy and run the final script on the real data yourself, outside the
+agent's workspace.
+:::
+
+
+## Step 1: Profile the raw data (R, not AI)
+
+Profiling is counting, and counting is something you should compute rather
+than ask a model to estimate. Run the provided script yourself:
+
+```{r}
+#| eval: false
+# scripts/00_profile.R ----
+# Purpose: describe the raw file as entered, before any decision is made.
+# Every column is read as character so codes such as 9999 or -1 appear
+# exactly as entered.
+library(tidyverse)
+library(here)
+
+raw_df <- read_csv(
+  here("data", "raw", "voles_raw.csv"),
+  col_types = cols(.default = col_character())
+)
+
+# one row per column: missingness, distinct values, numeric range ----
+profile_df <- raw_df |>
+  pivot_longer(everything(), names_to = "column", values_to = "value") |>
+  # suppressWarnings: text values become NA here by design
+  mutate(value_num = suppressWarnings(as.numeric(value))) |>
+  summarise(
+    n_rows = n(),
+    n_missing = sum(is.na(value)),
+    n_distinct = n_distinct(value, na.rm = TRUE),
+    n_numeric = sum(!is.na(value_num)),
+    min_numeric = if (all(is.na(value_num))) NA_real_ else min(value_num, na.rm = TRUE),
+    max_numeric = if (all(is.na(value_num))) NA_real_ else max(value_num, na.rm = TRUE),
+    .by = column
+  )
+
+# every distinct label in the categorical columns ----
+labels_df <- raw_df |>
+  select(sex, treatment_arm) |>
+  pivot_longer(everything(), names_to = "column", values_to = "value") |>
+  count(column, value, sort = TRUE)
+
+# identifiers that appear more than once ----
+repeated_ids_df <- raw_df |>
+  count(subject_id) |>
+  filter(n > 1)
+
+print(profile_df, n = Inf)
+print(labels_df, n = Inf)
+print(repeated_ids_df)
+```
+
+Keep the output. It is the factual input to Step 2.
+
+
+## Step 2: Draft the codebook, then audit it
+
+:::{.task}
+::::{.task-header}
+Draft and audit the codebook
+::::
+::::{.task-container}
+
+**1. Let the AI draft it from the profile alone.** Do not give it the data
+provider's note yet.
+
+```
+Here is a profile of a raw data file. Draft docs/codebook.csv with the
+columns: column, type, rule, min, max, missing_codes, unit, source.
+In the source column, state for every entry whether it comes from the
+profile or is your assumption. Do not write any other file.
+
+[paste the output of scripts/00_profile.R]
+```
+
+**2. Audit the draft.** Before you open `docs/data_note.md`, answer:
+
+- Did the draft list `9999` as a missing-value code, or treat it as a large
+  measurement?
+- Did it notice that `-1` is a code?
+- Where did its `min` and `max` come from? A range read off the data includes
+  the errors in the data, so it cannot be used to detect them. Valid ranges
+  must come from the biology or the protocol.
+
+**3. Correct it against the data provider's note.** Open `docs/data_note.md`
+and edit the codebook yourself. Every line should be traceable to the note or
+to a decision you can defend.
+
+::::
+:::
+
+`r hide("A codebook you could converge on")`
+
+```
+column,type,rule,min,max,missing_codes,unit,source
+subject_id,character,"pattern ^V[0-9]{3}$; unique; pad digits to three",,,,,data note
+sex,character,"allowed M, F; recode male to M, female to F",,,,,data note
+treatment_arm,character,"allowed Control, Low_dose, High_dose; match case-insensitively",,,,,data note
+mass_pre_g,double,,15,60,9999,g,data note (range from colony records)
+mass_post_g,double,,15,60,9999,g,data note (range from colony records)
+metabolic_rate_post,double,,5,30,-1,<unit>,data note (range from equipment)
+```
+
+`r unhide()`
+
+
+## Step 3: Write the validation rules (independently)
+
+Validation rules are transcribed from the codebook, not from the cleaning
+script. If the same session writes both, a single misunderstanding (for
+example, that `-1` is a valid reading) passes both.
+
+Either use the provided `scripts/functions/validate_voles.R`, or open a **new**
+session with no access to any cleaning code and prompt:
+
+```
+Using only docs/codebook.csv, write scripts/functions/validate_voles.R
+containing a function validate_voles(data, label) that builds a pointblank
+agent with one validation step per codebook rule, and interrogates it. Also
+write voles_col_types(), returning readr column types for the codebook
+columns, with character as the default for anything else. Do not read or write
+any other file.
+```
+
+Compare what it writes with the reference:
+
+`r hide("Reference version")`
+
+```{r}
+#| eval: false
+# scripts/functions/validate_voles.R ----
+# Rules transcribed from docs/codebook.csv by a human, not by the agent
+# that writes the cleaning script.
+
+voles_col_types <- function() {
+  readr::cols(
+    subject_id = readr::col_character(),
+    sex = readr::col_character(),
+    treatment_arm = readr::col_character(),
+    mass_pre_g = readr::col_double(),
+    mass_post_g = readr::col_double(),
+    metabolic_rate_post = readr::col_double(),
+    .default = readr::col_character()
+  )
+}
+
+validate_voles <- function(data, label) {
+  data |>
+    pointblank::create_agent(label = label) |>
+    pointblank::col_vals_not_null(columns = c(subject_id, sex, treatment_arm)) |>
+    pointblank::col_vals_regex(columns = subject_id, regex = "^V[0-9]{3}$") |>
+    pointblank::rows_distinct(columns = subject_id) |>
+    pointblank::col_vals_in_set(columns = sex, set = c("M", "F")) |>
+    pointblank::col_vals_in_set(
+      columns = treatment_arm,
+      set = c("Control", "Low_dose", "High_dose")
+    ) |>
+    pointblank::col_vals_between(
+      columns = c(mass_pre_g, mass_post_g),
+      left = 15, right = 60, na_pass = TRUE
+    ) |>
+    pointblank::col_vals_between(
+      columns = metabolic_rate_post,
+      left = 5, right = 30, na_pass = TRUE
+    ) |>
+    pointblank::interrogate()
+}
+```
+
+`r unhide()`
+
+**Run the rules on the raw data. They should fail.** If raw data pass every
+rule, either the data are already clean or the rules are too weak, and you
+should suspect the second.
+
+```{r}
+#| eval: false
+# scripts/02_validate.R ----
+library(tidyverse)
+library(here)
+source(here("scripts", "functions", "validate_voles.R"))
+
+raw_df <- read_csv(here("data", "raw", "voles_raw.csv"), col_types = voles_col_types())
+validate_voles(raw_df, "Raw data: expected to FAIL")
+```
+
+Note which rules fail and how many rows each flags. Every failure is a problem
+that the cleaning must resolve or log.
+
+:::{.callout-warning}
+`na_pass = TRUE` lets genuine missing values through. It would also let
+through a cleaning script that replaced *every* mass with `NA`. Validation
+alone cannot catch over-cleaning; the audit in Step 5 can.
+:::
+
+
+## Step 4: Clean with the skill, plan first
+
+The skill holds the procedure; the codebook holds the facts. It sets
+`disable-model-invocation: true`, so it runs only when you invoke it by name.
+That is appropriate for a workflow that writes files.
+
+:::{.callout-note collapse="true"}
+## `.agents/skills/clean-with-codebook/SKILL.md`
+
+```markdown
+---
+name: clean-with-codebook
+description: >-
+  Writes or revises a reproducible R cleaning script that applies a
+  human-authored codebook (docs/codebook.csv) to raw tabular data. Use when
+  asked to clean, recode or prepare raw data in a project that has a codebook.
+  Not for exploratory analysis or modelling.
+disable-model-invocation: true
+---
+
+# Clean data against a codebook
+
+## Hard constraints
+1. Never modify anything under data/raw/. Read raw files with explicit
+   column types.
+2. The codebook is the only source of rules. Do not infer units, ranges,
+   missing-value codes or label mappings that the codebook does not state.
+3. Do not edit docs/, scripts/functions/, scripts/02_validate.R,
+   scripts/03_audit_cleaning.R or anything under tests/. If a check fails,
+   report it; never change a check to make it pass.
+4. Never drop a row silently. Every excluded row goes in the exclusion log
+   with a reason.
+5. Every changed cell goes in the cleaning log.
+6. A value outside a codebook range that no codebook rule explains is set to
+   NA, logged with rule "out_of_range_query", and listed in the final report.
+   Never correct it by guessing a unit or decimal error.
+7. No imputation.
+8. Tidyverse style, native pipe, here::here() for all paths.
+
+## Procedure
+1. Present a plan before writing anything: every rule you will apply, the
+   codebook row it comes from, and the order. Wait for the user to confirm.
+2. If the data contain a value the codebook does not cover, stop and ask.
+3. Write scripts/01_clean.R and run it in a fresh R session.
+4. Run scripts/02_validate.R on the clean data and run the tests in tests/.
+   Report the results verbatim.
+
+## Outputs (exact columns)
+- data/derived/voles_clean.csv: the codebook columns plus raw_row, the row
+  number in the raw file.
+- data/derived/exclusion_log.csv: raw_row, subject_id, reason.
+- data/derived/cleaning_log.csv: raw_row, subject_id, column, old_value,
+  new_value, rule.
+
+## Final report
+Row counts in, out and excluded; every value set to NA for query; any gaps
+in the codebook you found.
+```
+:::
+
+:::{.task}
+::::{.task-header}
+Plan, review, then execute
+::::
+::::{.task-container}
+
+**1.** With your repository committed and clean, switch your assistant to plan
+mode (in Posit Assistant, `/plan`; in Claude Code, plan mode) and invoke the
+skill:
+
+```
+/clean-with-codebook
+Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.
+```
+
+**2. Review the plan before approving it.** Check that:
+
+- every rule cites a codebook row;
+- out-of-range values are set to `NA` and queried, not "corrected";
+- no file outside `scripts/01_clean.R` and `data/derived/` will be written;
+- duplicates are handled by a stated rule, with each exclusion logged.
+
+**3.** Approve, let it execute, and note every time it stopped to ask you
+something. A well-behaved agent should stop at least once.
+
+::::
+:::
+
+
+## Step 5: Check the result
+
+Four checks, each catching something the others cannot.
+
+**1. Validation on clean data should pass.** Run `validate_voles()` on
+`data/derived/voles_clean.csv`.
+
+**2. The tests: raw data unchanged and every row accounted for.**
+
+```{r}
+#| eval: false
+# tests/test_cleaning.R ----
+library(testthat)
+source(here::here("scripts", "functions", "validate_voles.R"))
+
+read_chr <- function(...) {
+  readr::read_csv(
+    here::here(...),
+    col_types = readr::cols(.default = readr::col_character())
+  )
+}
+
+test_that("raw data are unchanged", {
+  recorded <- readLines(here::here("tests", "fixtures", "raw_checksum.txt"))
+  current <- unname(tools::md5sum(here::here("data", "raw", "voles_raw.csv")))
+  expect_identical(current, recorded)
+})
+
+test_that("every raw row is either in the clean data or in the exclusion log", {
+  raw_df <- read_chr("data", "raw", "voles_raw.csv")
+  clean_df <- read_chr("data", "derived", "voles_clean.csv")
+  excluded_df <- read_chr("data", "derived", "exclusion_log.csv")
+
+  expect_equal(nrow(raw_df), nrow(clean_df) + nrow(excluded_df))
+  expect_setequal(
+    c(clean_df$raw_row, excluded_df$raw_row),
+    as.character(seq_len(nrow(raw_df)))
+  )
+  expect_false(any(is.na(excluded_df$reason) | excluded_df$reason == ""))
+})
+
+test_that("clean data pass every codebook rule", {
+  clean_df <- readr::read_csv(
+    here::here("data", "derived", "voles_clean.csv"),
+    col_types = voles_col_types()
+  )
+  agent <- validate_voles(clean_df, "Clean data")
+  expect_true(pointblank::all_passed(agent))
+})
+```
+
+Run with `testthat::test_file(here::here("tests", "test_cleaning.R"))`.
+
+**3. Audit the logs against the data.** The cleaning log was written by the
+agent, so check it rather than trust it:
+
+```{r}
+#| eval: false
+# scripts/03_audit_cleaning.R ----
+library(tidyverse)
+library(here)
+source(here("scripts", "functions", "validate_voles.R"))
+
+to_long <- function(data, value_name) {
+  data |>
+    pivot_longer(
+      -raw_row,
+      names_to = "column",
+      values_to = value_name,
+      values_transform = as.character
+    )
+}
+
+raw_long_df <- read_csv(here("data", "raw", "voles_raw.csv"), col_types = voles_col_types()) |>
+  mutate(raw_row = as.character(row_number())) |>
+  to_long("raw_value")
+
+clean_long_df <- read_csv(here("data", "derived", "voles_clean.csv"), col_types = voles_col_types()) |>
+  to_long("clean_value")
+
+cleaning_log_df <- read_csv(
+  here("data", "derived", "cleaning_log.csv"),
+  col_types = cols(.default = col_character())
+)
+
+# 1. Truthful: every logged old value matches the raw file ----
+untruthful_df <- cleaning_log_df |>
+  left_join(raw_long_df, by = c("raw_row", "column")) |>
+  filter(!map2_lgl(old_value, raw_value, identical))
+
+# 2. Complete: every changed cell appears in the log ----
+unlogged_df <- clean_long_df |>
+  left_join(raw_long_df, by = c("raw_row", "column")) |>
+  filter(!map2_lgl(clean_value, raw_value, identical)) |>
+  anti_join(cleaning_log_df, by = c("raw_row", "column"))
+
+untruthful_df
+unlogged_df
+
+# 3. What kinds of change were made ----
+cleaning_log_df |> count(column, rule, sort = TRUE)
+
+# 4. Ten logged changes to check by hand against the raw file ----
+set.seed(2026)
+cleaning_log_df |> slice_sample(n = 10)
+```
+
+`untruthful_df` and `unlogged_df` should both have zero rows. An unlogged
+change is the most dangerous outcome in this block: a value altered with no
+record. If a row appears, inspect it; a difference in number formatting is
+harmless, a changed value is not. For the ten sampled changes, open the raw file
+yourself and confirm each one.
+
+**4. Grade the pipeline against the planted errors.** Your instructor will now
+release the answer key. For each planted error, record:
+
+| Planted error | Failed validation on raw? | Handled as intended? | In the log? |
+|---|---|---|---|
+| | | | |
+
+The first column measures your *rules*; the second measures the *cleaning*;
+the third measures the *record*. A planted error that passed validation on raw
+data is a hole in your codebook, whatever the cleaning did.
+
+
+## Debrief
+
+1. Which planted errors did the AI's first draft of the codebook miss before you
+   gave it the data provider's note? What does that say about who should own the
+   codebook?
+2. What did the agent do with the mass recorded in kilograms and the value ten
+   times too large? If it "corrected" them, on whose authority? If the provider
+   confirms a kilogram entry, the correction becomes a codebook rule you add,
+   not something the script infers.
+3. Which of your checks would have caught a script that set every mass to `NA`?
+4. Once the clean output is right, freeze it as a reference, as in the
+   [characterisation-test block](11i-characterisation-tests.qmd), so a later refactor of `01_clean.R` must
+   reproduce it exactly.
+
+
+## Check your understanding
+
+**Why must the codebook be written or confirmed by the analyst rather than
+inferred by the AI from the data?**
+
+`r longmcq(c(
+  "Because AI tools cannot read CSV files",
+  answer = "Because missing-value codes, units and valid ranges are facts about how the data were collected; ranges read off the data include the very errors they are meant to detect",
+  "Because codebooks must be written in a specific file format",
+  "Because the AI would take too long to profile the data"
+))`
+
+**Your validation rules all pass on the raw data before any cleaning. What is
+the most likely explanation in this exercise?**
+
+`r longmcq(c(
+  "The cleaning script has already run",
+  "pointblank cannot read raw data",
+  answer = "The rules have gaps, because the raw data are known to contain errors",
+  "The data are clean and no cleaning is needed"
+))`
+
+**How does the checksum test differ from the permission deny rule?**
+
+`r longmcq(c(
+  "They are equivalent; one is redundant",
+  answer = "The deny rule blocks one route (the agent's editing tools) before a change happens; the checksum detects a change by any route, after it happens",
+  "The checksum prevents edits; the deny rule only reports them",
+  "The deny rule works on GitHub; the checksum works only locally"
+))`
+
+
+## References
+
+- Spreafico, M., Tassini, L., Sancricca, C. and Cappiello, C. (2025) 'Lost in
+  the pipeline: how well do large language models handle data preparation?',
+  arXiv preprint 2511.21708. <https://doi.org/10.48550/arXiv.2511.21708>
+- Claude Code documentation: *Extend Claude Code*,
+  <https://code.claude.com/docs/en/features-overview>; *Skills*,
+  <https://code.claude.com/docs/en/skills>; *Configure permissions*,
+  <https://code.claude.com/docs/en/permissions>.
+- Posit Assistant documentation: *Skills*,
+  <https://assistant.posit.co/docs/features/skills/>.
+
+
+:::{.callout-note collapse="true"}
+## Instructor only: generating the planted data
+
+Keep this script and `planted_errors.csv` **outside** the participant
+repository. An agent that can read the answer key will use it. Run it in an
+instructor copy of the repository that holds the clean
+`data/raw/voles_metabolism.csv`, and copy only the generated
+`data/raw/voles_raw.csv` into the participant repository.
+
+```{r}
+#| eval: false
+# instructor/make_dirty_voles.R ----
+library(tidyverse)
+library(here)
+
+# suppressWarnings: case_when() evaluates every branch, including numeric
+# conversion of text labels
+as_num <- function(x) suppressWarnings(as.numeric(x))
+
+clean_df <- read_csv(
+  here("data", "raw", "voles_metabolism.csv"),
+  col_types = cols(.default = col_character())
+)
+
+plants_df <- tribble(
+  ~row, ~column,               ~error_class,
+  5,    "mass_post_g",         "sentinel 9999",
+  41,   "mass_post_g",         "sentinel 9999",
+  12,   "metabolic_rate_post", "non-standard missing code -1",
+  20,   "treatment_arm",       "label in lower case",
+  33,   "treatment_arm",       "label in upper case",
+  58,   "sex",                 "label spelled out",
+  27,   "mass_pre_g",          "recorded in kg",
+  64,   "mass_pre_g",          "decimal slip (x10)"
+) |>
+  mutate(
+    subject_id = clean_df$subject_id[row],
+    old_value = map2_chr(row, column, \(r, col) clean_df[[col]][[r]]),
+    new_value = case_when(
+      error_class == "sentinel 9999" ~ "9999",
+      error_class == "non-standard missing code -1" ~ "-1",
+      error_class == "label in lower case" ~ str_to_lower(old_value),
+      error_class == "label in upper case" ~ str_to_upper(old_value),
+      error_class == "label spelled out" ~ if_else(old_value == "M", "male", "female"),
+      error_class == "recorded in kg" ~ as.character(as_num(old_value) / 1000),
+      error_class == "decimal slip (x10)" ~ as.character(as_num(old_value) * 10)
+    )
+  )
+
+# apply each plant to its cell ----
+planted_df <- reduce(
+  seq_len(nrow(plants_df)),
+  \(data, i) {
+    data[[plants_df$column[[i]]]][[plants_df$row[[i]]]] <- plants_df$new_value[[i]]
+    data
+  },
+  .init = clean_df
+)
+
+# insert an exact duplicate and a near duplicate with a malformed ID ----
+near_duplicate_df <- planted_df |>
+  slice(15) |>
+  mutate(subject_id = str_replace(subject_id, "^V0", "V"))
+
+raw_df <- bind_rows(
+  slice(planted_df, 1:30),
+  slice(planted_df, 7),
+  slice(planted_df, 31:50),
+  near_duplicate_df,
+  slice(planted_df, 51:n())
+)
+
+write_csv(raw_df, here("data", "raw", "voles_raw.csv"), na = "")
+
+# answer key, indexed by row in the raw file ----
+key_df <- plants_df |>
+  mutate(
+    raw_row = row + (row > 30) + (row > 50),
+    expected_handling = case_when(
+      str_starts(error_class, "sentinel") |
+        str_starts(error_class, "non-standard") ~ "recode to NA (codebook missing code); log",
+      str_starts(error_class, "label") ~ "recode to canonical label; log",
+      .default = "fails range rule; set to NA and query, do not infer a correction; log"
+    )
+  ) |>
+  select(raw_row, subject_id, column, old_value, new_value, error_class, expected_handling) |>
+  bind_rows(
+    tibble(
+      raw_row = c(31, 52),
+      subject_id = clean_df$subject_id[c(7, 15)],
+      column = "(whole row)",
+      error_class = c("exact duplicate row", "near duplicate: malformed ID"),
+      expected_handling = c(
+        "exclude one copy; log reason",
+        "fails ID pattern; identify as duplicate of the original animal; exclude; log reason"
+      )
+    )
+  )
+
+write_csv(key_df, here("instructor", "planted_errors.csv"))
+```
+
+The raw file has 74 rows: 72 animals, one exact duplicate (raw row 31) and one
+near duplicate (raw row 52). A correct pipeline excludes two rows and sets five
+values to `NA`: two sentinels, the `-1` code, and the two masses queried as out
+of range. These are in addition to the genuine missing value already in the
+source data.
+
+`docs/data_note.md` should state: IDs are V followed by three digits; sex is M
+or F; the three treatment arms; masses in grams, with adults in this colony
+between 15 and 60 g and 9999 entered when an animal could not be weighed;
+metabolic rate `-1` when the respirometry run failed, with valid readings
+between 5 and 30.
+:::

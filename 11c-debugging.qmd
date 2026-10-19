@@ -1,6 +1,5 @@
 # Block 3: Debugging with AI {.unnumbered}
 
-
 ```{r}
 #| include: false
 source("R/booktem_setup.R")
@@ -10,33 +9,39 @@ library(here)
 library(webexercises)
 ```
 
-AI is at its most useful for debugging code you wrote. You know what you intended; the AI can spot syntactic mistakes you missed, suggest fixes for runtime errors, and help you interpret unfamiliar error messages. The verification cost is low, because you are comparing the AI's diagnosis against your own intention rather than against an unknown ground truth.
+AI is most useful for debugging code you wrote yourself. You know what you
+intended, so you can judge its diagnosis against your intention rather than
+against an unknown ground truth. It can spot syntax mistakes you missed, suggest
+fixes for errors, and explain unfamiliar messages.
 
-This block uses four error types, ordered by how much the debugger needs to know. The first error is a call to a function that does not exist, which Copilot can catch with no data; the second requires knowledge of the data values; the third requires knowledge of ggplot2's grammar; the fourth runs cleanly, returns a plausible answer, and is wrong, so that only knowledge of the expected result reveals it. The differences matter, because they show where AI can substitute for documentation lookup, where it cannot substitute for inspecting the data, and where it cannot substitute for knowing the biology.
+This block uses four error types, ordered by what the debugger needs to know.
+The first is a typo that needs no data. The second needs the actual values in
+the data. The third needs ggplot2's grammar. The fourth runs cleanly, returns a
+plausible answer and is wrong; only knowledge of the expected result reveals
+it. The differences show where AI can stand in for looking up documentation,
+where it cannot stand in for inspecting the data, and where it cannot stand in
+for knowing the biology.
 
 *⏱ ~30 minutes*
 
 
 ## Setup
 
-Have the voles dataset loaded:
+Load the voles data:
 
 ```{r}
 #| eval: false
 library(tidyverse)
-voles <- read_csv(here::here("data", "voles_metabolism.csv"))
+voles <- read_csv(here::here("data", "raw", "voles_metabolism.csv"))
 ```
 
+Use whichever assistant you have: inline completion, a chat window, Posit
+Assistant or Claude Code. Where a step depends on the tool, it says so.
 
-## Exercise 1: A missing function
 
-:::{.task}
-::::{.task-header}
-Exercise 1: A missing function
-::::
-::::{.task-container}
+## Exercise 1: A syntax error
 
-You wrote the following to count voles per treatment:
+You wrote this to count voles per treatment:
 
 ```{r}
 #| eval: false
@@ -47,10 +52,12 @@ ggplot(voles, aes(x = treatment_arm)) +
 R returns:
 
 ```
-Error in geom_barchart() : could not find function "geom_barchart"
+Error in geom_barchart(): could not find function "geom_barchart"
 ```
 
-**1. Paste both the code and the error message into your script as a block comment, then add `# Fix this code:` and let Copilot suggest a continuation:**
+**1. Ask for a fix.** With inline completion, paste the code and the error into
+your script as a block comment, add `# Fix this code:`, and let the assistant
+suggest a continuation. With a chat window or agent, paste both and ask.
 
 ```{r}
 #| eval: false
@@ -58,40 +65,34 @@ Error in geom_barchart() : could not find function "geom_barchart"
 # ggplot(voles, aes(x = treatment_arm)) +
 #   geom_barchart()
 #
-# Error in geom_barchart() : could not find function "geom_barchart"
+# Error: could not find function "geom_barchart"
 #
 # Fix this code:
 ```
 
-Before accepting any suggestion, write a single sentence explaining why the original failed. Your sentence is the verification step. If you can write the sentence, you understood the fix; if you cannot, the AI has solved the problem but you have not learned anything.
-
+Before accepting any suggestion, write one sentence explaining why the original
+failed. That sentence is your verification step: if you can write it, you
+understood the fix; if you cannot, the AI has solved the problem and you have
+learned nothing.
 
 `r hide("Solution")`
 
-```{r}
-#| eval: false
+```{r, eval = FALSE}
 ggplot(voles, aes(x = treatment_arm)) +
   geom_bar()
 ```
 
-The function is `geom_bar()`, not `geom_barchart()`. ggplot2's geom functions use short names; there is no `_chart` suffix anywhere in the package. The error message "could not find function" is the standard R response when a function does not exist in any loaded package, and it is the easiest class of error to recognise.
-
+The function is `geom_bar()`, not `geom_barchart()`. ggplot2's geoms use short
+names with no `_chart` suffix. "Could not find function" is R's standard message
+when a function does not exist in any loaded package, and it is the easiest
+class of error to recognise.
 
 `r unhide()`
-
-::::
-:::
 
 
 ## Exercise 2: A logic error
 
-:::{.task}
-::::{.task-header}
-Exercise 2: A logic error
-::::
-::::{.task-container}
-
-You wrote the following to filter to high-dose voles and compute mean post-treatment mass:
+You wrote this to compute mean post-treatment mass for high-dose voles:
 
 ```{r}
 #| eval: false
@@ -111,9 +112,11 @@ The code runs without error and returns:
 1       NaN
 ```
 
-This is harder than the missing-function error, because there is no error message to paste. The code is doing exactly what you asked it to; the bug is in what you asked for. AI cannot diagnose this without first knowing what your data look like.
+There is no error message to paste. The code does exactly what you asked; the
+bug is in what you asked for. No assistant can diagnose this reliably without
+knowing what your data contain.
 
-**1. Before asking AI for help, inspect the data.** Three diagnostic calls take seconds and tell you what you need to know:
+**1. Inspect the data before asking for help.** Three calls take seconds:
 
 ```{r}
 #| eval: false
@@ -122,31 +125,39 @@ voles |> count(treatment_arm)
 nrow(high_dose)
 ```
 
-The first two reveal that the values of `treatment_arm` (a character column, as `read_csv()` reads text by default) are `Control`, `Low_dose`, and `High_dose` (initial capital, underscore between words). The third returns zero. At this point you have already diagnosed the bug without involving an AI.
+The first two show that the values are `Control`, `Low_dose` and `High_dose`
+(capital first letter, underscore between words). The third returns zero. You
+have diagnosed the bug without an AI.
 
-**2. With the diagnostic information in hand, paste both the code and the diagnostic output into Chat (or as a block comment in your script) and ask for confirmation of the diagnosis:**
+**2. Ask with the evidence in hand.** Paste the code and the diagnostic output
+together and ask for confirmation:
 
 ```
-# I am trying to compute mean post-treatment mass for high-dose voles. My code:
+I am trying to compute mean post-treatment mass for high-dose voles.
+My code:
 
-#  high_dose <- voles |>
-#    filter(treatment_arm == "high_dose")
+  high_dose <- voles |>
+    filter(treatment_arm == "high_dose")
 
-#  high_dose |>
-#    summarise(mean_mass = mean(mass_post_g))
+  high_dose |>
+    summarise(mean_mass = mean(mass_post_g))
 
-# returns NaN. But voles |> distinct(treatment_arm) returns
-# "Control", "Low_dose", "High_dose". I think the filter is failing
-# because of the case. Is that the only problem?
+returns NaN. But voles |> distinct(treatment_arm) returns
+"Control", "Low_dose", "High_dose". I think the filter fails because of
+the capitalisation. Is that the only problem?
 ```
 
-The exercise is to ask the question with the diagnostic context already in place, rather than asking AI to diagnose blind. AI is faster than you at typo-spotting and syntax recall, but slower than `distinct()` at telling you what is actually in your data.
+The exercise is to ask with the diagnostic context already in place, not to ask
+the AI to diagnose blind. AI is quick at typo-spotting and syntax recall;
+`distinct()` is quicker at telling you what is in your data.
 
+**With an agent** (Posit Assistant or Claude Code), you can ask it to run the
+diagnostics itself. Ask it to show the commands and their output, and read the
+output yourself before accepting its diagnosis.
 
 `r hide("Solution")`
 
-```{r}
-#| eval: false
+```{r, eval = FALSE}
 high_dose <- voles |>
   filter(treatment_arm == "High_dose")
 
@@ -154,24 +165,17 @@ high_dose |>
   summarise(mean_mass = mean(mass_post_g, na.rm = TRUE))
 ```
 
-The capitalisation now matches the actual value in the data. Adding `na.rm = TRUE` is precautionary; for this dataset there are no missing values in `mass_post_g`, but in real biological data there usually are.
-
+The value now matches the data exactly. `na.rm = TRUE` is a precaution: this
+dataset has no missing values in `mass_post_g`, but real biological data usually
+do.
 
 `r unhide()`
-
-::::
-:::
 
 
 ## Exercise 3: An aesthetic-mapping error
 
-:::{.task}
-::::{.task-header}
-Exercise 3: An aesthetic-mapping error
-::::
-::::{.task-container}
-
-You wanted a scatter plot of post-treatment metabolic rate against post-treatment mass, coloured by treatment arm:
+You wanted a scatter plot of post-treatment metabolic rate against
+post-treatment mass, coloured by treatment arm:
 
 ```{r}
 #| eval: false
@@ -180,42 +184,32 @@ ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
   labs(title = "Metabolic rate by mass")
 ```
 
-R returns:
+R returns an error saying that object `treatment_arm` was not found. The exact
+wording varies between ggplot2 versions.
 
-```
-Error: object 'treatment_arm' not found
-```
-
-**1. Paste code and error as before, and ask Copilot for a fix. Before accepting, write a sentence on why R could not find `treatment_arm`, even though it is a column in `voles`.**
-
+**1. Ask for a fix.** Before accepting it, write one sentence on why ggplot2
+could not find `treatment_arm`.
 
 `r hide("Solution")`
 
-```{r}
-#| eval: false
+```{r, eval = FALSE}
 ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
   geom_point(aes(colour = treatment_arm)) +
   labs(title = "Metabolic rate by mass")
 ```
 
-`treatment_arm` is a column in the data, so the mapping must go inside `aes()`. The `color =` argument outside `aes()` expects a fixed value such as `"red"` or `"#0072B2"`, not a variable name. Because `color = treatment_arm` sits outside `aes()`, R evaluates it as an ordinary argument: it looks for an object called `treatment_arm` in your global environment, does not find one, and stops before ggplot2 ever looks inside the data. That is why the message names no function and does not mention the data at all. British spelling `colour` works as an alias for `color` in ggplot2.
-
+`treatment_arm` is a column in the data, so the mapping must go inside `aes()`.
+An argument outside `aes()`, such as `color =`, expects a fixed value like
+`"red"` or `"#0072B2"`. ggplot2 looked for an object called `treatment_arm` in
+your environment, found none, and stopped. `colour` and `color` are
+interchangeable in ggplot2.
 
 `r unhide()`
-
-::::
-:::
 
 
 ## Exercise 4: A correct-looking but wrong result
 
-:::{.task}
-::::{.task-header}
-Exercise 4: A correct-looking but wrong result
-::::
-::::{.task-container}
-
-You want the mean change in body mass by treatment arm. You write:
+You want the mean change in body mass by treatment arm:
 
 ```{r}
 #| eval: false
@@ -224,7 +218,7 @@ voles |>
   summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
 ```
 
-The code runs. There is no error and no `NaN`. It returns something like:
+It runs. There is no error and no `NaN`. It returns something like:
 
 ```
 # A tibble: 3 × 2
@@ -235,65 +229,90 @@ The code runs. There is no error and no `NaN`. It returns something like:
 3 High_dose           -3.19
 ```
 
-Every value is a small number of grams, which is entirely plausible for a vole, so nothing here looks wrong on its face. But the result is the reverse of the truth. The treatment was administered to increase body mass, and the dataset was built so that mass rises with dose. The table reports that mass falls, and falls most at the highest dose.
+Every value is a small number of grams, plausible for a vole, so nothing looks
+wrong. But the result is the reverse of the truth. The treatment was designed
+to increase body mass, and the dataset was built so that mass rises with dose.
+The table says that mass falls, and falls most at the highest dose.
 
-This is the error class that neither your diagnostics nor an AI can reliably catch for you. `glimpse()`, `distinct()`, and `count()` all report a clean dataset, because the data are clean; the fault is in the arithmetic, and the arithmetic produces a plausible number. The subtraction is the wrong way round. `mass_pre_g - mass_post_g` measures loss, when you wanted gain.
+The data are clean, so `glimpse()`, `distinct()` and `count()` report nothing
+unusual. The fault is in the arithmetic: `mass_pre_g - mass_post_g` measures
+loss, when you wanted gain.
 
 :::{.callout-note}
-
-A chat model will sometimes flag `mass_pre_g - mass_post_g` anyway, because "post minus pre" is the usual convention for a change score in its training data. That is pattern-matching on a convention, not a check of your result: the model cannot know which direction your treatment should push body mass unless you tell it, and plenty of valid analyses define change the other way round. Do not rely on it to catch this class of error.
-
+**Can an AI catch this?** Only if it knows what the answer should be. Given the
+code and output alone, an assistant can describe what the code does, but
+nothing in the code or the output says that mass should rise. If you state the
+expected direction, it is far more likely to name the error. The knowledge
+that makes the error visible is yours.
 :::
 
-**1. Before you trust any result that runs cleanly, write down what a correct result should look like.** For this table: the sign should be positive, because the treatment adds mass, and the magnitude should increase from Control to High_dose. Only then compare. The mismatch between "should be positive and increasing" and "is negative and decreasing" is the diagnosis.
+**1. Before you trust any result that runs cleanly, write down what a correct
+result should look like.** Here: positive values, increasing from Control to
+High_dose. Then compare. The mismatch between "positive and increasing" and
+"negative and decreasing" is the diagnosis.
 
-**2. You may give the code to AI for a second opinion, but it can only help if you supply the expected direction.** A prompt that says "this should show increasing mass gain with dose, but it shows decreasing values; what is wrong?" will get the sign error named. A prompt that gives only the code and the output will get a description of what the code does, which is not the same as catching that it does the wrong thing.
-
+**2. You may ask an AI for a second opinion, with the expected direction
+included.** "This should show mass gain increasing with dose, but the values
+are negative and decreasing; what is wrong?" will usually get the sign error
+named. A prompt with only the code and output usually will not.
 
 `r hide("Solution")`
 
-```{r}
-#| eval: false
+```{r, eval = FALSE}
 voles |>
   mutate(mass_change_g = mass_post_g - mass_pre_g) |>
   summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
 ```
 
-`mass_change_g` is post minus pre, not pre minus post. With the subtraction the right way round the means are positive and increase with dose, matching the design of the study. The original ran without complaint because subtraction is defined in both directions; the only signal that it was wrong was knowing what the answer should be.
-
+`mass_change_g` is post minus pre. With the subtraction the right way round,
+the means are positive and increase with dose, matching the study design. The
+original ran without complaint because subtraction works in either direction;
+the only signal that it was wrong was knowing what the answer should be.
 
 `r unhide()`
-
-::::
-:::
 
 
 ## The debugging checklist
 
-When code fails, the order matters. Inspect the data first, ask the AI second.
+When code fails, order matters: inspect the data first, ask the AI second.
 
-1. Read the error message in full. The function name and the phrase ("could not find function", "object not found", "non-numeric argument") usually localise the bug.
-
-2. Inspect the relevant data. `glimpse()`, `distinct()` on character or factor columns, `summary()` on numeric columns, and `nrow()` after a filter are the four commands that catch most logic errors in seconds.
-
-3. Verify variable names exactly, including capitalisation and underscores. Most "object not found" errors are typos.
-
-4. If steps 1 to 3 do not localise the bug, paste the code, the error message, and the diagnostic output into Chat together. The combination is much more useful than the error alone.
-
-5. After AI suggests a fix, write a one-sentence explanation of why the original failed. If you cannot write the sentence, you have not understood the fix.
-
-6. Before trusting a result that runs without error, state in advance what it should look like: the sign, the rough magnitude, and the expected ordering. Compare the output against that statement. This is the one check AI cannot perform for you, because it requires knowing the biology.
+1. **Read the error message in full.** The function name and the phrase ("could
+   not find function", "object not found", "non-numeric argument") usually
+   locate the bug.
+2. **Inspect the relevant data.** `glimpse()`, `distinct()` on categorical
+   columns, `summary()` on numeric columns, and `nrow()` after a filter catch
+   most logic errors in seconds.
+3. **Check names exactly,** including capitalisation and underscores. Most
+   "object not found" errors are typos.
+4. **If steps 1 to 3 do not locate the bug,** give the assistant the code, the
+   error message and the diagnostic output together. The combination is much
+   more useful than the error alone.
+5. **After the AI suggests a fix,** write one sentence explaining why the
+   original failed. If you cannot, you have not understood the fix.
+6. **Before trusting a result that runs without error,** state what it should
+   look like (sign, rough magnitude, expected ordering) and compare. This check
+   depends on your knowledge of the study, which no assistant has unless you
+   supply it.
 
 
 ## Check your understanding
 
-**When a ggplot2 call stops with `Error: object 'X' not found`, and `X` is a column in your data, the most common cause is:**
+**When ggplot2 reports that a column such as `treatment_arm` was not found, the
+most common cause is:**
 
 `r longmcq(c(
   "The data argument was supplied incorrectly",
-  answer = "A column name was used outside aes() where ggplot2 expected a fixed value",
+  answer = "A column name was used outside aes(), where ggplot2 expected a fixed value",
   "The ggplot2 package is not loaded",
   "The variable contains missing values"
 ))`
 
+**Code runs without error and returns plausible numbers. What is the most
+reliable first check?**
 
+`r longmcq(c(
+  "Ask an AI whether the code is correct",
+  "Run the code again to confirm the output is stable",
+  answer = "Write down what the result should look like from the study design, then compare",
+  "Check that there are no warnings"
+))`

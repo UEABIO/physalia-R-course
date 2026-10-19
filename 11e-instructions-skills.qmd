@@ -1,5 +1,4 @@
-# Block 6: Custom instructions and skills {.unnumbered}
-
+# Block 5: Instructions and skills {.unnumbered}
 
 ```{r}
 #| include: false
@@ -10,446 +9,408 @@ library(here)
 library(webexercises)
 ```
 
-
-Block 5 argued that an agent acts on conventions it cannot see, and that the looser the leash, the more those standing conventions matter. This block shows how to make those conventions visible to the assistant in advance, so you do not restate them in every comment and every Chat session. It falls into two parts. **Part A** covers the always-on mechanisms, custom instructions and scoped instructions, which load automatically and behave the same for everyone on a surface that reads them; you will test these mostly in Ask mode, the mode from Block 5 where you remain the filter. **Part B** moves to agent mode and to skills, which are invoked rather than always loaded and are far more surface-dependent. It also returns to Plan mode as the review step that sits between asking and handing a goal to a fully autonomous agent.
-
-*⏱ ~60 minutes*
-
-
-## Before you start: which assistant are you actually using?
-
-:::{.callout-warning collapse="true"}
-
-You met Copilot in VS Code and Posit Assistant in Block 5. This is the detail that matters now that you are writing configuration files, because the two read those files from different places, and confusing them is the single most common reason a configuration file appears to be ignored. (If you used Positron Assistant on an earlier course or in an older Positron, note that it is now deprecated: since Positron 2026.07, Posit Assistant is Positron's default AI experience.)
-
-**GitHub Copilot** (on github.com, in the cloud agent, and in VS Code) reads `.github/copilot-instructions.md`, scoped `.github/instructions/*.instructions.md` files, and `AGENTS.md`. It loads skills from `.github/skills/`, `.claude/skills/` or `.agents/skills/`.
-
-**Posit Assistant**, in Positron and RStudio, reads `AGENTS.md` in the project root as its project instructions; it does not read `.github/copilot-instructions.md`. It loads skills automatically when they are relevant, from `.agents/skills/` or its own `.posit/assistant/skills/` (older versions used `.positai/`; extra locations can be set with `skills.paths`). It does not look in `.github/skills/`.
-
-The blunt rule of thumb, at the time of writing (October 2026): the files both tools read are `AGENTS.md` for instructions and `.agents/skills/` for skills. This block teaches Copilot's `.github/` files because they are what the cloud agent and code review on github.com use, and because scoped instructions have no Posit Assistant equivalent; if you work in Posit Assistant, put your always-on instructions in `AGENTS.md` and your skills in `.agents/skills/`. Where this block depends on behaviour that differs between the two tools it says so, because both are moving targets and guessing wastes your time.
-
+:::{.callout-note}
+**Last verified:** 9 October 2026, against GitHub's Copilot documentation
+(custom instructions, agent skills), the Claude Code documentation (features
+overview, skills) and the Posit Assistant documentation (docs version 1.7:
+memory, skills).
 :::
 
+The previous block showed that the further up the autonomy ladder an assistant
+works, the more its unstated assumptions land in your files. This block is how
+you state your conventions once, so you do not repeat them in every prompt.
 
-## Part A: Instructions and scoping
+There are two mechanisms, distinguished by when they load:
 
-The two mechanisms in this part share one property that makes them dependable: they load automatically, without your asking. You do not invoke them, you do not name them, and you do not have to remember they exist. They are also the right place to start, because everything you learn here works the same for everyone on a surface that reads the file in question, with less of the surface-dependence that complicates Part B.
+- **Instructions** load into every session automatically. Use them for what is
+  always true of the project: structure, style, reproducibility rules.
+- **Skills** load only when invoked by name or judged relevant from their
+  description. Use them for procedures you need sometimes: producing a
+  publication figure, cleaning data against a codebook, reviewing code.
 
+Both are requests. The model usually follows them, but nothing guarantees it.
+Rules that must hold every time belong in the enforced controls of the next
+block.
 
-### Providing context to models
-
-GitHub Copilot, like any LLM client, provides several ways to supply context, distinguished by how they load.
-
-**Workspace-level custom instructions** live in `.github/copilot-instructions.md`. Copilot loads this file automatically for every request: in web-based GitHub Chat, the cloud agent, code review, and Copilot Chat in VS Code. (Posit Assistant does not read it, per the orientation above.) Use it for things that are always true of your project: which packages you use, your naming conventions, your file structure, your statistical conventions. The file should be short and broad in scope; treat two pages as a ceiling, not a target.
-
-**Scoped instructions** live in `.github/instructions/*.instructions.md`, with a YAML front-matter `applyTo` glob that restricts the file to particular paths (for example `applyTo: "**/*.qmd"` to apply only to Quarto documents). Use them for rules that apply to one kind of file but not the rest. They load automatically when Copilot works on a matching file, and are used *alongside* `copilot-instructions.md`, not instead of it. Support differs by surface: in VS Code, Copilot Chat honours `applyTo` and attaches the file when the agent works on a matching file; on GitHub.com, at the time of writing, scoped instructions are used only by the cloud agent and by Copilot code review. Posit Assistant has no equivalent. If your work is mainly in one tool, confirm it supports the mechanism before relying on it.
-
-**Agent instructions** live in an `AGENTS.md` file, usually in the repository root. `AGENTS.md` is a cross-tool convention rather than a Copilot one: Copilot reads it (and gives precedence to the nearest `AGENTS.md` in the directory tree), and it is the file Posit Assistant reads for project instructions. If your group uses more than one assistant, it is the most portable place for always-on conventions.
-
-**Agent Skills** live in `.github/skills/<skill-name>/SKILL.md` (or `.agents/skills/<skill-name>/SKILL.md`, which Posit Assistant also reads), with a YAML front-matter `name` and `description`. Unlike the mechanisms above, skills are not always loaded; they are invoked. Either you type `/skill-name`, or the assistant infers from the description that the skill is relevant. Skills are the subject of Part B; they are listed here only to complete the picture.
-
-A further, related mechanism is custom prompt files (`.github/prompts/*.prompt.md`), invoked explicitly as slash commands. These are outside the scope of this workshop.
-
-The mechanisms answer different questions. Custom instructions (and `AGENTS.md`) answer "how should code in this project be written?" Scoped instructions answer "how should this kind of file be written?" Skills answer "how should this specific task be executed?"
+*⏱ ~55 minutes*
 
 
-### How to write effective instructions
+# Part A: Instructions {.unnumbered}
 
-A `copilot-instructions.md` file is loaded into every interaction on a reading surface, and is read by the cloud agent before it starts work, so its length is a recurring cost. A handful of accurate lines outperforms a long file.
+## Where each tool looks
 
-A few principles carry most of the value:
+| File | Claude Code | Posit Assistant | GitHub Copilot |
+|---|---|---|---|
+| `AGENTS.md` (repository root) | Via an import in `CLAUDE.md` | Read as project memory | Read by the cloud agent, agent mode and the CLI |
+| `CLAUDE.md` | Read every session | — | Read by the cloud agent |
+| `.github/copilot-instructions.md` | — | — | Read by Copilot; also offered for conversion by `/import-instructions` in Posit Assistant |
+| Path-scoped rules | `.claude/rules/*.md` with `paths` | No equivalent found | `.github/instructions/*.instructions.md` with `applyTo` |
 
-- Write each instruction as a single, simple statement. If you have several points, use several lines rather than one dense paragraph; the model parses discrete statements more reliably than prose.
+This course uses **one source of truth**: conventions live in `AGENTS.md`, and
+`CLAUDE.md` contains a single line that imports it:
 
-- Describe the conventions you actually follow, not the ones you aspire to. An instruction your own code routinely breaks teaches the model a rule the surrounding code contradicts, which makes its suggestions less consistent.
+```
+@AGENTS.md
+```
 
-- Be concrete and positive. "Use the native pipe `|>`" and "snake_case for all object names" are actionable; "write clean, idiomatic code" is not.
+Copilot's cloud agent reads both files, so it may see the conventions twice.
+That is harmless but wasteful, so keep `CLAUDE.md` to that one line.
 
-- Avoid contradiction and overlap. When a file matches a scoped instruction, Copilot is given *both* that file and `copilot-instructions.md`; GitHub documents no rule for which wins when they disagree, so do not rely on one quietly overriding the other.
 
-More set-up advice and principles are in the
-[GitHub documentation on onboarding an instruction file](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions).
+## Writing instructions that work
 
-`r hide("Example")`
+- **One instruction per line.** Short, concrete statements are easier to check
+  than paragraphs, for the model and for you.
+- **Describe what you actually do.** An instruction your existing code breaks
+  sends the model mixed signals. The test is whether your own scripts obey it.
+- **Be specific.** "Use the native pipe `|>`" can be checked; "write clean,
+  idiomatic code" cannot.
+- **Keep it short.** The file loads into every request. Anthropic advises
+  keeping Claude Code's always-loaded file under about 200 lines; aim far
+  lower.
+- **Add a rule when a mistake repeats.** If the assistant gets the same
+  convention wrong twice, that convention belongs in the file. A one-off
+  correction in chat is forgotten next session.
+- **Do not put guarantees here.** "Never edit raw data" is worth stating, but
+  enforce it with the controls in the next block.
+
+`r hide("Example AGENTS.md")`
 
 ```markdown
-# Copilot Instructions: R Analytical Repository
-
-This repository contains analytical R code for computationally reproducible
-research. Most items below are written for you to follow as you generate code.
-A short Verification section lists the few things that are also checked in CI,
-because a silent failure there is costly.
+# Project conventions: voles analysis
 
 ## Canary
-Start any response that writes or edits R code with this as the first line of
-the first code block:
-`# copilot-instructions: active v4`
+When you write or edit R code, make the first line of the first code block:
+# agents-md: active v1
 
-## Priorities
-When two instructions conflict and no test settles it, prefer in this order:
-correctness, reproducibility, transparency, interpretability, maintainability.
-Note the trade-off in the pull request description.
+## Structure
+- Raw data live in data/raw/ and are never modified.
+- Derived data go to data/derived/; figures and tables go to outputs/.
+- Reusable functions live in scripts/functions/.
 
-## Agent behaviour
-Never wait for human input in committed code. Do not use `readline()`,
-`menu()`, `file.choose()`, `browser()`, or `View()`. When an input is missing,
-add a `# DEFAULT:` comment naming the assumption and the value you chose, then
-carry on.
-
-## Naming and style
-- Use the native pipe `|>`, not `%>%`.
-- Use snake_case for all objects and functions.
-- Assign with `<-`, not `=`.
-- Write `TRUE` and `FALSE`, never `T` and `F`.
-- Suffix dataframe and tibble objects with `_df`; raw import objects use `_raw`
-  instead and are never reassigned.
-- Suffix fitted models with `_model`.
-- Suffix ggplot objects with `_plot`.
-- Namespace-qualify calls (`pkg::fun()`) inside `R/functions/`. In analysis
-  scripts, load packages with `library()` at the top and use bare names below.
-- Avoid hidden global state and partial argument matching.
-- Abstract logic into a function once it appears in three or more places.
+## R style
+- Tidyverse style, native pipe |>, snake_case names, <- for assignment.
+- Write TRUE and FALSE, never T and F.
+- Build every path with here::here(). Never use setwd() or rm(list = ls()).
+- Read CSV files with readr and explicit col_types.
 
 ## Reproducibility
-- Never use `setwd()` or `rm(list = ls())`.
-- Build every path with `here::here()`; relative paths only.
-- Assume each script runs from a fresh R session.
-- Manage dependencies with `renv`.
-- Set a seed before any stochastic operation.
-- Save `sessioninfo::session_info()` to the output directory at the end of each
-  top-level script.
-
-## Dependencies (renv)
-- Manage all dependencies with `renv`; the project library is the only source
-  of truth.
-- Never call `install.packages()`. Add a package with `renv::install()`, then
-  `renv::snapshot(prompt = FALSE)`.
-- When `renv.lock` already lists the packages you need, restore rather than
-  install: `renv::restore(prompt = FALSE)`.
-- Never edit `renv.lock` by hand.
-- Set `options(renv.config.auto.snapshot = FALSE)` so the lockfile is never
-  written as a side effect; snapshot only deliberately.
-- Use `renv::snapshot(type = "all")` so the lockfile is reproducible across
-  runs rather than depending on usage detection.
-
-## Reading and writing data
-- Always use functions from readr (`readr::read_*(col_types = ...)`), not
-  `read.*`.
-- Keep raw data files immutable; never overwrite anything in the raw data
-  directory.
-- Separate raw data, derived data, scripts, outputs, and documentation.
-- Write outputs only to dedicated output directories, never outside the
-  repository.
-- Assign cleaned and derived results to new objects; do not overwrite the raw
-  import object.
+- Packages are managed with renv. Do not call install.packages(); ask before
+  adding a package.
+- Set a seed immediately before any random step.
+- Every script must run in a fresh R session.
 
 ## Data integrity
-- Never drop missing data silently. Filter with a stated reason, or use
-  `tidyr::drop_na()` on named columns.
-- Prefer `purrr::map_*()` and `vapply()` over `sapply()`.
+- Never drop rows silently; state the reason for every filter in a comment.
+- Report the number of observations behind every summary statistic.
 
-## Statistical practice
-- Distinguish exploratory from confirmatory analyses, in prose or chunk labels.
-- Validate model assumptions with `performance::check_model()` for regression
-  models and record the inspection.
+## Statistics
+- Label each analysis as exploratory or confirmatory.
+- Never type numerical results into text; compute them in code.
 
-## Figures
-For any figure, quick or polished:
-- Use tidyverse style, the native pipe, and British spelling.
-- Build paths with `here::here()`.
-- No pie charts, dual y-axes, 3D effects, or dynamite plots (bar plus error
-  bar) when raw data exist.
-- Never use `theme_grey()`; default to `theme_minimal()` or `theme_classic()`.
-- For categorical groups, add `shape` or `linetype` alongside colour.
-- Use `linewidth`, not `size`, for line and density layers.
-- For figures meant for an audience, follow the pub-figures skill in full.
-
-## Code chunks
-- Keep chunks short: one logical step each (import, clean, transform, model,
-  diagnose, or visualise), and no more than about 40 lines.
-- Comment the rationale for the step, not the mechanics of each line.
-- Include at least one comment per chunk.
-
-## Quarto
-For `.qmd` files: render from a clean session, give chunks informative labels,
-and avoid hidden dependencies between chunks.
-
-## Verification (also checked in CI)
-These are enforced because a silent miss is costly:
-- No `setwd(`, `%>%`, `install.packages(`, or absolute paths in committed code.
-- `renv::status()` reports a synchronised library.
-- Each script and `.qmd` runs or renders in a fresh `--vanilla` session without
-  error.
-- The raw data directory is unchanged by any run.
-- Outputs resolve inside the repository.
-
-## Specialist instructions and skills
-Specialised instruction files hold domain standards and repository policy;
-skills hold procedural workflows. When one applies, follow it alongside these
-instructions. Skill selection follows each skill's own description.
-
+## Working with me
+- Before changing more than one file, present a plan and wait for approval.
+- Do not edit anything under data/raw/, tests/fixtures/ or .github/.
 ```
 
 `r unhide()`
 
 
-### Activity: Build your copilot-instructions.md file
+## Activity: Build and test your AGENTS.md
 
 :::{.task}
 ::::{.task-header}
-Build your copilot-instructions.md file
+Write, trim, verify (20 minutes)
 ::::
 ::::{.task-container}
 
-In the workshop template repository (which you forked at the start of the day), you will create `.github/copilot-instructions.md`. Rather than start from a blank file, generate a skeleton and then refine it. The refining is the real exercise.
+Work in your forked workshop repository, committed and clean.
 
-**Step 1: Before and after.** This is a controlled before-and-after: the same prompt, run twice in the same mode, with the instructions file the only thing that changes between the runs. Unlike the Block 5 exercise, where the mode changed between runs, here the mode is held fixed (Ask) and the file is the single variable.
+**1. Baseline.** With no `AGENTS.md` present, ask your assistant (rung 1, Ask):
 
-Run the prompt, in Ask mode, with no instructions file present:
-
-```text
-Read in data/voles_metabolism.csv and make a quick exploratory plot of
+```
+Read data/raw/voles_metabolism.csv and make a quick exploratory plot of
 mass_post_g by treatment arm.
 ```
 
-> You can do this in your IDE's chat or by heading to the repository on GitHub.
+Keep the answer.
 
-Keep this answer. It is your baseline.
+**2. Draft.** Ask the assistant to draft an `AGENTS.md` by reading the
+repository. In Posit Assistant you can instead have a short conversation about
+your conventions and run `/savememory`. Expect the draft to be long and
+generic.
 
-**Step 2: Draft a skeleton.**
+**3. Trim hard.** Delete anything the model padded or guessed. Keep only what
+is always true of this project.
 
-*If you have an in-IDE agent* (Copilot in VS Code, or Posit Assistant in Positron or RStudio): open the chat in Agent mode and prompt, "Create .github/copilot-instructions.md by reading the current workspace." The assistant reads the repository and drafts a file covering the structure, languages, and packages it detects. If Posit Assistant is your main tool, ask for `AGENTS.md` in the project root instead, because that is the file it reads (Copilot reads `AGENTS.md` too); everywhere this activity says `copilot-instructions.md`, read `AGENTS.md`.
+**4. Make it yours.** Make sure the file states at least:
 
-*If you have no in-IDE agent*: create `.github/copilot-instructions.md` by hand. Either take the example above, or, if it is easier, push an empty file and use GitHub.com's web Chat to generate a draft once it is on the remote. Hand-authoring is fine; the file is short.
+1. one style convention you genuinely follow and the draft did not infer;
+2. one structural fact the model cannot guess, such as where raw data live and
+   that they are immutable;
+3. one reproducibility or statistical convention you always apply;
+4. a **canary**: a fixed first line for any R code block, such as
+   `# agents-md: active v1`.
 
-**Step 3: Trim it hard.** Generated instructions run long and generic. Cut the draft down to what is always true of the project and broadly useful, treating two pages as a ceiling, not a target. Delete anything the model padded or guessed at.
+**5. Connect Claude Code.** Create `CLAUDE.md` containing only `@AGENTS.md`.
 
-**Step 4: Make it yours.** The generator reads the workshop template, not your own work, and it cannot read your judgement. Edit the file so that it specifies, at minimum:
+**6. Verify in each tool you use.** Commit, open a **new** session, and repeat
+the Step 1 prompt.
 
-1. **One naming or style convention you actually hold** that the generator did not infer: the native pipe over `%>%`, `<-` over `=`, a suffix scheme for objects, whichever you genuinely follow. The test is whether your own existing code obeys it.
-
-2. **One project-structure fact** the model cannot guess from a fresh template: where raw data live and that they are immutable, where outputs are written, where functions are sourced from. State it as a single declarative line.
-
-3. **One statistical or reproducibility convention** that is always true of your work: that paths are built with `here::here()`, that a seed is set before any stochastic step, that exploratory and confirmatory analyses are labelled as such.
-
-4. **A canary line** you can verify. Instruct Copilot to begin any response that writes R code with a fixed first comment, for example `# copilot-instructions: active`. This is the cheapest possible test of whether the file is being read at all: if the canary is absent, the file is not loading, and you are debugging the wrong thing.
-
-Keep each as a single, simple statement. Four accurate lines you can verify are worth more than two pages of generated prose you cannot.
-
-**Step 5: Commit and push.** Commit `.github/copilot-instructions.md` and push to your fork on GitHub. Pushing makes the file available to every Copilot surface on GitHub.com, as well as to your IDE.
-
-**Step 6: Verify.** Open a fresh chat session, on GitHub.com or in your IDE, and run the same prompt as Step 1:
-
-```text
-Read in data/voles_metabolism.csv and make a quick exploratory plot of
-mass_post_g by treatment arm.
-```
-
-Read the answer against your Step 1 baseline. If your canary line appears, the file is loading. If the plot follows the conventions you wrote in Step 4, in particular the one only you could have supplied, the instructions are doing their job. If the canary is missing, the file is not being found: check that it sits at exactly `.github/copilot-instructions.md` (or `AGENTS.md` in the project root), that it is committed and pushed, and that instruction files are enabled in your settings.
+- If the canary appears, the file is being loaded.
+- If the canary is missing, the file is not reaching that tool. Check the file
+  location, that the change is committed (for the Copilot cloud agent, pushed
+  to the default branch), and, in Posit Assistant, that you trusted the
+  workspace.
+- A canary shows that the file was **loaded**, not that every rule was
+  **followed**. Check the plot code against each rule you wrote.
 
 ::::
 :::
 
-Compare your answer with what someone else gets from their own instructions file. The differences reflect your different standards.
 
+## Activity: A rule for Quarto files only
 
-### Activity: Write a scoped instruction for Quarto documents
-
-A scoped instruction is a file of rules that applies only to certain files in your project. It lives in `.github/instructions/` and carries an `applyTo` glob in its front matter that names the paths it covers, for example `applyTo: "**/*.qmd"` to apply only to Quarto documents. When Copilot works on a file that matches the glob, the rules load automatically; when it works on any other file, they do not.
-
-:::{.callout-note}
-
-### When to use a scoped file
-
-The test for whether something belongs in a scoped file rather than the
-always-on `copilot-instructions.md` is simple: would the rule be wrong, not
-merely irrelevant, in the files the glob excludes? If a rule is true
-everywhere (use the native pipe, use snake_case), it belongs in the always-on
-file; putting it in a scoped file gains nothing and adds the scoped mechanism's
-reliability problems. A rule earns a scoped file only when it is a property of
-one file type and would mislead the model elsewhere.
-
-:::
-
-Quarto `.qmd` files are a clear case for an R user, because they carry concerns a plain `.R` script does not have at all: chunk options, how code is echoed into the rendered document, figure captions and dimensions, and a working-directory trap specific to rendering. An instruction to set `echo: false` is correct inside a `.qmd` and meaningless inside `scripts/02_analysis.R`.
+Some rules are right for one kind of file and wrong elsewhere. A chunk option
+such as `#| echo: false` is meaningful in a `.qmd` file and meaningless in an
+`.R` script. The test for a scoped rule: would it be *wrong*, not merely
+irrelevant, in the files it excludes? If not, put it in `AGENTS.md`.
 
 :::{.task}
 ::::{.task-header}
-Create a scoped instruction file
+Create and test a scoped rule (10 minutes)
 ::::
 ::::{.task-container}
 
-Create `.github/instructions/quarto.instructions.md` with the following
-content:
+The rules themselves:
+
+```markdown
+# Quarto document conventions
+
+- Set chunk options with the hashpipe (#|) inside the chunk, not in the
+  {r} header.
+- Give every chunk a label; prefix figure chunks with fig-.
+- Every figure chunk sets #| fig-cap:, #| fig-width: and #| fig-height:.
+- Refer to figures in the text with @fig-..., never by a typed number.
+- Default to #| echo: false unless the document is a code walkthrough.
+- Resolve paths with here::here(); never assume the working directory is the
+  document's folder.
+```
+
+Place them where your tool looks:
+
+- **Copilot:** `.github/instructions/quarto.instructions.md`, beginning with
+  this front matter:
+
+  ```
+  ---
+  applyTo: "**/*.qmd"
+  ---
+  ```
+
+- **Claude Code:** `.claude/rules/quarto.md`, beginning with front matter that
+  restricts it to Quarto files:
+
+  ```
+  ---
+  paths:
+    - "**/*.qmd"
+  ---
+  ```
+
+- **Posit Assistant:** no path-scoped instruction file is documented. Add the
+  rules to `AGENTS.md` under a heading such as "When editing .qmd files", or
+  rely on its built-in `quarto-authoring` skill.
+
+**Test.** Open a `.qmd` file and ask for a chunk that plots `mass_post_g` by
+`treatment_arm`. A correct answer uses hashpipe options, a `fig-` label, a
+caption and `here::here()`. Then ask for the same plot in an `.R` script; the
+Quarto rules should not appear. If they do not appear in the `.qmd` either, the
+rule is not loading on your surface. Report what you found; behaviour differs
+between tools.
+
+::::
+:::
+
+Every scoped rule is a second copy of a convention to keep in step, once per
+tool. Use scoped rules sparingly.
+
+
+# Part B: Skills {.unnumbered}
+
+A skill is a folder containing a `SKILL.md` file, and optionally scripts,
+templates and reference files. The front matter carries a `name` and a
+`description`. Skills follow the open Agent Skills specification, so one skill
+can serve several tools.
+
+Two parts decide whether a skill works:
+
+- **The description is the trigger.** The assistant reads descriptions to decide
+  which skill is relevant. "Use when producing a ggplot2 figure for a report,
+  poster or paper" loads when it should; "for plots" loads erratically.
+  Invoking a skill by name (`/skill-name`) does not depend on the description.
+- **The body is a procedure:** when to use the skill, the steps, hard rules, and
+  a final check. Because a skill loads only when used, it can be longer than an
+  instruction file.
+
+For a skill that writes files or has other side effects, set
+`disable-model-invocation: true` in the front matter, so it runs only when you
+invoke it by name. Claude Code and Posit Assistant both support this field.
+
+
+## Where each tool looks
+
+| Location in the repository | Claude Code | Posit Assistant | GitHub Copilot |
+|---|---|---|---|
+| `.agents/skills/<name>/` | — | Yes | Yes |
+| `.claude/skills/<name>/` | Yes | — | Yes |
+| `.posit/assistant/skills/<name>/` | — | Yes | — |
+| `.github/skills/<name>/` | — | — | Yes |
+
+Keep the single copy in `.agents/skills/` and link it into `.claude/skills/` for
+Claude Code, which follows symbolic links. On macOS or Linux, from the
+repository root:
+
+```bash
+mkdir -p .claude/skills
+ln -s ../../.agents/skills/house-figures .claude/skills/house-figures
+```
+
+On Windows, symbolic links in git need extra configuration; copying the folder
+works, but you then maintain two copies. Copilot reads both `.agents/skills/` and
+`.claude/skills/`. If it lists the skill twice, remove one route for Copilot.
+
+
+## Activity: Write a skill and test it
+
+:::{.task}
+::::{.task-header}
+A house figure style (20 minutes)
+::::
+::::{.task-container}
+
+**1. Create** `.agents/skills/house-figures/SKILL.md`:
 
 ```markdown
 ---
-applyTo: "**/*.qmd"
+name: house-figures
+description: >-
+  Applies this project's conventions to any ggplot2 figure that will appear
+  in a report, poster or paper. Use when asked to create, revise or polish a
+  figure for presentation. Not for quick exploratory plots.
 ---
 
-# Quarto document conventions
+# House figure style
 
-These rules apply to Quarto source files only. They concern how code is
-presented and rendered in the document, not the analysis logic itself.
+## Rules
+1. Where any group has fewer than 30 observations, show every observation
+   (jittered points or a dot plot) with a summary overlaid. Never draw a bar
+   with error bars ("dynamite plot").
+2. Colour categorical groups with the Okabe-Ito palette
+   (grDevices::palette.colors(palette = "Okabe-Ito")), and map the same
+   variable to point shape so the figure works without colour.
+3. Axis titles give the quantity and its unit, for example "Body mass (g)".
+4. Use theme_classic(base_size = 12).
+5. Show the number of observations per group on the figure.
+6. Never add p-values or significance markers unless the user supplies a
+   fitted model and asks for them.
 
-## Chunk options
-- Set chunk options with the hashpipe (`#|`) inside the chunk, not in the
-  `{r}` header. For example `#| echo: false`, not `{r, echo=FALSE}`.
-- Give every code chunk a label (`#| label: fig-mass-by-arm`) so cross-
-  references and cached results are stable.
-- Every chunk that produces a figure must set `#| fig-cap:` with a caption;
-  do not emit an uncaptioned figure into a rendered document.
-
-## Echo and output for a written report
-- Default to `#| echo: false` so the rendered document shows results, not
-  source, unless the document is explicitly a code walkthrough.
-- Use `#| warning: false` and `#| message: false` on chunks that load
-  packages or fit models, so loading noise does not appear in the output.
-
-## Figures
-- Label figure chunks with a `fig-` prefix and reference them in prose with
-  `@fig-...`, not by a hardcoded number.
-- Set figure dimensions explicitly with `#| fig-width:` and `#| fig-height:`
-  rather than relying on defaults.
-
-## Reproducibility
-- Resolve paths with `here::here()` inside chunks; never assume the working
-  directory is the document's folder, because Quarto and the R session may
-  differ on this.
-
+## Before returning code
+List which rules you applied, and any you could not apply and why.
 ```
 
-**Test it.** With the scoped file committed, open a `.qmd` file and, in Agent mode, ask Copilot to add a code chunk to that file (and change nothing else) that reads the voles data and plots `mass_post_g` by `treatment_arm`. A correct response uses hashpipe chunk options, labels the chunk with a `fig-` prefix, sets a `fig-cap:`, and resolves the path with `here::here()`. Then open a plain `.R` script and ask for the same plot in that file: the hashpipe and caption rules should not appear, because the scoped file does not apply there. That contrast, the same request producing different output in the two file types, is the demonstration. Run this test in Copilot in VS Code or with the cloud agent; Posit Assistant has no scoped-instruction mechanism.
+**2. Without the skill.** In a session where the skill is not invoked, ask:
 
-::::
-:::
-
-Part A ends here. Everything so far has loaded automatically and, apart from one tightly scoped request, left you as the filter on what reaches your files. Part B removes that filter.
-
-
-## Part B: Agent mode, Plan mode, and skills
-
-Part A's mechanisms loaded whether or not you thought about them. Skills are different: they are invoked, not always loaded, and they live in an agent's world, where the assistant acts rather than advises. Before the skill itself, it is worth returning to the mode that puts a review step in front of an agent.
-
-
-### Plan mode: the review step before action
-
-Block 5 set out three modes: Ask, which answers; Plan, which proposes; and Agent, which decides scope and acts. You used **Plan mode** there on a one-line change, where it hardly earns its keep. Its value shows on a multi-step job.
-
-Plan mode does not change your code while it plans. Given a goal, it produces an ordered, step-by-step plan of what it *would* do, which files it would touch, and in what order, and waits for you to approve, amend, or reject that plan before any of it executes. (Posit Assistant writes the plan to a Markdown plan file, and its documentation describes this as an instruction to the model rather than a hard lock, so still read what it does.) Plan shows you the intended shape of a whole multi-step job before a single file changes. It is the review gate for work too large to specify edit by edit but too consequential to hand straight to an autonomous agent.
-
-The progression is one of widening autonomy with a review point inserted before the riskiest step:
-
-| Mode | What you get back | What changes | Your control point |
-|---|---|---|---|
-| Ask | Prose and code in the reply | Nothing | You apply everything by hand |
-| Plan | An ordered plan of intended steps | Nothing, until you approve | You approve the plan before execution |
-| Agent | Executed changes across the project | Files and state, as it works | You review the result, or the pull request |
-
-At the time of writing (October 2026), Plan mode is available in Copilot Chat in VS Code (choose **Plan** in the chat's agent picker) and in Posit Assistant (type `/plan`). The natural workflow for any non-trivial agent task is Plan first, read the plan, then let it execute, rather than handing a goal straight to Agent mode and discovering its choices after the fact.
-
-:::{.task}
-::::{.task-header}
-Plan, review, then execute
-::::
-::::{.task-container}
-
-In Copilot in VS Code or Posit Assistant, with your forked repository committed and clean, switch to **Plan mode** and give it a goal that spans more than one step:
-
-```text
-In the voles pipeline, add a derived mass_change column (mass_post_g minus
-mass_pre_g) to the loading step, then create a new script that plots
-mass_change by treatment_arm, and make sure the pipeline still runs end to
-end.
+```
+Make a figure of mass_post_g by treatment_arm for the voles data, for a
+lab report.
 ```
 
-Read the plan it returns before doing anything else. It should name the files it intends to touch, the order it will work in, and how it will check the pipeline. This is the moment to catch a wrong assumption: if it proposes editing the raw data, or putting the plot in the wrong place, or skipping the end-to-end check, you say so now, while nothing has changed. Amend the plan in conversation, then approve it and let it execute. Compare the experience with handing the same goal straight to Agent mode in Block 5: the difference is that you saw the intent before the action, not the action before the review.
+**3. With the skill.** In a new session, invoke it by name
+(`/house-figures`) and ask the same thing.
 
-**Discard the change.** When it has finished, read the diff, then discard it so the skills exercise starts from a clean repository: run `git restore .` and `git clean -fd` in a terminal at the project root, or use the Git pane equivalent, as you did in Block 5. Your committed instruction files are untouched by this, because it only removes uncommitted changes.
+**4. Grade it.** For each of the six rules, record whether the output complies:
+
+| Rule | Without skill | With skill |
+|---|---|---|
+| 1. Raw data shown; no dynamite plot | | |
+| 2. Okabe-Ito colour plus shape | | |
+| 3. Units in axis titles | | |
+| 4. `theme_classic(base_size = 12)` | | |
+| 5. n per group shown | | |
+| 6. No unrequested p-values | | |
+
+Run the code and look at the figure. Code that names the right functions can
+still produce the wrong picture.
+
+**5. Test the trigger.** Without naming the skill, ask "Give me a quick look at
+mass_post_g by arm" (exploratory, so the skill should *not* load), then "Polish
+this figure for the poster" (it *should* load). If either goes the wrong way,
+rewrite the description and test again.
+
+**6. Test a rule under pressure.** Ask the assistant to "add significance stars
+between the groups". Rule 6 says it should decline without a fitted model.
+Note whether it did. A skill is an instruction, not a guarantee.
 
 ::::
 :::
 
 
-### Agent skills
+## Skills you did not write
 
-A skill is a packaged procedure the assistant loads when a task calls for it, rather than a set of rules attached to a file type or applied to every request. For Copilot it lives in `.github/skills/<skill-name>/SKILL.md` (or `.agents/skills/` or `.claude/skills/`) and carries a `name` and a `description` in its front matter; the description is what the assistant reads to decide the skill is relevant, or you invoke it directly by name. Because a skill loads only when needed, it can be longer and carry supporting material, templates, tables, and reference files that an always-on instruction file could not afford to include on every request.
+Each tool ships built-in skills. Claude Code bundles skills such as
+`/code-review` and `/debug`. Posit Assistant includes `quarto-authoring` and
+`r-package-development`. Collections of shared skills are published online, for
+example Anthropic's `anthropics/skills` repository.
 
-A caution before the demonstration, following from the orientation at the start of this block. Skills are the one mechanism here that does not transfer cleanly across the tools, and this is why the skills exercise behaves differently from person to person:
+Before installing a skill someone else wrote, read it. A skill can include
+scripts that the assistant may run on your machine, and its instructions shape
+what the assistant does with your files and data. Treat it as you would any
+code from the internet.
 
-- **GitHub Copilot loads skills from `.github/skills/`, `.claude/skills/` or `.agents/skills/`.** At the time of writing (October 2026), skills work with the cloud agent, Copilot code review, the Copilot CLI, and agent mode in VS Code; run the exercise below in Agent mode.
-
-- **Posit Assistant loads skills automatically, but from its own list of locations**: `.agents/skills/` or `.posit/assistant/skills/` in the project (older versions used `.positai/`), or other paths you add to `skills.paths`. It does not look in `.github/skills/`.
-
-So the one project location both tools read is `.agents/skills/`. A skill placed under `.github/skills/` reaches every Copilot surface but not Posit Assistant.
-
-The skill demonstrated is `pub-figures`, which governs the production of every figure in the project that a human will read. It encodes a chart-selection table, a list of unconditional prohibitions (no pie charts, no dual y-axes, no dynamite plots when raw data are available), an accessible colour scheme, audience-specific styling, a mandatory colour-vision-deficiency check, and a checklist.
-
-:::{.callout-warning}
-
-Run this exercise where the skill will actually load. With GitHub Copilot, that is agent mode, either in VS Code or with the cloud agent on GitHub.com, with the skill in `.github/skills/pub-figures/`. If you want to run it in Posit Assistant instead, move the folder to `.agents/skills/pub-figures/`; Copilot reads that location too, so one copy then serves both tools. The steps below are written for Copilot.
-
-:::
-
-**1. Default output.** In a fresh Chat session (with no skill loaded), ask:
-
-```text
-Produce a ggplot2 boxplot of mass_post_g by treatment_arm for the voles
-dataset.
-```
-
-The result is a default-styled boxplot: grey background, ggplot2 default colours, no consideration of accessibility, no annotation of sample sizes. It runs and answers the literal question, and that is all.
-
-**2. With the skill.** Open a new Chat session, select Agent mode, invoke the skill (`/pub-figures`), and ask the same question. The skill requires the agent to elicit the audience before producing code. It will ask whether the figure is for a journal or lab report, a poster, a talk, or public engagement. Answer "journal/lab report" and confirm the plan it produces.
-
-The skill folder looks like this:
-
-```text
-your-repo/
-└── .github/
-    └── skills/
-        └── pub-figures/
-            ├── SKILL.md
-            ├── raincloud-template.R
-            ├── emmeans-bridge.R
-            ├── save-figure.R
-            └── theme-project.R
-```
-
-The output is materially different. A raincloud (`ggdist::stat_halfeye` plus a boxplot plus jittered points) should replace the bare boxplot, because the skill specifies raincloud as the default for discrete-continuous comparisons where raw data are available. The palette is colour-blind friendly. Axis labels carry units. The pre-flight checklist is reported in the chat.
-
-**3. Iteration.** Ask the agent to add pairwise statistical annotation. The skill prohibits hallucinating p-values, so the agent should refuse unless a fitted model object is available. Provide a fitted `lm()` and the `emmeans` contrasts; the agent will use `ggpubr::stat_pvalue_manual()` to draw brackets and labels from the model-derived data. The four-element figure legend appears at the bottom of the output.
-
-
-### How to write skills
-
-You will receive these skills rather than author them in this workshop, but it is worth seeing how a skill is built. The same structure applies when you write your own, it explains why the demonstration above behaved as it did, and it is the shape of the characterisation-test skill sketched (but not built) in Block 8.
-
-A skill is a folder containing a `SKILL.md` file, for example `.github/skills/<skill-name>/SKILL.md` or `.agents/skills/<skill-name>/SKILL.md`, with a YAML front-matter block and a Markdown body. Two parts decide whether it works:
-
-- The `description` in the front matter is the trigger. It is the text the agent reads to decide whether the skill is relevant to a request, so it must name the condition under which the skill applies, specifically. "Used when producing any ggplot2 figure a human will read" loads when it should; "for plots" loads erratically. A skill invoked by name with `/skill-name` does not depend on the description, but a skill you want loaded automatically does.
-
-- The body is a procedure: when to use the skill, the ordered steps, any hard prohibitions, and a final checklist. Because a skill is read only when invoked, it can be long without slowing ordinary interactions, which is why the `pub-figures` skill can carry a chart-selection table, a prohibition list, and an accessibility check at no cost to a routine question. Supporting files such as templates or reference tables can sit in the skill folder alongside `SKILL.md`.
-
-
-Posit has published a series of skills on GitHub [here](https://github.com/posit-dev/skills/tree/main). They are .md files with supporting templates, and they can be used with a range of LLM providers.
 
 ## Check your understanding
 
-**An Agent Skill differs from a workspace-level custom instructions file in that:**
+**Your canary line appears in Claude Code's answers but not in Posit
+Assistant's. What is the most likely explanation?**
 
 `r longmcq(c(
-  "Skills only work in Posit Assistant, custom instructions work in all IDEs",
-  answer = "Custom instructions are loaded automatically for every interaction on a reading surface, whereas skills are invoked by name or loaded only when judged relevant",
-  "Skills are paid features and custom instructions are free",
-  "Custom instructions can include code but skills cannot"
+  "Posit Assistant cannot follow instructions",
+  answer = "The instruction file is not reaching Posit Assistant, for example because the workspace is untrusted or the file is not where it looks",
+  "The canary only works with Anthropic models",
+  "AGENTS.md must be renamed CLAUDE.md for Posit Assistant"
 ))`
 
-**What distinguishes Plan mode from Agent mode?**
+**What is the essential difference between an instruction file and a skill?**
 
 `r longmcq(c(
-  "Plan mode uses a cheaper model and so produces lower-quality code",
-  answer = "Plan mode does not change your code; it returns an ordered plan for you to approve before anything executes, whereas Agent mode carries out the work and you review the result",
-  "Plan mode can only be used on GitHub.com, Agent mode only in an IDE",
-  "Plan mode edits files one at a time, Agent mode edits them all at once"
+  "Instruction files can contain code; skills cannot",
+  answer = "Instructions load into every session automatically; a skill loads only when invoked by name or judged relevant from its description",
+  "Skills are enforced; instructions are advisory",
+  "Instruction files work only with Copilot"
 ))`
+
+**A skill fires for quick exploratory plots when you meant it only for
+publication figures. What should you change first?**
+
+`r longmcq(c(
+  "The rules in the body of the skill",
+  answer = "The description, so it states precisely when the skill applies and when it does not",
+  "The folder the skill is stored in",
+  "The model you are using"
+))`
+
+
+## References
+
+- GitHub documentation: *About agent skills*,
+  <https://docs.github.com/en/copilot/concepts/agents/about-agent-skills>;
+  *Adding repository custom instructions for GitHub Copilot*,
+  <https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions>.
+- Claude Code documentation: *Extend Claude Code*,
+  <https://code.claude.com/docs/en/features-overview>; *Skills*,
+  <https://code.claude.com/docs/en/skills>.
+- Posit Assistant documentation: *Skills*,
+  <https://assistant.posit.co/docs/features/skills/>; *Getting Started*,
+  <https://assistant.posit.co/docs/getting-started/>.
+- Agent Skills specification: <https://agentskills.io>.

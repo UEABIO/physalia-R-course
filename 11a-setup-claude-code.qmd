@@ -1,0 +1,215 @@
+# Setting up Claude Code {.unnumbered}
+
+```{r}
+#| include: false
+source("R/booktem_setup.R")
+source("R/my_setup.R")
+library(webexercises)
+```
+
+:::{.callout-note}
+**Last verified:** 9 October 2026, against the Claude Code documentation
+(code.claude.com: setup, authentication, permission modes). Installation
+details change; if a command here fails, check the setup page first.
+:::
+
+Claude Code is an AI agent that runs in a terminal. It reads the files in the
+folder you start it from, edits them, and runs commands, including R scripts,
+asking your permission as it goes. Most participants at this level have not
+used a terminal much. This chapter covers the minimum you need, and ends with
+a check that everything works before the first session.
+
+*⏱ ~30 minutes, best done before the workshop*
+
+
+## Before you install: three questions
+
+1. **Are you permitted to use it on this work?** Claude Code sends the files it
+   reads, and the output of commands it runs, to Anthropic. Check your
+   institution's policy, and your ethics approval and data agreements if you
+   will use it near research data. The [context-and-disclosure block](11d-context-disclosure-autonomy.qmd) covers this
+   in detail.
+2. **Which account will you use?** You need one of:
+   - a **Claude Pro or Max subscription**, signing in with your Claude.ai
+     account;
+   - a **Claude for Teams or Enterprise** seat, if your institution provides
+     one;
+   - a **Claude Console** account, which bills API use per request;
+   - access through a cloud provider (Amazon Bedrock, Google Vertex AI or
+     Microsoft Foundry), if your institution has set this up.
+
+   Check current prices on Anthropic's pricing page before you choose.
+3. **Is your computer supported?** Claude Code requires macOS 13 or later,
+   Windows 10 (version 1809) or later, or a recent Linux distribution.
+
+
+## Step 1: Open a terminal
+
+You can use the terminal built into your IDE, which starts in your project
+folder:
+
+- **RStudio:** *Tools → Terminal → New Terminal*, or the **Terminal** tab beside
+  the Console.
+- **Positron or VS Code:** *Terminal → New Terminal*.
+
+Or use your system's terminal: **Terminal** on macOS, **PowerShell** on Windows.
+
+
+## Step 2: Check git and R are reachable
+
+Claude Code runs R by calling `Rscript`, and it works best in a git repository.
+In the terminal, run:
+
+```bash
+git --version
+Rscript --version
+```
+
+Both should print a version number.
+
+- **`git` not found:** install git. On Windows, install **Git for Windows**,
+  which Claude Code also uses as its shell.
+- **`Rscript` not found (common on Windows):** the R installer does not always
+  add R to your system path. Add R's `bin` folder (for example
+  `C:\Program Files\R\R-4.5.2\bin`) to your `PATH` environment variable, open a
+  new terminal, and try again.
+
+
+## Step 3: Install Claude Code
+
+**macOS, Linux, or WSL on Windows:**
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+**Windows (Command Prompt):**
+
+```bash
+curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+```
+
+**macOS with Homebrew** (alternative):
+
+```bash
+brew install --cask claude-code
+```
+
+Open a **new** terminal, then confirm the installation:
+
+```bash
+claude --version
+```
+
+The native installer keeps Claude Code up to date in the background. Homebrew
+and other package-manager installations need to be updated by hand.
+
+
+## Step 4: Sign in
+
+In your project folder, start Claude Code:
+
+```bash
+cd path/to/your/workshop-repository
+claude
+```
+
+On first launch, Claude Code opens a browser window. Sign in with the account
+you chose above. To switch accounts later, use `/logout` and `/login` inside
+Claude Code.
+
+:::{.callout-warning}
+**API keys.** If you use a Console API key, set it as the environment variable
+`ANTHROPIC_API_KEY`. Many R users keep keys in `.Renviron`. Never commit that
+file. Add it to `.gitignore`, and add the deny rule `Read(/.Renviron)` from the
+[enforced-controls block](11f-enforced-controls.qmd) so the agent cannot read it.
+
+If `ANTHROPIC_API_KEY` is already set for another tool, such as Posit
+Assistant, Claude Code may use it instead of your subscription, and you will be
+billed per request. Check which credential is in use under `/config`.
+:::
+
+
+## Step 5: Learn five things
+
+| To... | Do this |
+|---|---|
+| Start in your project | `cd` to the project folder, then `claude` |
+| Change how much it may do without asking | `Shift+Tab` cycles `default` → `acceptEdits` → `plan` |
+| Start in read-only planning mode | `claude --permission-mode plan` |
+| See which permission rules are active | `/permissions` |
+| Leave | `/exit`, or close the terminal |
+
+Every time it wants to edit a file or run a command in `default` mode, Claude
+Code asks first. Read each request before you approve it. The autonomy ladder
+in the [context-and-disclosure block](11d-context-disclosure-autonomy.qmd) explains what each mode allows.
+
+Always start Claude Code from the project's root folder. It works on the folder
+it starts in, and your project settings in `.claude/settings.json` are found
+relative to it.
+
+
+## Step 6: Check everything works
+
+:::{.task}
+::::{.task-header}
+Pre-workshop check (10 minutes)
+::::
+::::{.task-container}
+
+Do this in your forked workshop repository, with no uncommitted changes.
+
+**1. Read-only.** Start in plan mode:
+
+```bash
+claude --permission-mode plan
+```
+
+Ask:
+
+```
+Describe the structure of this repository and what each top-level folder
+contains. Do not change anything.
+```
+
+Exit and run `git status`. Nothing should have changed.
+
+**2. R is reachable.** Start `claude` in default mode and ask:
+
+```
+Run Rscript -e "sessionInfo()" and show me the output.
+```
+
+Approve the command when asked. You should see your R version and loaded
+packages. If Claude Code reports that `Rscript` was not found, return to
+Step 2.
+
+**3. Project settings load.** Run `/permissions`. If the repository already
+contains `.claude/settings.json` (it will after the [enforced-controls block](11f-enforced-controls.qmd)),
+its deny rules should be listed.
+
+**4. Bring evidence.** Copy the output of steps 2 and 3 into a text file and
+bring it to the workshop. If any step failed, note the error message exactly.
+
+::::
+:::
+
+
+## Where Claude Code fits among the course's tools
+
+| | Claude Code | Posit Assistant | GitHub Copilot |
+|---|---|---|---|
+| Where it runs | Your terminal | Inside RStudio or Positron | Your editor, github.com, and GitHub's servers (cloud agent) |
+| What it sees | Project files, and output of commands it runs | Your live R session and project files | Open files; on github.com, the repository |
+| Instruction file | `CLAUDE.md` (importing `AGENTS.md`) | `AGENTS.md` | `AGENTS.md`, `.github/copilot-instructions.md` |
+| Skills folder | `.claude/skills/` | `.agents/skills/` | `.agents/skills/`, `.claude/skills/`, `.github/skills/` |
+
+The later blocks give instructions for each tool where they differ.
+
+
+## References
+
+- Claude Code documentation: *Advanced setup*,
+  <https://code.claude.com/docs/en/setup>; *Authentication*,
+  <https://code.claude.com/docs/en/authentication>; *Permission modes*,
+  <https://code.claude.com/docs/en/permission-modes>.
