@@ -9,12 +9,6 @@ library(here)
 library(webexercises)
 ```
 
-:::{.callout-note}
-**Last verified:** 9 October 2026, against the Claude Code permissions
-documentation (code.claude.com) and GitHub's documentation on customising the
-Copilot cloud agent's environment (docs.github.com).
-:::
-
 You have a computation that already works and you want to turn it into a
 reusable function. An agent can do that in seconds. The hard part is not the
 refactor but the verification: a change that "improves" code can quietly alter
@@ -632,9 +626,9 @@ the environment before you suspect the code.
 The protective sentence in Path B ("do not create, regenerate or modify
 anything under tests/fixtures/") is a durable convention: it is the same for
 every refactor. Anything you retype into every prompt is a candidate for a
-skill. A skill for this workflow would say: capture the reference only if the
-human has not; never regenerate a fixture; refactor and test in separate steps;
-compare against the human-held reference.
+skill. A skill for this workflow would say: if no reference exists, stop and
+ask the human to capture it; never create or regenerate a fixture; refactor and
+test in separate steps; compare against the human-held reference.
 
 The benefit is that you stop retyping the boundary. The hazard is the same
 sentence read the other way: once the rule lives in a skill, you no longer see
@@ -643,6 +637,56 @@ rests on it. A skill is also only an instruction. The deny rules, CODEOWNERS and
 git checks in this block hold whether or not the agent reads it. Build the skill
 only after you have done Path A or B, and keep the "reference stays with the
 human" clause as a visible line.
+
+Write your own version first, then compare it with the example below. Store it
+in `.agents/skills/characterisation-refactor/SKILL.md`, as in the
+[instructions-and-skills block](11e-instructions-skills.qmd).
+
+:::{.callout-note collapse="true"}
+## Example: `characterisation-refactor/SKILL.md`
+
+```markdown
+---
+name: characterisation-refactor
+description: >-
+  Refactors working R analysis code into documented functions under a
+  characterisation test, so the output is proved unchanged. Use when asked to
+  functionalise, refactor or tidy a script whose output must not change.
+  Not for fixing bugs or changing results.
+disable-model-invocation: true
+---
+
+# Refactor under a characterisation test
+
+## The reference stays with the human
+The frozen reference in tests/fixtures/ is captured by the user, once, before
+any refactoring. A reference produced by the code under test proves nothing.
+- Never create, regenerate or modify anything under tests/fixtures/.
+- Never run tests/make_reference.R or any script that writes a fixture.
+- If no reference exists, stop and ask the user to capture one.
+
+## Procedure
+1. Present a plan: the code to move, the function name and file, and the
+   test file. Wait for the user to confirm.
+2. Refactor only. Write the function in scripts/functions/ with a roxygen2
+   block and an argument check, and make the original script call it. Do not
+   write or edit tests in this step. Stop and let the user review the diff.
+3. Test only. Write a testthat file that reads the reference from
+   tests/fixtures/ and compares it with the function's output using
+   expect_equal(). Never hard-code expected values, and never reimplement
+   the computation inside the test.
+4. Run the tests in a fresh R session and report the output verbatim.
+
+## Rules
+- If the test fails, report the difference. Never change the test, the
+  tolerance or the reference to make it pass.
+- Sort rows explicitly (dplyr::arrange()) where grouping could change their
+  order.
+- Do not change behaviour, including how missing values are handled. A
+  passing test shows the output is unchanged, not that it is correct; list
+  anything that looks wrong for the user to decide.
+```
+:::
 
 
 ## Check your understanding
@@ -674,19 +718,3 @@ action could still change the reference?**
   "Opening the .rds file in the IDE",
   "Running testthat::test_file() on the test file"
 ))`
-
-
-:::{.callout-note collapse="true"}
-## Instructor notes
-
-- Check your copy of `voles_metabolism.csv` before teaching: the `.by` failure
-  in Path A appears only if
-  `load_voles() |> dplyr::distinct(treatment_arm, sex)` is not already in sorted
-  order. If it is sorted, reorder the rows of the file once and commit it before
-  the session.
-- Confirm that the file contains exactly one missing value in
-  `metabolic_rate_post`, and note which group it falls in, for the Step 4
-  discussion.
-- Path C depends on account features. Run it once on a participant-type account
-  before the session.
-:::

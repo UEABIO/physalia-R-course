@@ -4,6 +4,7 @@
 #| include: false
 source("R/booktem_setup.R")
 source("R/my_setup.R")
+source("R/skill_download.R")
 library(tidyverse)
 library(here)
 library(webexercises)
@@ -195,8 +196,13 @@ running?", and treat any claim about reproduced results as unsupported.
 
 If your repository is on GitHub, open a pull request containing `ANALYSIS.R` and
 request Copilot as a reviewer. Its comments appear on the changed lines, like a
-colleague's. It reads the repository's custom instructions, so the review
-conventions you wrote in the [instructions-and-skills block](11e-instructions-skills.qmd) apply.
+colleague's. It reads the repository's custom instructions
+(`.github/copilot-instructions.md`, or `AGENTS.md` as in the
+[instructions-and-skills block](11e-instructions-skills.qmd)), but none of
+those exist in the OSF folder yet. To have Copilot apply the standard from
+Part 2, add your review rules (the four Rs, the intended analysis, no praise,
+NEEDS HUMAN CHECK) to `.github/copilot-instructions.md` in that repository
+before you request the review.
 
 :::{.task}
 ::::{.task-header}
@@ -242,6 +248,28 @@ most confident false positive in the chat, with line numbers.
 The second deliverable is the documentation that makes *Reported* and *Run*
 answerable: a README. You are provided with the `research-readme` skill: a
 `SKILL.md`, two helper scripts and a template.
+
+**Install the skill before you start.** Download the bundle and unzip it into
+the OSF project folder at `.agents/skills/`, so that the folder
+`.agents/skills/research-readme/` contains `SKILL.md`, `scripts/` and
+`references/`.
+
+```{r}
+#| echo: false
+skill_download_button("research-readme")
+```
+
+- **Posit Assistant and GitHub Copilot** read `.agents/skills/` directly.
+- **Claude Code** reads `.claude/skills/`. Link or copy the folder there, as
+  described in the [instructions-and-skills block](11e-instructions-skills.qmd).
+- **Chat window:** you do not need to install anything. You will run the two
+  scripts yourself and paste the template into the chat.
+
+Check that the skill is visible before going on. In Claude Code, type `/` and
+look for `research-readme`. In any tool, the test is behaviour: when you invoke
+`/research-readme` in Pass 2, its first reply should be the numbered plan that
+the skill's "Before executing" section requires. If it is not, the skill did
+not load.
 
 You run this in two passes. The first shows the failure; the second shows the
 fix.
@@ -332,10 +360,9 @@ README's offspring range alone would have led you back to P8.
 
 ### The skill bundle
 
-The bundle is reproduced here for reference; you do not edit it during the
-session. It lives in `.agents/skills/research-readme/`, linked into
-`.claude/skills/` for Claude Code as described in the [instructions-and-skills
-block](11e-instructions-skills.qmd).
+The bundle you downloaded at the start of Part 4 is reproduced here for
+reference; you do not edit it during the session. Read it before you use it,
+as you would any skill you did not write.
 
 ```
 research-readme/
@@ -350,209 +377,25 @@ research-readme/
 :::{.callout-note collapse="true"}
 ### `scripts/describe_csv.R`
 
-```{r, eval = FALSE}
-# describe_csv.R ----
-# Purpose: one row per column of a CSV file: name, the type readr assigns,
-# missing-value count, and a brief range (numeric) or distinct-value count
-# (other). Describes; does not interpret.
-# Used by: research-readme skill, Stage 2.
-
-describe_range <- function(x) {
-  if (all(is.na(x))) {
-    return("all values missing")
-  }
-  if (is.numeric(x)) {
-    return(paste(min(x, na.rm = TRUE), "to", max(x, na.rm = TRUE)))
-  }
-  paste(dplyr::n_distinct(x, na.rm = TRUE), "distinct values")
-}
-
-# one-row-per-column summary of a single CSV ----
-describe_csv <- function(path) {
-  stopifnot(is.character(path), length(path) == 1L, file.exists(path))
-  data_df <- readr::read_csv(path, show_col_types = FALSE)
-  tibble::tibble(
-    file        = basename(path),
-    column      = names(data_df),
-    type        = purrr::map_chr(data_df, \(x) class(x)[1]),
-    n_missing   = purrr::map_int(data_df, \(x) sum(is.na(x))),
-    range       = purrr::map_chr(data_df, describe_range),
-    # completed by the user during Stage 2:
-    description = NA_character_,
-    unit        = NA_character_
-  )
-}
-
-# describe every CSV in a project, skipping renv and git folders ----
-describe_project_csvs <- function(project_dir) {
-  stopifnot(dir.exists(project_dir))
-  csv_paths <- list.files(
-    project_dir,
-    pattern = "\\.csv$",
-    recursive = TRUE,
-    full.names = TRUE,
-    ignore.case = TRUE
-  )
-  csv_paths <- csv_paths[!grepl("(^|/)(renv|\\.git)/", csv_paths)]
-  if (length(csv_paths) == 0L) {
-    message("No CSV files found under ", project_dir)
-    return(tibble::tibble())
-  }
-  csv_paths |>
-    purrr::map(describe_csv) |>
-    purrr::list_rbind()
-}
+```{r, eval = FALSE, file = here::here("files", "skills", "research-readme", "scripts", "describe_csv.R")}
 ```
 :::
 
 :::{.callout-note collapse="true"}
 ### `scripts/scan_packages.R`
 
-```{r, eval = FALSE}
-# scan_packages.R ----
-# Purpose: read renv.lock and report the R version and pinned package
-# versions. A missing lockfile is reported as a finding, not an error.
-# Used by: research-readme skill, Stage 4.
-
-read_lockfile <- function(lock_path = "renv.lock") {
-  if (!file.exists(lock_path)) {
-    return(list(found = FALSE, r_version = NA_character_, packages = tibble::tibble()))
-  }
-  lock <- jsonlite::read_json(lock_path)
-  packages <- purrr::pluck(lock, "Packages", .default = list())
-
-  packages_df <- tibble::tibble(
-    package = unname(purrr::map_chr(packages, \(p) purrr::pluck(p, "Package", .default = NA_character_))),
-    version = unname(purrr::map_chr(packages, \(p) purrr::pluck(p, "Version", .default = NA_character_)))
-  ) |>
-    dplyr::arrange(package)
-
-  list(
-    found = TRUE,
-    r_version = purrr::pluck(lock, "R", "Version", .default = NA_character_),
-    packages = packages_df
-  )
-}
-
-print_lockfile <- function(lock_path = "renv.lock") {
-  info <- read_lockfile(lock_path)
-  if (!info$found) {
-    cat(
-      "No lockfile found at ", lock_path, ".\n",
-      "FINDING: package versions were not recorded.\n",
-      "README text: <!-- TODO: supply R version and key package versions: ",
-      "not recorded; resolve before submission -->\n",
-      sep = ""
-    )
-    return(invisible(info))
-  }
-  cat("R version: ", info$r_version, "\n\n", sep = "")
-  print(info$packages, n = Inf)
-  invisible(info)
-}
+```{r, eval = FALSE, file = here::here("files", "skills", "research-readme", "scripts", "scan_packages.R")}
 ```
 :::
 
 :::{.callout-note collapse="true"}
 ### `SKILL.md`
 
-```markdown
----
-name: research-readme
-description: >-
-  Writes a README.md for a research repository whose code and data accompany
-  a paper. Use when asked to write a README for an analysis project, document
-  a repository for a paper, or prepare code for journal submission or
-  archiving (Zenodo, Figshare, OSF). Not for general software READMEs and not
-  for auditing code.
-disable-model-invocation: true
----
-
-# Research README generator
-
-Produces one README.md for a repository of R code and data that accompanies a
-manuscript, including the metadata that journals and archives expect:
-persistent identifiers, ORCIDs, funding, per-variable descriptions with units,
-an explicit script run order, and a dependency record.
-
-## Operating constraints
-These hold for the whole conversation unless the user explicitly withdraws
-them.
-1. The only file you create or overwrite is README.md. Do not edit, rename or
-   delete any other file. If you notice an apparent error in code or data,
-   record it under "Open questions" in the README or report it in chat, and
-   leave the file untouched.
-2. Do not fabricate metadata. DOIs, ORCIDs, grant numbers, collection dates,
-   units and affiliations come from the user or from a file the user points to.
-   If a value is unknown, insert a placeholder (see Placeholders).
-3. Automatic summaries describe; they do not interpret. Report column type,
-   missing count and range. Do not state what a variable means, its unit, or
-   whether a value is plausible.
-4. Work conversationally and write the file directly; do not build an app.
-
-## Before executing
-Present a short numbered plan: the folder to be scanned, that only README.md
-will be written, and the five stages below. Wait for the user to confirm.
-
-## Stage 1: Project information
-Collect title, abstract, DOIs (paper; archived code and data), licences,
-authors with ORCIDs and affiliations, and funders with grant numbers. Read
-these from CITATION.cff, codemeta.json or DESCRIPTION if present, and ask only
-for what is missing. Pair each author with their own ORCID and affiliation. If
-no code licence is supplied, flag it prominently and use a placeholder; do not
-choose a licence for the user.
-
-## Stage 2: Files and variable summaries
-List the data and code files. For CSV files, run
-describe_project_csvs() from scripts/describe_csv.R and use its output as a
-scaffold. Ask the user for each column's description and unit, and for
-collection dates and locations per data file. List other tabular formats
-(.xlsx, .tsv) and ask the user to describe their columns by hand. Never infer
-units from column names.
-
-## Stage 3: Script order
-List executable files (.R, .Rmd, .qmd). Propose a run order using numeric
-prefixes (01_, 02_) as the first signal, and ask the user to confirm or
-reorder; the user's order is authoritative. Collect a one-line description of
-each script. Do not run any script to determine the order.
-
-## Stage 4: R packages and versions
-Run print_lockfile() from scripts/scan_packages.R.
-- If a lockfile exists, the Dependencies section states the R version, says
-  that versions are pinned in renv.lock, gives the restore command
-  renv::restore(), and includes the package table.
-- If no lockfile exists, the Dependencies section states that package versions
-  were not recorded, and contains the placeholder from print_lockfile(). Do not
-  guess versions or scan the installed library.
-
-## Stage 5: Assemble, preview and reader-test
-Fill references/readme_template.md. Show the rendered Markdown in chat. Then
-read it as a newcomer who has only the repository and the paper: could they
-find the data, restore the environment, run the scripts in order and
-understand every variable? List any section still holding a placeholder. On
-confirmation, write README.md to the project root.
-
-## AI declaration
-State that an AI assisted in generating this README, naming the model if the
-user wishes, with the date. Make no claims about AI use elsewhere in the
-project unless the user states them, and then record exactly what they state.
-
-## Placeholders
-Write every unknown value as a visible placeholder, in exactly this form:
-<!-- TODO: supply [field]: not provided -->
-Flag a missing code licence and a missing code or data DOI as blocking for
-submission, but still write the file so the user has a working draft.
-
-## Scope
-This skill does not audit code quality or reproducibility, and does not
-produce figures. If asked to do either mid-run, say so and stop that part of
-the request.
-
-## References
-- Ivimey-Cook, E.R. et al. (2023) Implementing code review in the scientific
-  workflow. Journal of Evolutionary Biology 36(10), 1347–1356.
-- Ivimey-Cook, E.R. et al. (2025) TADA! Simple guidelines to improve
-  analytical code sharing for transparency and reproducibility. EcoEvoRxiv.
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: markdown
+show_skill_file("research-readme", "SKILL.md")
 ```
 :::
 
@@ -563,76 +406,11 @@ The Dependencies section is a single token, filled with one of the two versions
 defined in Stage 4 of `SKILL.md`, so the README is accurate whether or not a
 lockfile exists.
 
-```markdown
-# {{TITLE}}
-
-{{DOI_BADGE}} {{LICENCE_BADGE}}
-
-## Description
-
-{{DESCRIPTION}}
-
-## Abstract
-
-{{ABSTRACT}}
-
-## Instructions
-
-This repository contains the code and data accompanying the manuscript above.
-To reproduce the analysis:
-
-1. Obtain the data as described under *Data files*.
-2. Set up the R environment as described under *Dependencies*.
-3. Run the scripts in the order given under *Scripts*.
-
-## Authors
-
-| Name | ORCID | Affiliation |
-|------|-------|-------------|
-{{AUTHOR_ROWS}}
-
-### Funding
-
-{{FUNDING}}
-
-## Data files
-
-{{PER_FILE_SECTIONS}}
-
-<!--
-Each data file is rendered as:
-
-### `<filename>`
-
-Collected: <dates> at <locations>.
-
-| Column | Type | Missing | Range / values | Description | Unit |
-|--------|------|---------|----------------|-------------|------|
-| ...    | ...  | ...     | ...            | ...         | ...  |
-
-Type is the class readr assigns. Range is min to max for numeric columns,
-or a count of distinct values otherwise.
--->
-
-## Scripts
-
-Run in this order:
-
-| Order | Script | Description |
-|-------|--------|-------------|
-{{SCRIPT_ROWS}}
-
-## Dependencies
-
-{{DEPENDENCIES}}
-
-## Open questions
-
-{{OPEN_QUESTIONS}}
-
-## AI declaration
-
-{{AI_DECLARATION}}
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: markdown
+show_skill_file("research-readme", "references/readme_template.md")
 ```
 :::
 

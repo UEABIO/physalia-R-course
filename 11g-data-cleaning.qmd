@@ -4,17 +4,11 @@
 #| include: false
 source("R/booktem_setup.R")
 source("R/my_setup.R")
+source("R/skill_download.R")
 library(tidyverse)
 library(here)
 library(webexercises)
 ```
-
-:::{.callout-note}
-**Last verified:** 9 October 2026, against the Claude Code documentation
-(code.claude.com) and the Posit Assistant documentation (assistant.posit.co,
-docs version 1.7). Tool behaviour changes quickly; check the linked pages
-before teaching.
-:::
 
 Cleaning is where an AI assistant looks most useful and where its mistakes are
 hardest to see. A cleaning script can run without error, return the right
@@ -74,6 +68,14 @@ repo/
 └── tests/
     ├── fixtures/raw_checksum.txt      you create this in Step 0
     └── test_cleaning.R                provided
+```
+
+If your fork does not already contain `.agents/skills/clean-with-codebook/`,
+download the skill and unzip it into `.agents/skills/`:
+
+```{r}
+#| echo: false
+skill_download_button("clean-with-codebook")
 ```
 
 The skill folder is stored once, in `.agents/skills/`, which Posit Assistant
@@ -363,54 +365,11 @@ That is appropriate for a workflow that writes files.
 :::{.callout-note collapse="true"}
 ## `.agents/skills/clean-with-codebook/SKILL.md`
 
-```markdown
----
-name: clean-with-codebook
-description: >-
-  Writes or revises a reproducible R cleaning script that applies a
-  human-authored codebook (docs/codebook.csv) to raw tabular data. Use when
-  asked to clean, recode or prepare raw data in a project that has a codebook.
-  Not for exploratory analysis or modelling.
-disable-model-invocation: true
----
-
-# Clean data against a codebook
-
-## Hard constraints
-1. Never modify anything under data/raw/. Read raw files with explicit
-   column types.
-2. The codebook is the only source of rules. Do not infer units, ranges,
-   missing-value codes or label mappings that the codebook does not state.
-3. Do not edit docs/, scripts/functions/, scripts/02_validate.R,
-   scripts/03_audit_cleaning.R or anything under tests/. If a check fails,
-   report it; never change a check to make it pass.
-4. Never drop a row silently. Every excluded row goes in the exclusion log
-   with a reason.
-5. Every changed cell goes in the cleaning log.
-6. A value outside a codebook range that no codebook rule explains is set to
-   NA, logged with rule "out_of_range_query", and listed in the final report.
-   Never correct it by guessing a unit or decimal error.
-7. No imputation.
-8. Tidyverse style, native pipe, here::here() for all paths.
-
-## Procedure
-1. Present a plan before writing anything: every rule you will apply, the
-   codebook row it comes from, and the order. Wait for the user to confirm.
-2. If the data contain a value the codebook does not cover, stop and ask.
-3. Write scripts/01_clean.R and run it in a fresh R session.
-4. Run scripts/02_validate.R on the clean data and run the tests in tests/.
-   Report the results verbatim.
-
-## Outputs (exact columns)
-- data/derived/voles_clean.csv: the codebook columns plus raw_row, the row
-  number in the raw file.
-- data/derived/exclusion_log.csv: raw_row, subject_id, reason.
-- data/derived/cleaning_log.csv: raw_row, subject_id, column, old_value,
-  new_value, rule.
-
-## Final report
-Row counts in, out and excluded; every value set to NA for query; any gaps
-in the codebook you found.
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: markdown
+show_skill_file("clean-with-codebook", "SKILL.md")
 ```
 :::
 
@@ -626,119 +585,3 @@ the most likely explanation in this exercise?**
   <https://code.claude.com/docs/en/permissions>.
 - Posit Assistant documentation: *Skills*,
   <https://assistant.posit.co/docs/features/skills/>.
-
-
-:::{.callout-note collapse="true"}
-## Instructor only: generating the planted data
-
-Keep this script and `planted_errors.csv` **outside** the participant
-repository. An agent that can read the answer key will use it. Run it in an
-instructor copy of the repository that holds the clean
-`data/raw/voles_metabolism.csv`, and copy only the generated
-`data/raw/voles_raw.csv` into the participant repository.
-
-```{r}
-#| eval: false
-# instructor/make_dirty_voles.R ----
-library(tidyverse)
-library(here)
-
-# suppressWarnings: case_when() evaluates every branch, including numeric
-# conversion of text labels
-as_num <- function(x) suppressWarnings(as.numeric(x))
-
-clean_df <- read_csv(
-  here("data", "raw", "voles_metabolism.csv"),
-  col_types = cols(.default = col_character())
-)
-
-plants_df <- tribble(
-  ~row, ~column,               ~error_class,
-  5,    "mass_post_g",         "sentinel 9999",
-  41,   "mass_post_g",         "sentinel 9999",
-  12,   "metabolic_rate_post", "non-standard missing code -1",
-  20,   "treatment_arm",       "label in lower case",
-  33,   "treatment_arm",       "label in upper case",
-  58,   "sex",                 "label spelled out",
-  27,   "mass_pre_g",          "recorded in kg",
-  64,   "mass_pre_g",          "decimal slip (x10)"
-) |>
-  mutate(
-    subject_id = clean_df$subject_id[row],
-    old_value = map2_chr(row, column, \(r, col) clean_df[[col]][[r]]),
-    new_value = case_when(
-      error_class == "sentinel 9999" ~ "9999",
-      error_class == "non-standard missing code -1" ~ "-1",
-      error_class == "label in lower case" ~ str_to_lower(old_value),
-      error_class == "label in upper case" ~ str_to_upper(old_value),
-      error_class == "label spelled out" ~ if_else(old_value == "M", "male", "female"),
-      error_class == "recorded in kg" ~ as.character(as_num(old_value) / 1000),
-      error_class == "decimal slip (x10)" ~ as.character(as_num(old_value) * 10)
-    )
-  )
-
-# apply each plant to its cell ----
-planted_df <- reduce(
-  seq_len(nrow(plants_df)),
-  \(data, i) {
-    data[[plants_df$column[[i]]]][[plants_df$row[[i]]]] <- plants_df$new_value[[i]]
-    data
-  },
-  .init = clean_df
-)
-
-# insert an exact duplicate and a near duplicate with a malformed ID ----
-near_duplicate_df <- planted_df |>
-  slice(15) |>
-  mutate(subject_id = str_replace(subject_id, "^V0", "V"))
-
-raw_df <- bind_rows(
-  slice(planted_df, 1:30),
-  slice(planted_df, 7),
-  slice(planted_df, 31:50),
-  near_duplicate_df,
-  slice(planted_df, 51:n())
-)
-
-write_csv(raw_df, here("data", "raw", "voles_raw.csv"), na = "")
-
-# answer key, indexed by row in the raw file ----
-key_df <- plants_df |>
-  mutate(
-    raw_row = row + (row > 30) + (row > 50),
-    expected_handling = case_when(
-      str_starts(error_class, "sentinel") |
-        str_starts(error_class, "non-standard") ~ "recode to NA (codebook missing code); log",
-      str_starts(error_class, "label") ~ "recode to canonical label; log",
-      .default = "fails range rule; set to NA and query, do not infer a correction; log"
-    )
-  ) |>
-  select(raw_row, subject_id, column, old_value, new_value, error_class, expected_handling) |>
-  bind_rows(
-    tibble(
-      raw_row = c(31, 52),
-      subject_id = clean_df$subject_id[c(7, 15)],
-      column = "(whole row)",
-      error_class = c("exact duplicate row", "near duplicate: malformed ID"),
-      expected_handling = c(
-        "exclude one copy; log reason",
-        "fails ID pattern; identify as duplicate of the original animal; exclude; log reason"
-      )
-    )
-  )
-
-write_csv(key_df, here("instructor", "planted_errors.csv"))
-```
-
-The raw file has 74 rows: 72 animals, one exact duplicate (raw row 31) and one
-near duplicate (raw row 52). A correct pipeline excludes two rows and sets five
-values to `NA`: two sentinels, the `-1` code, and the two masses queried as out
-of range. These are in addition to the genuine missing value already in the
-source data.
-
-`docs/data_note.md` should state: IDs are V followed by three digits; sex is M
-or F; the three treatment arms; masses in grams, with adults in this colony
-between 15 and 60 g and 9999 entered when an animal could not be weighed;
-metabolic rate `-1` when the respirometry run failed, with valid readings
-between 5 and 30.
-:::

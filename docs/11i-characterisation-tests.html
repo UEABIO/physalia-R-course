@@ -645,20 +645,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Last verified:</strong> 9 October 2026, against the Claude Code permissions documentation (code.claude.com) and GitHub’s documentation on customising the Copilot cloud agent’s environment (docs.github.com).</p>
-</div>
-</div>
-<p>You have a computation that already works and you want to turn it into a reusable function. An agent can do that in seconds. The hard part is not the refactor but the verification: a change that “improves” code can quietly alter its output, so how do you confirm the function still does what the script did?</p>
+</header><p>You have a computation that already works and you want to turn it into a reusable function. An agent can do that in seconds. The hard part is not the refactor but the verification: a change that “improves” code can quietly alter its output, so how do you confirm the function still does what the script did?</p>
 <p>The method is to freeze the original result before anything is touched. You run the analysis once, save its output to a reference file (an <code>.rds</code>), and require the new function to reproduce that reference exactly. This is a <em>characterisation test</em>. It establishes that the output is <strong>unchanged</strong>, not that it is <strong>correct</strong>. Step 4 shows why that distinction matters, using a missing value that has been in the data all along.</p>
 <p>The block has a shared spine and three paths that differ in who writes the function and the test:</p>
 <ul>
@@ -1074,40 +1061,75 @@ Changed function
 </ul>
 <p>When the agent’s test run and the independent <code>r-checks</code> run disagree, suspect the environment before you suspect the code.</p>
 </section><section id="from-convention-to-skill" class="level2"><h2 class="anchored" data-anchor-id="from-convention-to-skill">From convention to skill</h2>
-<p>The protective sentence in Path B (“do not create, regenerate or modify anything under tests/fixtures/”) is a durable convention: it is the same for every refactor. Anything you retype into every prompt is a candidate for a skill. A skill for this workflow would say: capture the reference only if the human has not; never regenerate a fixture; refactor and test in separate steps; compare against the human-held reference.</p>
+<p>The protective sentence in Path B (“do not create, regenerate or modify anything under tests/fixtures/”) is a durable convention: it is the same for every refactor. Anything you retype into every prompt is a candidate for a skill. A skill for this workflow would say: if no reference exists, stop and ask the human to capture it; never create or regenerate a fixture; refactor and test in separate steps; compare against the human-held reference.</p>
 <p>The benefit is that you stop retyping the boundary. The hazard is the same sentence read the other way: once the rule lives in a skill, you no longer see it, and a colleague using your skill may not know that the whole trust argument rests on it. A skill is also only an instruction. The deny rules, CODEOWNERS and git checks in this block hold whether or not the agent reads it. Build the skill only after you have done Path A or B, and keep the “reference stays with the human” clause as a visible line.</p>
-</section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
-<p><strong>A characterisation test passes after a refactor. What has it established?</strong></p>
-<div id="radio_LGCCCPDJFW" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_LGCCCPDJFW" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_LGCCCPDJFW" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_LGCCCPDJFW" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_LGCCCPDJFW" value=""><span>That the original code had no bugs</span></label>
-</div>
-<p><strong>Why must the agent never generate the reference file?</strong></p>
-<div id="radio_GOWVGCUQCQ" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_GOWVGCUQCQ" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_GOWVGCUQCQ" value=""><span>Because the reference would be too large</span></label><label><input type="radio" autocomplete="off" name="radio_GOWVGCUQCQ" value="answer"><span>Because a reference produced by the code under test can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_GOWVGCUQCQ" value=""><span>Because reference files must be written in a different language</span></label>
-</div>
-<p><strong>You have added Edit deny rules for tests/fixtures/ in Claude Code. Which action could still change the reference?</strong></p>
-<div id="radio_PSNUYPSXOP" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_PSNUYPSXOP" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_PSNUYPSXOP" value="answer"><span>The agent running tests/make_reference.R through the shell</span></label><label><input type="radio" autocomplete="off" name="radio_PSNUYPSXOP" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_PSNUYPSXOP" value=""><span>Running testthat::test_file() on the test file</span></label>
-</div>
+<p>Write your own version first, then compare it with the example below. Store it in <code>.agents/skills/characterisation-refactor/SKILL.md</code>, as in the <a href="./11e-instructions-skills.html">instructions-and-skills block</a>.</p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Instructor notes
+<span class="screen-reader-only">Note</span>Example: <code>characterisation-refactor/SKILL.md</code>
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<ul>
-<li>Check your copy of <code>voles_metabolism.csv</code> before teaching: the <code>.by</code> failure in Path A appears only if <code>load_voles() |&gt; dplyr::distinct(treatment_arm, sex)</code> is not already in sorted order. If it is sorted, reorder the rows of the file once and commit it before the session.</li>
-<li>Confirm that the file contains exactly one missing value in <code>metabolic_rate_post</code>, and note which group it falls in, for the Step 4 discussion.</li>
-<li>Path C depends on account features. Run it once on a participant-type account before the session.</li>
-</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb22-1"><a href="#cb22-1" aria-label="1"></a><span class="co">---</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-label="2"></a><span class="an">name:</span><span class="co"> characterisation-refactor</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-label="3"></a><span class="an">description:</span><span class="co"> &gt;-</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-label="4"></a><span class="co">  Refactors working R analysis code into documented functions under a</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-label="5"></a><span class="co">  characterisation test, so the output is proved unchanged. Use when asked to</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-label="6"></a><span class="co">  functionalise, refactor or tidy a script whose output must not change.</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-label="7"></a><span class="co">  Not for fixing bugs or changing results.</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-label="8"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-label="9"></a><span class="co">---</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-label="10"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-label="11"></a><span class="fu"># Refactor under a characterisation test</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-label="12"></a></span>
+<span id="cb22-13"><a href="#cb22-13" aria-label="13"></a><span class="fu">## The reference stays with the human</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-label="14"></a>The frozen reference in tests/fixtures/ is captured by the user, once, before</span>
+<span id="cb22-15"><a href="#cb22-15" aria-label="15"></a>any refactoring. A reference produced by the code under test proves nothing.</span>
+<span id="cb22-16"><a href="#cb22-16" aria-label="16"></a><span class="ss">- </span>Never create, regenerate or modify anything under tests/fixtures/.</span>
+<span id="cb22-17"><a href="#cb22-17" aria-label="17"></a><span class="ss">- </span>Never run tests/make_reference.R or any script that writes a fixture.</span>
+<span id="cb22-18"><a href="#cb22-18" aria-label="18"></a><span class="ss">- </span>If no reference exists, stop and ask the user to capture one.</span>
+<span id="cb22-19"><a href="#cb22-19" aria-label="19"></a></span>
+<span id="cb22-20"><a href="#cb22-20" aria-label="20"></a><span class="fu">## Procedure</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-label="21"></a><span class="ss">1. </span>Present a plan: the code to move, the function name and file, and the</span>
+<span id="cb22-22"><a href="#cb22-22" aria-label="22"></a>   test file. Wait for the user to confirm.</span>
+<span id="cb22-23"><a href="#cb22-23" aria-label="23"></a><span class="ss">2. </span>Refactor only. Write the function in scripts/functions/ with a roxygen2</span>
+<span id="cb22-24"><a href="#cb22-24" aria-label="24"></a>   block and an argument check, and make the original script call it. Do not</span>
+<span id="cb22-25"><a href="#cb22-25" aria-label="25"></a>   write or edit tests in this step. Stop and let the user review the diff.</span>
+<span id="cb22-26"><a href="#cb22-26" aria-label="26"></a><span class="ss">3. </span>Test only. Write a testthat file that reads the reference from</span>
+<span id="cb22-27"><a href="#cb22-27" aria-label="27"></a>   tests/fixtures/ and compares it with the function's output using</span>
+<span id="cb22-28"><a href="#cb22-28" aria-label="28"></a>   expect_equal(). Never hard-code expected values, and never reimplement</span>
+<span id="cb22-29"><a href="#cb22-29" aria-label="29"></a>   the computation inside the test.</span>
+<span id="cb22-30"><a href="#cb22-30" aria-label="30"></a><span class="ss">4. </span>Run the tests in a fresh R session and report the output verbatim.</span>
+<span id="cb22-31"><a href="#cb22-31" aria-label="31"></a></span>
+<span id="cb22-32"><a href="#cb22-32" aria-label="32"></a><span class="fu">## Rules</span></span>
+<span id="cb22-33"><a href="#cb22-33" aria-label="33"></a><span class="ss">- </span>If the test fails, report the difference. Never change the test, the</span>
+<span id="cb22-34"><a href="#cb22-34" aria-label="34"></a>  tolerance or the reference to make it pass.</span>
+<span id="cb22-35"><a href="#cb22-35" aria-label="35"></a><span class="ss">- </span>Sort rows explicitly (dplyr::arrange()) where grouping could change their</span>
+<span id="cb22-36"><a href="#cb22-36" aria-label="36"></a>  order.</span>
+<span id="cb22-37"><a href="#cb22-37" aria-label="37"></a><span class="ss">- </span>Do not change behaviour, including how missing values are handled. A</span>
+<span id="cb22-38"><a href="#cb22-38" aria-label="38"></a>  passing test shows the output is unchanged, not that it is correct; list</span>
+<span id="cb22-39"><a href="#cb22-39" aria-label="39"></a>  anything that looks wrong for the user to decide.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
+</div>
+</section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
+<p><strong>A characterisation test passes after a refactor. What has it established?</strong></p>
+<div id="radio_UEVNSWHDWC" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value=""><span>That the original code had no bugs</span></label>
+</div>
+<p><strong>Why must the agent never generate the reference file?</strong></p>
+<div id="radio_MKKFMYHDJE" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value=""><span>Because the reference would be too large</span></label><label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value="answer"><span>Because a reference produced by the code under test can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value=""><span>Because reference files must be written in a different language</span></label>
+</div>
+<p><strong>You have added Edit deny rules for tests/fixtures/ in Claude Code. Which action could still change the reference?</strong></p>
+<div id="radio_MVXPRUAJYG" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value="answer"><span>The agent running tests/make_reference.R through the shell</span></label><label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value=""><span>Running testthat::test_file() on the test file</span></label>
 </div>
 
 

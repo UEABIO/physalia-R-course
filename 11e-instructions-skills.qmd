@@ -4,17 +4,11 @@
 #| include: false
 source("R/booktem_setup.R")
 source("R/my_setup.R")
+source("R/skill_download.R")
 library(tidyverse)
 library(here)
 library(webexercises)
 ```
-
-:::{.callout-note}
-**Last verified:** 9 October 2026, against GitHub's Copilot documentation
-(custom instructions, agent skills), the Claude Code documentation (features
-overview, skills) and the Posit Assistant documentation (docs version 1.7:
-memory, skills).
-:::
 
 The previous block showed that the further up the autonomy ladder an assistant
 works, the more its unstated assumptions land in your files. This block is how
@@ -32,7 +26,7 @@ Both are requests. The model usually follows them, but nothing guarantees it.
 Rules that must hold every time belong in the enforced controls of the next
 block.
 
-*⏱ ~55 minutes*
+*⏱ ~70 minutes*
 
 
 # Part A: Instructions {.unnumbered}
@@ -367,6 +361,131 @@ Before installing a skill someone else wrote, read it. A skill can include
 scripts that the assistant may run on your machine, and its instructions shape
 what the assistant does with your files and data. Treat it as you would any
 code from the internet.
+
+
+## Activity: Install a skill bundle and compare
+
+`house-figures` is six rules you wrote and can read at a glance. `pub-figures`
+is the opposite case: the conventions from the ggplot chapter (the chart-type
+and audience tables, `theme_project()`, colorspace palettes, the
+colour-vision-deficiency check, the four-element legend, saving in two
+formats) packaged as a skill of about 200 lines, with R scripts that the
+assistant sources and adapts. It is a skill you did not write, so you read it
+before you install it.
+
+The bundle contains:
+
+```
+pub-figures/
+├── SKILL.md                when to use it, the rules, a pre-flight checklist
+├── theme-project.R         theme_project() and palette functions
+├── raincloud-template.R    figure skeleton, including saving
+├── emmeans-bridge.R        model-based significance brackets
+└── patchwork-template.R    multi-panel figure with one shared legend
+```
+
+`theme_project()` in this bundle is the full version of the simple
+`theme_project()` you wrote in the ggplot chapter: the same name and
+`base_size` argument, with a font, colours for titles and gridlines, and an
+`axis_type` argument added.
+
+```{r}
+#| echo: false
+skill_download_button("pub-figures")
+```
+
+:::{.task}
+::::{.task-header}
+A skill bundle you did not write (15 minutes)
+::::
+::::{.task-container}
+
+**1. Read before you install.** Open `SKILL.md` and `theme-project.R` (both are
+also reproduced below). Find two places where `pub-figures` contradicts your
+`house-figures` rules. (There are at least two: the palette and the theme.)
+Find the line that tells the assistant what to do when information is
+missing.
+
+**2. Remove the overlap.** Both skills describe themselves as being for
+figures in reports, posters and papers, so with both installed you cannot tell
+which one loaded. Move `house-figures` out of the skills folder (or rename
+`SKILL.md` inside it) before going on. Overlapping descriptions are a real
+hazard once you collect skills from several sources.
+
+**3. Install.** Unzip the download into `.agents/skills/`, and link or copy it
+into `.claude/skills/` for Claude Code, as above. The skill uses ggdist,
+colorspace, ragg, colorBlindness, emmeans and ggpubr; if your project uses
+renv and they are not in its lockfile, add them yourself before the test,
+rather than letting the assistant install packages.
+
+**4. Same prompt, new skill.** In a new session, without naming the skill, ask
+the prompt from the previous activity:
+
+```
+Make a figure of mass_post_g by treatment_arm for the voles data, for a
+lab report.
+```
+
+Did the skill load from its description alone? Did the assistant ask about
+the audience, or record a default?
+
+**5. Grade it against its own checklist.** The skill ends with a pre-flight
+checklist. Check the script against each item yourself, rather than accepting
+the assistant's report that it did. Then run the script: are both a PDF and a
+PNG in `outputs/figures/`? Run the `colorBlindness::cvdPlot()` line it left
+for you, and look at the result.
+
+**6. Test a rule under pressure.** Ask it to "add significance stars between
+the groups" without fitting a model. The skill says it must insert a legend
+placeholder rather than invent p-values. Then fit
+`lm(mass_post_g ~ treatment_arm, data = voles)` and ask again: it should now
+use the `emmeans-bridge.R` pattern with an adjusted p-value.
+
+**7. Compare.** Which skill would you hand to a colleague? Which would you
+trust without rereading it after an update? A long skill encodes more of your
+standards, and hides more of them from view.
+
+::::
+:::
+
+:::{.callout-note collapse="true"}
+## `pub-figures/SKILL.md`
+
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: markdown
+show_skill_file("pub-figures", "SKILL.md")
+```
+:::
+
+:::{.callout-note collapse="true"}
+## `pub-figures/theme-project.R`
+
+```{r, eval = FALSE, file = here::here("files", "skills", "pub-figures", "theme-project.R")}
+```
+:::
+
+:::{.callout-note collapse="true"}
+## `pub-figures/raincloud-template.R`
+
+```{r, eval = FALSE, file = here::here("files", "skills", "pub-figures", "raincloud-template.R")}
+```
+:::
+
+:::{.callout-note collapse="true"}
+## `pub-figures/emmeans-bridge.R`
+
+```{r, eval = FALSE, file = here::here("files", "skills", "pub-figures", "emmeans-bridge.R")}
+```
+:::
+
+:::{.callout-note collapse="true"}
+## `pub-figures/patchwork-template.R`
+
+```{r, eval = FALSE, file = here::here("files", "skills", "pub-figures", "patchwork-template.R")}
+```
+:::
 
 
 ## Check your understanding
