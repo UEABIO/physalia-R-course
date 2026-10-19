@@ -619,14 +619,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
 <li><a href="#the-repository-layout" id="toc-the-repository-layout" class="nav-link active" data-scroll-target="#the-repository-layout">The repository layout</a></li>
   <li><a href="#the-original-scripts" id="toc-the-original-scripts" class="nav-link" data-scroll-target="#the-original-scripts">The original scripts</a></li>
-  <li><a href="#step-0-spine-capture-and-protect-the-reference" id="toc-step-0-spine-capture-and-protect-the-reference" class="nav-link" data-scroll-target="#step-0-spine-capture-and-protect-the-reference">Step 0 (spine): capture and protect the reference</a></li>
-  <li><a href="#path-a-write-the-function-and-the-test-yourself" id="toc-path-a-write-the-function-and-the-test-yourself" class="nav-link" data-scroll-target="#path-a-write-the-function-and-the-test-yourself">Path A: write the function and the test yourself</a></li>
-  <li><a href="#path-b-a-local-agent-in-two-prompts" id="toc-path-b-a-local-agent-in-two-prompts" class="nav-link" data-scroll-target="#path-b-a-local-agent-in-two-prompts">Path B: a local agent, in two prompts</a></li>
-  <li><a href="#path-c-an-asynchronous-agent-copilot-cloud-agent" id="toc-path-c-an-asynchronous-agent-copilot-cloud-agent" class="nav-link" data-scroll-target="#path-c-an-asynchronous-agent-copilot-cloud-agent">Path C: an asynchronous agent (Copilot cloud agent)</a></li>
-  <li><a href="#step-4-spine-unchanged-is-not-correct" id="toc-step-4-spine-unchanged-is-not-correct" class="nav-link" data-scroll-target="#step-4-spine-unchanged-is-not-correct">Step 4 (spine): unchanged is not correct</a></li>
-  <li><a href="#the-environment-the-test-runs-in-spine" id="toc-the-environment-the-test-runs-in-spine" class="nav-link" data-scroll-target="#the-environment-the-test-runs-in-spine">The environment the test runs in (spine)</a></li>
+  <li><a href="#step-0-capture-and-protect-the-reference" id="toc-step-0-capture-and-protect-the-reference" class="nav-link" data-scroll-target="#step-0-capture-and-protect-the-reference">Step 0: capture and protect the reference</a></li>
+  <li><a href="#step-1-refactor-and-test-with-claude-code-in-two-prompts" id="toc-step-1-refactor-and-test-with-claude-code-in-two-prompts" class="nav-link" data-scroll-target="#step-1-refactor-and-test-with-claude-code-in-two-prompts">Step 1: refactor and test with Claude Code, in two prompts</a></li>
+  <li><a href="#step-2-unchanged-is-not-correct" id="toc-step-2-unchanged-is-not-correct" class="nav-link" data-scroll-target="#step-2-unchanged-is-not-correct">Step 2: unchanged is not correct</a></li>
   <li><a href="#from-convention-to-skill" id="toc-from-convention-to-skill" class="nav-link" data-scroll-target="#from-convention-to-skill">From convention to skill</a></li>
   <li><a href="#check-your-understanding" id="toc-check-your-understanding" class="nav-link" data-scroll-target="#check-your-understanding">Check your understanding</a></li>
+  <li>
+<a href="#going-further-not-covered-live" id="toc-going-further-not-covered-live" class="nav-link" data-scroll-target="#going-further-not-covered-live">Going further (not covered live)</a>
+  <ul class="collapse">
+<li><a href="#an-asynchronous-agent-the-copilot-cloud-agent" id="toc-an-asynchronous-agent-the-copilot-cloud-agent" class="nav-link" data-scroll-target="#an-asynchronous-agent-the-copilot-cloud-agent">An asynchronous agent: the Copilot cloud agent</a></li>
+  <li><a href="#the-environment-the-test-runs-in" id="toc-the-environment-the-test-runs-in" class="nav-link" data-scroll-target="#the-environment-the-test-runs-in">The environment the test runs in</a></li>
+  </ul>
+</li>
   </ul></nav>
     </div>
 <!-- main -->
@@ -646,26 +650,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 </header><p>You have a computation that already works and you want to turn it into a reusable function. An agent can do that in seconds. The hard part is not the refactor but the verification: a change that “improves” code can quietly alter its output, so how do you confirm the function still does what the script did?</p>
-<p>The method is to freeze the original result before anything is touched. You run the analysis once, save its output to a reference file (an <code>.rds</code>), and require the new function to reproduce that reference exactly. This is a <em>characterisation test</em>. It establishes that the output is <strong>unchanged</strong>, not that it is <strong>correct</strong>. Step 4 shows why that distinction matters, using a missing value that has been in the data all along.</p>
-<p>The block has a shared spine and three paths that differ in who writes the function and the test:</p>
-<ul>
-<li>
-<strong>Path A: by hand.</strong> You write the function and the test. Slowest, and the path that teaches the verification logic most directly. Start here if testthat is new to you.</li>
-<li>
-<strong>Path B: a local agent, in two prompts.</strong> Claude Code, Posit Assistant or Copilot in your IDE does the refactor and then the test, and you verify between them.</li>
-<li>
-<strong>Path C: an asynchronous agent.</strong> You describe the work in GitHub issues; the Copilot cloud agent does it remotely and returns pull requests for you to review.</li>
-</ul>
-<p>All paths rejoin at Step 4.</p>
-<p><em>⏱ ~60 minutes</em></p>
+<p>You already know the method from the <a href="./05-tidy-evaluation.html">tidy-evaluation chapter</a>: a <em>characterisation test</em>. Freeze the original output once, then require the new code to reproduce it exactly. Here the twist is who does the work. Claude Code writes the function and the test; you hold the reference and check what it did. The test establishes that the output is <strong>unchanged</strong>, not that it is <strong>correct</strong>, and Step 2 shows why that distinction matters, using a missing value that has been in the data all along.</p>
+<p><em>⏱ ~38 minutes</em></p>
 <section id="the-repository-layout" class="level2"><h2 class="anchored" data-anchor-id="the-repository-layout">The repository layout</h2>
 <pre><code>repo/
 ├── .claude/settings.json               deny rules (Claude Code)
-├── .github/
-│   ├── CODEOWNERS                      your review required for protected paths
-│   └── workflows/
-│       ├── r-checks.yml                the independent check
-│       └── copilot-setup-steps.yml     the cloud agent's environment
 ├── data/
 │   └── raw/
 │       └── voles_metabolism.csv        contains one NA, on purpose
@@ -681,6 +670,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 │   │   └── metabolic_summary.rds       the frozen reference
 │   └── test_summary_functions.R        created in this block
 └── renv.lock                           pins tidyverse, here, testthat, renv</code></pre>
+<p>The template also contains a <code>.github/</code> folder (a CODEOWNERS file and two workflows). You do not need it in the live session; it is used in <em>Going further</em>.</p>
 <p>The single most important property of this layout: the file <code>tests/fixtures/metabolic_summary.rds</code> is created by you, once, and by nobody else. Every protection in this block exists to keep that true.</p>
 </section><section id="the-original-scripts" class="level2"><h2 class="anchored" data-anchor-id="the-original-scripts">The original scripts</h2>
 <p>The data are read by one function that states every column type. The analysis, the reference and the test all call it, so they read the data identically. A column whose type <code>read_csv()</code> guesses differently in one place produces a test failure that has nothing to do with the refactor.</p>
@@ -726,11 +716,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Two things to notice now and leave alone:</p>
 <ol type="1">
-<li>The data contain one missing value in <code>metabolic_rate_post</code>, and this code has no <code>na.rm</code>, so one cell of the result is <code>NA</code>. Do not “fix” it yet. Step 4 is about exactly this.</li>
+<li>The data contain one missing value in <code>metabolic_rate_post</code>, and this code has no <code>na.rm</code>, so one cell of the result is <code>NA</code>. Do not “fix” it yet. Step 2 is about exactly this.</li>
 <li>
 <code>group_by()</code> returns groups sorted by their keys. The <code>.by</code> argument returns them in order of first appearance in the data. If the two orders differ, a refactor that switches to <code>.by</code> changes the row order of the output.</li>
-</ol></section><section id="step-0-spine-capture-and-protect-the-reference" class="level2"><h2 class="anchored" data-anchor-id="step-0-spine-capture-and-protect-the-reference">Step 0 (spine): capture and protect the reference</h2>
-<p>Before anything else, run <code>scripts/02_analysis.R</code> yourself and confirm that <code>metabolic_summary</code> looks as you expect, including the one <code>NA</code> cell. Then run the capture script <strong>once</strong>:</p>
+</ol></section><section id="step-0-capture-and-protect-the-reference" class="level2"><h2 class="anchored" data-anchor-id="step-0-capture-and-protect-the-reference">Step 0: capture and protect the reference</h2>
+<p>Before anything else, run <code>scripts/02_analysis.R</code> yourself and confirm that <code>metabolic_summary</code> looks as you expect, including the one <code>NA</code> cell. Then run the provided capture script <strong>once</strong>, yourself:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a><span class="co"># tests/make_reference.R ----</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-label="2"></a><span class="co"># Run ONCE, by you, BEFORE any refactoring.</span></span>
@@ -748,7 +738,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>Protect it.</strong> Each control covers a different route:</p>
 <ul>
 <li>
-<p><strong>Local agent (Claude Code).</strong> Add deny rules to <code>.claude/settings.json</code>:</p>
+<p><strong>Claude Code.</strong> Add deny rules to <code>.claude/settings.json</code>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a><span class="fu">{</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>  <span class="dt">"permissions"</span><span class="fu">:</span> <span class="fu">{</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-label="3"></a>    <span class="dt">"deny"</span><span class="fu">:</span> <span class="ot">[</span></span>
@@ -760,12 +750,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-9"><a href="#cb7-9" aria-label="9"></a>  <span class="fu">}</span></span>
 <span id="cb7-10"><a href="#cb7-10" aria-label="10"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Run <code>/permissions</code> to confirm the rules are active, then ask the agent to delete the <code>.rds</code> file and check that it is refused.</p>
-</li>
-<li>
-<p><strong>Asynchronous agent (Copilot).</strong> Add a <code>.github/CODEOWNERS</code> file naming yourself for the protected paths, and turn on branch protection for <code>main</code> so that merging requires your review and a passing <code>r-checks</code> run:</p>
-<pre><code>/tests/fixtures/      @your-github-username
-/tests/make_reference.R @your-github-username
-/.github/             @your-github-username</code></pre>
 </li>
 <li><p><strong>Every route.</strong> Git. <code>git status --short tests/fixtures</code> should print nothing for the rest of this block.</p></li>
 </ul>
@@ -779,41 +763,116 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>What a deny rule does not cover.</strong> Claude Code’s deny rules apply to its built-in file tools, not to commands it runs through the shell. An agent that ran <code>Rscript tests/make_reference.R</code> would overwrite your reference without touching an edit tool. That is why git, not the deny rule, is the final check, and why the checklists below ask you to read the agent’s command log.</p>
+<p><strong>What a deny rule does not cover.</strong> Claude Code’s deny rules apply to its built-in file tools, not to commands it runs through the shell. An agent that ran <code>Rscript tests/make_reference.R</code> would overwrite your reference without touching an edit tool. That is why git, not the deny rule, is the final check, and why the checklist below asks you to read the agent’s command log.</p>
 </div>
 </div>
-<p>You now hold the reference. Pick one path, then rejoin at Step 4.</p>
-</section><section id="path-a-write-the-function-and-the-test-yourself" class="level2"><h2 class="anchored" data-anchor-id="path-a-write-the-function-and-the-test-yourself">Path A: write the function and the test yourself</h2>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Using Posit Assistant
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Posit Assistant has no documented path rules for file edits. Protect the reference with the guard hook from the <a href="./11f-enforced-controls.html">enforced-controls block</a>, and rely on git as the final check. It can also run R code in your session, so read its tool calls, not just its summary, for any run of <code>tests/make_reference.R</code>.</p>
+</div>
+</div>
+</div>
+</section><section id="step-1-refactor-and-test-with-claude-code-in-two-prompts" class="level2"><h2 class="anchored" data-anchor-id="step-1-refactor-and-test-with-claude-code-in-two-prompts">Step 1: refactor and test with Claude Code, in two prompts</h2>
+<p>Split the job into two prompts, not one. A single prompt that writes both the refactor and the test lets one misunderstanding (about row order, say) shape both files at once, producing a passing test that proves nothing. Separating them stops the test inheriting the refactor’s assumptions.</p>
+<p>Start Claude Code in <code>default</code> mode from the repository root, with the repository committed and clean.</p>
+<p><strong>Prompt 1: the refactor only.</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a>Move the computation in scripts/02_analysis.R into a documented function</span>
+<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a</span>
+<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a>roxygen2 block and an argument check. Make 02_analysis.R call the new function</span>
+<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a>instead of the inline pipeline. Do not write any tests, and do not touch</span>
+<span id="cb8-5"><a href="#cb8-5" aria-label="5"></a>anything under tests/.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Read the diff (<code>git diff</code>). If it uses <code>.by</code> without a trailing <code>arrange()</code>, leave that for now; the test will expose it.</p>
+<p><strong>Prompt 2: the test only.</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a>Add tests/test_summary_functions.R. It must call local_edition(3), source</span>
+<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>scripts/functions/load_voles.R and scripts/functions/summary_functions.R,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a>read tests/fixtures/metabolic_summary.rds, and compare it with</span>
+<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a>summarise_metabolic_rate(load_voles()) using expect_equal().</span>
+<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-label="6"></a>Do not create, regenerate or modify anything under tests/fixtures/, and do not</span>
+<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a>run tests/make_reference.R. I captured that reference myself; a reference you</span>
+<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a>generate proves nothing.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Before you trust a passing test, check what the agent wrote and did:</p>
+<ol type="1">
+<li>The test <em>reads</em> <code>tests/fixtures/metabolic_summary.rds</code>. It does not hard-code expected numbers. If it does, the check is circular whatever the result.</li>
+<li>The test calls <code>summarise_metabolic_rate()</code>, the function under test, not a reimplementation of the pipeline inside the test.</li>
+<li>
+<code>git status --short tests/fixtures</code> prints nothing.</li>
+<li>The agent’s command log shows no run of <code>tests/make_reference.R</code>.</li>
+</ol>
+<p>Now run the test yourself, with <code>testthat::test_file(here::here("tests", "test_summary_functions.R"))</code>. If the function used <code>.by</code> without <code>arrange()</code>, it fails on row order, not values. Have the agent add <code>dplyr::arrange(treatment_arm, sex)</code> and run again. If it passed first time, remove the <code>arrange()</code> yourself to see the failure, then restore it.</p>
+<p><strong>Reproduce it without the agent.</strong> A test that passes in your IDE session can depend on objects or packages already loaded there. Commit, then check from the terminal:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"renv::status()"</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"testthat::test_file('tests/test_summary_functions.R')"</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a><span class="fu">git</span> status <span class="at">--short</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> should report a consistent state. If the agent used a package that is not in the lockfile, decide whether you want it and record it with <code><a href="https://rstudio.github.io/renv/reference/snapshot.html">renv::snapshot()</a></code>, as on <a href="./01-projects.html">Day 1</a>. The test must pass in the fresh session that <code>Rscript</code> starts, and <code>git status</code> should show nothing new: in particular, nothing under <code>tests/fixtures/</code>.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Using Posit Assistant
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Give the same two prompts in normal mode, so it asks before each change, and review the diff between them. Apply the same four-point checklist.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Without an agent: write the function and the test yourself
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <p>A tidy refactor naturally reaches for the modern <code>.by</code> argument. Write this first attempt in <code>scripts/functions/summary_functions.R</code>:</p>
 <div class="webex-solution">
 <button>
 First attempt (deliberately incomplete)
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: first attempt ----</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
-<span id="cb9-6"><a href="#cb9-6" aria-label="6"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
-<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
-<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
-<span id="cb9-9"><a href="#cb9-9" aria-label="9"></a>    )</span>
-<span id="cb9-10"><a href="#cb9-10" aria-label="10"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: first attempt ----</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-label="4"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" aria-label="5"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
+<span id="cb11-6"><a href="#cb11-6" aria-label="6"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-label="7"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
+<span id="cb11-8"><a href="#cb11-8" aria-label="8"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-label="9"></a>    )</span>
+<span id="cb11-10"><a href="#cb11-10" aria-label="10"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <p>Now write the test and run it:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a><span class="co"># tests/test_summary_functions.R ----</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a><span class="fu">library</span>(testthat)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a><span class="fu">local_edition</span>(<span class="dv">3</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-label="4"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
-<span id="cb10-5"><a href="#cb10-5" aria-label="5"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
-<span id="cb10-6"><a href="#cb10-6" aria-label="6"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-label="7"></a><span class="fu">test_that</span>(<span class="st">"summarise_metabolic_rate() reproduces the original summary"</span>, {</span>
-<span id="cb10-8"><a href="#cb10-8" aria-label="8"></a>  reference <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"metabolic_summary.rds"</span>))</span>
-<span id="cb10-9"><a href="#cb10-9" aria-label="9"></a>  <span class="fu">expect_equal</span>(<span class="fu">summarise_metabolic_rate</span>(<span class="fu">load_voles</span>()), reference, <span class="at">tolerance =</span> <span class="fl">1e-8</span>)</span>
-<span id="cb10-10"><a href="#cb10-10" aria-label="10"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a><span class="co"># tests/test_summary_functions.R ----</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a><span class="fu">library</span>(testthat)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a><span class="fu">local_edition</span>(<span class="dv">3</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
+<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
+<span id="cb12-6"><a href="#cb12-6" aria-label="6"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-label="7"></a><span class="fu">test_that</span>(<span class="st">"summarise_metabolic_rate() reproduces the original summary"</span>, {</span>
+<span id="cb12-8"><a href="#cb12-8" aria-label="8"></a>  reference <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"metabolic_summary.rds"</span>))</span>
+<span id="cb12-9"><a href="#cb12-9" aria-label="9"></a>  <span class="fu">expect_equal</span>(<span class="fu">summarise_metabolic_rate</span>(<span class="fu">load_voles</span>()), reference, <span class="at">tolerance =</span> <span class="fl">1e-8</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-label="10"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Run it with <code>testthat::test_file(here::here("tests", "test_summary_functions.R"))</code>.</p>
 <div class="webex-solution">
@@ -830,114 +889,69 @@ What happened
 Refactored function
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: refactored ----</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a><span class="co">#' Summarise post-treatment metabolic rate by treatment arm and sex</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a><span class="co">#'</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-label="4"></a><span class="co">#' @param data A data frame with columns treatment_arm, sex and</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-label="5"></a><span class="co">#'   metabolic_rate_post.</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-label="6"></a><span class="co">#' @return A tibble with one row per treatment_arm and sex, sorted by both,</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-label="7"></a><span class="co">#'   giving the mean, standard deviation and number of rows.</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-label="8"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb11-9"><a href="#cb11-9" aria-label="9"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
-<span id="cb11-10"><a href="#cb11-10" aria-label="10"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
-<span id="cb11-11"><a href="#cb11-11" aria-label="11"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
-<span id="cb11-12"><a href="#cb11-12" aria-label="12"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb11-13"><a href="#cb11-13" aria-label="13"></a>    <span class="fu">stop</span>(</span>
-<span id="cb11-14"><a href="#cb11-14" aria-label="14"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
-<span id="cb11-15"><a href="#cb11-15" aria-label="15"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
-<span id="cb11-16"><a href="#cb11-16" aria-label="16"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
-<span id="cb11-17"><a href="#cb11-17" aria-label="17"></a>    )</span>
-<span id="cb11-18"><a href="#cb11-18" aria-label="18"></a>  }</span>
-<span id="cb11-19"><a href="#cb11-19" aria-label="19"></a></span>
-<span id="cb11-20"><a href="#cb11-20" aria-label="20"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb11-21"><a href="#cb11-21" aria-label="21"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb11-22"><a href="#cb11-22" aria-label="22"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
-<span id="cb11-23"><a href="#cb11-23" aria-label="23"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
-<span id="cb11-24"><a href="#cb11-24" aria-label="24"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
-<span id="cb11-25"><a href="#cb11-25" aria-label="25"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
-<span id="cb11-26"><a href="#cb11-26" aria-label="26"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb11-27"><a href="#cb11-27" aria-label="27"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
-<span id="cb11-28"><a href="#cb11-28" aria-label="28"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: refactored ----</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a><span class="co">#' Summarise post-treatment metabolic rate by treatment arm and sex</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a><span class="co">#'</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-label="4"></a><span class="co">#' @param data A data frame with columns treatment_arm, sex and</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-label="5"></a><span class="co">#'   metabolic_rate_post.</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-label="6"></a><span class="co">#' @return A tibble with one row per treatment_arm and sex, sorted by both,</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-label="7"></a><span class="co">#'   giving the mean, standard deviation and number of rows.</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-label="8"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb13-9"><a href="#cb13-9" aria-label="9"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
+<span id="cb13-10"><a href="#cb13-10" aria-label="10"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-label="11"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
+<span id="cb13-12"><a href="#cb13-12" aria-label="12"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb13-13"><a href="#cb13-13" aria-label="13"></a>    <span class="fu">stop</span>(</span>
+<span id="cb13-14"><a href="#cb13-14" aria-label="14"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
+<span id="cb13-15"><a href="#cb13-15" aria-label="15"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
+<span id="cb13-16"><a href="#cb13-16" aria-label="16"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-label="17"></a>    )</span>
+<span id="cb13-18"><a href="#cb13-18" aria-label="18"></a>  }</span>
+<span id="cb13-19"><a href="#cb13-19" aria-label="19"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-label="20"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-label="21"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb13-22"><a href="#cb13-22" aria-label="22"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
+<span id="cb13-23"><a href="#cb13-23" aria-label="23"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
+<span id="cb13-24"><a href="#cb13-24" aria-label="24"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
+<span id="cb13-25"><a href="#cb13-25" aria-label="25"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
+<span id="cb13-26"><a href="#cb13-26" aria-label="26"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-label="27"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
+<span id="cb13-28"><a href="#cb13-28" aria-label="28"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <p>Finally, make <code>scripts/02_analysis.R</code> call the function, so it genuinely replaces the code it came from:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a><span class="co"># scripts/02_analysis.R: after refactoring ----</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"01_load_data.R"</span>))</span>
-<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
-<span id="cb12-6"><a href="#cb12-6" aria-label="6"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-label="7"></a>metabolic_summary <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(voles)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a><span class="co"># scripts/02_analysis.R: after refactoring ----</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"01_load_data.R"</span>))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
+<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-label="7"></a>metabolic_summary <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(voles)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Run the test again; it should still pass. Rejoin at Step 4.</p>
-</section><section id="path-b-a-local-agent-in-two-prompts" class="level2"><h2 class="anchored" data-anchor-id="path-b-a-local-agent-in-two-prompts">Path B: a local agent, in two prompts</h2>
-<p>Use this path to let an agent do the work while you verify. Split the job into two prompts, not one. A single prompt that writes both the refactor and the test lets one misunderstanding (about row order, say) shape both files at once, producing a passing test that proves nothing. Separating them stops the test inheriting the refactor’s assumptions.</p>
-<p><strong>Prompt 1: the refactor only.</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a>Move the computation in scripts/02_analysis.R into a documented function</span>
-<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a</span>
-<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a>roxygen2 block and an argument check. Make 02_analysis.R call the new function</span>
-<span id="cb13-4"><a href="#cb13-4" aria-label="4"></a>instead of the inline pipeline. Do not write any tests, and do not touch</span>
-<span id="cb13-5"><a href="#cb13-5" aria-label="5"></a>anything under tests/.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Read what it writes. If it uses <code>.by</code> without a trailing <code>arrange()</code>, leave that for now; the next step will expose it.</p>
-<p><strong>Prompt 2: the test only.</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a>Add tests/test_summary_functions.R. It must call local_edition(3), source</span>
-<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a>scripts/functions/load_voles.R and scripts/functions/summary_functions.R,</span>
-<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a>read tests/fixtures/metabolic_summary.rds, and compare it with</span>
-<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a>summarise_metabolic_rate(load_voles()) using expect_equal().</span>
-<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a></span>
-<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a>Do not create, regenerate or modify anything under tests/fixtures/, and do not</span>
-<span id="cb14-7"><a href="#cb14-7" aria-label="7"></a>run tests/make_reference.R. I captured that reference myself; a reference you</span>
-<span id="cb14-8"><a href="#cb14-8" aria-label="8"></a>generate proves nothing.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Before you trust a passing test, check what the agent wrote and did:</p>
-<ol type="1">
-<li>The test <em>reads</em> <code>tests/fixtures/metabolic_summary.rds</code>. It does not hard-code expected numbers. If it does, the check is circular whatever the result.</li>
-<li>The test calls <code>summarise_metabolic_rate()</code>, the function under test, not a reimplementation of the pipeline inside the test.</li>
-<li>
-<code>git status --short tests/fixtures</code> prints nothing.</li>
-<li>The agent’s command log shows no run of <code>tests/make_reference.R</code>.</li>
-</ol>
-<p>Now run the test yourself. If the function used <code>.by</code> without <code>arrange()</code>, it fails on row order, not values. Have the agent add <code>dplyr::arrange(treatment_arm, sex)</code> and run again. If it passed first time, remove the <code>arrange()</code> yourself to see the failure, then restore it. Rejoin at Step 4.</p>
-</section><section id="path-c-an-asynchronous-agent-copilot-cloud-agent" class="level2"><h2 class="anchored" data-anchor-id="path-c-an-asynchronous-agent-copilot-cloud-agent">Path C: an asynchronous agent (Copilot cloud agent)</h2>
-<p>The same work can be handed to an agent that runs remotely while you do something else. It works on a branch in GitHub’s infrastructure and returns a pull request. Before you start, check that your Copilot plan includes the coding agent, that <code>copilot-setup-steps.yml</code> is on your default branch, and that the CODEOWNERS file and branch protection from Step 0 are in place.</p>
-<p>Keep the two-step discipline by writing <strong>two issues</strong>, and assign the second only after you have reviewed and merged the first.</p>
-<p><strong>Issue 1</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a>Title: Move the metabolic-rate summary into a function</span>
-<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a></span>
-<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>Move the summary computation in scripts/02_analysis.R into a documented</span>
-<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a>function summarise_metabolic_rate() in scripts/functions/summary_functions.R,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a>with a roxygen2 block and an argument check. Make 02_analysis.R call it.</span>
-<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a></span>
-<span id="cb15-7"><a href="#cb15-7" aria-label="7"></a>Acceptance criteria:</span>
-<span id="cb15-8"><a href="#cb15-8" aria-label="8"></a>- Do not add or change anything under tests/, data/ or .github/.</span>
-<span id="cb15-9"><a href="#cb15-9" aria-label="9"></a>- The output must be identical to the current output, including row order</span>
-<span id="cb15-10"><a href="#cb15-10" aria-label="10"></a>  and the existing NA value.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>Issue 2 (after Issue 1 is merged)</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a>Title: Add a characterisation test for summarise_metabolic_rate()</span>
-<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a></span>
-<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a>Add tests/test_summary_functions.R. It must call local_edition(3), source</span>
-<span id="cb16-4"><a href="#cb16-4" aria-label="4"></a>scripts/functions/load_voles.R and scripts/functions/summary_functions.R, and</span>
-<span id="cb16-5"><a href="#cb16-5" aria-label="5"></a>compare summarise_metabolic_rate(load_voles()) with</span>
-<span id="cb16-6"><a href="#cb16-6" aria-label="6"></a>tests/fixtures/metabolic_summary.rds using expect_equal().</span>
-<span id="cb16-7"><a href="#cb16-7" aria-label="7"></a></span>
-<span id="cb16-8"><a href="#cb16-8" aria-label="8"></a>Acceptance criteria:</span>
-<span id="cb16-9"><a href="#cb16-9" aria-label="9"></a>- Do not create, modify or regenerate anything under tests/fixtures/, and do</span>
-<span id="cb16-10"><a href="#cb16-10" aria-label="10"></a>  not run tests/make_reference.R.</span>
-<span id="cb16-11"><a href="#cb16-11" aria-label="11"></a>- Run the tests and report the result in the pull request description.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Assign each issue to Copilot. When a pull request arrives:</p>
-<ol type="1">
-<li>Open <strong>Files changed</strong>. Confirm that only the expected files changed. A change under <code>tests/fixtures/</code> or <code>.github/</code> should not merge, and CODEOWNERS will in any case require your review for it.</li>
-<li>Read the test against the four-point checklist in Path B.</li>
-<li>Check that the <code>r-checks</code> run on the pull request passed.</li>
-<li>Pull the branch and run the test on your own machine. The agent’s report that “tests pass” is its claim; your run is the check.</li>
-</ol>
-<p>If something is wrong, comment on the pull request to ask for a revision, or close it. Nothing reaches <code>main</code> until you merge.</p>
-</section><section id="step-4-spine-unchanged-is-not-correct" class="level2"><h2 class="anchored" data-anchor-id="step-4-spine-unchanged-is-not-correct">Step 4 (spine): unchanged is not correct</h2>
+<p>Run the test again; it should still pass.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Instructor demonstration: the review gate.</strong> Local controls do not exist for an agent that works remotely. Your instructor will show a pull request that changes a file under <code>tests/</code> being held until the code owner reviews it. How to set up CODEOWNERS and branch protection for your own repository is in the <em>Going further</em> section of the <a href="./11f-enforced-controls.html">enforced-controls block</a>.</p>
+</div>
+</div>
+</section><section id="step-2-unchanged-is-not-correct" class="level2"><h2 class="anchored" data-anchor-id="step-2-unchanged-is-not-correct">Step 2: unchanged is not correct</h2>
 <p>Your test passes. The function reproduces the reference exactly, <strong>including the <code>NA</code> cell</strong>. The characterisation test has certified that the refactor preserved the original behaviour, and the original behaviour reports a missing mean for one group of animals.</p>
 <p>Is that the right answer? It depends on what you meant. If you want the mean of the animals that were measured, the original code was wrong all along, and the refactor faithfully preserved the error. A characterisation test cannot tell the difference, because it compares against the past, not against the truth.</p>
 <div class="task">
 <div class="task-header">
-<p>Decide, change, and test the change independently</p>
+<p>Decide, change, and test the change independently (10 minutes)</p>
 </div>
 <div class="task-container">
 <p><strong>1. Decide.</strong> Suppose you conclude that the mean and standard deviation should use the measured animals only. There is a second, quieter problem: <code>n()</code> counts rows, including the animal with no measurement, so <code>n</code> would no longer match the number of values behind the mean. A summary that reports a mean of 11 animals beside <code>n = 12</code> misstates the sample size.</p>
@@ -947,107 +961,236 @@ Refactored function
 Changed function
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: missing values handled ----</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb17-3"><a href="#cb17-3" aria-label="3"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
-<span id="cb17-4"><a href="#cb17-4" aria-label="4"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
-<span id="cb17-5"><a href="#cb17-5" aria-label="5"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
-<span id="cb17-6"><a href="#cb17-6" aria-label="6"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb17-7"><a href="#cb17-7" aria-label="7"></a>    <span class="fu">stop</span>(</span>
-<span id="cb17-8"><a href="#cb17-8" aria-label="8"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
-<span id="cb17-9"><a href="#cb17-9" aria-label="9"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
-<span id="cb17-10"><a href="#cb17-10" aria-label="10"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-label="11"></a>    )</span>
-<span id="cb17-12"><a href="#cb17-12" aria-label="12"></a>  }</span>
-<span id="cb17-13"><a href="#cb17-13" aria-label="13"></a></span>
-<span id="cb17-14"><a href="#cb17-14" aria-label="14"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb17-15"><a href="#cb17-15" aria-label="15"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb17-16"><a href="#cb17-16" aria-label="16"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb17-17"><a href="#cb17-17" aria-label="17"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb17-18"><a href="#cb17-18" aria-label="18"></a>      <span class="at">n_used    =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(metabolic_rate_post)),</span>
-<span id="cb17-19"><a href="#cb17-19" aria-label="19"></a>      <span class="at">n_missing =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(metabolic_rate_post)),</span>
-<span id="cb17-20"><a href="#cb17-20" aria-label="20"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
-<span id="cb17-21"><a href="#cb17-21" aria-label="21"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb17-22"><a href="#cb17-22" aria-label="22"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
-<span id="cb17-23"><a href="#cb17-23" aria-label="23"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: missing values handled ----</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
+<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
+<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb15-7"><a href="#cb15-7" aria-label="7"></a>    <span class="fu">stop</span>(</span>
+<span id="cb15-8"><a href="#cb15-8" aria-label="8"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-label="9"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
+<span id="cb15-10"><a href="#cb15-10" aria-label="10"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-label="11"></a>    )</span>
+<span id="cb15-12"><a href="#cb15-12" aria-label="12"></a>  }</span>
+<span id="cb15-13"><a href="#cb15-13" aria-label="13"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-label="14"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-label="15"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb15-16"><a href="#cb15-16" aria-label="16"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-17"><a href="#cb15-17" aria-label="17"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-18"><a href="#cb15-18" aria-label="18"></a>      <span class="at">n_used    =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(metabolic_rate_post)),</span>
+<span id="cb15-19"><a href="#cb15-19" aria-label="19"></a>      <span class="at">n_missing =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(metabolic_rate_post)),</span>
+<span id="cb15-20"><a href="#cb15-20" aria-label="20"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
+<span id="cb15-21"><a href="#cb15-21" aria-label="21"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-label="22"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
+<span id="cb15-23"><a href="#cb15-23" aria-label="23"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <p><strong>3. Run the characterisation test. It fails, correctly.</strong> The output has changed, and the test exists to tell you so.</p>
 <p><strong>4. Add a known-answer test before re-capturing anything.</strong> A known-answer test checks the new behaviour against a result you can compute by hand, independent of any reference file:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a><span class="co"># add to tests/test_summary_functions.R ----</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-label="2"></a><span class="fu">test_that</span>(<span class="st">"means ignore missing values and n_used counts measured animals"</span>, {</span>
-<span id="cb18-3"><a href="#cb18-3" aria-label="3"></a>  toy_df <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
-<span id="cb18-4"><a href="#cb18-4" aria-label="4"></a>    <span class="at">treatment_arm       =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Control"</span>, <span class="st">"Control"</span>),</span>
-<span id="cb18-5"><a href="#cb18-5" aria-label="5"></a>    <span class="at">sex                 =</span> <span class="fu">c</span>(<span class="st">"F"</span>, <span class="st">"F"</span>, <span class="st">"F"</span>),</span>
-<span id="cb18-6"><a href="#cb18-6" aria-label="6"></a>    <span class="at">metabolic_rate_post =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">14</span>, <span class="cn">NA</span>)</span>
-<span id="cb18-7"><a href="#cb18-7" aria-label="7"></a>  )</span>
-<span id="cb18-8"><a href="#cb18-8" aria-label="8"></a>  result <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(toy_df)</span>
-<span id="cb18-9"><a href="#cb18-9" aria-label="9"></a></span>
-<span id="cb18-10"><a href="#cb18-10" aria-label="10"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>mean_rate, <span class="dv">12</span>)</span>
-<span id="cb18-11"><a href="#cb18-11" aria-label="11"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_used, <span class="dv">2</span>)</span>
-<span id="cb18-12"><a href="#cb18-12" aria-label="12"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_missing, <span class="dv">1</span>)</span>
-<span id="cb18-13"><a href="#cb18-13" aria-label="13"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a><span class="co"># add to tests/test_summary_functions.R ----</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a><span class="fu">test_that</span>(<span class="st">"means ignore missing values and n_used counts measured animals"</span>, {</span>
+<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a>  toy_df <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb16-4"><a href="#cb16-4" aria-label="4"></a>    <span class="at">treatment_arm       =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Control"</span>, <span class="st">"Control"</span>),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-label="5"></a>    <span class="at">sex                 =</span> <span class="fu">c</span>(<span class="st">"F"</span>, <span class="st">"F"</span>, <span class="st">"F"</span>),</span>
+<span id="cb16-6"><a href="#cb16-6" aria-label="6"></a>    <span class="at">metabolic_rate_post =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">14</span>, <span class="cn">NA</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-label="7"></a>  )</span>
+<span id="cb16-8"><a href="#cb16-8" aria-label="8"></a>  result <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(toy_df)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-label="9"></a></span>
+<span id="cb16-10"><a href="#cb16-10" aria-label="10"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>mean_rate, <span class="dv">12</span>)</span>
+<span id="cb16-11"><a href="#cb16-11" aria-label="11"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_used, <span class="dv">2</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-label="12"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_missing, <span class="dv">1</span>)</span>
+<span id="cb16-13"><a href="#cb16-13" aria-label="13"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>5. Only now, re-capture the reference, as a recorded decision.</strong> Re-run <code>tests/make_reference.R</code> yourself and commit with a message that states why:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-label="1"></a><span class="fu">git</span> add tests/fixtures/metabolic_summary.rds scripts/functions/summary_functions.R tests/test_summary_functions.R</span>
-<span id="cb19-2"><a href="#cb19-2" aria-label="2"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Exclude missing metabolic rates from mean and SD; report n_used and n_missing"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a><span class="fu">git</span> add tests/fixtures/metabolic_summary.rds scripts/functions/summary_functions.R tests/test_summary_functions.R</span>
+<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Exclude missing metabolic rates from mean and SD; report n_used and n_missing"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Re-capturing compares the function with itself, so it is acceptable only under three conditions: you decided it, an independent known-answer test checks the new behaviour, and the commit records why. Without those, re-capturing a reference to make a failing test pass is the circular verification this whole block warns against.</p>
 </div>
 </div>
 <p>The general rule: characterisation tests protect behaviour you have already judged correct. Judging it correct is a separate step, and it is yours.</p>
-</section><section id="the-environment-the-test-runs-in-spine" class="level2"><h2 class="anchored" data-anchor-id="the-environment-the-test-runs-in-spine">The environment the test runs in (spine)</h2>
+</section><section id="from-convention-to-skill" class="level2"><h2 class="anchored" data-anchor-id="from-convention-to-skill">From convention to skill</h2>
+<p>The protective sentence in Prompt 2 (“do not create, regenerate or modify anything under tests/fixtures/”) is the same for every refactor, so it is a candidate for a skill. The hazard is that once the rule lives in a skill, you no longer see it, and a colleague using your skill may not know that the whole trust argument rests on it. A skill is also only an instruction; the deny rules and git checks hold whether or not the agent reads it. If you build one, keep the “reference stays with the human” clause as a visible line. An example to compare with your own, stored in <code>.agents/skills/characterisation-refactor/SKILL.md</code> as in the <a href="./11e-instructions-skills.html">instructions-and-skills block</a>:</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Example: <code>characterisation-refactor/SKILL.md</code>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a><span class="co">---</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-label="2"></a><span class="an">name:</span><span class="co"> characterisation-refactor</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-label="3"></a><span class="an">description:</span><span class="co"> &gt;-</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-label="4"></a><span class="co">  Refactors working R analysis code into documented functions under a</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-label="5"></a><span class="co">  characterisation test, so the output is proved unchanged. Use when asked to</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-label="6"></a><span class="co">  functionalise, refactor or tidy a script whose output must not change.</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-label="7"></a><span class="co">  Not for fixing bugs or changing results.</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-label="8"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-label="9"></a><span class="co">---</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-label="10"></a></span>
+<span id="cb18-11"><a href="#cb18-11" aria-label="11"></a><span class="fu"># Refactor under a characterisation test</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-label="12"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-label="13"></a><span class="fu">## The reference stays with the human</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-label="14"></a>The frozen reference in tests/fixtures/ is captured by the user, once, before</span>
+<span id="cb18-15"><a href="#cb18-15" aria-label="15"></a>any refactoring. A reference produced by the code under test proves nothing.</span>
+<span id="cb18-16"><a href="#cb18-16" aria-label="16"></a><span class="ss">- </span>Never create, regenerate or modify anything under tests/fixtures/.</span>
+<span id="cb18-17"><a href="#cb18-17" aria-label="17"></a><span class="ss">- </span>Never run tests/make_reference.R or any script that writes a fixture.</span>
+<span id="cb18-18"><a href="#cb18-18" aria-label="18"></a><span class="ss">- </span>If no reference exists, stop and ask the user to capture one.</span>
+<span id="cb18-19"><a href="#cb18-19" aria-label="19"></a></span>
+<span id="cb18-20"><a href="#cb18-20" aria-label="20"></a><span class="fu">## Procedure</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-label="21"></a><span class="ss">1. </span>Present a plan: the code to move, the function name and file, and the</span>
+<span id="cb18-22"><a href="#cb18-22" aria-label="22"></a>   test file. Wait for the user to confirm.</span>
+<span id="cb18-23"><a href="#cb18-23" aria-label="23"></a><span class="ss">2. </span>Refactor only. Write the function in scripts/functions/ with a roxygen2</span>
+<span id="cb18-24"><a href="#cb18-24" aria-label="24"></a>   block and an argument check, and make the original script call it. Do not</span>
+<span id="cb18-25"><a href="#cb18-25" aria-label="25"></a>   write or edit tests in this step. Stop and let the user review the diff.</span>
+<span id="cb18-26"><a href="#cb18-26" aria-label="26"></a><span class="ss">3. </span>Test only. Write a testthat file that reads the reference from</span>
+<span id="cb18-27"><a href="#cb18-27" aria-label="27"></a>   tests/fixtures/ and compares it with the function's output using</span>
+<span id="cb18-28"><a href="#cb18-28" aria-label="28"></a>   expect_equal(). Never hard-code expected values, and never reimplement</span>
+<span id="cb18-29"><a href="#cb18-29" aria-label="29"></a>   the computation inside the test.</span>
+<span id="cb18-30"><a href="#cb18-30" aria-label="30"></a><span class="ss">4. </span>Run the tests in a fresh R session and report the output verbatim.</span>
+<span id="cb18-31"><a href="#cb18-31" aria-label="31"></a></span>
+<span id="cb18-32"><a href="#cb18-32" aria-label="32"></a><span class="fu">## Rules</span></span>
+<span id="cb18-33"><a href="#cb18-33" aria-label="33"></a><span class="ss">- </span>If the test fails, report the difference. Never change the test, the</span>
+<span id="cb18-34"><a href="#cb18-34" aria-label="34"></a>  tolerance or the reference to make it pass.</span>
+<span id="cb18-35"><a href="#cb18-35" aria-label="35"></a><span class="ss">- </span>Sort rows explicitly (dplyr::arrange()) where grouping could change their</span>
+<span id="cb18-36"><a href="#cb18-36" aria-label="36"></a>  order.</span>
+<span id="cb18-37"><a href="#cb18-37" aria-label="37"></a><span class="ss">- </span>Do not change behaviour, including how missing values are handled. A</span>
+<span id="cb18-38"><a href="#cb18-38" aria-label="38"></a>  passing test shows the output is unchanged, not that it is correct; list</span>
+<span id="cb18-39"><a href="#cb18-39" aria-label="39"></a>  anything that looks wrong for the user to decide.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Check · Reproduce · Record
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>
+<strong>Check:</strong> the reference you captured, read by a test the agent wrote in a separate prompt; the four-point checklist; and a known-answer test, because unchanged is not correct.</li>
+<li>
+<strong>Reproduce:</strong> <code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> and the test passing in a fresh <code>Rscript</code> session, with nothing changed under <code>tests/fixtures/</code>.</li>
+<li>
+<strong>Record:</strong> any re-captured reference is a decision with a commit message that says why. Add a line to <code>docs/ai-log.md</code>: the two prompts, whether the test passed first time, and what you changed.</li>
+</ul>
+</div>
+</div>
+</section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
+<p><strong>A characterisation test passes after a refactor. What has it established?</strong></p>
+<div id="radio_IUDMXRJVAE" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_IUDMXRJVAE" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_IUDMXRJVAE" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_IUDMXRJVAE" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_IUDMXRJVAE" value=""><span>That the original code had no bugs</span></label>
+</div>
+<p><strong>Why must the agent never generate the reference file?</strong></p>
+<div id="radio_MLEUMOGBIW" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_MLEUMOGBIW" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_MLEUMOGBIW" value=""><span>Because the reference would be too large</span></label><label><input type="radio" autocomplete="off" name="radio_MLEUMOGBIW" value="answer"><span>Because a reference produced by the code under test can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_MLEUMOGBIW" value=""><span>Because reference files must be written in a different language</span></label>
+</div>
+<p><strong>You have added Edit deny rules for tests/fixtures/ in Claude Code. Which action could still change the reference?</strong></p>
+<div id="radio_CWNCXZIZDC" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_CWNCXZIZDC" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_CWNCXZIZDC" value="answer"><span>The agent running tests/make_reference.R through the shell</span></label><label><input type="radio" autocomplete="off" name="radio_CWNCXZIZDC" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_CWNCXZIZDC" value=""><span>Running testthat::test_file() on the test file</span></label>
+</div>
+</section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
+<p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
+<section id="an-asynchronous-agent-the-copilot-cloud-agent" class="level3"><h3 class="anchored" data-anchor-id="an-asynchronous-agent-the-copilot-cloud-agent">An asynchronous agent: the Copilot cloud agent</h3>
+<p>The same work can be handed to an agent that runs remotely while you do something else. It works on a branch in GitHub’s infrastructure and returns a pull request. Before you start, check that your Copilot plan includes the cloud agent, that <code>copilot-setup-steps.yml</code> is on your default branch (see the next section), and that the repository is protected.</p>
+<p><strong>Protect the reference on GitHub.</strong> Local deny rules do not exist for a remote agent. Add a <code>.github/CODEOWNERS</code> file naming yourself for the protected paths, and turn on branch protection for <code>main</code> so that merging requires your review and a passing <code>r-checks</code> run:</p>
+<pre><code>/tests/fixtures/      @your-github-username
+/tests/make_reference.R @your-github-username
+/.github/             @your-github-username</code></pre>
+<p>Keep the two-step discipline by writing <strong>two issues</strong>, and assign the second only after you have reviewed and merged the first.</p>
+<p><strong>Issue 1</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb20-1"><a href="#cb20-1" aria-label="1"></a>Title: Move the metabolic-rate summary into a function</span>
+<span id="cb20-2"><a href="#cb20-2" aria-label="2"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-label="3"></a>Move the summary computation in scripts/02_analysis.R into a documented</span>
+<span id="cb20-4"><a href="#cb20-4" aria-label="4"></a>function summarise_metabolic_rate() in scripts/functions/summary_functions.R,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-label="5"></a>with a roxygen2 block and an argument check. Make 02_analysis.R call it.</span>
+<span id="cb20-6"><a href="#cb20-6" aria-label="6"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-label="7"></a>Acceptance criteria:</span>
+<span id="cb20-8"><a href="#cb20-8" aria-label="8"></a>- Do not add or change anything under tests/, data/ or .github/.</span>
+<span id="cb20-9"><a href="#cb20-9" aria-label="9"></a>- The output must be identical to the current output, including row order</span>
+<span id="cb20-10"><a href="#cb20-10" aria-label="10"></a>  and the existing NA value.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Issue 2 (after Issue 1 is merged)</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb21-1"><a href="#cb21-1" aria-label="1"></a>Title: Add a characterisation test for summarise_metabolic_rate()</span>
+<span id="cb21-2"><a href="#cb21-2" aria-label="2"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-label="3"></a>Add tests/test_summary_functions.R. It must call local_edition(3), source</span>
+<span id="cb21-4"><a href="#cb21-4" aria-label="4"></a>scripts/functions/load_voles.R and scripts/functions/summary_functions.R, and</span>
+<span id="cb21-5"><a href="#cb21-5" aria-label="5"></a>compare summarise_metabolic_rate(load_voles()) with</span>
+<span id="cb21-6"><a href="#cb21-6" aria-label="6"></a>tests/fixtures/metabolic_summary.rds using expect_equal().</span>
+<span id="cb21-7"><a href="#cb21-7" aria-label="7"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-label="8"></a>Acceptance criteria:</span>
+<span id="cb21-9"><a href="#cb21-9" aria-label="9"></a>- Do not create, modify or regenerate anything under tests/fixtures/, and do</span>
+<span id="cb21-10"><a href="#cb21-10" aria-label="10"></a>  not run tests/make_reference.R.</span>
+<span id="cb21-11"><a href="#cb21-11" aria-label="11"></a>- Run the tests and report the result in the pull request description.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Assign each issue to Copilot. When a pull request arrives:</p>
+<ol type="1">
+<li>Open <strong>Files changed</strong>. Confirm that only the expected files changed. A change under <code>tests/fixtures/</code> or <code>.github/</code> should not merge, and CODEOWNERS will in any case require your review for it.</li>
+<li>Read the test against the four-point checklist in Step 1.</li>
+<li>Check that the <code>r-checks</code> run on the pull request passed.</li>
+<li>Pull the branch and run the test on your own machine. The agent’s report that “tests pass” is its claim; your run is the check.</li>
+</ol>
+<p>If something is wrong, comment on the pull request to ask for a revision, or close it. Nothing reaches <code>main</code> until you merge.</p>
+</section><section id="the-environment-the-test-runs-in" class="level3"><h3 class="anchored" data-anchor-id="the-environment-the-test-runs-in">The environment the test runs in</h3>
 <p>A characterisation test is only as stable as the environment it runs in. The column types in <code>load_voles()</code> handle the finest-grained part. The R version and the package set are handled by two GitHub Actions workflows.</p>
 <p><code>r-checks.yml</code> is the independent check. It runs the tests from a clean checkout on every push to <code>main</code> and on every pull request:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb20-1"><a href="#cb20-1" aria-label="1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> r-checks</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-label="2"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-label="3"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-label="4"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">main</span><span class="kw">]</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-label="5"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-label="6"></a></span>
-<span id="cb20-7"><a href="#cb20-7" aria-label="7"></a><span class="fu">jobs</span><span class="kw">:</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-label="8"></a><span class="at">  </span><span class="fu">tests</span><span class="kw">:</span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-label="9"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-label="10"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-label="11"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
-<span id="cb20-12"><a href="#cb20-12" aria-label="12"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
-<span id="cb20-13"><a href="#cb20-13" aria-label="13"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb20-14"><a href="#cb20-14" aria-label="14"></a><span class="at">          </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.5.2"</span><span class="co">   # match the R version in renv.lock</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-label="15"></a><span class="at">          </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-label="16"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-renv@v2</span></span>
-<span id="cb20-17"><a href="#cb20-17" aria-label="17"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Run tests</span></span>
-<span id="cb20-18"><a href="#cb20-18" aria-label="18"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> Rscript -e 'testthat::test_dir("tests", stop_on_failure = TRUE)'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>It is independent of your machine and of the agent’s environment, but it is not tamper-proof. A pull request can change the workflow file or the reference it checks against. CODEOWNERS and branch protection (Step 0) are what make a passing run meaningful: you review every change to those paths before it merges.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb22-1"><a href="#cb22-1" aria-label="1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> r-checks</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-label="2"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-label="3"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-label="4"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">main</span><span class="kw">]</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-label="5"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-label="6"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-label="7"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-label="8"></a><span class="at">  </span><span class="fu">tests</span><span class="kw">:</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-label="9"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-label="10"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-label="11"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-label="12"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-label="13"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb22-14"><a href="#cb22-14" aria-label="14"></a><span class="at">          </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.5.2"</span><span class="co">   # match the R version in renv.lock</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-label="15"></a><span class="at">          </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-label="16"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-renv@v2</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-label="17"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Run tests</span></span>
+<span id="cb22-18"><a href="#cb22-18" aria-label="18"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> Rscript -e 'testthat::test_dir("tests", stop_on_failure = TRUE)'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>It is independent of your machine and of the agent’s environment, but it is not tamper-proof. A pull request can change the workflow file or the reference it checks against. CODEOWNERS and branch protection (above) are what make a passing run meaningful: you review every change to those paths before it merges.</p>
 <p><code>copilot-setup-steps.yml</code> builds the environment the Copilot cloud agent works in. Following GitHub’s documented pattern:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb21-1"><a href="#cb21-1" aria-label="1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Copilot Setup Steps"</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-label="2"></a></span>
-<span id="cb21-3"><a href="#cb21-3" aria-label="3"></a><span class="co"># Runs when this file changes, so you can see whether setup succeeds,</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-label="4"></a><span class="co"># and can be run by hand from the Actions tab.</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-label="5"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-label="6"></a><span class="at">  </span><span class="fu">workflow_dispatch</span><span class="kw">:</span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-label="7"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-label="8"></a><span class="at">    </span><span class="fu">paths</span><span class="kw">:</span></span>
-<span id="cb21-9"><a href="#cb21-9" aria-label="9"></a><span class="at">      </span><span class="kw">-</span><span class="at"> .github/workflows/copilot-setup-steps.yml</span></span>
-<span id="cb21-10"><a href="#cb21-10" aria-label="10"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-label="11"></a><span class="at">    </span><span class="fu">paths</span><span class="kw">:</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-label="12"></a><span class="at">      </span><span class="kw">-</span><span class="at"> .github/workflows/copilot-setup-steps.yml</span></span>
-<span id="cb21-13"><a href="#cb21-13" aria-label="13"></a></span>
-<span id="cb21-14"><a href="#cb21-14" aria-label="14"></a><span class="fu">jobs</span><span class="kw">:</span></span>
-<span id="cb21-15"><a href="#cb21-15" aria-label="15"></a><span class="co">  # The job must be called copilot-setup-steps or Copilot will not use it.</span></span>
-<span id="cb21-16"><a href="#cb21-16" aria-label="16"></a><span class="at">  </span><span class="fu">copilot-setup-steps</span><span class="kw">:</span></span>
-<span id="cb21-17"><a href="#cb21-17" aria-label="17"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
-<span id="cb21-18"><a href="#cb21-18" aria-label="18"></a><span class="at">    </span><span class="fu">permissions</span><span class="kw">:</span></span>
-<span id="cb21-19"><a href="#cb21-19" aria-label="19"></a><span class="at">      </span><span class="fu">contents</span><span class="kw">:</span><span class="at"> read</span></span>
-<span id="cb21-20"><a href="#cb21-20" aria-label="20"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb21-21"><a href="#cb21-21" aria-label="21"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Check out repository</span></span>
-<span id="cb21-22"><a href="#cb21-22" aria-label="22"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
-<span id="cb21-23"><a href="#cb21-23" aria-label="23"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Set up R</span></span>
-<span id="cb21-24"><a href="#cb21-24" aria-label="24"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
-<span id="cb21-25"><a href="#cb21-25" aria-label="25"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb21-26"><a href="#cb21-26" aria-label="26"></a><span class="at">          </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.5.2"</span><span class="co">   # match the R version in renv.lock</span></span>
-<span id="cb21-27"><a href="#cb21-27" aria-label="27"></a><span class="at">          </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb21-28"><a href="#cb21-28" aria-label="28"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Restore packages from renv.lock</span></span>
-<span id="cb21-29"><a href="#cb21-29" aria-label="29"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-renv@v2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode numberSource yaml number-lines code-with-copy"><code class="sourceCode yaml"><span id="cb23-1"><a href="#cb23-1" aria-label="1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Copilot Setup Steps"</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-label="2"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-label="3"></a><span class="co"># Runs when this file changes, so you can see whether setup succeeds,</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-label="4"></a><span class="co"># and can be run by hand from the Actions tab.</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-label="5"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-label="6"></a><span class="at">  </span><span class="fu">workflow_dispatch</span><span class="kw">:</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-label="7"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-label="8"></a><span class="at">    </span><span class="fu">paths</span><span class="kw">:</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-label="9"></a><span class="at">      </span><span class="kw">-</span><span class="at"> .github/workflows/copilot-setup-steps.yml</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-label="10"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-label="11"></a><span class="at">    </span><span class="fu">paths</span><span class="kw">:</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-label="12"></a><span class="at">      </span><span class="kw">-</span><span class="at"> .github/workflows/copilot-setup-steps.yml</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-label="13"></a></span>
+<span id="cb23-14"><a href="#cb23-14" aria-label="14"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb23-15"><a href="#cb23-15" aria-label="15"></a><span class="co">  # The job must be called copilot-setup-steps or Copilot will not use it.</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-label="16"></a><span class="at">  </span><span class="fu">copilot-setup-steps</span><span class="kw">:</span></span>
+<span id="cb23-17"><a href="#cb23-17" aria-label="17"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb23-18"><a href="#cb23-18" aria-label="18"></a><span class="at">    </span><span class="fu">permissions</span><span class="kw">:</span></span>
+<span id="cb23-19"><a href="#cb23-19" aria-label="19"></a><span class="at">      </span><span class="fu">contents</span><span class="kw">:</span><span class="at"> read</span></span>
+<span id="cb23-20"><a href="#cb23-20" aria-label="20"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb23-21"><a href="#cb23-21" aria-label="21"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Check out repository</span></span>
+<span id="cb23-22"><a href="#cb23-22" aria-label="22"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
+<span id="cb23-23"><a href="#cb23-23" aria-label="23"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Set up R</span></span>
+<span id="cb23-24"><a href="#cb23-24" aria-label="24"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
+<span id="cb23-25"><a href="#cb23-25" aria-label="25"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb23-26"><a href="#cb23-26" aria-label="26"></a><span class="at">          </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.5.2"</span><span class="co">   # match the R version in renv.lock</span></span>
+<span id="cb23-27"><a href="#cb23-27" aria-label="27"></a><span class="at">          </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb23-28"><a href="#cb23-28" aria-label="28"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Restore packages from renv.lock</span></span>
+<span id="cb23-29"><a href="#cb23-29" aria-label="29"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-renv@v2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Four requirements, each with a different failure mode:</p>
 <ul>
 <li>
@@ -1060,80 +1203,9 @@ Changed function
 <strong>The lockfile must be restored.</strong> If it restores the wrong versions, the failure is quiet: tests run and pass against different package behaviour. The frozen reference then certifies sameness against the wrong baseline.</li>
 </ul>
 <p>When the agent’s test run and the independent <code>r-checks</code> run disagree, suspect the environment before you suspect the code.</p>
-</section><section id="from-convention-to-skill" class="level2"><h2 class="anchored" data-anchor-id="from-convention-to-skill">From convention to skill</h2>
-<p>The protective sentence in Path B (“do not create, regenerate or modify anything under tests/fixtures/”) is a durable convention: it is the same for every refactor. Anything you retype into every prompt is a candidate for a skill. A skill for this workflow would say: if no reference exists, stop and ask the human to capture it; never create or regenerate a fixture; refactor and test in separate steps; compare against the human-held reference.</p>
-<p>The benefit is that you stop retyping the boundary. The hazard is the same sentence read the other way: once the rule lives in a skill, you no longer see it, and a colleague using your skill may not know that the whole trust argument rests on it. A skill is also only an instruction. The deny rules, CODEOWNERS and git checks in this block hold whether or not the agent reads it. Build the skill only after you have done Path A or B, and keep the “reference stays with the human” clause as a visible line.</p>
-<p>Write your own version first, then compare it with the example below. Store it in <code>.agents/skills/characterisation-refactor/SKILL.md</code>, as in the <a href="./11e-instructions-skills.html">instructions-and-skills block</a>.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Example: <code>characterisation-refactor/SKILL.md</code>
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb22-1"><a href="#cb22-1" aria-label="1"></a><span class="co">---</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-label="2"></a><span class="an">name:</span><span class="co"> characterisation-refactor</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-label="3"></a><span class="an">description:</span><span class="co"> &gt;-</span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-label="4"></a><span class="co">  Refactors working R analysis code into documented functions under a</span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-label="5"></a><span class="co">  characterisation test, so the output is proved unchanged. Use when asked to</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-label="6"></a><span class="co">  functionalise, refactor or tidy a script whose output must not change.</span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-label="7"></a><span class="co">  Not for fixing bugs or changing results.</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-label="8"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
-<span id="cb22-9"><a href="#cb22-9" aria-label="9"></a><span class="co">---</span></span>
-<span id="cb22-10"><a href="#cb22-10" aria-label="10"></a></span>
-<span id="cb22-11"><a href="#cb22-11" aria-label="11"></a><span class="fu"># Refactor under a characterisation test</span></span>
-<span id="cb22-12"><a href="#cb22-12" aria-label="12"></a></span>
-<span id="cb22-13"><a href="#cb22-13" aria-label="13"></a><span class="fu">## The reference stays with the human</span></span>
-<span id="cb22-14"><a href="#cb22-14" aria-label="14"></a>The frozen reference in tests/fixtures/ is captured by the user, once, before</span>
-<span id="cb22-15"><a href="#cb22-15" aria-label="15"></a>any refactoring. A reference produced by the code under test proves nothing.</span>
-<span id="cb22-16"><a href="#cb22-16" aria-label="16"></a><span class="ss">- </span>Never create, regenerate or modify anything under tests/fixtures/.</span>
-<span id="cb22-17"><a href="#cb22-17" aria-label="17"></a><span class="ss">- </span>Never run tests/make_reference.R or any script that writes a fixture.</span>
-<span id="cb22-18"><a href="#cb22-18" aria-label="18"></a><span class="ss">- </span>If no reference exists, stop and ask the user to capture one.</span>
-<span id="cb22-19"><a href="#cb22-19" aria-label="19"></a></span>
-<span id="cb22-20"><a href="#cb22-20" aria-label="20"></a><span class="fu">## Procedure</span></span>
-<span id="cb22-21"><a href="#cb22-21" aria-label="21"></a><span class="ss">1. </span>Present a plan: the code to move, the function name and file, and the</span>
-<span id="cb22-22"><a href="#cb22-22" aria-label="22"></a>   test file. Wait for the user to confirm.</span>
-<span id="cb22-23"><a href="#cb22-23" aria-label="23"></a><span class="ss">2. </span>Refactor only. Write the function in scripts/functions/ with a roxygen2</span>
-<span id="cb22-24"><a href="#cb22-24" aria-label="24"></a>   block and an argument check, and make the original script call it. Do not</span>
-<span id="cb22-25"><a href="#cb22-25" aria-label="25"></a>   write or edit tests in this step. Stop and let the user review the diff.</span>
-<span id="cb22-26"><a href="#cb22-26" aria-label="26"></a><span class="ss">3. </span>Test only. Write a testthat file that reads the reference from</span>
-<span id="cb22-27"><a href="#cb22-27" aria-label="27"></a>   tests/fixtures/ and compares it with the function's output using</span>
-<span id="cb22-28"><a href="#cb22-28" aria-label="28"></a>   expect_equal(). Never hard-code expected values, and never reimplement</span>
-<span id="cb22-29"><a href="#cb22-29" aria-label="29"></a>   the computation inside the test.</span>
-<span id="cb22-30"><a href="#cb22-30" aria-label="30"></a><span class="ss">4. </span>Run the tests in a fresh R session and report the output verbatim.</span>
-<span id="cb22-31"><a href="#cb22-31" aria-label="31"></a></span>
-<span id="cb22-32"><a href="#cb22-32" aria-label="32"></a><span class="fu">## Rules</span></span>
-<span id="cb22-33"><a href="#cb22-33" aria-label="33"></a><span class="ss">- </span>If the test fails, report the difference. Never change the test, the</span>
-<span id="cb22-34"><a href="#cb22-34" aria-label="34"></a>  tolerance or the reference to make it pass.</span>
-<span id="cb22-35"><a href="#cb22-35" aria-label="35"></a><span class="ss">- </span>Sort rows explicitly (dplyr::arrange()) where grouping could change their</span>
-<span id="cb22-36"><a href="#cb22-36" aria-label="36"></a>  order.</span>
-<span id="cb22-37"><a href="#cb22-37" aria-label="37"></a><span class="ss">- </span>Do not change behaviour, including how missing values are handled. A</span>
-<span id="cb22-38"><a href="#cb22-38" aria-label="38"></a>  passing test shows the output is unchanged, not that it is correct; list</span>
-<span id="cb22-39"><a href="#cb22-39" aria-label="39"></a>  anything that looks wrong for the user to decide.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-</div>
-</div>
-</section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
-<p><strong>A characterisation test passes after a refactor. What has it established?</strong></p>
-<div id="radio_UEVNSWHDWC" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_UEVNSWHDWC" value=""><span>That the original code had no bugs</span></label>
-</div>
-<p><strong>Why must the agent never generate the reference file?</strong></p>
-<div id="radio_MKKFMYHDJE" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value=""><span>Because the reference would be too large</span></label><label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value="answer"><span>Because a reference produced by the code under test can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_MKKFMYHDJE" value=""><span>Because reference files must be written in a different language</span></label>
-</div>
-<p><strong>You have added Edit deny rules for tests/fixtures/ in Claude Code. Which action could still change the reference?</strong></p>
-<div id="radio_MVXPRUAJYG" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value="answer"><span>The agent running tests/make_reference.R through the shell</span></label><label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_MVXPRUAJYG" value=""><span>Running testthat::test_file() on the test file</span></label>
-</div>
 
 
-</section></main><!-- /main --><script>
+</section></section></main><!-- /main --><script>
 
 /* update total correct if #webex-total_correct exists */
 update_total_correct = function() {

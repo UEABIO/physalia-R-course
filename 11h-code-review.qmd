@@ -29,12 +29,17 @@ wrong? You are reviewing a script whose problems you already know, so you can
 grade the machine rather than trust it.
 :::
 
-*⏱ ~90 minutes*
+You already built a README for this project with READMEBuilder in the
+[reproducibility chapter](06-reproducibility.qmd). An AI-assisted version,
+using a skill that is forbidden to invent metadata, is in *Going further* at
+the end of this page.
+
+*⏱ ~40 minutes*
 
 
 ## Part 1: What AI is, and is not, good for in code review {#ai-why}
 
-*⏱ ~15 minutes*
+*⏱ ~5 minutes*
 
 The appeal of an AI reviewer is speed and coverage: it reads every line and
 does not tire. The danger is fluent, confident output that is sometimes wrong,
@@ -87,7 +92,7 @@ Keep the result visible; we return to it at the end.
 
 ## Part 2: Telling the AI how to behave {#ai-prompting}
 
-*⏱ ~20 minutes*
+*⏱ ~10 minutes*
 
 A vague prompt ("review my code") tends to produce a vague, generous review.
 Give the AI the same scaffold you used in the manual review.
@@ -109,13 +114,13 @@ Give the AI the same scaffold you used in the manual review.
 
 :::{.task}
 ::::{.task-header}
-**Activity: write the review prompt (10 minutes)**
+**Activity: write the review prompt (7 minutes)**
 ::::
 
 ::::{.task-container}
 
-Write a prompt containing all four elements. The room splits in two for a
-controlled comparison:
+Start from the working draft below and check it contains all four elements.
+The room splits in two for a controlled comparison:
 
 - **Group A** includes the line about the 9999 sentinel in the skeleton below.
 - **Group B** deletes it.
@@ -150,23 +155,38 @@ Organise your output by the four Rs.
 
 ## Part 3: Running the review {#ai-running}
 
-*⏱ ~35 minutes*
+*⏱ ~25 minutes*
 
-### Path A: a local agent, read-only
+### Path A: Claude Code, read-only
 
-Use Claude Code in `plan` mode, Posit Assistant in Ask mode, or Copilot Chat in
-Ask. At this rung the agent can read every file in the project but cannot change
-any, which is what a review needs.
+Start Claude Code in `plan` mode from the OSF project folder. At this rung the
+agent can read every file in the project but cannot change any, which is what
+a review needs.
 
-1. Open the whole OSF project folder, so the agent can see the data files as
-   well as `ANALYSIS.R`.
+```bash
+cd path/to/osf-project
+claude --permission-mode plan
+```
+
+1. Starting from the project folder lets the agent see the data files as well
+   as `ANALYSIS.R`.
 2. Give it your Part 2 prompt.
 3. Save its review to a file of your own before moving on.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Open the OSF project in RStudio or Positron and switch Posit Assistant to Ask
+mode, so it can read but not change anything. Give it your Part 2 prompt and
+save the review as above. For the optional step below, switch back to normal
+mode, so it asks before running anything.
+:::
 
 ### Path A, step 2: let it run the script (optional)
 
 An agent that can execute R can turn the *Run* question from a prediction into
-evidence. Switch to rung 3 (acting with approval) and ask:
+evidence. Switch to rung 3 (acting with approval: `Shift+Tab` to `default`
+mode in Claude Code) and ask:
 
 ```
 Run ANALYSIS.R from a fresh R session with Rscript and report the exact
@@ -192,21 +212,9 @@ it executed the code. It did not. Ask instead "what would *prevent* this
 running?", and treat any claim about reproduced results as unsupported.
 :::
 
-### Path C: Copilot code review on a pull request (demonstration)
-
-If your repository is on GitHub, open a pull request containing `ANALYSIS.R` and
-request Copilot as a reviewer. Its comments appear on the changed lines, like a
-colleague's. It reads the repository's custom instructions
-(`.github/copilot-instructions.md`, or `AGENTS.md` as in the
-[instructions-and-skills block](11e-instructions-skills.qmd)), but none of
-those exist in the OSF folder yet. To have Copilot apply the standard from
-Part 2, add your review rules (the four Rs, the intended analysis, no praise,
-NEEDS HUMAN CHECK) to `.github/copilot-instructions.md` in that repository
-before you request the review.
-
 :::{.task}
 ::::{.task-header}
-**Activity: grade the machine (20 minutes)**
+**Activity: grade the machine (10 minutes)**
 ::::
 
 ::::{.task-container}
@@ -241,7 +249,59 @@ most confident false positive in the chat, with line numbers.
 :::
 
 
-## Part 4: Generating the README with AI {#ai-readme}
+:::{.callout-note}
+## Check · Reproduce · Record
+
+- **Check:** grade every AI finding against the P1–P12 answer key; the absence
+  of a finding is no evidence that the problem is absent.
+- **Reproduce:** a claim that the script runs counts only with the command and
+  the output from a fresh R session.
+- **Record:** add a line to `docs/ai-log.md` in your workshop repository: the
+  tool, its hit count, and its most confident false positive. The README for
+  this project is the one you built on Day 2.
+:::
+
+
+## Check your understanding
+
+**An AI reviewer reports that `ANALYSIS.R` "runs without errors". What do you
+need before treating that as evidence?**
+
+`r longmcq(c(
+  "Nothing; the model has read every line",
+  "A second AI reviewer's agreement",
+  answer = "The command it ran and the output it saw, from a fresh R session; without them the statement is a prediction",
+  "A statement of confidence from the model"
+))`
+
+**Why did Group A catch P8 more often than Group B?**
+
+`r longmcq(c(
+  "Group A used a better model",
+  answer = "Nothing in the script reveals that 9999 is a code; the AI could only check for it when the prompt said so",
+  "Group B's prompt was longer",
+  "P8 is a syntax error that only some models detect"
+))`
+
+
+## Going further (not covered live)
+
+This material is not covered in the live session. Work through it afterwards if
+it is useful to you.
+
+### Copilot code review on a pull request
+
+If your repository is on GitHub, open a pull request containing `ANALYSIS.R` and
+request Copilot as a reviewer. Its comments appear on the changed lines, like a
+colleague's. It reads the repository's custom instructions
+(`.github/copilot-instructions.md`, or `AGENTS.md` as in the
+[instructions-and-skills block](11e-instructions-skills.qmd)), but none of
+those exist in the OSF folder yet. To have Copilot apply the standard from
+Part 2, add your review rules (the four Rs, the intended analysis, no praise,
+NEEDS HUMAN CHECK) to `.github/copilot-instructions.md` in that repository
+before you request the review.
+
+### Generating the README with AI {#ai-readme}
 
 *⏱ ~20 minutes*
 
@@ -274,7 +334,7 @@ not load.
 You run this in two passes. The first shows the failure; the second shows the
 fix.
 
-### Pass 1: README from the AI alone (demonstration, ~4 minutes)
+#### Pass 1: README from the AI alone (~4 minutes)
 
 Give the AI only `ANALYSIS.R` and the data, and ask for a README with no
 constraints. The result reads as complete. It will assign plausible units,
@@ -282,13 +342,13 @@ describe variables it cannot have verified, and may state package versions it
 has no way to know. Note what it asserts about the variables and dependencies;
 Pass 2 replaces each guess with a fact you generate.
 
-### Pass 2: README from verifiable inputs
+#### Pass 2: README from verifiable inputs
 
 The skill's rules are that the AI must **not fabricate metadata**, and that
 automatic summaries **describe; they do not interpret**. So you generate the
 facts mechanically, and the AI only assembles and phrases them.
 
-#### Step 1: Generate the inputs yourself (R, not AI)
+##### Step 1: Generate the inputs yourself (R, not AI)
 
 ```{r readme-inputs}
 #| eval: false
@@ -310,7 +370,7 @@ Look at the offspring column in the summary: its range will read something like
 reports it without judgement. Judging plausibility is your job. That honest,
 uninterpreted range is the visible trace of the sentinel.
 
-#### Step 2: Hand the AI the specification and the inputs
+##### Step 2: Hand the AI the specification and the inputs
 
 **Agent path:** invoke `/research-readme` and let its five stages run. It will
 ask you for what it cannot find.
@@ -351,18 +411,17 @@ Audit the draft against three of the skill's rules:
 3. **README only.** Confirm with `git status` that nothing except `README.md`
    changed.
 
-Post the worst fabrication or interpretation you caught, and say whether the
+Note the worst fabrication or interpretation you caught, and whether the
 README's offspring range alone would have led you back to P8.
 
 ::::
 :::
 
+#### The skill bundle
 
-### The skill bundle
-
-The bundle you downloaded at the start of Part 4 is reproduced here for
-reference; you do not edit it during the session. Read it before you use it,
-as you would any skill you did not write.
+The bundle you downloaded above is reproduced here for reference; you do not
+need to edit it. Read it before you use it, as you would any skill you did not
+write.
 
 ```
 research-readme/
@@ -415,28 +474,6 @@ show_skill_file("research-readme", "references/readme_template.md")
 :::
 
 
-## Check your understanding
-
-**An AI reviewer reports that `ANALYSIS.R` "runs without errors". What do you
-need before treating that as evidence?**
-
-`r longmcq(c(
-  "Nothing; the model has read every line",
-  "A second AI reviewer's agreement",
-  answer = "The command it ran and the output it saw, from a fresh R session; without them the statement is a prediction",
-  "A statement of confidence from the model"
-))`
-
-**Why did Group A catch P8 more often than Group B?**
-
-`r longmcq(c(
-  "Group A used a better model",
-  answer = "Nothing in the script reveals that 9999 is a code; the AI could only check for it when the prompt said so",
-  "Group B's prompt was longer",
-  "P8 is a syntax error that only some models detect"
-))`
-
-
 ## Glossary
 
 ```{r glossary-crai}
@@ -444,11 +481,11 @@ need before treating that as evidence?**
 tribble(
   ~Term,                        ~Definition,
   "Agent",                      "An AI that can read across a project's files and, depending on its mode, edit them and run commands, as opposed to a chat window that sees only pasted text",
-  "Read-only rung",             "A mode in which the assistant can read but not change anything: Claude Code plan mode, Posit Assistant Ask mode, Copilot Ask",
+  "Read-only rung",             "A mode in which the assistant can read but not change anything: Claude Code plan mode, Posit Assistant Ask mode",
   "False positive (in review)", "A problem the AI reports confidently that is not real, or is described wrongly",
   "Claimed execution",          "A statement that code runs or reproduces, made without a command and its output to support it",
   "Sentinel value",             "A number with a special meaning (9999 = not recorded); detectable from the data or from your instruction, not from the code alone",
-  "AI declaration",             "A README statement recording that an AI assisted, naming the model and date, and making no claims about AI use elsewhere"
+  "AI declaration",             "A README statement recording that an AI assisted, naming the model and date, and making no claims about AI use elsewhere (see Going further)"
 ) |>
   kbl() |>
   kable_styling(bootstrap_options = c("striped", "hover"))

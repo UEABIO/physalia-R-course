@@ -14,29 +14,16 @@ reusable function. An agent can do that in seconds. The hard part is not the
 refactor but the verification: a change that "improves" code can quietly alter
 its output, so how do you confirm the function still does what the script did?
 
-The method is to freeze the original result before anything is touched. You run
-the analysis once, save its output to a reference file (an `.rds`), and require
-the new function to reproduce that reference exactly. This is a
-*characterisation test*. It establishes that the output is **unchanged**, not
-that it is **correct**. Step 4 shows why that distinction matters, using a
-missing value that has been in the data all along.
+You already know the method from the
+[tidy-evaluation chapter](05-tidy-evaluation.qmd): a *characterisation test*.
+Freeze the original output once, then require the new code to reproduce it
+exactly. Here the twist is who does the work. Claude Code writes the function
+and the test; you hold the reference and check what it did. The test
+establishes that the output is **unchanged**, not that it is **correct**, and
+Step 2 shows why that distinction matters, using a missing value that has been
+in the data all along.
 
-The block has a shared spine and three paths that differ in who writes the
-function and the test:
-
-- **Path A: by hand.** You write the function and the test. Slowest, and the
-  path that teaches the verification logic most directly. Start here if
-  testthat is new to you.
-- **Path B: a local agent, in two prompts.** Claude Code, Posit Assistant or
-  Copilot in your IDE does the refactor and then the test, and you verify
-  between them.
-- **Path C: an asynchronous agent.** You describe the work in GitHub issues;
-  the Copilot cloud agent does it remotely and returns pull requests for you to
-  review.
-
-All paths rejoin at Step 4.
-
-*⏱ ~60 minutes*
+*⏱ ~38 minutes*
 
 
 ## The repository layout
@@ -44,11 +31,6 @@ All paths rejoin at Step 4.
 ```
 repo/
 ├── .claude/settings.json               deny rules (Claude Code)
-├── .github/
-│   ├── CODEOWNERS                      your review required for protected paths
-│   └── workflows/
-│       ├── r-checks.yml                the independent check
-│       └── copilot-setup-steps.yml     the cloud agent's environment
 ├── data/
 │   └── raw/
 │       └── voles_metabolism.csv        contains one NA, on purpose
@@ -65,6 +47,10 @@ repo/
 │   └── test_summary_functions.R        created in this block
 └── renv.lock                           pins tidyverse, here, testthat, renv
 ```
+
+The template also contains a `.github/` folder (a CODEOWNERS file and two
+workflows). You do not need it in the live session; it is used in *Going
+further*.
 
 The single most important property of this layout: the file
 `tests/fixtures/metabolic_summary.rds` is created by you, once, and by nobody
@@ -129,18 +115,18 @@ metabolic_summary <- voles |>
 Two things to notice now and leave alone:
 
 1. The data contain one missing value in `metabolic_rate_post`, and this code has
-   no `na.rm`, so one cell of the result is `NA`. Do not "fix" it yet. Step 4 is
+   no `na.rm`, so one cell of the result is `NA`. Do not "fix" it yet. Step 2 is
    about exactly this.
 2. `group_by()` returns groups sorted by their keys. The `.by` argument returns
    them in order of first appearance in the data. If the two orders differ, a
    refactor that switches to `.by` changes the row order of the output.
 
 
-## Step 0 (spine): capture and protect the reference
+## Step 0: capture and protect the reference
 
 Before anything else, run `scripts/02_analysis.R` yourself and confirm that
 `metabolic_summary` looks as you expect, including the one `NA` cell. Then run
-the capture script **once**:
+the provided capture script **once**, yourself:
 
 ```{r}
 #| eval: false
@@ -167,7 +153,7 @@ function with itself.
 
 **Protect it.** Each control covers a different route:
 
-- **Local agent (Claude Code).** Add deny rules to `.claude/settings.json`:
+- **Claude Code.** Add deny rules to `.claude/settings.json`:
 
   ```json
   {
@@ -185,16 +171,6 @@ function with itself.
   Run `/permissions` to confirm the rules are active, then ask the agent to
   delete the `.rds` file and check that it is refused.
 
-- **Asynchronous agent (Copilot).** Add a `.github/CODEOWNERS` file naming
-  yourself for the protected paths, and turn on branch protection for `main` so
-  that merging requires your review and a passing `r-checks` run:
-
-  ```
-  /tests/fixtures/      @your-github-username
-  /tests/make_reference.R @your-github-username
-  /.github/             @your-github-username
-  ```
-
 - **Every route.** Git. `git status --short tests/fixtures` should print
   nothing for the rest of this block.
 
@@ -203,13 +179,98 @@ function with itself.
 built-in file tools, not to commands it runs through the shell. An agent that
 ran `Rscript tests/make_reference.R` would overwrite your reference without
 touching an edit tool. That is why git, not the deny rule, is the final check,
-and why the checklists below ask you to read the agent's command log.
+and why the checklist below asks you to read the agent's command log.
 :::
 
-You now hold the reference. Pick one path, then rejoin at Step 4.
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Posit Assistant has no documented path rules for file edits. Protect the
+reference with the guard hook from the
+[enforced-controls block](11f-enforced-controls.qmd), and rely on git as the
+final check. It can also run R code in your session, so read its tool calls,
+not just its summary, for any run of `tests/make_reference.R`.
+:::
 
 
-## Path A: write the function and the test yourself
+## Step 1: refactor and test with Claude Code, in two prompts
+
+Split the job into two prompts, not one. A single prompt that writes both the
+refactor and the test lets one misunderstanding (about row order, say) shape
+both files at once, producing a passing test that proves nothing. Separating
+them stops the test inheriting the refactor's assumptions.
+
+Start Claude Code in `default` mode from the repository root, with the
+repository committed and clean.
+
+**Prompt 1: the refactor only.**
+
+```text
+Move the computation in scripts/02_analysis.R into a documented function
+summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a
+roxygen2 block and an argument check. Make 02_analysis.R call the new function
+instead of the inline pipeline. Do not write any tests, and do not touch
+anything under tests/.
+```
+
+Read the diff (`git diff`). If it uses `.by` without a trailing `arrange()`,
+leave that for now; the test will expose it.
+
+**Prompt 2: the test only.**
+
+```text
+Add tests/test_summary_functions.R. It must call local_edition(3), source
+scripts/functions/load_voles.R and scripts/functions/summary_functions.R,
+read tests/fixtures/metabolic_summary.rds, and compare it with
+summarise_metabolic_rate(load_voles()) using expect_equal().
+
+Do not create, regenerate or modify anything under tests/fixtures/, and do not
+run tests/make_reference.R. I captured that reference myself; a reference you
+generate proves nothing.
+```
+
+Before you trust a passing test, check what the agent wrote and did:
+
+1. The test *reads* `tests/fixtures/metabolic_summary.rds`. It does not
+   hard-code expected numbers. If it does, the check is circular whatever the
+   result.
+2. The test calls `summarise_metabolic_rate()`, the function under test, not a
+   reimplementation of the pipeline inside the test.
+3. `git status --short tests/fixtures` prints nothing.
+4. The agent's command log shows no run of `tests/make_reference.R`.
+
+Now run the test yourself, with
+`testthat::test_file(here::here("tests", "test_summary_functions.R"))`. If the
+function used `.by` without `arrange()`, it fails on row order, not values.
+Have the agent add `dplyr::arrange(treatment_arm, sex)` and run again. If it
+passed first time, remove the `arrange()` yourself to see the failure, then
+restore it.
+
+**Reproduce it without the agent.** A test that passes in your IDE session can
+depend on objects or packages already loaded there. Commit, then check from
+the terminal:
+
+```bash
+Rscript -e "renv::status()"
+Rscript -e "testthat::test_file('tests/test_summary_functions.R')"
+git status --short
+```
+
+`renv::status()` should report a consistent state. If the agent used a package
+that is not in the lockfile, decide whether you want it and record it with
+`renv::snapshot()`, as on [Day 1](01-projects.qmd). The test must pass in the
+fresh session that `Rscript` starts, and `git status` should show nothing new:
+in particular, nothing under `tests/fixtures/`.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Give the same two prompts in normal mode, so it asks before each change, and
+review the diff between them. Apply the same four-point checklist.
+:::
+
+:::{.callout-note collapse="true"}
+## Without an agent: write the function and the test yourself
 
 A tidy refactor naturally reaches for the modern `.by` argument. Write this
 first attempt in `scripts/functions/summary_functions.R`:
@@ -322,117 +383,20 @@ source(here("scripts", "functions", "summary_functions.R"))
 metabolic_summary <- summarise_metabolic_rate(voles)
 ```
 
-Run the test again; it should still pass. Rejoin at Step 4.
+Run the test again; it should still pass.
+:::
+
+:::{.callout-note}
+**Instructor demonstration: the review gate.** Local controls do not exist for
+an agent that works remotely. Your instructor will show a pull request that
+changes a file under `tests/` being held until the code owner reviews it. How
+to set up CODEOWNERS and branch protection for your own repository is in the
+*Going further* section of the
+[enforced-controls block](11f-enforced-controls.qmd).
+:::
 
 
-## Path B: a local agent, in two prompts
-
-Use this path to let an agent do the work while you verify. Split the job into
-two prompts, not one. A single prompt that writes both the refactor and the test
-lets one misunderstanding (about row order, say) shape both files at once,
-producing a passing test that proves nothing. Separating them stops the test
-inheriting the refactor's assumptions.
-
-**Prompt 1: the refactor only.**
-
-```text
-Move the computation in scripts/02_analysis.R into a documented function
-summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a
-roxygen2 block and an argument check. Make 02_analysis.R call the new function
-instead of the inline pipeline. Do not write any tests, and do not touch
-anything under tests/.
-```
-
-Read what it writes. If it uses `.by` without a trailing `arrange()`, leave that
-for now; the next step will expose it.
-
-**Prompt 2: the test only.**
-
-```text
-Add tests/test_summary_functions.R. It must call local_edition(3), source
-scripts/functions/load_voles.R and scripts/functions/summary_functions.R,
-read tests/fixtures/metabolic_summary.rds, and compare it with
-summarise_metabolic_rate(load_voles()) using expect_equal().
-
-Do not create, regenerate or modify anything under tests/fixtures/, and do not
-run tests/make_reference.R. I captured that reference myself; a reference you
-generate proves nothing.
-```
-
-Before you trust a passing test, check what the agent wrote and did:
-
-1. The test *reads* `tests/fixtures/metabolic_summary.rds`. It does not
-   hard-code expected numbers. If it does, the check is circular whatever the
-   result.
-2. The test calls `summarise_metabolic_rate()`, the function under test, not a
-   reimplementation of the pipeline inside the test.
-3. `git status --short tests/fixtures` prints nothing.
-4. The agent's command log shows no run of `tests/make_reference.R`.
-
-Now run the test yourself. If the function used `.by` without `arrange()`, it
-fails on row order, not values. Have the agent add
-`dplyr::arrange(treatment_arm, sex)` and run again. If it passed first time,
-remove the `arrange()` yourself to see the failure, then restore it. Rejoin at
-Step 4.
-
-
-## Path C: an asynchronous agent (Copilot cloud agent)
-
-The same work can be handed to an agent that runs remotely while you do
-something else. It works on a branch in GitHub's infrastructure and returns a
-pull request. Before you start, check that your Copilot plan includes the coding
-agent, that `copilot-setup-steps.yml` is on your default branch, and that the
-CODEOWNERS file and branch protection from Step 0 are in place.
-
-Keep the two-step discipline by writing **two issues**, and assign the second
-only after you have reviewed and merged the first.
-
-**Issue 1**
-
-```text
-Title: Move the metabolic-rate summary into a function
-
-Move the summary computation in scripts/02_analysis.R into a documented
-function summarise_metabolic_rate() in scripts/functions/summary_functions.R,
-with a roxygen2 block and an argument check. Make 02_analysis.R call it.
-
-Acceptance criteria:
-- Do not add or change anything under tests/, data/ or .github/.
-- The output must be identical to the current output, including row order
-  and the existing NA value.
-```
-
-**Issue 2 (after Issue 1 is merged)**
-
-```text
-Title: Add a characterisation test for summarise_metabolic_rate()
-
-Add tests/test_summary_functions.R. It must call local_edition(3), source
-scripts/functions/load_voles.R and scripts/functions/summary_functions.R, and
-compare summarise_metabolic_rate(load_voles()) with
-tests/fixtures/metabolic_summary.rds using expect_equal().
-
-Acceptance criteria:
-- Do not create, modify or regenerate anything under tests/fixtures/, and do
-  not run tests/make_reference.R.
-- Run the tests and report the result in the pull request description.
-```
-
-Assign each issue to Copilot. When a pull request arrives:
-
-1. Open **Files changed**. Confirm that only the expected files changed. A
-   change under `tests/fixtures/` or `.github/` should not merge, and CODEOWNERS
-   will in any case require your review for it.
-2. Read the test against the four-point checklist in Path B.
-3. Check that the `r-checks` run on the pull request passed.
-4. Pull the branch and run the test on your own machine. The agent's report
-   that "tests pass" is its claim; your run is the check.
-
-If something is wrong, comment on the pull request to ask for a revision, or
-close it. Nothing reaches `main` until you merge.
-
-
-## Step 4 (spine): unchanged is not correct
+## Step 2: unchanged is not correct
 
 Your test passes. The function reproduces the reference exactly, **including
 the `NA` cell**. The characterisation test has certified that the refactor
@@ -446,7 +410,7 @@ the difference, because it compares against the past, not against the truth.
 
 :::{.task}
 ::::{.task-header}
-Decide, change, and test the change independently
+Decide, change, and test the change independently (10 minutes)
 ::::
 ::::{.task-container}
 
@@ -534,7 +498,183 @@ The general rule: characterisation tests protect behaviour you have already
 judged correct. Judging it correct is a separate step, and it is yours.
 
 
-## The environment the test runs in (spine)
+## From convention to skill
+
+The protective sentence in Prompt 2 ("do not create, regenerate or modify
+anything under tests/fixtures/") is the same for every refactor, so it is a
+candidate for a skill. The hazard is that once the rule lives in a skill, you
+no longer see it, and a colleague using your skill may not know that the whole
+trust argument rests on it. A skill is also only an instruction; the deny rules
+and git checks hold whether or not the agent reads it. If you build one, keep
+the "reference stays with the human" clause as a visible line. An example to
+compare with your own, stored in
+`.agents/skills/characterisation-refactor/SKILL.md` as in the
+[instructions-and-skills block](11e-instructions-skills.qmd):
+
+:::{.callout-note collapse="true"}
+## Example: `characterisation-refactor/SKILL.md`
+
+```markdown
+---
+name: characterisation-refactor
+description: >-
+  Refactors working R analysis code into documented functions under a
+  characterisation test, so the output is proved unchanged. Use when asked to
+  functionalise, refactor or tidy a script whose output must not change.
+  Not for fixing bugs or changing results.
+disable-model-invocation: true
+---
+
+# Refactor under a characterisation test
+
+## The reference stays with the human
+The frozen reference in tests/fixtures/ is captured by the user, once, before
+any refactoring. A reference produced by the code under test proves nothing.
+- Never create, regenerate or modify anything under tests/fixtures/.
+- Never run tests/make_reference.R or any script that writes a fixture.
+- If no reference exists, stop and ask the user to capture one.
+
+## Procedure
+1. Present a plan: the code to move, the function name and file, and the
+   test file. Wait for the user to confirm.
+2. Refactor only. Write the function in scripts/functions/ with a roxygen2
+   block and an argument check, and make the original script call it. Do not
+   write or edit tests in this step. Stop and let the user review the diff.
+3. Test only. Write a testthat file that reads the reference from
+   tests/fixtures/ and compares it with the function's output using
+   expect_equal(). Never hard-code expected values, and never reimplement
+   the computation inside the test.
+4. Run the tests in a fresh R session and report the output verbatim.
+
+## Rules
+- If the test fails, report the difference. Never change the test, the
+  tolerance or the reference to make it pass.
+- Sort rows explicitly (dplyr::arrange()) where grouping could change their
+  order.
+- Do not change behaviour, including how missing values are handled. A
+  passing test shows the output is unchanged, not that it is correct; list
+  anything that looks wrong for the user to decide.
+```
+:::
+
+
+:::{.callout-note}
+## Check · Reproduce · Record
+
+- **Check:** the reference you captured, read by a test the agent wrote in a
+  separate prompt; the four-point checklist; and a known-answer test, because
+  unchanged is not correct.
+- **Reproduce:** `renv::status()` and the test passing in a fresh `Rscript`
+  session, with nothing changed under `tests/fixtures/`.
+- **Record:** any re-captured reference is a decision with a commit message
+  that says why. Add a line to `docs/ai-log.md`: the two prompts, whether the
+  test passed first time, and what you changed.
+:::
+
+
+## Check your understanding
+
+**A characterisation test passes after a refactor. What has it established?**
+
+`r longmcq(c(
+  "That the function's output is correct",
+  answer = "That the function's output is the same as the original code's output, whether or not that output was correct",
+  "That the function is faster than the original code",
+  "That the original code had no bugs"
+))`
+
+**Why must the agent never generate the reference file?**
+
+`r longmcq(c(
+  "Because agents cannot write .rds files",
+  "Because the reference would be too large",
+  answer = "Because a reference produced by the code under test can only confirm that the code agrees with itself",
+  "Because reference files must be written in a different language"
+))`
+
+**You have added Edit deny rules for tests/fixtures/ in Claude Code. Which
+action could still change the reference?**
+
+`r longmcq(c(
+  "Asking the agent to edit the .rds file with its editing tool",
+  answer = "The agent running tests/make_reference.R through the shell",
+  "Opening the .rds file in the IDE",
+  "Running testthat::test_file() on the test file"
+))`
+
+
+## Going further (not covered live)
+
+This material is not covered in the live session. Work through it afterwards if
+it is useful to you.
+
+### An asynchronous agent: the Copilot cloud agent
+
+The same work can be handed to an agent that runs remotely while you do
+something else. It works on a branch in GitHub's infrastructure and returns a
+pull request. Before you start, check that your Copilot plan includes the cloud
+agent, that `copilot-setup-steps.yml` is on your default branch (see the next
+section), and that the repository is protected.
+
+**Protect the reference on GitHub.** Local deny rules do not exist for a remote
+agent. Add a `.github/CODEOWNERS` file naming yourself for the protected paths,
+and turn on branch protection for `main` so that merging requires your review
+and a passing `r-checks` run:
+
+```
+/tests/fixtures/      @your-github-username
+/tests/make_reference.R @your-github-username
+/.github/             @your-github-username
+```
+
+Keep the two-step discipline by writing **two issues**, and assign the second
+only after you have reviewed and merged the first.
+
+**Issue 1**
+
+```text
+Title: Move the metabolic-rate summary into a function
+
+Move the summary computation in scripts/02_analysis.R into a documented
+function summarise_metabolic_rate() in scripts/functions/summary_functions.R,
+with a roxygen2 block and an argument check. Make 02_analysis.R call it.
+
+Acceptance criteria:
+- Do not add or change anything under tests/, data/ or .github/.
+- The output must be identical to the current output, including row order
+  and the existing NA value.
+```
+
+**Issue 2 (after Issue 1 is merged)**
+
+```text
+Title: Add a characterisation test for summarise_metabolic_rate()
+
+Add tests/test_summary_functions.R. It must call local_edition(3), source
+scripts/functions/load_voles.R and scripts/functions/summary_functions.R, and
+compare summarise_metabolic_rate(load_voles()) with
+tests/fixtures/metabolic_summary.rds using expect_equal().
+
+Acceptance criteria:
+- Do not create, modify or regenerate anything under tests/fixtures/, and do
+  not run tests/make_reference.R.
+- Run the tests and report the result in the pull request description.
+```
+
+Assign each issue to Copilot. When a pull request arrives:
+
+1. Open **Files changed**. Confirm that only the expected files changed. A
+   change under `tests/fixtures/` or `.github/` should not merge, and CODEOWNERS
+   will in any case require your review for it.
+2. Read the test against the four-point checklist in Step 1.
+3. Check that the `r-checks` run on the pull request passed.
+4. Pull the branch and run the test on your own machine. The agent's report
+   that "tests pass" is its claim; your run is the check.
+
+If something is wrong, comment on the pull request to ask for a revision, or
+close it. Nothing reaches `main` until you merge.
+
+### The environment the test runs in
 
 A characterisation test is only as stable as the environment it runs in. The
 column types in `load_voles()` handle the finest-grained part. The R version and
@@ -566,7 +706,7 @@ jobs:
 
 It is independent of your machine and of the agent's environment, but it is not
 tamper-proof. A pull request can change the workflow file or the reference it
-checks against. CODEOWNERS and branch protection (Step 0) are what make a
+checks against. CODEOWNERS and branch protection (above) are what make a
 passing run meaningful: you review every change to those paths before it
 merges.
 
@@ -619,102 +759,3 @@ Four requirements, each with a different failure mode:
 
 When the agent's test run and the independent `r-checks` run disagree, suspect
 the environment before you suspect the code.
-
-
-## From convention to skill
-
-The protective sentence in Path B ("do not create, regenerate or modify
-anything under tests/fixtures/") is a durable convention: it is the same for
-every refactor. Anything you retype into every prompt is a candidate for a
-skill. A skill for this workflow would say: if no reference exists, stop and
-ask the human to capture it; never create or regenerate a fixture; refactor and
-test in separate steps; compare against the human-held reference.
-
-The benefit is that you stop retyping the boundary. The hazard is the same
-sentence read the other way: once the rule lives in a skill, you no longer see
-it, and a colleague using your skill may not know that the whole trust argument
-rests on it. A skill is also only an instruction. The deny rules, CODEOWNERS and
-git checks in this block hold whether or not the agent reads it. Build the skill
-only after you have done Path A or B, and keep the "reference stays with the
-human" clause as a visible line.
-
-Write your own version first, then compare it with the example below. Store it
-in `.agents/skills/characterisation-refactor/SKILL.md`, as in the
-[instructions-and-skills block](11e-instructions-skills.qmd).
-
-:::{.callout-note collapse="true"}
-## Example: `characterisation-refactor/SKILL.md`
-
-```markdown
----
-name: characterisation-refactor
-description: >-
-  Refactors working R analysis code into documented functions under a
-  characterisation test, so the output is proved unchanged. Use when asked to
-  functionalise, refactor or tidy a script whose output must not change.
-  Not for fixing bugs or changing results.
-disable-model-invocation: true
----
-
-# Refactor under a characterisation test
-
-## The reference stays with the human
-The frozen reference in tests/fixtures/ is captured by the user, once, before
-any refactoring. A reference produced by the code under test proves nothing.
-- Never create, regenerate or modify anything under tests/fixtures/.
-- Never run tests/make_reference.R or any script that writes a fixture.
-- If no reference exists, stop and ask the user to capture one.
-
-## Procedure
-1. Present a plan: the code to move, the function name and file, and the
-   test file. Wait for the user to confirm.
-2. Refactor only. Write the function in scripts/functions/ with a roxygen2
-   block and an argument check, and make the original script call it. Do not
-   write or edit tests in this step. Stop and let the user review the diff.
-3. Test only. Write a testthat file that reads the reference from
-   tests/fixtures/ and compares it with the function's output using
-   expect_equal(). Never hard-code expected values, and never reimplement
-   the computation inside the test.
-4. Run the tests in a fresh R session and report the output verbatim.
-
-## Rules
-- If the test fails, report the difference. Never change the test, the
-  tolerance or the reference to make it pass.
-- Sort rows explicitly (dplyr::arrange()) where grouping could change their
-  order.
-- Do not change behaviour, including how missing values are handled. A
-  passing test shows the output is unchanged, not that it is correct; list
-  anything that looks wrong for the user to decide.
-```
-:::
-
-
-## Check your understanding
-
-**A characterisation test passes after a refactor. What has it established?**
-
-`r longmcq(c(
-  "That the function's output is correct",
-  answer = "That the function's output is the same as the original code's output, whether or not that output was correct",
-  "That the function is faster than the original code",
-  "That the original code had no bugs"
-))`
-
-**Why must the agent never generate the reference file?**
-
-`r longmcq(c(
-  "Because agents cannot write .rds files",
-  "Because the reference would be too large",
-  answer = "Because a reference produced by the code under test can only confirm that the code agrees with itself",
-  "Because reference files must be written in a different language"
-))`
-
-**You have added Edit deny rules for tests/fixtures/ in Claude Code. Which
-action could still change the reference?**
-
-`r longmcq(c(
-  "Asking the agent to edit the .rds file with its editing tool",
-  answer = "The agent running tests/make_reference.R through the shell",
-  "Opening the .rds file in the IDE",
-  "Running testthat::test_file() on the test file"
-))`

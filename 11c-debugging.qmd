@@ -14,15 +14,14 @@ intended, so you can judge its diagnosis against your intention rather than
 against an unknown ground truth. It can spot syntax mistakes you missed, suggest
 fixes for errors, and explain unfamiliar messages.
 
-This block uses four error types, ordered by what the debugger needs to know.
+This block uses three error types, ordered by what the debugger needs to know.
 The first is a typo that needs no data. The second needs the actual values in
-the data. The third needs ggplot2's grammar. The fourth runs cleanly, returns a
-plausible answer and is wrong; only knowledge of the expected result reveals
-it. The differences show where AI can stand in for looking up documentation,
-where it cannot stand in for inspecting the data, and where it cannot stand in
-for knowing the biology.
+the data. The third runs cleanly, returns a plausible answer and is wrong; only
+knowledge of the expected result reveals it. The differences show where AI can
+stand in for looking up documentation, where it cannot stand in for inspecting
+the data, and where it cannot stand in for knowing the biology.
 
-*⏱ ~30 minutes*
+*⏱ ~20 minutes*
 
 
 ## Setup
@@ -35,8 +34,8 @@ library(tidyverse)
 voles <- read_csv(here::here("data", "raw", "voles_metabolism.csv"))
 ```
 
-Use whichever assistant you have: inline completion, a chat window, Posit
-Assistant or Claude Code. Where a step depends on the tool, it says so.
+Use Claude Code, started from your project folder. If you have no agent, a chat
+window works for every exercise; inline completion works for Exercise 1.
 
 
 ## Exercise 1: A syntax error
@@ -55,9 +54,9 @@ R returns:
 Error in geom_barchart(): could not find function "geom_barchart"
 ```
 
-**1. Ask for a fix.** With inline completion, paste the code and the error into
-your script as a block comment, add `# Fix this code:`, and let the assistant
-suggest a continuation. With a chat window or agent, paste both and ask.
+**1. Ask for a fix.** In Claude Code or a chat window, paste the code and the
+error and ask. With inline completion, paste both into your script as a block
+comment, add `# Fix this code:`, and let the assistant suggest a continuation.
 
 ```{r}
 #| eval: false
@@ -151,9 +150,17 @@ The exercise is to ask with the diagnostic context already in place, not to ask
 the AI to diagnose blind. AI is quick at typo-spotting and syntax recall;
 `distinct()` is quicker at telling you what is in your data.
 
-**With an agent** (Posit Assistant or Claude Code), you can ask it to run the
-diagnostics itself. Ask it to show the commands and their output, and read the
-output yourself before accepting its diagnosis.
+**With Claude Code**, you can ask it to run the diagnostics itself. Ask it to
+show the commands and their output, and read the output yourself before
+accepting its diagnosis.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Posit Assistant can run the same diagnostics in your live R session. The rule
+is the same: ask it to show the commands and their output, and read the output
+yourself.
+:::
 
 `r hide("Solution")`
 
@@ -172,42 +179,7 @@ do.
 `r unhide()`
 
 
-## Exercise 3: An aesthetic-mapping error
-
-You wanted a scatter plot of post-treatment metabolic rate against
-post-treatment mass, coloured by treatment arm:
-
-```{r}
-#| eval: false
-ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
-  geom_point(color = treatment_arm) +
-  labs(title = "Metabolic rate by mass")
-```
-
-R returns an error saying that object `treatment_arm` was not found. The exact
-wording varies between ggplot2 versions.
-
-**1. Ask for a fix.** Before accepting it, write one sentence on why ggplot2
-could not find `treatment_arm`.
-
-`r hide("Solution")`
-
-```{r, eval = FALSE}
-ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
-  geom_point(aes(colour = treatment_arm)) +
-  labs(title = "Metabolic rate by mass")
-```
-
-`treatment_arm` is a column in the data, so the mapping must go inside `aes()`.
-An argument outside `aes()`, such as `color =`, expects a fixed value like
-`"red"` or `"#0072B2"`. ggplot2 looked for an object called `treatment_arm` in
-your environment, found none, and stopped. `colour` and `color` are
-interchangeable in ggplot2.
-
-`r unhide()`
-
-
-## Exercise 4: A correct-looking but wrong result
+## Exercise 3: A correct-looking but wrong result
 
 You want the mean change in body mass by treatment arm:
 
@@ -295,16 +267,27 @@ When code fails, order matters: inspect the data first, ask the AI second.
    supply it.
 
 
+:::{.callout-note}
+## Check · Reproduce · Record
+
+- **Check:** inspect the data before asking, and write one sentence explaining
+  each fix; state the expected sign and size of a result before trusting it.
+- **Reproduce:** rerun the fixed code from a fresh R session, so the fix does
+  not depend on an object left over from your experiments.
+- **Record:** nothing to log yet; the AI-use log starts in Block 4.
+:::
+
+
 ## Check your understanding
 
-**When ggplot2 reports that a column such as `treatment_arm` was not found, the
-most common cause is:**
+**A filter returns zero rows and the summary is `NaN`, with no error. What
+should you do before asking an AI?**
 
 `r longmcq(c(
-  "The data argument was supplied incorrectly",
-  answer = "A column name was used outside aes(), where ggplot2 expected a fixed value",
-  "The ggplot2 package is not loaded",
-  "The variable contains missing values"
+  "Paste the NaN output into a chat window and ask what is wrong",
+  answer = "Inspect the data, for example with distinct() on the filtered column, so you can give the assistant the evidence",
+  "Reinstall dplyr",
+  "Add na.rm = TRUE and run it again"
 ))`
 
 **Code runs without error and returns plausible numbers. What is the most
@@ -315,4 +298,55 @@ reliable first check?**
   "Run the code again to confirm the output is stable",
   answer = "Write down what the result should look like from the study design, then compare",
   "Check that there are no warnings"
+))`
+
+
+## Going further (not covered live)
+
+This material is not covered in the live session. Work through it afterwards if
+it is useful to you.
+
+### An aesthetic-mapping error
+
+This error needs ggplot2's grammar rather than the data. You wanted a scatter
+plot of post-treatment metabolic rate against post-treatment mass, coloured by
+treatment arm:
+
+```{r}
+#| eval: false
+ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
+  geom_point(color = treatment_arm) +
+  labs(title = "Metabolic rate by mass")
+```
+
+R returns an error saying that object `treatment_arm` was not found. The exact
+wording varies between ggplot2 versions.
+
+**1. Ask for a fix.** Before accepting it, write one sentence on why ggplot2
+could not find `treatment_arm`.
+
+`r hide("Solution")`
+
+```{r, eval = FALSE}
+ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
+  geom_point(aes(colour = treatment_arm)) +
+  labs(title = "Metabolic rate by mass")
+```
+
+`treatment_arm` is a column in the data, so the mapping must go inside `aes()`.
+An argument outside `aes()`, such as `color =`, expects a fixed value like
+`"red"` or `"#0072B2"`. ggplot2 looked for an object called `treatment_arm` in
+your environment, found none, and stopped. `colour` and `color` are
+interchangeable in ggplot2.
+
+`r unhide()`
+
+**When ggplot2 reports that a column such as `treatment_arm` was not found, the
+most common cause is:**
+
+`r longmcq(c(
+  "The data argument was supplied incorrectly",
+  answer = "A column name was used outside aes(), where ggplot2 expected a fixed value",
+  "The ggplot2 package is not loaded",
+  "The variable contains missing values"
 ))`

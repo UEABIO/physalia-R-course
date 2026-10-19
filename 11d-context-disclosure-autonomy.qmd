@@ -17,21 +17,19 @@ your code:
 2. **What can it do?** An assistant that advises leaves you as the filter on
    every change. An agent that acts removes that filter.
 
-This block covers both, using the three tools in this course: Claude Code in the
-terminal, Posit Assistant in RStudio or Positron, and GitHub Copilot, both in
-the browser and as an asynchronous cloud agent.
+This block covers both, using Claude Code in the terminal. If you use Posit
+Assistant instead, the collapsed boxes give the differences.
 
-*⏱ ~55 minutes*
+*⏱ ~33 minutes*
 
 
 # Part A: What can the assistant see? {.unnumbered}
 
 | Surface | Example | What it can see | Can it act? |
 |---|---|---|---|
-| Browser chat | Copilot Chat on github.com; any chat website | What you paste; on github.com, files in the repository you open it from | No |
-| Session-aware IDE assistant | Posit Assistant in RStudio or Positron | Your live R session (loaded packages, data frames, console history) and project files | Yes, in your session and files |
+| Browser chat | Any chat website | What you paste | No |
 | Terminal agent | Claude Code | Project files, and the output of any command it runs | Yes, in your files and shell |
-| Remote agent | Copilot cloud agent | The repository on GitHub, in an environment GitHub runs | Yes, on a branch; returns a pull request |
+| Session-aware IDE assistant | Posit Assistant in RStudio or Positron | Your live R session (loaded packages, data frames, console history) and project files | Yes, in your session and files |
 
 :::{.callout-note}
 **Knowing versus guessing.** An assistant can describe your data confidently
@@ -53,7 +51,7 @@ any data-specific claim against the real object.
 
 :::{.task}
 ::::{.task-header}
-The same error, three levels of context (15 minutes)
+The same error, three levels of context (10 minutes)
 ::::
 ::::{.task-container}
 
@@ -100,15 +98,22 @@ What is wrong?
 
 It should name the missing `_g` suffix.
 
-**3. No paste at all.** Load the data in your R session, run the failing code,
-then ask Posit Assistant (or Claude Code, from the project folder) only: "Why
-did my last command fail?" A session-aware assistant can read your console
-history and the data frame; Claude Code can open the script and run code to
+**3. No paste at all.** Save the failing code in a script in your project.
+Start Claude Code from the project folder and ask only: "Why does the mutate()
+call in my script fail?" Claude Code can open the script and run code to
 inspect the data.
 
 Then ask: "How do you know the column names?" Compare its answer with what you
 know it was given. If it claims to have seen something it could not have seen,
 you have found the unreliability described in the callout above.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Load the data in your R session and run the failing code, then ask Posit
+Assistant only: "Why did my last command fail?" A session-aware assistant can
+read your console history and the data frame without your pasting anything.
+:::
 
 ::::
 :::
@@ -148,31 +153,30 @@ amounts:
 your institution permits sending this kind of data to this provider; whether
 your ethics approval and data-sharing agreements allow it; and whether a
 synthetic or anonymised copy would serve instead. Tool settings that restrict
-reading (see the [enforced-controls block](11f-enforced-controls.qmd)) reduce accidental exposure, but they
-do not make an agent safe for confidential data: any command it runs that
-prints data sends that data to the provider.
+reading (see the [enforced-controls block](11f-enforced-controls.qmd)) reduce
+accidental exposure, but they do not make an agent safe for confidential data:
+any command it runs that prints data sends that data to the provider.
+
+For personal or confidential data, let the agent work on a synthetic copy and
+run the final code on the real data yourself, outside the agent's workspace.
+Hooks and project settings are also code that runs on your machine, and a
+cloned repository can carry its own; trust only repositories whose
+configuration you have read.
 :::
 
 
-## Exercise 2: Context you hold in your head
+## Context you hold in your head
 
-:::{.task}
-::::{.task-header}
-Refine an approach question (10 minutes)
-::::
-::::{.task-container}
+*Instructor demonstration, about 3 minutes.*
 
-**1.** In a fresh browser chat, ask exactly:
+A data file can supply column names and types, but not your scientific
+question or your design intent. Your instructor will ask a fresh chat this:
 
 ```
 I have a dataset with pre and post measurements. How should I analyse it?
 ```
 
-With no design and no question supplied, you will get a tour of options
-(paired tests, change scores, ANCOVA, mixed models) rather than a
-recommendation.
-
-**2.** In a new session, state the design and the question:
+and then, in a new session, this:
 
 ```
 I have 72 voles, balanced across three treatment arms (Control, Low_dose,
@@ -187,16 +191,11 @@ any inferential test. Given this design, what is a defensible primary
 analysis, and what are the main threats to its validity?
 ```
 
-**3.** Compare the answers. A data file can supply column names and types, but
-not your scientific question or your design intent. Those exist only in your
-head until you write them down.
-
-Treat even the better answer as a proposal to check against a statistics text
-or a colleague. Choosing the primary analysis is your decision, not the
-assistant's.
-
-::::
-:::
+The first returns a tour of options (paired tests, change scores, ANCOVA,
+mixed models); the second can return a recommendation, because the design and
+the question now exist outside your head. Treat even the better answer as a
+proposal to check against a statistics text or a colleague. Choosing the
+primary analysis is your decision, not the assistant's.
 
 
 # Part B: What can the assistant do? {.unnumbered}
@@ -204,15 +203,17 @@ assistant's.
 The model is the same at every level below. What changes is what it is
 permitted to do, and therefore where you sit in the loop.
 
-| Rung | What happens | Claude Code | Posit Assistant | GitHub Copilot |
-|---|---|---|---|---|
-| 0. Suggest | Completes the line you are typing | — | Next Edit Suggestions | Inline suggestions |
-| 1. Ask | Answers; changes nothing | Ask a question in `plan` mode | Ask mode | Ask in Chat |
-| 2. Plan | Proposes steps; changes nothing until you approve | `plan` mode | `/plan` | Plan mode in the IDE |
-| 3. Act, with approval | Edits files and runs commands, asking first | `default` mode | Normal mode | Agent mode, approving each tool call |
-| 4. Act, partly unsupervised | Some actions without asking | `acceptEdits` mode | Auto mode | Agent mode with auto-approval |
-| 5. Act, unsupervised | No prompts | `bypassPermissions` | YOLO mode | — |
-| 6. Act remotely | Works on a branch elsewhere; returns a pull request | — | — | Cloud agent |
+| Rung | What happens | Claude Code | Posit Assistant |
+|---|---|---|---|
+| 0. Suggest | Completes the line you are typing | — | Next Edit Suggestions |
+| 1. Ask | Answers; changes nothing | Ask a question in `plan` mode | Ask mode |
+| 2. Plan | Proposes steps; changes nothing until you approve | `plan` mode | `/plan` |
+| 3. Act, with approval | Edits files and runs commands, asking first | `default` mode | Normal mode |
+| 4. Act, partly unsupervised | Some actions without asking | `acceptEdits` mode | Auto mode |
+| 5. Act, unsupervised | No prompts | `bypassPermissions` | YOLO mode |
+
+A sixth rung, acting remotely on a branch and returning a pull request, is
+covered in *Going further* below.
 
 In Claude Code, `Shift+Tab` cycles `default`, `acceptEdits` and `plan`. In Posit
 Assistant, `/plan`, `/auto`, `/yolo` and `/restricted` switch modes. Use rungs 0
@@ -227,22 +228,23 @@ Each step up the ladder removes a moment when you would have seen the action
 before it happened.
 
 **Approval fatigue is real.** At rung 3, an approval prompt you click through
-without reading is rung 5 with extra steps. The [enforced-controls block](11f-enforced-controls.qmd) covers
-the rules that hold however tired you are.
+without reading is rung 5 with extra steps. The
+[enforced-controls block](11f-enforced-controls.qmd) covers the rules that hold
+however tired you are.
 :::
 
 Higher rungs make standing instructions matter more. In Ask mode, a convention
 the assistant does not know costs you a re-read. In agent mode, the assistant
 acts on its guess, and the guess lands in your files. That is why the
-[instructions-and-skills block](11e-instructions-skills.qmd) comes next, and why the [enforced-controls block](11f-enforced-controls.qmd)
-follows it.
+[instructions-and-skills block](11e-instructions-skills.qmd) comes next, and
+why the [enforced-controls block](11f-enforced-controls.qmd) follows it.
 
 
-## Exercise 3: The same task, rising autonomy
+## Exercise 2: The same task, rising autonomy
 
 :::{.task}
 ::::{.task-header}
-Ask, plan, act (20 minutes)
+Ask, plan, act (15 minutes)
 ::::
 ::::{.task-container}
 
@@ -250,7 +252,8 @@ Use your forked workshop repository, **committed and clean**, so every change is
 a diff you can inspect or revert. Never run an agent with uncommitted work you
 are not prepared to lose.
 
-**1. Ask.** At rung 1, ask:
+**1. Ask.** Start Claude Code in plan mode (`claude --permission-mode plan`)
+and ask:
 
 ```
 In scripts/clean_voles.R, how would I add a column mass_change equal to
@@ -259,7 +262,7 @@ mass_post_g minus mass_pre_g?
 
 Read the answer. Confirm with `git status` that nothing changed.
 
-**2. Plan.** At rung 2, give a goal that spans several files:
+**2. Plan.** Still in plan mode, give a goal that spans several files:
 
 ```
 In the voles pipeline, add a derived mass_change column (mass_post_g minus
@@ -271,9 +274,10 @@ Before approving, check that the plan names every file it will touch, does not
 touch raw data, says where the plot script goes, and says how it will check the
 pipeline runs. Amend the plan in conversation if any of that is missing.
 
-**3. Act, with approval.** Approve the plan and stay at rung 3. Read each
-approval prompt before answering it. Refuse at least one action you consider
-out of scope, and note how the agent responds.
+**3. Act, with approval.** Approve the plan and make sure you are in `default`
+mode, in which Claude Code asks before each edit or command (`Shift+Tab`
+switches modes). Read each approval prompt before answering it. Refuse at least one action you consider out of scope, and
+note how the agent responds.
 
 **4. Review.** When it finishes:
 
@@ -289,8 +293,24 @@ it.
 **5. Compare.** At which rung did you decide the most? At which rung would you
 have missed an unwanted change if you had not read the diff?
 
-The asynchronous rung, the Copilot cloud agent, is demonstrated in the
-[characterisation-test block](11i-characterisation-tests.qmd), where its pull request meets a review gate.
+**6. Start your AI-use log.** Create `docs/ai-log.md` and write the first line
+yourself, rather than asking the agent, in the form set out in Block 1:
+
+```
+2026-10-19; Claude Code (model as reported in the session); added mass_change
+and a plot script; kept both after reading the diff; rejected one
+out-of-scope edit.
+```
+
+Commit it with the agent's changes. You will add a line after each block in
+which an agent does work.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Use Ask mode for step 1, `/plan` for step 2, and Normal mode for step 3. The
+review in step 4 is the same: `git status` and `git diff` in the terminal.
+:::
 
 ::::
 :::
@@ -304,23 +324,33 @@ The asynchronous rung, the Copilot cloud agent, is demonstrated in the
 - **Posit Assistant** uses Posit AI Pass or your own provider key, including an
   Anthropic API key. In RStudio, providers are configured in the assistant's
   settings.
-- **GitHub Copilot** bills in AI credits. Copilot Free includes only limited
-  agent features. Check GitHub's plans page to see whether your plan includes
-  the cloud agent.
+- **GitHub Copilot** bills in AI credits; check GitHub's plans page for what
+  your plan includes.
 - **Your institution** may have approved some of these tools and not others.
+:::
+
+
+:::{.callout-note}
+## Check · Reproduce · Record
+
+- **Check:** `git status` and `git diff` after every agent action; the agent's
+  report that something "still runs" is a claim until you run it.
+- **Reproduce:** work only in a committed, clean repository, so every change
+  is a diff you can inspect or revert.
+- **Record:** your AI-use log starts here, in `docs/ai-log.md`.
 :::
 
 
 ## Check your understanding
 
-**What can a session-aware assistant such as Posit Assistant see that a browser
-chat cannot?**
+**You paste nothing, yet Claude Code names your columns correctly. How could it
+know them?**
 
 `r longmcq(c(
-  "Nothing; both see only what you paste",
-  answer = "Your live R session, including loaded packages, data frames in memory and console history, without your pasting anything",
-  "Every file on your computer",
-  "The data of other users of the same tool"
+  "It cannot; it must be guessing",
+  answer = "It read a file in your project or ran code that printed the data, and that output entered its context",
+  "It can see every file on your computer",
+  "It remembers your data from a previous session"
 ))`
 
 **In Claude Code's acceptEdits mode, what does the agent do without asking?**
@@ -342,12 +372,48 @@ chat cannot?**
 ))`
 
 
+## Going further (not covered live)
+
+This material is not covered in the live session. Work through it afterwards if
+it is useful to you.
+
+### GitHub Copilot and the remote rung
+
+GitHub Copilot offers the same ladder in its own surfaces. Copilot Chat on
+github.com can also see files in the repository you open it from.
+
+| Rung | GitHub Copilot |
+|---|---|
+| 0. Suggest | Inline suggestions |
+| 1. Ask | Ask in Chat |
+| 2. Plan | Plan mode in the IDE |
+| 3. Act, with approval | Agent mode, approving each tool call |
+| 4. Act, partly unsupervised | Agent mode with auto-approval |
+| 5. Act, unsupervised | — |
+| 6. Act remotely | Cloud agent |
+
+The sixth rung, the **Copilot cloud agent**, works on the repository on GitHub,
+in an environment GitHub runs. It takes a task such as an issue, works on its
+own branch and returns a pull request. Copilot Free includes only limited agent
+features; check GitHub's plans page to see whether your plan includes the cloud
+agent. The cloud agent appears in the *Going further* section of the
+[characterisation-test block](11i-characterisation-tests.qmd), where its pull
+request meets a review gate.
+
+### Exercise: context you hold in your head
+
+To try the demonstration above yourself, ask a fresh browser chat the first
+prompt, then a new session the second, and compare the answers. A data file
+can supply column names and types, but not your scientific question or your
+design intent.
+
+
 ## References
 
-- GitHub documentation: *Plans for GitHub Copilot*,
-  <https://docs.github.com/en/copilot/get-started/plans>.
 - Claude Code documentation: *Permission modes*,
   <https://code.claude.com/docs/en/permission-modes>.
 - Posit Assistant documentation: *Getting Started*,
   <https://assistant.posit.co/docs/getting-started/>; *Permissions & Trust*,
   <https://assistant.posit.co/docs/features/permissions/>.
+- GitHub documentation: *Plans for GitHub Copilot*,
+  <https://docs.github.com/en/copilot/get-started/plans>.

@@ -620,10 +620,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup">Setup</a></li>
   <li><a href="#exercise-1-a-syntax-error" id="toc-exercise-1-a-syntax-error" class="nav-link" data-scroll-target="#exercise-1-a-syntax-error">Exercise 1: A syntax error</a></li>
   <li><a href="#exercise-2-a-logic-error" id="toc-exercise-2-a-logic-error" class="nav-link" data-scroll-target="#exercise-2-a-logic-error">Exercise 2: A logic error</a></li>
-  <li><a href="#exercise-3-an-aesthetic-mapping-error" id="toc-exercise-3-an-aesthetic-mapping-error" class="nav-link" data-scroll-target="#exercise-3-an-aesthetic-mapping-error">Exercise 3: An aesthetic-mapping error</a></li>
-  <li><a href="#exercise-4-a-correct-looking-but-wrong-result" id="toc-exercise-4-a-correct-looking-but-wrong-result" class="nav-link" data-scroll-target="#exercise-4-a-correct-looking-but-wrong-result">Exercise 4: A correct-looking but wrong result</a></li>
+  <li><a href="#exercise-3-a-correct-looking-but-wrong-result" id="toc-exercise-3-a-correct-looking-but-wrong-result" class="nav-link" data-scroll-target="#exercise-3-a-correct-looking-but-wrong-result">Exercise 3: A correct-looking but wrong result</a></li>
   <li><a href="#the-debugging-checklist" id="toc-the-debugging-checklist" class="nav-link" data-scroll-target="#the-debugging-checklist">The debugging checklist</a></li>
   <li><a href="#check-your-understanding" id="toc-check-your-understanding" class="nav-link" data-scroll-target="#check-your-understanding">Check your understanding</a></li>
+  <li>
+<a href="#going-further-not-covered-live" id="toc-going-further-not-covered-live" class="nav-link" data-scroll-target="#going-further-not-covered-live">Going further (not covered live)</a>
+  <ul class="collapse">
+<li><a href="#an-aesthetic-mapping-error" id="toc-an-aesthetic-mapping-error" class="nav-link" data-scroll-target="#an-aesthetic-mapping-error">An aesthetic-mapping error</a></li>
+  </ul>
+</li>
   </ul></nav>
     </div>
 <!-- main -->
@@ -643,15 +648,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 </header><p>AI is most useful for debugging code you wrote yourself. You know what you intended, so you can judge its diagnosis against your intention rather than against an unknown ground truth. It can spot syntax mistakes you missed, suggest fixes for errors, and explain unfamiliar messages.</p>
-<p>This block uses four error types, ordered by what the debugger needs to know. The first is a typo that needs no data. The second needs the actual values in the data. The third needs ggplot2’s grammar. The fourth runs cleanly, returns a plausible answer and is wrong; only knowledge of the expected result reveals it. The differences show where AI can stand in for looking up documentation, where it cannot stand in for inspecting the data, and where it cannot stand in for knowing the biology.</p>
-<p><em>⏱ ~30 minutes</em></p>
+<p>This block uses three error types, ordered by what the debugger needs to know. The first is a typo that needs no data. The second needs the actual values in the data. The third runs cleanly, returns a plausible answer and is wrong; only knowledge of the expected result reveals it. The differences show where AI can stand in for looking up documentation, where it cannot stand in for inspecting the data, and where it cannot stand in for knowing the biology.</p>
+<p><em>⏱ ~20 minutes</em></p>
 <section id="setup" class="level2"><h2 class="anchored" data-anchor-id="setup">Setup</h2>
 <p>Load the voles data:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-label="2"></a>voles <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Use whichever assistant you have: inline completion, a chat window, Posit Assistant or Claude Code. Where a step depends on the tool, it says so.</p>
+<p>Use Claude Code, started from your project folder. If you have no agent, a chat window works for every exercise; inline completion works for Exercise 1.</p>
 </section><section id="exercise-1-a-syntax-error" class="level2"><h2 class="anchored" data-anchor-id="exercise-1-a-syntax-error">Exercise 1: A syntax error</h2>
 <p>You wrote this to count voles per treatment:</p>
 <div class="cell" data-layout-align="center">
@@ -660,7 +665,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>R returns:</p>
 <pre><code>Error in geom_barchart(): could not find function "geom_barchart"</code></pre>
-<p><strong>1. Ask for a fix.</strong> With inline completion, paste the code and the error into your script as a block comment, add <code># Fix this code:</code>, and let the assistant suggest a continuation. With a chat window or agent, paste both and ask.</p>
+<p><strong>1. Ask for a fix.</strong> In Claude Code or a chat window, paste the code and the error and ask. With inline completion, paste both into your script as a block comment, add <code># Fix this code:</code>, and let the assistant suggest a continuation.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a><span class="co"># This code gives an error:</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-label="2"></a><span class="co"># ggplot(voles, aes(x = treatment_arm)) +</span></span>
@@ -717,7 +722,23 @@ returns NaN. But voles |&gt; distinct(treatment_arm) returns
 "Control", "Low_dose", "High_dose". I think the filter fails because of
 the capitalisation. Is that the only problem?</code></pre>
 <p>The exercise is to ask with the diagnostic context already in place, not to ask the AI to diagnose blind. AI is quick at typo-spotting and syntax recall; <code>distinct()</code> is quicker at telling you what is in your data.</p>
-<p><strong>With an agent</strong> (Posit Assistant or Claude Code), you can ask it to run the diagnostics itself. Ask it to show the commands and their output, and read the output yourself before accepting its diagnosis.</p>
+<p><strong>With Claude Code</strong>, you can ask it to run the diagnostics itself. Ask it to show the commands and their output, and read the output yourself before accepting its diagnosis.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Using Posit Assistant
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Posit Assistant can run the same diagnostics in your live R session. The rule is the same: ask it to show the commands and their output, and read the output yourself.</p>
+</div>
+</div>
+</div>
 <div class="webex-solution">
 <button>
 Solution
@@ -731,32 +752,12 @@ Solution
 </div>
 <p>The value now matches the data exactly. <code>na.rm = TRUE</code> is a precaution: this dataset has no missing values in <code>mass_post_g</code>, but real biological data usually do.</p>
 </div>
-</section><section id="exercise-3-an-aesthetic-mapping-error" class="level2"><h2 class="anchored" data-anchor-id="exercise-3-an-aesthetic-mapping-error">Exercise 3: An aesthetic-mapping error</h2>
-<p>You wanted a scatter plot of post-treatment metabolic rate against post-treatment mass, coloured by treatment arm:</p>
-<div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> treatment_arm) <span class="sc">+</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>R returns an error saying that object <code>treatment_arm</code> was not found. The exact wording varies between ggplot2 versions.</p>
-<p><strong>1. Ask for a fix.</strong> Before accepting it, write one sentence on why ggplot2 could not find <code>treatment_arm</code>.</p>
-<div class="webex-solution">
-<button>
-Solution
-</button>
-<div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> treatment_arm)) <span class="sc">+</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p><code>treatment_arm</code> is a column in the data, so the mapping must go inside <code>aes()</code>. An argument outside <code>aes()</code>, such as <code>color =</code>, expects a fixed value like <code>"red"</code> or <code>"#0072B2"</code>. ggplot2 looked for an object called <code>treatment_arm</code> in your environment, found none, and stopped. <code>colour</code> and <code>color</code> are interchangeable in ggplot2.</p>
-</div>
-</section><section id="exercise-4-a-correct-looking-but-wrong-result" class="level2"><h2 class="anchored" data-anchor-id="exercise-4-a-correct-looking-but-wrong-result">Exercise 4: A correct-looking but wrong result</h2>
+</section><section id="exercise-3-a-correct-looking-but-wrong-result" class="level2"><h2 class="anchored" data-anchor-id="exercise-3-a-correct-looking-but-wrong-result">Exercise 3: A correct-looking but wrong result</h2>
 <p>You want the mean change in body mass by treatment arm:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_pre_g <span class="sc">-</span> mass_post_g) <span class="sc">|&gt;</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_pre_g <span class="sc">-</span> mass_post_g) <span class="sc">|&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>It runs. There is no error and no <code>NaN</code>. It returns something like:</p>
 <pre><code># A tibble: 3 × 2
@@ -787,9 +788,9 @@ Note
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_post_g <span class="sc">-</span> mass_pre_g) <span class="sc">|&gt;</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_post_g <span class="sc">-</span> mass_pre_g) <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>mass_change_g</code> is post minus pre. With the subtraction the right way round, the means are positive and increase with dose, matching the study design. The original ran without complaint because subtraction works in either direction; the only signal that it was wrong was knowing what the answer should be.</p>
 </div>
@@ -808,18 +809,65 @@ Solution
 <strong>After the AI suggests a fix,</strong> write one sentence explaining why the original failed. If you cannot, you have not understood the fix.</li>
 <li>
 <strong>Before trusting a result that runs without error,</strong> state what it should look like (sign, rough magnitude, expected ordering) and compare. This check depends on your knowledge of the study, which no assistant has unless you supply it.</li>
-</ol></section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
-<p><strong>When ggplot2 reports that a column such as <code>treatment_arm</code> was not found, the most common cause is:</strong></p>
-<div id="radio_MUBHLAKRCK" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_MUBHLAKRCK" value=""><span>The data argument was supplied incorrectly</span></label><label><input type="radio" autocomplete="off" name="radio_MUBHLAKRCK" value="answer"><span>A column name was used outside aes(), where ggplot2 expected a fixed value</span></label><label><input type="radio" autocomplete="off" name="radio_MUBHLAKRCK" value=""><span>The ggplot2 package is not loaded</span></label><label><input type="radio" autocomplete="off" name="radio_MUBHLAKRCK" value=""><span>The variable contains missing values</span></label>
+</ol>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Check · Reproduce · Record
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>
+<strong>Check:</strong> inspect the data before asking, and write one sentence explaining each fix; state the expected sign and size of a result before trusting it.</li>
+<li>
+<strong>Reproduce:</strong> rerun the fixed code from a fresh R session, so the fix does not depend on an object left over from your experiments.</li>
+<li>
+<strong>Record:</strong> nothing to log yet; the AI-use log starts in Block 4.</li>
+</ul>
+</div>
+</div>
+</section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
+<p><strong>A filter returns zero rows and the summary is <code>NaN</code>, with no error. What should you do before asking an AI?</strong></p>
+<div id="radio_JOCLAXQNGP" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_JOCLAXQNGP" value=""><span>Paste the NaN output into a chat window and ask what is wrong</span></label><label><input type="radio" autocomplete="off" name="radio_JOCLAXQNGP" value="answer"><span>Inspect the data, for example with distinct() on the filtered column, so you can give the assistant the evidence</span></label><label><input type="radio" autocomplete="off" name="radio_JOCLAXQNGP" value=""><span>Reinstall dplyr</span></label><label><input type="radio" autocomplete="off" name="radio_JOCLAXQNGP" value=""><span>Add na.rm = TRUE and run it again</span></label>
 </div>
 <p><strong>Code runs without error and returns plausible numbers. What is the most reliable first check?</strong></p>
-<div id="radio_SMPSJNYTVI" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_SMPSJNYTVI" value=""><span>Ask an AI whether the code is correct</span></label><label><input type="radio" autocomplete="off" name="radio_SMPSJNYTVI" value=""><span>Run the code again to confirm the output is stable</span></label><label><input type="radio" autocomplete="off" name="radio_SMPSJNYTVI" value="answer"><span>Write down what the result should look like from the study design, then compare</span></label><label><input type="radio" autocomplete="off" name="radio_SMPSJNYTVI" value=""><span>Check that there are no warnings</span></label>
+<div id="radio_TJWRBQWQHV" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_TJWRBQWQHV" value=""><span>Ask an AI whether the code is correct</span></label><label><input type="radio" autocomplete="off" name="radio_TJWRBQWQHV" value=""><span>Run the code again to confirm the output is stable</span></label><label><input type="radio" autocomplete="off" name="radio_TJWRBQWQHV" value="answer"><span>Write down what the result should look like from the study design, then compare</span></label><label><input type="radio" autocomplete="off" name="radio_TJWRBQWQHV" value=""><span>Check that there are no warnings</span></label>
+</div>
+</section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
+<p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
+<section id="an-aesthetic-mapping-error" class="level3"><h3 class="anchored" data-anchor-id="an-aesthetic-mapping-error">An aesthetic-mapping error</h3>
+<p>This error needs ggplot2’s grammar rather than the data. You wanted a scatter plot of post-treatment metabolic rate against post-treatment mass, coloured by treatment arm:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> treatment_arm) <span class="sc">+</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>R returns an error saying that object <code>treatment_arm</code> was not found. The exact wording varies between ggplot2 versions.</p>
+<p><strong>1. Ask for a fix.</strong> Before accepting it, write one sentence on why ggplot2 could not find <code>treatment_arm</code>.</p>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> treatment_arm)) <span class="sc">+</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>treatment_arm</code> is a column in the data, so the mapping must go inside <code>aes()</code>. An argument outside <code>aes()</code>, such as <code>color =</code>, expects a fixed value like <code>"red"</code> or <code>"#0072B2"</code>. ggplot2 looked for an object called <code>treatment_arm</code> in your environment, found none, and stopped. <code>colour</code> and <code>color</code> are interchangeable in ggplot2.</p>
+</div>
+<p><strong>When ggplot2 reports that a column such as <code>treatment_arm</code> was not found, the most common cause is:</strong></p>
+<div id="radio_GYSZHUBBJU" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_GYSZHUBBJU" value=""><span>The data argument was supplied incorrectly</span></label><label><input type="radio" autocomplete="off" name="radio_GYSZHUBBJU" value="answer"><span>A column name was used outside aes(), where ggplot2 expected a fixed value</span></label><label><input type="radio" autocomplete="off" name="radio_GYSZHUBBJU" value=""><span>The ggplot2 package is not loaded</span></label><label><input type="radio" autocomplete="off" name="radio_GYSZHUBBJU" value=""><span>The variable contains missing values</span></label>
 </div>
 
 
-</section></main><!-- /main --><script>
+</section></section></main><!-- /main --><script>
 
 /* update total correct if #webex-total_correct exists */
 update_total_correct = function() {

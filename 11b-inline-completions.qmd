@@ -15,7 +15,10 @@ Esc, or ignore it by carrying on typing. This block teaches what context inline
 completion uses, and the practical consequence: what you write immediately
 before the cursor matters more than anything else.
 
-*⏱ ~35 minutes*
+Claude Code does not offer inline completion, so this is the one block where
+GitHub Copilot is the main tool.
+
+*⏱ ~25 minutes*
 
 
 ## Setup
@@ -23,12 +26,10 @@ before the cursor matters more than anything else.
 Use **one** completion provider at a time during this block, so you know which
 tool produced each suggestion.
 
-- **RStudio:** either GitHub Copilot (enable it in RStudio's options and sign
-  in to GitHub) or Posit AI Next Edit Suggestions (from the Posit Assistant
-  toolbar button; requires a Posit AI account).
-- **Positron:** completions come from Posit AI Next Edit Suggestions or GitHub
-  Copilot. See Positron's completions documentation for how to choose and
-  toggle the provider.
+- **RStudio:** enable GitHub Copilot in RStudio's options and sign in to
+  GitHub.
+- **Positron:** see Positron's completions documentation for how to choose
+  GitHub Copilot as the provider.
 - **VS Code:** Copilot's AI features are built in. Select **Use AI Features**
   from the Copilot icon in the Status Bar and sign in with GitHub.
 
@@ -38,33 +39,44 @@ ghost text such as `mean(1:100)`. If nothing appears, press Enter to move to the
 next line and wait.
 
 Copilot Free allows a limited number of completions per month (2,000 at the
-time of writing); paid Copilot plans and Posit AI do not meter completions.
-Completions send the code around your cursor to the provider, so the disclosure
-points in the [context-and-disclosure block](11d-context-disclosure-autonomy.qmd) apply here too.
+time of writing); paid Copilot plans do not meter completions. Completions send
+the code around your cursor to the provider, so the disclosure points in the
+[context-and-disclosure block](11d-context-disclosure-autonomy.qmd) apply here
+too.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+In RStudio and Positron you can use Posit AI Next Edit Suggestions instead of
+Copilot. In RStudio, turn it on from the Posit Assistant toolbar button; it
+requires a Posit AI account. In Positron, choose it as the completions
+provider. Posit AI does not meter completions.
+:::
 
 
 ## The context principle
 
-What an inline suggestion is based on depends on the provider:
+GitHub Copilot works mainly from the current file: the code above and below the
+cursor, and especially the comment immediately before it. In Positron and VS
+Code it may also draw on other open tabs. It does not see your R session.
 
-- **GitHub Copilot** works mainly from the current file: the code above and
-  below the cursor, and especially the comment immediately before it. In
-  Positron and VS Code it may also draw on other open tabs. It does not see
-  your R session.
-- **Posit AI Next Edit Suggestions** also sees your live R session: the columns
-  of loaded data frames, functions you have defined and packages you have
-  loaded.
+The practical consequence: the comment immediately before your cursor, and the
+code above it, have the largest effect on what you get.
 
-The practical consequence for both: the comment immediately before your cursor,
-and the code above it, have the largest effect on what you get. A
-session-aware provider adds one more lever: what you have loaded.
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Posit AI Next Edit Suggestions also sees your live R session: the columns of
+loaded data frames, functions you have defined and packages you have loaded.
+A session-aware provider therefore adds one more lever: what you have loaded.
+:::
 
 
 ## Activity: The context demonstration
 
 :::{.task}
 ::::{.task-header}
-The context demonstration
+The context demonstration (10 minutes)
 ::::
 ::::{.task-container}
 
@@ -73,9 +85,6 @@ its column names are unlikely to appear in any model's training data. The
 columns are `subject_id`, `sex`, `treatment_arm`, `mass_pre_g`, `mass_post_g`
 and `metabolic_rate_post`. The data record a hypothetical metabolism trial in
 72 voles, with three treatment arms and two sexes.
-
-::::
-:::
 
 **1. No context.** Restart R so that nothing is loaded. Open a blank R script,
 type only this comment, and wait:
@@ -128,50 +137,60 @@ voles |>
 The exact form varies between people and sessions; that variation is itself
 part of the lesson.
 
-**3. Posit AI only: context in the session.** Run the lines from step 2 so that
-`voles` exists in your session. Then open a **new, blank** script, type only the
-comment from step 1, and wait. If the suggestion now uses the real column
-names, it came from your session, not from the file.
+How different were the two outputs? Did the second use column names that exist
+in the data? Did the model compute the change in the right direction (post
+minus pre)?
 
-How different were the outputs? Did the later versions use column names that
-exist in the data? Did the model compute the change in the right direction
-(post minus pre)?
+::::
+:::
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+**3. Context in the session.** With Posit AI Next Edit Suggestions, run the
+lines from step 2 so that `voles` exists in your session. Then open a **new,
+blank** script, type only the comment from step 1, and wait. If the suggestion
+now uses the real column names, it came from your session, not from the file.
+:::
 
 
 ## Activity: Build a small analysis
 
 :::{.task}
 ::::{.task-header}
-Build a small analysis
+Build a small analysis (10 minutes)
 ::::
 ::::{.task-container}
 
-In the script from step 2, drive inline completion through a four-step
-analysis. Write the comment for each step first, then accept, reject or modify
-the suggestion.
+In the script from step 2, drive inline completion through two analysis steps.
+Write the comment for each step first, then accept, reject or modify the
+suggestion.
 
-**1.** Filter to subjects with non-missing `metabolic_rate_post` and create a
-derived variable `mass_change_g`.
-
-**2.** Produce a summary table of the mean and standard deviation of
+**1.** Produce a summary table of the mean and standard deviation of
 `mass_change_g` by `treatment_arm` and `sex`, with the number of observations
-per cell.
+per cell. (Create `mass_change_g` first if your script does not have it.)
 
-**3.** Fit a linear model of `metabolic_rate_post` on `treatment_arm` and `sex`.
-Inspect the coefficients.
-
-**4.** Produce one plot relating `mass_change_g` to `metabolic_rate_post`,
+**2.** Produce one plot relating `mass_change_g` to `metabolic_rate_post`,
 coloured by `treatment_arm`.
 
 For each step, record the comment you wrote, the suggested code, and one line
 saying whether you accepted, modified or rejected it. The point of the record is
 to make you notice when you accepted something without inspecting it.
 
-Work in pairs. Each partner attempts steps 2 and 4 independently before
-comparing. Comparison usually surfaces different suggestions, different
-acceptance decisions and, often, different bugs.
-
 ::::
+:::
+
+
+:::{.callout-note}
+## Check · Reproduce · Record
+
+- **Check:** accept, modify or reject every suggestion deliberately; your
+  record of each decision is what makes you notice an unexamined acceptance.
+- **Reproduce:** a suggestion that names your columns correctly came from
+  context in the file or session, so the same comment in a blank script will
+  not reproduce it.
+- **Record:** nothing to log yet; the AI-use log starts in Block 4, once an
+  agent starts doing work.
 :::
 
 
@@ -196,3 +215,28 @@ Suggestions, but not with Copilot. The most likely reason is:**
   "Copilot cannot read R code",
   "The column names were in Posit AI's training data"
 ))`
+
+
+## Going further (not covered live)
+
+This material is not covered in the live session. Work through it afterwards if
+it is useful to you.
+
+### The full four-step analysis
+
+The live activity uses two of four steps. The full sequence, again writing the
+comment for each step before accepting, rejecting or modifying the suggestion:
+
+1. Filter to subjects with non-missing `metabolic_rate_post` and create a
+   derived variable `mass_change_g`.
+2. Produce a summary table of the mean and standard deviation of
+   `mass_change_g` by `treatment_arm` and `sex`, with the number of
+   observations per cell.
+3. Fit a linear model of `metabolic_rate_post` on `treatment_arm` and `sex`.
+   Inspect the coefficients.
+4. Produce one plot relating `mass_change_g` to `metabolic_rate_post`,
+   coloured by `treatment_arm`.
+
+If you can, work in pairs. Each partner attempts steps 2 and 4 independently
+before comparing. Comparison usually surfaces different suggestions, different
+acceptance decisions and, often, different bugs.

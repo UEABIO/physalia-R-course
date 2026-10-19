@@ -29,18 +29,16 @@ You will work on a version of the voles data with errors planted in it. Your
 instructor holds the answer key, so at the end you can measure what your
 pipeline caught and what it missed.
 
-*⏱ ~75 minutes*
+*⏱ ~54 minutes*
 
 :::{.callout-important}
-**Why not simply ask the AI to clean the data?** In a 2025 study that gave
-several language models deliberately polluted tables, the models generally
-found missing values in standard formats but struggled with codes such as `-1`,
-rarely detected non-exact duplicates, and performed worse as the proportion of
-errors rose (Spreafico et al., 2025). The study gave the models a 100-row
-sample as text in the prompt rather than asking an agent to write and run
-code, and the models are older than those you will use, so treat it as a map
-of where to look, not a measure of current tools. The error classes it
-identifies are the ones planted in this block's data.
+**Why not simply ask the AI to clean the data?** In a 2025 study, language
+models given deliberately polluted tables found missing values in standard
+formats but struggled with codes such as `-1`, rarely detected non-exact
+duplicates, and did worse as errors increased (Spreafico et al., 2025). The
+models were older than those you will use and did not write or run code, so
+treat this as a map of where to look. Those error classes are planted in this
+block's data.
 :::
 
 
@@ -64,7 +62,7 @@ repo/
 │   ├── 01_clean.R                     written by the agent in Step 4
 │   ├── 02_validate.R                  provided
 │   ├── 03_audit_cleaning.R            provided
-│   └── functions/validate_voles.R     provided, or written in Step 3
+│   └── functions/validate_voles.R     provided
 └── tests/
     ├── fixtures/raw_checksum.txt      you create this in Step 0
     └── test_cleaning.R                provided
@@ -78,25 +76,29 @@ download the skill and unzip it into `.agents/skills/`:
 skill_download_button("clean-with-codebook")
 ```
 
-The skill folder is stored once, in `.agents/skills/`, which Posit Assistant
-and GitHub Copilot both read. Claude Code reads `.claude/skills/` and follows
-symbolic links, so a link avoids keeping two copies. On macOS or Linux, from the
-repository root:
+Claude Code reads skills from `.claude/skills/`, so copy the
+`clean-with-codebook` folder there as well. On macOS or Linux you can link it
+instead, so there is only one copy to keep in step:
 
 ```bash
 mkdir -p .claude/skills
 ln -s ../../.agents/skills/clean-with-codebook .claude/skills/clean-with-codebook
 ```
 
-On Windows, symbolic links in git need extra configuration. Copying the folder
-is acceptable, but you then have two copies to keep in step.
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Posit Assistant reads `.agents/skills/` directly, so no copy or link is
+needed.
+:::
 
 
 ## Step 0: Lock the raw data
 
 Everything later depends on the raw file being exactly what the data provider
-sent. Three controls protect it, and each covers a different route. The
-[enforced-controls block](11f-enforced-controls.qmd) explains each in more depth.
+sent. The template comes with the controls from the
+[enforced-controls block](11f-enforced-controls.qmd) already in place; here you
+add a checksum and confirm the rest are working.
 
 **1. Record a checksum and commit it.** Run this once, yourself:
 
@@ -109,57 +111,17 @@ writeLines(
 )
 ```
 
-Add this line to `.gitattributes` so git does not convert line endings, which
-would change the checksum on Windows:
+**2. Confirm the deny rules are active.** In Claude Code, run `/permissions`.
+The rules from the template's `.claude/settings.json` should be listed,
+including `Edit(/data/raw/**)`.
 
-```
-data/raw/** -text
-```
+**3. Test the control, do not assume it.** Ask Claude Code to add a comment
+line to the top of `data/raw/voles_raw.csv`. It should be refused. Then run
+the tests (Step 5) and confirm the checksum test still passes.
 
-**2. Deny edits in the agent's configuration.** For Claude Code, the project
-file `.claude/settings.json` contains:
-
-```json
-{
-  "permissions": {
-    "deny": [
-      "Edit(/data/raw/**)",
-      "Edit(/docs/codebook.csv)",
-      "Edit(/docs/data_note.md)",
-      "Edit(/scripts/02_validate.R)",
-      "Edit(/scripts/03_audit_cleaning.R)",
-      "Edit(/scripts/functions/**)",
-      "Edit(/tests/**)"
-    ]
-  }
-}
-```
-
-A leading `/` anchors each pattern to the project root. Run `/permissions` to
-confirm the rules are active. Posit Assistant has no documented path rules for
-file edits; use the guard hook from the [enforced-controls block](11f-enforced-controls.qmd) instead.
-
-**3. Test the control, do not assume it.** Ask the agent to add a comment line
-to the top of `data/raw/voles_raw.csv`. It should be refused. Then run the
-tests (Step 5) and confirm the checksum test still passes.
-
-:::{.callout-warning}
-**What each control covers.** The permission rule blocks the agent's
-file-editing tools. It does not cover commands the agent runs through the shell
-or R: an R script that the agent runs is a different route. The checksum test
-catches a change made by *any* route, but only after the fact. On the Copilot
-cloud agent, where you have no local permission file, the checksum test running
-in CI plus branch protection is your control. Use both where you can: one
-prevents, the other detects.
-:::
-
-:::{.callout-note}
-**Data governance.** A deny rule on *editing* does not stop data reaching the
-model provider. If the agent runs a script that prints data, those values enter
-its context. For personal or confidential data, let the agent work on a
-synthetic copy and run the final script on the real data yourself, outside the
-agent's workspace.
-:::
+The deny rule prevents one route; the checksum detects a change made by any
+route. *Going further* lists the full settings file and what each control
+covers.
 
 
 ## Step 1: Profile the raw data (R, not AI)
@@ -217,6 +179,11 @@ Keep the output. It is the factual input to Step 2.
 
 ## Step 2: Draft the codebook, then audit it
 
+The codebook is the data dictionary you wrote for the README on Day 2
+([Fixing it with structure, cleaning and a README](06-reproducibility.qmd#repro-fix)),
+with machine-readable rules added: valid ranges, missing-value codes and label
+mappings that both the cleaning skill and the validation rules can read.
+
 :::{.task}
 ::::{.task-header}
 Draft and audit the codebook
@@ -266,27 +233,18 @@ metabolic_rate_post,double,,5,30,-1,<unit>,data note (range from equipment)
 `r unhide()`
 
 
-## Step 3: Write the validation rules (independently)
+## Step 3: Run the validation rules
 
 Validation rules are transcribed from the codebook, not from the cleaning
 script. If the same session writes both, a single misunderstanding (for
 example, that `-1` is a valid reading) passes both.
 
-Either use the provided `scripts/functions/validate_voles.R`, or open a **new**
-session with no access to any cleaning code and prompt:
+The template provides `scripts/functions/validate_voles.R`, written from the
+codebook by a person. It uses the pointblank package: each line is one rule,
+and `interrogate()` reports how many rows break it. You do not need to write
+pointblank code today.
 
-```
-Using only docs/codebook.csv, write scripts/functions/validate_voles.R
-containing a function validate_voles(data, label) that builds a pointblank
-agent with one validation step per codebook rule, and interrogates it. Also
-write voles_col_types(), returning readr column types for the codebook
-columns, with character as the default for anything else. Do not read or write
-any other file.
-```
-
-Compare what it writes with the reference:
-
-`r hide("Reference version")`
+`r hide("The provided version")`
 
 ```{r}
 #| eval: false
@@ -379,14 +337,20 @@ Plan, review, then execute
 ::::
 ::::{.task-container}
 
-**1.** With your repository committed and clean, switch your assistant to plan
-mode (in Posit Assistant, `/plan`; in Claude Code, plan mode) and invoke the
-skill:
+**1.** With your repository committed and clean, start Claude Code in plan
+mode (`Shift+Tab` until the mode shows `plan`, or
+`claude --permission-mode plan`) and invoke the skill:
 
 ```
 /clean-with-codebook
 Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.
 ```
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Switch to plan mode with `/plan`, then invoke the skill with the same prompt.
+:::
 
 **2. Review the plan before approving it.** Check that:
 
@@ -404,7 +368,7 @@ something. A well-behaved agent should stop at least once.
 
 ## Step 5: Check the result
 
-Four checks, each catching something the others cannot.
+Five checks, each catching something the others cannot.
 
 **1. Validation on clean data should pass.** Run `validate_voles()` on
 `data/derived/voles_clean.csv`.
@@ -515,7 +479,25 @@ record. If a row appears, inspect it; a difference in number formatting is
 harmless, a changed value is not. For the ten sampled changes, open the raw file
 yourself and confirm each one.
 
-**4. Grade the pipeline against the planted errors.** Your instructor will now
+**4. Reproduce it without the agent.** Your `AGENTS.md` and the skill asked for
+a script that runs in a fresh R session with the packages in `renv.lock`.
+Check, rather than trust. Commit the outputs, then in the terminal:
+
+```bash
+Rscript -e "renv::status()"
+Rscript scripts/01_clean.R
+git status --short data/derived
+```
+
+`renv::status()` should report that the project is in a consistent state. If
+the agent installed or used a package that is not in `renv.lock`, it says so;
+decide whether you want the package, then update the lockfile with
+`renv::snapshot()` as on [Day 1](01-projects.qmd). `Rscript` runs the script in
+a fresh session, and the same script on the same raw data must write the same
+outputs, so `git status` should show no changes. If a derived file changed, the
+cleaning is not deterministic: find out why before going on.
+
+**5. Grade the pipeline against the planted errors.** Your instructor will now
 release the answer key. For each planted error, record:
 
 | Planted error | Failed validation on raw? | Handled as intended? | In the log? |
@@ -537,9 +519,21 @@ data is a hole in your codebook, whatever the cleaning did.
    confirms a kilogram entry, the correction becomes a codebook rule you add,
    not something the script infers.
 3. Which of your checks would have caught a script that set every mass to `NA`?
-4. Once the clean output is right, freeze it as a reference, as in the
-   [characterisation-test block](11i-characterisation-tests.qmd), so a later refactor of `01_clean.R` must
-   reproduce it exactly.
+
+
+:::{.callout-note}
+## Check · Reproduce · Record
+
+- **Check:** validation rules transcribed from the codebook, not from the
+  cleaning code; tests; the log audited against the raw file; the answer key.
+- **Reproduce:** `renv::status()` and a fresh `Rscript` run that writes
+  identical outputs. Once the clean output is right, freeze it as a reference,
+  as in the [characterisation-test block](11i-characterisation-tests.qmd), so a
+  later refactor of `01_clean.R` must reproduce it exactly.
+- **Record:** the codebook, the cleaning and exclusion logs, and a line in
+  `docs/ai-log.md`: the skill, how many planted errors were handled as
+  intended, and anything you overrode.
+:::
 
 
 ## Check your understanding
@@ -572,6 +566,75 @@ the most likely explanation in this exercise?**
   "The checksum prevents edits; the deny rule only reports them",
   "The deny rule works on GitHub; the checksum works only locally"
 ))`
+
+
+## Going further (not covered live)
+
+This material is not covered in the live session. Work through it afterwards
+if it is useful to you.
+
+### The Step 0 controls in full
+
+**Line endings.** The template's `.gitattributes` contains this line, so git
+does not convert line endings, which would change the checksum on Windows:
+
+```
+data/raw/** -text
+```
+
+**Deny rules.** The template's `.claude/settings.json` contains:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Edit(/data/raw/**)",
+      "Edit(/docs/codebook.csv)",
+      "Edit(/docs/data_note.md)",
+      "Edit(/scripts/02_validate.R)",
+      "Edit(/scripts/03_audit_cleaning.R)",
+      "Edit(/scripts/functions/**)",
+      "Edit(/tests/**)"
+    ]
+  }
+}
+```
+
+A leading `/` anchors each pattern to the project root. Posit Assistant has no
+documented path rules for file edits; use the guard hook from the
+[enforced-controls block](11f-enforced-controls.qmd) instead.
+
+:::{.callout-warning}
+**What each control covers.** The permission rule blocks the agent's
+file-editing tools. It does not cover commands the agent runs through the shell
+or R: an R script that the agent runs is a different route. The checksum test
+catches a change made by *any* route, but only after the fact. On the Copilot
+cloud agent, where you have no local permission file, the checksum test running
+in CI plus branch protection is your control. Use both where you can: one
+prevents, the other detects.
+:::
+
+**Data governance.** A deny rule on editing does not stop data reaching the
+model provider; see
+[the context-and-disclosure block](11d-context-disclosure-autonomy.qmd).
+
+### Write the validation rules independently
+
+Instead of using the provided `validate_voles.R`, you can have the rules
+written by a **new** session with no access to any cleaning code:
+
+```
+Using only docs/codebook.csv, write scripts/functions/validate_voles.R
+containing a function validate_voles(data, label) that builds a pointblank
+agent with one validation step per codebook rule, and interrogates it. Also
+write voles_col_types(), returning readr column types for the codebook
+columns, with character as the default for anything else. Do not read or write
+any other file.
+```
+
+Compare what it writes with the provided version in Step 3. A rule it missed,
+or a range it took from the data rather than the codebook, is the kind of
+error the separate session is meant to expose.
 
 
 ## References
