@@ -10,11 +10,11 @@ library(webexercises)
 Installation details change. If a command here fails, check the
 [Claude Code setup page](https://code.claude.com/docs/en/setup) first.
 
-Claude Code is an AI agent that runs in a terminal. It reads the files in the
+Claude Code is an AI `r glossary("agent")` that runs in a terminal. It reads the files in the
 folder you start it from, edits them, and runs commands, including R scripts,
 asking your permission as it goes. Most participants at this level have not
 used a terminal much. This chapter covers the minimum you need, and ends with
-a check that everything works before the first session.
+a check that everything works before the workshop day.
 
 *⏱ ~30 minutes, best done before the workshop*
 
@@ -24,9 +24,8 @@ a check that everything works before the first session.
 1. **Are you permitted to use it on this work?** Claude Code sends the files it
    reads, and the output of commands it runs, to Anthropic. Check your
    institution's policy, and your ethics approval and data agreements if you
-   will use it near research data. The
-   [context-and-disclosure block](11d-context-disclosure-autonomy.qmd) covers
-   this in detail.
+   will use it near research data.
+   [Block 4](11d-context-disclosure-autonomy.qmd) covers this in detail.
 2. **Which account will you use?** You need one of:
    - a **Claude Pro or Max subscription**, signing in with your Claude.ai
      account;
@@ -56,7 +55,8 @@ Or use your system's terminal: **Terminal** on macOS, **PowerShell** on Windows.
 ## Step 2: Check git and R are reachable
 
 Claude Code runs R by calling `Rscript`, and it works best in a git repository.
-In the terminal, run:
+
+**In the terminal:**
 
 ```bash
 git --version
@@ -75,25 +75,36 @@ Both should print a version number.
 
 ## Step 3: Install Claude Code
 
-**macOS, Linux, or WSL on Windows:**
+**macOS, Linux, or WSL on Windows.** In the terminal:
 
 ```bash
 curl -fsSL https://claude.ai/install.sh | bash
 ```
 
-**Windows (Command Prompt):**
+**Windows, in PowerShell** (the terminal Step 1 suggests):
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+**Windows, in Command Prompt** (alternative):
 
 ```bash
 curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
 ```
 
-**macOS with Homebrew** (alternative):
+If you see `The token '&&' is not a valid statement separator`, you ran the
+Command Prompt line in PowerShell: use the PowerShell line instead.
+
+**macOS with Homebrew** (alternative). In the terminal:
 
 ```bash
 brew install --cask claude-code
 ```
 
-Open a **new** terminal, then confirm the installation:
+Open a **new** terminal, then confirm the installation.
+
+**In the terminal:**
 
 ```bash
 claude --version
@@ -103,9 +114,80 @@ The native installer keeps Claude Code up to date in the background. Homebrew
 and other package-manager installations need to be updated by hand.
 
 
+## Before you sign in: prepare your workshop repository
+
+Set-up takes time on the day, so do these once beforehand. Step 6 then checks
+the result.
+
+1. **Fork the workshop template** on GitHub, clone your fork, and open it as a
+   project in your IDE.
+2. **Restore the packages.** In the R console, run `renv::restore()` once. It
+   installs the package versions recorded in the template's
+   `r glossary("lockfile")`, and can take several minutes.
+3. **Check the skills folder.** Claude Code reads `r glossary("skill", "skills")` from
+   `.claude/skills/`.
+   If your fork has skill folders in `.agents/skills/` but they are not already
+   present in `.claude/skills/`, copy each skill folder across, so that, for
+   example, `.claude/skills/clean-with-codebook/SKILL.md` exists. Copying is
+   the simplest route and works on every system. On macOS or Linux you can
+   instead create a `r glossary("symbolic link")`, as
+   [Block 5](11e-instructions-skills.qmd) describes, so there is only one copy
+   to keep up to date.
+4. **Commit**, so that your fork has no uncommitted changes when the day
+   starts.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Posit Assistant needs no terminal install: it is built into RStudio and
+Positron, and you configure it there. It reads skills from `.agents/skills/`
+directly, so step 3 is not needed. Check that your account or provider key
+works before the day; the access note in
+[Block 4](11d-context-disclosure-autonomy.qmd) lists the options.
+:::
+
+
+## Your workshop repository
+
+Every block from Block 4 onwards works in this one repository. The template
+ships most of it; the files marked *you* are created during the day.
+
+```
+data/
+  raw/voles_metabolism.csv     Blocks 2–5, 9 and 10 (one deliberate NA)
+  raw/voles_raw.csv            Block 7 (errors planted by your instructor)
+  derived/                     written by Block 7's cleaning
+docs/
+  data_note.md                 the data provider's note (Block 7)
+  codebook.csv                 you, Block 7
+  ai-log.md                    you, from Block 4
+scripts/
+  explore_voles.R              Block 4 (exploratory, so unnumbered)
+  00_profile.R … 03_audit_cleaning.R   Block 7: the cleaning pipeline
+  04_load_data.R, 05_analysis.R        Block 9: the analysis
+  functions/                   load_voles.R, validate_voles.R, and
+                               summary_functions.R (Block 9)
+tests/
+  make_reference.R, test_cleaning.R
+  fixtures/                    the references you capture (Blocks 7 and 9)
+AGENTS.md, CLAUDE.md           you, Block 5
+.agents/skills/, .claude/skills/   skills (copies of the same folders)
+.claude/settings.json          the deny rules (read in Block 6)
+renv.lock                      the package versions
+```
+
+`.claude/settings.json` ships with the template. It holds the
+`r glossary("deny rule", "deny rules")` that protect the raw data, the codebook, the checks and the references. You read and
+test it in [Block 6](11f-enforced-controls.qmd) rather than writing it.
+Scripts are numbered in the order they run, which is what the README in
+Block 10 reports as the run order.
+
+
 ## Step 4: Sign in
 
-In your project folder, start Claude Code:
+Start Claude Code from your workshop repository's root folder.
+
+**In the terminal:**
 
 ```bash
 cd path/to/your/workshop-repository
@@ -119,8 +201,9 @@ Claude Code.
 :::{.callout-warning}
 **API keys.** If you use a Console API key, set it as the environment variable
 `ANTHROPIC_API_KEY`. Many R users keep keys in `.Renviron`. Never commit that
-file. Add it to `.gitignore`, and add the deny rule `Read(/.Renviron)` from the
-[enforced-controls block](11f-enforced-controls.qmd) so the agent cannot read it.
+file. Add it to `.gitignore`. The template's settings already include the deny
+rule `Read(/.Renviron)` (see [Block 6](11f-enforced-controls.qmd)), but it covers
+only a `.Renviron` in the project folder, not the one in your home folder.
 
 If `ANTHROPIC_API_KEY` is already set for another tool, such as Posit
 Assistant, Claude Code may use it instead of your subscription, and you will be
@@ -132,53 +215,24 @@ billed per request. Check which credential is in use under `/config`.
 
 | To... | Do this |
 |---|---|
-| Start in your project | `cd` to the project folder, then `claude` |
+| Start in your workshop repository | `cd` to its root folder, then `claude` |
 | Change how much it may do without asking | `Shift+Tab` cycles `default` → `acceptEdits` → `plan` |
 | Start in read-only planning mode | `claude --permission-mode plan` |
 | See which permission rules are active | `/permissions` |
 | Leave | `/exit`, or close the terminal |
 
-Every time it wants to edit a file or run a command in `default` mode, Claude
-Code asks first. Read each request before you approve it. The autonomy ladder
-in the [context-and-disclosure block](11d-context-disclosure-autonomy.qmd)
-explains what each mode allows.
+Each of these settings is a `r glossary("permission mode")`. Every time it
+wants to edit a file or run a command in `default` mode, Claude Code asks
+first. Read each request before you approve it. The autonomy ladder in
+[Block 4](11d-context-disclosure-autonomy.qmd) explains what each mode allows,
+and the full
+[Claude Code quick reference](11-AI-programming-integrated.qmd#cc-quick-reference)
+in Block 1 adds how to interrupt it, approve a plan and start a new
+conversation.
 
-Always start Claude Code from the project's root folder. It works on the folder
-it starts in, and your project settings in `.claude/settings.json` are found
-relative to it.
-
-
-## Before the workshop day: prepare the repository
-
-Set-up takes time on the day, so do these once beforehand. Step 6 then checks
-the result.
-
-1. **Fork the workshop template** on GitHub, clone your fork, and open it as a
-   project in your IDE.
-2. **Restore the packages.** In the R console, run `renv::restore()` once. It
-   installs the package versions the template locks, and can take several
-   minutes.
-3. **Check the skills folder.** Claude Code reads skills from `.claude/skills/`.
-   If your fork has skill folders in `.agents/skills/` but they are not already
-   present in `.claude/skills/`, copy each skill folder across, so that, for
-   example, `.claude/skills/clean-with-codebook/SKILL.md` exists. Copying is
-   the simplest route and works on every system. On macOS or Linux you can
-   instead create a symbolic link, as the
-   [instructions-and-skills block](11e-instructions-skills.qmd) describes, so
-   there is only one copy to keep up to date.
-4. **Commit**, so that your fork has no uncommitted changes when the day
-   starts.
-
-:::{.callout-tip collapse="true"}
-## Using Posit Assistant instead
-
-Posit Assistant needs no terminal install: it is built into RStudio and
-Positron, and you configure it there. It reads skills from `.agents/skills/`
-directly, so step 3 is not needed. Check that your account or provider key
-works before the day; the access note in the
-[context-and-disclosure block](11d-context-disclosure-autonomy.qmd) lists the
-options.
-:::
+Always start Claude Code from your workshop repository's root folder. It works
+on the folder it starts in, and your project settings in
+`.claude/settings.json` are found relative to it.
 
 
 ## Step 6: Check everything works
@@ -189,26 +243,31 @@ Pre-workshop check (10 minutes)
 ::::
 ::::{.task-container}
 
-Do this in your forked workshop repository, with no uncommitted changes.
+Do this in your workshop repository, with no uncommitted changes.
 
-**1. Read-only.** Start in plan mode:
+**1. Read-only.** Start in `plan` mode.
+
+**In the terminal:**
 
 ```bash
 claude --permission-mode plan
 ```
 
-Ask:
+**Prompt (Claude Code):**
 
-```
+```text
 Describe the structure of this repository and what each top-level folder
 contains. Do not change anything.
 ```
 
-Exit and run `git status`. Nothing should have changed.
+Type `/exit`, then run `git status` in the terminal. Nothing should have
+changed.
 
-**2. R is reachable.** Start `claude` in default mode and ask:
+**2. R is reachable.** Start `claude` again, in `default` mode.
 
-```
+**Prompt (Claude Code):**
+
+```text
 Run Rscript -e "sessionInfo()" and show me the output.
 ```
 
@@ -216,10 +275,10 @@ Approve the command when asked. You should see your R version and loaded
 packages. If Claude Code reports that `Rscript` was not found, return to
 Step 2.
 
-**3. Project settings load.** Run `/permissions`. If the repository already
-contains `.claude/settings.json` (it will after the
-[enforced-controls block](11f-enforced-controls.qmd)), its deny rules should
-be listed.
+**3. Project settings load.** Type `/permissions`. The deny rules from
+`.claude/settings.json`, which ships with the template, should be listed. If
+the list is empty, check that you started `claude` from the repository's root
+folder.
 
 **4. Bring evidence.** Copy the output of steps 2 and 3 into a text file and
 bring it to the workshop. If any step failed, note the error message exactly.
@@ -239,6 +298,14 @@ bring it to the workshop. If any step failed, note the error message exactly.
 
 The later blocks give instructions for Claude Code, with differences for Posit
 Assistant in collapsed boxes.
+
+
+## Glossary
+
+```{r}
+#| echo: false
+glossary_table()
+```
 
 
 ## References

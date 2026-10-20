@@ -15,10 +15,11 @@ refactor but the verification: a change that "improves" code can quietly alter
 its output, so how do you confirm the function still does what the script did?
 
 You already know the method from the
-[tidy-evaluation chapter](05-tidy-evaluation.qmd): a *characterisation test*.
-Freeze the original output once, then require the new code to reproduce it
-exactly. Here the twist is who does the work. Claude Code writes the function
-and the test; you hold the reference and check what it did. The test
+[tidy-evaluation chapter](05-tidy-evaluation.qmd): a
+`r glossary("characterisation test")`. Freeze the original output once, then
+require the new code to reproduce it exactly. Here the twist is who does the
+work. Claude Code writes the function and the test; you hold the reference and
+check what it did. The test
 establishes that the output is **unchanged**, not that it is **correct**, and
 Step 2 shows why that distinction matters, using a missing value that has been
 in the data all along.
@@ -28,15 +29,18 @@ in the data all along.
 
 ## The repository layout
 
+The parts of [your workshop repository](11a-setup-claude-code.qmd) that this
+block uses:
+
 ```
-repo/
-├── .claude/settings.json               deny rules (Claude Code)
+your workshop repository
+├── .claude/settings.json               deny rules (ships with the template)
 ├── data/
 │   └── raw/
 │       └── voles_metabolism.csv        contains one NA, on purpose
 ├── scripts/
-│   ├── 01_load_data.R
-│   ├── 02_analysis.R
+│   ├── 04_load_data.R
+│   ├── 05_analysis.R
 │   └── functions/
 │       ├── load_voles.R
 │       └── summary_functions.R         created in this block
@@ -48,13 +52,10 @@ repo/
 └── renv.lock                           pins tidyverse, here, testthat, renv
 ```
 
-The template also contains a `.github/` folder (a CODEOWNERS file and two
-workflows). You do not need it in the live session; it is used in *Going
-further*.
-
-The single most important property of this layout: the file
-`tests/fixtures/metabolic_summary.rds` is created by you, once, and by nobody
-else. Every protection in this block exists to keep that true.
+The single most important property of this layout: the
+`r glossary("reference")`, `tests/fixtures/metabolic_summary.rds`, is created by
+you, once, and by nobody else. Tests read it as a `r glossary("fixture")`.
+Every protection in this block exists to keep that true.
 
 
 ## The original scripts
@@ -84,7 +85,7 @@ load_voles <- function() {
 
 ```{r}
 #| eval: false
-# scripts/01_load_data.R ----
+# scripts/04_load_data.R ----
 library(tidyverse)
 library(here)
 source(here("scripts", "functions", "load_voles.R"))
@@ -97,10 +98,10 @@ so that sourcing the script from a test prints nothing.
 
 ```{r}
 #| eval: false
-# scripts/02_analysis.R: the original, trusted version ----
+# scripts/05_analysis.R: the original, trusted version ----
 library(tidyverse)
 library(here)
-source(here("scripts", "01_load_data.R"))
+source(here("scripts", "04_load_data.R"))
 
 metabolic_summary <- voles |>
   group_by(treatment_arm, sex) |>
@@ -124,15 +125,82 @@ Two things to notice now and leave alone:
 
 ## Step 0: capture and protect the reference
 
-Before anything else, run `scripts/02_analysis.R` yourself and confirm that
+The whole block in one picture: you hold the reference at both ends, and the
+agent works only in between.
+
+::::::: {.dia .dia-lanes role="figure" aria-label="The characterisation-test loop. Step 0 and Step 1: you capture the reference; the agent refactors in prompt 1; you read the diff; the agent writes a test that reads the reference in prompt 2; the test must pass in a fresh Rscript session. Step 2: you decide the behaviour should change; the change makes the characterisation test fail, correctly; a known-answer test checks the new behaviour; you re-capture the reference with a commit message."}
+:::::: {.dia-flow}
+::: {.dia-label}
+Steps 0 and 1: refactor without changing the output
+:::
+::: {.dia-node .dia-you}
+Capture the reference in `tests/fixtures/`
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-ai}
+Prompt 1: refactor only
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-you}
+Read the diff
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-ai}
+Prompt 2: a test that reads the reference
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-check}
+Test passes in a fresh `Rscript` session
+:::
+::::::
+:::::: {.dia-flow}
+::: {.dia-label}
+Step 2: when the behaviour should change
+:::
+::: {.dia-node .dia-you}
+Decide the output is wrong
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-plain}
+Change the function
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-check}
+Characterisation test fails, correctly
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-check}
+Known-answer test passes
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-you}
+Re-capture, with a commit message saying why
+:::
+::::::
+::: {.dia-caption}
+The agent never creates or regenerates the reference. A reference produced by
+the code under test can only confirm that the code agrees with itself.
+:::
+:::::::
+
+Before anything else, run `scripts/05_analysis.R` yourself and confirm that
 `metabolic_summary` looks as you expect, including the one `NA` cell. Then run
-the provided capture script **once**, yourself:
+the provided capture script **once**, yourself. It is shown below; run it
+**in the R console** with `source(here::here("tests", "make_reference.R"))`.
 
 ```{r}
 #| eval: false
 # tests/make_reference.R ----
 # Run ONCE, by you, BEFORE any refactoring.
-source(here::here("scripts", "02_analysis.R"))
+source(here::here("scripts", "05_analysis.R"))
 dir.create(here::here("tests", "fixtures"), showWarnings = FALSE, recursive = TRUE)
 saveRDS(
   metabolic_summary,
@@ -140,56 +208,78 @@ saveRDS(
 )
 ```
 
-Commit the reference immediately, so that any later change to it is visible:
+Commit the reference immediately, so that any later change to it is visible.
+
+**In the terminal:**
 
 ```bash
 git add tests/fixtures/metabolic_summary.rds
 git commit -m "Capture reference output before refactoring"
 ```
 
-Capture it now, before the refactor. Afterwards, `02_analysis.R` computes the
+Capture it now, before the refactor. Afterwards, `05_analysis.R` computes the
 summary through the very function under test, so re-capturing would compare the
 function with itself.
 
 **Protect it.** Each control covers a different route:
 
-- **Claude Code.** Add deny rules to `.claude/settings.json`:
+- **Claude Code.** The `.claude/settings.json` that ships with the template
+  already contains the `r glossary("deny rule", display = "deny rules")` this
+  block relies on, among others:
 
-  ```json
-  {
-    "permissions": {
-      "deny": [
-        "Edit(/tests/fixtures/**)",
-        "Edit(/tests/make_reference.R)",
-        "Edit(/data/**)",
-        "Edit(/.github/**)"
-      ]
-    }
-  }
+  ```
+  Edit(/tests/fixtures/**)
+  Edit(/tests/make_reference.R)
+  Edit(/data/raw/**)
   ```
 
-  Run `/permissions` to confirm the rules are active, then ask the agent to
-  delete the `.rds` file and check that it is refused.
+  They protect specific files, not the whole of `tests/` or `scripts/`, so the
+  agent can still write the new function and its test. Start Claude Code and
+  run `/permissions` to confirm the rules are listed. Then test them:
+
+  **1. The edit tool is refused.**
+
+  **Prompt (Claude Code):**
+
+  ```text
+  Overwrite tests/fixtures/metabolic_summary.rds with an empty file.
+  ```
+
+  The agent's edit tool is refused by the deny rule.
+
+  **2. The shell route reaches you, not the rule.**
+
+  **Prompt (Claude Code):**
+
+  ```text
+  Remove tests/fixtures/metabolic_summary.rds with a shell command.
+  ```
+
+  Expect an approval prompt, not a refusal: the deny rule does not stop a
+  command such as `rm`. **Refuse it.** Only you stopped that route, and only
+  git would have shown that it happened.
 
 - **Every route.** Git. `git status --short tests/fixtures` should print
   nothing for the rest of this block.
 
 :::{.callout-warning}
 **What a deny rule does not cover.** Claude Code's deny rules apply to its
-built-in file tools, not to commands it runs through the shell. An agent that
-ran `Rscript tests/make_reference.R` would overwrite your reference without
+built-in file tools, and to shell output redirects such as `> file`, but not to
+R code or most other commands it runs. An agent that ran
+`Rscript tests/make_reference.R` would overwrite your reference without
 touching an edit tool. That is why git, not the deny rule, is the final check,
-and why the checklist below asks you to read the agent's command log.
+and why the checklist below asks you to read the agent's command log: the
+commands it ran, shown in the Claude Code conversation.
 :::
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
 Posit Assistant has no documented path rules for file edits. Protect the
-reference with the guard hook from the
-[enforced-controls block](11f-enforced-controls.qmd), and rely on git as the
-final check. It can also run R code in your session, so read its tool calls,
-not just its summary, for any run of `tests/make_reference.R`.
+reference with the guard hook in the *Going further* section of
+[Block 6](11f-enforced-controls.qmd), and rely on git as the final check. It
+can also run R code in your session, so read its tool calls, not just its
+summary, for any run of `tests/make_reference.R`.
 :::
 
 
@@ -200,23 +290,30 @@ refactor and the test lets one misunderstanding (about row order, say) shape
 both files at once, producing a passing test that proves nothing. Separating
 them stops the test inheriting the refactor's assumptions.
 
-Start Claude Code in `default` mode from the repository root, with the
-repository committed and clean.
+Start Claude Code in `default` mode from the root of your workshop repository,
+with the repository committed and clean. In `default` mode it asks before each
+edit; read each request before you approve it.
 
-**Prompt 1: the refactor only.**
+**In the terminal:**
+
+```bash
+claude
+```
+
+**Prompt 1 (Claude Code): the refactor only.**
 
 ```text
-Move the computation in scripts/02_analysis.R into a documented function
+Move the computation in scripts/05_analysis.R into a documented function
 summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a
-roxygen2 block and an argument check. Make 02_analysis.R call the new function
+roxygen2 block and an argument check. Make 05_analysis.R call the new function
 instead of the inline pipeline. Do not write any tests, and do not touch
 anything under tests/.
 ```
 
-Read the diff (`git diff`). If it uses `.by` without a trailing `arrange()`,
-leave that for now; the test will expose it.
+Read the diff (`git diff`, in the terminal). If it uses `.by` without a
+trailing `arrange()`, leave that for now; the test will expose it.
 
-**Prompt 2: the test only.**
+**Prompt 2 (Claude Code): the test only.**
 
 ```text
 Add tests/test_summary_functions.R. It must call local_edition(3), source
@@ -237,18 +334,29 @@ Before you trust a passing test, check what the agent wrote and did:
 2. The test calls `summarise_metabolic_rate()`, the function under test, not a
    reimplementation of the pipeline inside the test.
 3. `git status --short tests/fixtures` prints nothing.
-4. The agent's command log shows no run of `tests/make_reference.R`.
+4. The agent's command log (the commands it ran, shown in the conversation)
+   has no run of `tests/make_reference.R`.
 
-Now run the test yourself, with
-`testthat::test_file(here::here("tests", "test_summary_functions.R"))`. If the
-function used `.by` without `arrange()`, it fails on row order, not values.
+Now run the test yourself.
+
+**In the R console:**
+
+```{r}
+#| eval: false
+testthat::test_file(here::here("tests", "test_summary_functions.R"))
+```
+
+If the function used `.by` without `arrange()`, it fails on row order, not
+values.
 Have the agent add `dplyr::arrange(treatment_arm, sex)` and run again. If it
 passed first time, remove the `arrange()` yourself to see the failure, then
 restore it.
 
 **Reproduce it without the agent.** A test that passes in your IDE session can
-depend on objects or packages already loaded there. Commit, then check from
-the terminal:
+depend on objects or packages already loaded there. Commit, then check in a
+`r glossary("fresh R session")`.
+
+**In the terminal:**
 
 ```bash
 Rscript -e "renv::status()"
@@ -257,15 +365,18 @@ git status --short
 ```
 
 `renv::status()` should report a consistent state. If the agent used a package
-that is not in the lockfile, decide whether you want it and record it with
-`renv::snapshot()`, as on [Day 1](01-projects.qmd). The test must pass in the
-fresh session that `Rscript` starts, and `git status` should show nothing new:
-in particular, nothing under `tests/fixtures/`.
+that is not in the `r glossary("lockfile")`, decide whether you want it and
+record it with `renv::snapshot()`, as on [Day 1](01-projects.qmd). The test
+must pass in the fresh R session that `Rscript` starts, and `git status` should
+show nothing new: in particular, nothing under `tests/fixtures/`.
+
+**Payoff.** What did the agent do, how long did checking it take, and would you
+automate this again?
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
-Give the same two prompts in normal mode, so it asks before each change, and
+Give the same two prompts in Normal mode, so it asks before each change, and
 review the diff between them. Apply the same four-point checklist.
 :::
 
@@ -369,15 +480,15 @@ summarise_metabolic_rate <- function(data) {
 
 `r unhide()`
 
-Finally, make `scripts/02_analysis.R` call the function, so it genuinely
+Finally, make `scripts/05_analysis.R` call the function, so it genuinely
 replaces the code it came from:
 
 ```{r}
 #| eval: false
-# scripts/02_analysis.R: after refactoring ----
+# scripts/05_analysis.R: after refactoring ----
 library(tidyverse)
 library(here)
-source(here("scripts", "01_load_data.R"))
+source(here("scripts", "04_load_data.R"))
 source(here("scripts", "functions", "summary_functions.R"))
 
 metabolic_summary <- summarise_metabolic_rate(voles)
@@ -387,12 +498,13 @@ Run the test again; it should still pass.
 :::
 
 :::{.callout-note}
-**Instructor demonstration: the review gate.** Local controls do not exist for
-an agent that works remotely. Your instructor will show a pull request that
-changes a file under `tests/` being held until the code owner reviews it. How
-to set up CODEOWNERS and branch protection for your own repository is in the
-*Going further* section of the
-[enforced-controls block](11f-enforced-controls.qmd).
+## Instructor demonstration (3 minutes)
+
+**The review gate.** Local controls do not exist for an agent that works
+remotely. Your instructor will show a pull request that changes a file under
+`tests/` being held until the code owner reviews it. How to set up CODEOWNERS
+and branch protection for your own repository is in the *Going further*
+section of [Block 6](11f-enforced-controls.qmd).
 :::
 
 
@@ -456,9 +568,9 @@ summarise_metabolic_rate <- function(data) {
 **3. Run the characterisation test. It fails, correctly.** The output has
 changed, and the test exists to tell you so.
 
-**4. Add a known-answer test before re-capturing anything.** A known-answer test
-checks the new behaviour against a result you can compute by hand, independent
-of any reference file:
+**4. Add a known-answer test before re-capturing anything.** A
+`r glossary("known-answer test")` checks the new behaviour against a result you
+can compute by hand, independent of any reference file:
 
 ```{r}
 #| eval: false
@@ -478,7 +590,9 @@ test_that("means ignore missing values and n_used counts measured animals", {
 ```
 
 **5. Only now, re-capture the reference, as a recorded decision.** Re-run
-`tests/make_reference.R` yourself and commit with a message that states why:
+`tests/make_reference.R` yourself and commit with a message that states why.
+
+**In the terminal:**
 
 ```bash
 git add tests/fixtures/metabolic_summary.rds scripts/functions/summary_functions.R tests/test_summary_functions.R
@@ -508,8 +622,8 @@ trust argument rests on it. A skill is also only an instruction; the deny rules
 and git checks hold whether or not the agent reads it. If you build one, keep
 the "reference stays with the human" clause as a visible line. An example to
 compare with your own, stored in
-`.agents/skills/characterisation-refactor/SKILL.md` as in the
-[instructions-and-skills block](11e-instructions-skills.qmd):
+`.agents/skills/characterisation-refactor/SKILL.md` as in
+[Block 5](11e-instructions-skills.qmd):
 
 :::{.callout-note collapse="true"}
 ## Example: `characterisation-refactor/SKILL.md`
@@ -592,8 +706,8 @@ any refactoring. A reference produced by the code under test proves nothing.
   "Because reference files must be written in a different language"
 ))`
 
-**You have added Edit deny rules for tests/fixtures/ in Claude Code. Which
-action could still change the reference?**
+**The shipped deny rules protect tests/fixtures/ in Claude Code. Which action
+could still change the reference?**
 
 `r longmcq(c(
   "Asking the agent to edit the .rds file with its editing tool",
@@ -607,6 +721,42 @@ action could still change the reference?**
 
 This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
+
+### Reuse the skill on a second step
+
+A skill earns its keep the second time you use it. Save the example
+`characterisation-refactor` skill above to
+`.agents/skills/characterisation-refactor/SKILL.md`, copy it into
+`.claude/skills/`, and start a new Claude Code conversation (`/clear`).
+
+:::{.task}
+::::{.task-header}
+Reuse the skill (15 minutes)
+::::
+::::{.task-container}
+
+**1. Capture a reference yourself first.** Pick a second step: the plotting
+code you added to `scripts/explore_voles.R` in
+[Block 4](11d-context-disclosure-autonomy.qmd), or a step from your own
+project. Save its output to `tests/fixtures/` yourself, as in Step 0.
+
+**2. Invoke the skill.**
+
+**Prompt (Claude Code):**
+
+```text
+/characterisation-refactor
+Functionalise the step in scripts/explore_voles.R that I captured in
+tests/fixtures/. Start with the plan.
+```
+
+**3. Compare.** How much of the protective wording from Prompts 1 and 2 did you
+have to retype? Did the agent still stop between the refactor and the test?
+Apply the same four-point checklist from Step 1, and check `git status` for
+anything under `tests/fixtures/`.
+
+::::
+:::
 
 ### An asynchronous agent: the Copilot cloud agent
 
@@ -635,9 +785,9 @@ only after you have reviewed and merged the first.
 ```text
 Title: Move the metabolic-rate summary into a function
 
-Move the summary computation in scripts/02_analysis.R into a documented
+Move the summary computation in scripts/05_analysis.R into a documented
 function summarise_metabolic_rate() in scripts/functions/summary_functions.R,
-with a roxygen2 block and an argument check. Make 02_analysis.R call it.
+with a roxygen2 block and an argument check. Make 05_analysis.R call it.
 
 Acceptance criteria:
 - Do not add or change anything under tests/, data/ or .github/.
@@ -759,3 +909,11 @@ Four requirements, each with a different failure mode:
 
 When the agent's test run and the independent `r-checks` run disagree, suspect
 the environment before you suspect the code.
+
+
+## Glossary
+
+```{r}
+#| echo: false
+glossary_table()
+```

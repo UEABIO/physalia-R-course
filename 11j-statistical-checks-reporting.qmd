@@ -32,8 +32,13 @@ page.
 *⏱ ~15 minutes*
 
 Translating code (base R to tidyverse, or SPSS, Stata or SAS to R) is a task AI
-does quickly. The characterisation-test idea applies directly: run both versions
-and compare the outputs.
+does quickly. The characterisation-test idea from
+[Block 9](11i-characterisation-tests.qmd) applies directly: an
+`r glossary("equivalence check")` runs both versions and compares the outputs.
+
+Run the base R script in the R console, then ask Claude Code for the
+translation and paste it into the same R session, so both objects exist for
+the comparison.
 
 :::{.task}
 ::::{.task-header}
@@ -41,7 +46,7 @@ Translate and compare (15 minutes)
 ::::
 ::::{.task-container}
 
-**1.** Here is a short base R script:
+**1. Run the original.** In the R console:
 
 ```{r}
 #| eval: false
@@ -55,11 +60,23 @@ names(rate_n)[3] <- "n"
 legacy_summary <- merge(rate_mean, rate_n, by = c("treatment_arm", "sex"))
 ```
 
-**2.** Ask the AI to translate it into tidyverse code producing
-`tidy_summary`, with the same columns.
+**2. Ask for a translation.**
 
-**3.** Compare. Normalise only *presentation* (type and row order), never
-values:
+**Prompt (Claude Code):**
+
+```text
+Translate this base R code into tidyverse code that produces a tibble called
+tidy_summary with the same columns as legacy_summary. Show me the code only;
+do not run it and do not edit any file.
+
+[paste the base R script from step 1]
+```
+
+Paste the translation into the R console, in the same session as step 1, so
+both `legacy_summary` and `tidy_summary` exist.
+
+**3. Compare.** Normalise only *presentation* (type and row order), never
+values. In the R console:
 
 ```{r}
 #| eval: false
@@ -73,8 +90,8 @@ normalise <- function(data) {
 testthat::expect_equal(normalise(tidy_summary), normalise(legacy_summary))
 ```
 
-**4.** If the comparison fails after normalising, you have found a real
-difference in behaviour. Find it before reading on.
+**4. Find the difference.** If the comparison fails after normalising, you have
+found a real difference in behaviour. Find it before reading on.
 
 `r hide("The difference")`
 
@@ -85,17 +102,17 @@ from both the mean and the count. A direct translation using
 and counts the animal in `n`. Neither version is "the translation"; they make
 different decisions about missing data. Decide which you want, write it
 explicitly (`na.rm = TRUE` and a count of non-missing values), and record the
-decision. This is the same problem as the "unchanged is not correct" step of the
-[characterisation-test block](11i-characterisation-tests.qmd), reached from a different direction.
+decision. This is the same problem as the "unchanged is not correct" step of
+[Block 9](11i-characterisation-tests.qmd), reached from a different direction.
 
 `r unhide()`
 
 **5. Log it.** Add a line to `docs/ai-log.md`, for example:
 
 ```
-2026-10-09; Claude Code (model as reported in the session); translated
-summary script to tidyverse; kept translation, changed missing-value
-handling to na.rm = TRUE after equivalence check.
+2026-10-19; Claude Code (model as shown above the Claude Code prompt);
+translated summary script to tidyverse; kept translation, changed
+missing-value handling to na.rm = TRUE after equivalence check.
 ```
 
 ::::
@@ -116,11 +133,11 @@ tolerance setting.
 A number typed into a report is a number that can be mistyped, or left
 unchanged when the data change. When an assistant drafts the text, it may also
 "helpfully" restate numbers it saw earlier in the conversation. Every number in
-the prose should come from inline code:
+the prose should come from inline code. In a code chunk of your report:
 
 ```{r}
 #| eval: false
-# in a chunk: fit the pre-registered primary analysis
+# fit the pre-registered primary analysis
 voles_df <- read_csv(here("data", "raw", "voles_metabolism.csv"), show_col_types = FALSE) |>
   mutate(treatment_arm = factor(treatment_arm, levels = c("Control", "Low_dose", "High_dose")))
 
@@ -133,7 +150,7 @@ primary <- tibble(
 )
 ```
 
-and in the text:
+and in the text of the report:
 
 ```
 High-dose voles were `r knitr::inline_expr("round(primary$estimate, 2)")` g heavier than controls
@@ -142,8 +159,17 @@ after treatment (95% CI `r knitr::inline_expr("round(primary$lower, 2)")` to
 ```
 
 Your `AGENTS.md` should already say never to type numerical results into text.
-That is a request. This function is the check: it lists prose lines in a `.qmd`
-file that still contain numbers outside inline code, for you to review by eye.
+That is a request. The function below is the check: it lists prose lines in a
+`.qmd` file that still contain numbers outside inline code, for you to review
+by eye.
+
+:::{.task}
+::::{.task-header}
+Scan a report (3 minutes)
+::::
+::::{.task-container}
+
+**1. Define the check.** In the R console:
 
 ```{r}
 #| eval: false
@@ -158,12 +184,22 @@ find_typed_numbers <- function(path) {
     filter(grepl("[0-9]+\\.[0-9]+|\\b[0-9]{2,}\\b", prose, perl = TRUE)) |>
     select(line, text)
 }
+```
 
-find_typed_numbers(here("report.qmd"))
+**2. Run it on a real report.** Point it at the Quarto report you wrote on
+Day 3, or any `.qmd` file you have:
+
+```{r}
+#| eval: false
+find_typed_numbers("path/to/your_report.qmd")
 ```
 
 It will also flag years, sample sizes from the design and the YAML header, so
-treat each hit as a question, not an error.
+treat each hit as a question, not an error. For each typed result you find,
+decide whether it should be inline code.
+
+::::
+:::
 
 
 ## Part C: The repository you leave with
@@ -171,10 +207,40 @@ treat each hit as a question, not an error.
 *⏱ ~8 minutes*
 
 Over the day your repository has collected most of what a reader needs: a
-codebook (Block 7), cleaning and exclusion logs, scripts with a run order, a
-lockfile, tests with a reference you captured (Block 9), and an AI-use log. A
-README pulls that record together. The rule from Block 8 applies: the AI may
-assemble and phrase facts you can check, and must not invent any.
+`r glossary("codebook")` (Block 7), cleaning and exclusion logs, scripts with a
+run order, a `r glossary("lockfile")`, tests with a reference you captured
+(Block 9), and an `r glossary("AI-use log")`. A README pulls that record
+together. One rule applies throughout: the AI may assemble and phrase facts
+you can trace to a file, and must not invent any. Anything it cannot find in
+those files becomes a visible placeholder for you to fill.
+
+::::::: {.dia .dia-flow role="figure" aria-label="The README is drafted by the AI only from four kinds of file in your repository: the codebook and data note, the numbered scripts, renv.lock and the AI-use log. You then trace every statement back to a file."}
+:::::: {.dia-branches}
+::: {.dia-node .dia-file}
+`docs/codebook.csv`, `docs/data_note.md`
+:::
+::: {.dia-node .dia-file}
+numbered scripts in `scripts/`
+:::
+::: {.dia-node .dia-file}
+`renv.lock`
+:::
+::: {.dia-node .dia-file}
+`docs/ai-log.md`
+:::
+::::::
+::: {.dia-arrow}
+the only sources
+:::
+::: {.dia-node .dia-ai}
+Drafts `README.md`, with placeholders for anything missing
+:::
+::: {.dia-arrow}
+:::
+::: {.dia-node .dia-check}
+You trace every statement to a file
+:::
+:::::::
 
 :::{.task}
 ::::{.task-header}
@@ -182,10 +248,12 @@ Draft from the record, then audit (8 minutes)
 ::::
 ::::{.task-container}
 
-**1. Draft.** With the repository committed and clean, ask Claude Code in
+**1. Draft.** With the repository committed and clean, in Claude Code in
 `default` mode:
 
-```
+**Prompt (Claude Code):**
+
+```text
 Create or update README.md for this repository. Use ONLY these sources, and
 name the source of each section:
 - Data: docs/codebook.csv and docs/data_note.md.
@@ -201,24 +269,34 @@ Edit README.md only. Show me your plan first.
 
 **2. Audit.** Pick three statements and trace each to a file. Look in
 particular at the unit of `metabolic_rate_post`: the codebook leaves it as
-`<unit>`, so a README that states a unit has invented it. Check that the AI
-declaration says no more than your log.
+`<unit>`, so a README that states a unit has invented it. Check that the
+`r glossary("AI declaration")` says no more than your log.
 
-**3. Confirm the scope.** `git status` should show that only `README.md`
-changed.
+**3. Confirm the scope.** In the terminal:
+
+```bash
+git status --short
+```
+
+Only `README.md` should have changed.
 
 **4. Before you share it.** The placeholders are your to-do list. Work through
 licence, ORCIDs, DOI and archiving with the
 [SORTEE checklist from Day 2](06-reproducibility.qmd#repro-sortee). Then add the
 last line to `docs/ai-log.md`, and commit.
 
+**5. Payoff.** What did the agent do, how long did checking it take, and would
+you automate this again?
+
 ::::
 :::
 
-The fuller version of this task, with a skill that scans the data files and
-the lockfile itself, is in the *Going further* section of the
-[code-review block](11h-code-review.qmd). Check your institution's and target
-journal's current policy for what must be declared about AI use, and where.
+A fuller version of this task is in the *Going further* section of
+[Block 8](11h-code-review.qmd). There, you run two helper scripts yourself to
+describe every data file and read the lockfile, and a skill assembles the
+README from their output under the same no-invention rule. Check your
+institution's and target journal's current policy for what must be declared
+about AI use, and where.
 
 
 :::{.callout-note}
@@ -379,9 +457,9 @@ studies: the **aims**, the **data-generating mechanism**, the **estimand**, the
 - **Performance measures:** bias and confidence-interval coverage, each with
   its Monte Carlo standard error.
 
-The written mechanism is yours. It is the equivalent of the codebook in the
-[data-cleaning block](11g-data-cleaning.qmd): the AI turns it into code, and you check the code against
-it.
+The written mechanism is yours. It is the equivalent of the codebook in
+[Block 7](11g-data-cleaning.qmd): the AI turns it into code, and you check the
+code against it.
 
 :::{.task}
 ::::{.task-header}
@@ -484,7 +562,7 @@ should be within about two Monte Carlo standard errors of 0.95, roughly 0.936 to
 0.964 with 1,000 runs.
 
 **5. Prove the check can fail.** Replace the analysis with a version that models
-the change the wrong way round, as in the [debugging block](11c-debugging.qmd):
+the change the wrong way round, as in [Block 3](11c-debugging.qmd):
 
 ```{r}
 #| eval: false
@@ -532,6 +610,14 @@ What has it shown?**
   "That the study has adequate power",
   "That the model's assumptions hold for the real data"
 ))`
+
+
+## Glossary
+
+```{r}
+#| echo: false
+glossary_table()
+```
 
 
 ## References

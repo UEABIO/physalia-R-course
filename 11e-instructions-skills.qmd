@@ -16,40 +16,90 @@ you state your conventions once, so you do not repeat them in every prompt.
 
 There are two mechanisms, distinguished by when they load:
 
-- **Instructions** load into every session automatically. Use them for what is
-  always true of the project: structure, style, reproducibility rules.
+- **Instructions** live in an `r glossary("instruction file")` that loads into
+  every conversation automatically. Use it for what is always true of the
+  project: structure, style, reproducibility rules.
 - **Skills** load only when invoked by name or judged relevant from their
-  description. Use them for procedures you need sometimes: producing a
-  publication figure, cleaning data against a codebook, reviewing code.
+  description. A `r glossary("skill")` suits a procedure you need sometimes:
+  producing a publication figure, cleaning data against a codebook, reviewing
+  code.
 
 Both are requests. The model usually follows them, but nothing guarantees it.
-Rules that must hold every time belong in the enforced controls of the next
-block.
+Rules that must hold every time belong in the enforced controls of
+[Block 6](11f-enforced-controls.qmd).
 
 *⏱ ~45 minutes*
 
 
-# Part A: Instructions {.unnumbered}
+## Part A: Instructions
 
-## Where Claude Code looks
+### Where Claude Code looks
 
 | File | Claude Code | Posit Assistant |
 |---|---|---|
 | `AGENTS.md` (repository root) | Via an import in `CLAUDE.md` | Read as project memory |
-| `CLAUDE.md` | Read every session | — |
+| `CLAUDE.md` | Read at the start of every conversation | — |
 
 This course uses **one source of truth**: conventions live in `AGENTS.md`, and
 `CLAUDE.md` contains a single line that imports it:
 
-```
+```text
 @AGENTS.md
 ```
 
 Other tools read `AGENTS.md` too (see *Going further*), so one file serves them
-all.
+all. Skills, in Part B, follow the same idea: one master copy, read by each
+tool from where it looks.
+
+:::::: {.dia .dia-lanes role="figure" aria-label="Which files each tool reads: CLAUDE.md imports AGENTS.md; skills are copied from .agents/skills to .claude/skills"}
+::::: {.dia-flow}
+::: {.dia-label}
+Instruction files: loaded into every conversation
+:::
+::: {.dia-node .dia-file}
+`CLAUDE.md`, one line: `@AGENTS.md`
+:::
+::: {.dia-arrow}
+imports
+:::
+::: {.dia-node .dia-file}
+`AGENTS.md`: your conventions
+:::
+::: {.dia-arrow}
+read by
+:::
+::: {.dia-node .dia-ai}
+Claude Code, through `CLAUDE.md`
+:::
+:::::
+::::: {.dia-flow}
+::: {.dia-label}
+Skills: loaded when invoked or judged relevant
+:::
+::: {.dia-node .dia-file}
+`.agents/skills/house-figures/` (the master copy)
+:::
+::: {.dia-arrow}
+you copy
+:::
+::: {.dia-node .dia-file}
+`.claude/skills/house-figures/`
+:::
+::: {.dia-arrow}
+read by
+:::
+::: {.dia-node .dia-ai}
+Claude Code
+:::
+:::::
+::: {.dia-caption}
+Posit Assistant reads `AGENTS.md` and `.agents/skills/` directly, so it needs
+neither `CLAUDE.md` nor the copy.
+:::
+::::::
 
 
-## Writing instructions that work
+### Writing instructions that work
 
 - **One instruction per line.** Short, concrete statements are easier to check
   than paragraphs, for the model and for you.
@@ -62,12 +112,12 @@ all.
   lower.
 - **Add a rule when a mistake repeats.** If the assistant gets the same
   convention wrong twice, that convention belongs in the file. A one-off
-  correction in chat is forgotten next session.
+  correction in chat is forgotten in the next conversation.
 - **Do not put guarantees here.** "Never edit raw data" is worth stating, but
-  enforce it with the controls in the next block.
+  enforce it with the controls in [Block 6](11f-enforced-controls.qmd).
 
 
-## Activity: Build and test your AGENTS.md
+### Activity: Build and test your AGENTS.md
 
 You start from a provided draft rather than a blank page. Your job is to make
 it describe *your* practice, then prove that Claude Code reads it.
@@ -78,12 +128,19 @@ Adapt, connect, verify (15 minutes)
 ::::
 ::::{.task-container}
 
-Work in your forked workshop repository, committed and clean.
+Work in your workshop repository, committed and clean.
 
-**1. Baseline.** With no `AGENTS.md` present, start Claude Code in plan mode
-and ask:
+**1. Baseline.** With no `AGENTS.md` present, start Claude Code in `plan` mode.
 
+**In the terminal:**
+
+```bash
+claude --permission-mode plan
 ```
+
+**Prompt (Claude Code):**
+
+```text
 Read data/raw/voles_metabolism.csv and make a quick exploratory plot of
 mass_post_g by treatment arm.
 ```
@@ -91,7 +148,9 @@ mass_post_g by treatment arm.
 Keep the answer.
 
 **2. Copy the starting draft.** Create `AGENTS.md` in the repository root
-containing the draft below.
+containing the draft below. It includes a `r glossary("canary")`: a fixed first
+line the assistant is asked to put in any R code it writes, so you can see
+whether the file was loaded.
 
 ```markdown
 # Project conventions: voles analysis
@@ -130,18 +189,18 @@ When you write or edit R code, make the first line of the first code block:
 - Do not edit anything under data/raw/, tests/fixtures/ or .github/.
 ```
 
-**3. Make it yours.** Delete any rule you do not actually follow. Then add:
+**3. Make it yours.** Delete any rule you do not actually follow. Then add one
+style convention you genuinely follow that the draft does not state, and one
+reproducibility or statistical convention you always apply. Keep the canary
+line. Later blocks rely on the "Statistics" and "Working with me" rules, so keep
+those too.
 
-1. one style convention you genuinely follow that the draft does not state;
-2. one reproducibility or statistical convention you always apply.
+**4. Connect Claude Code.** Create `CLAUDE.md` in the repository root
+containing only the line `@AGENTS.md`.
 
-Keep the canary line: a fixed first line for any R code block. Later blocks
-rely on the "Statistics" and "Working with me" rules, so keep those too.
-
-**4. Connect Claude Code.** Create `CLAUDE.md` containing only `@AGENTS.md`.
-
-**5. Verify.** Commit, start a **new** Claude Code session, and repeat the
-Step 1 prompt.
+**5. Verify.** Commit. Then leave Claude Code (`/exit`) and start it again from
+the repository root, so it loads the new files at the start of the
+conversation, and repeat the step 1 prompt.
 
 - If the canary appears, the file is being loaded.
 - If the canary is missing, the file is not reaching Claude Code. Check the
@@ -163,12 +222,13 @@ that you trusted the workspace.
 :::
 
 
-# Part B: Skills {.unnumbered}
+## Part B: Skills
 
 A skill is a folder containing a `SKILL.md` file, and optionally scripts,
-templates and reference files. The front matter carries a `name` and a
-`description`. Skills follow the open Agent Skills specification, so one skill
-can serve several tools.
+templates and reference files. Its `r glossary("front matter")`, the block
+between two lines of three dashes at the top of `SKILL.md`, carries a `name`
+and a `description`. Skills follow the open Agent Skills specification, so one
+skill can serve several tools.
 
 Two parts decide whether a skill works:
 
@@ -185,7 +245,7 @@ For a skill that writes files or has other side effects, set
 invoke it by name. Claude Code and Posit Assistant both support this field.
 
 
-## Where skills live
+### Where skills live
 
 | Location in the repository | Claude Code | Posit Assistant |
 |---|---|---|
@@ -196,7 +256,9 @@ invoke it by name. Claude Code and Posit Assistant both support this field.
 This course keeps the master copy of each skill in `.agents/skills/`, which
 other tools also read, and **copies** the folder into `.claude/skills/` for
 Claude Code. If you change a skill, copy it again. On macOS or Linux you can
-use a symbolic link instead, so there is only one copy:
+use a `r glossary("symbolic link")` instead, so there is only one copy:
+
+**In the terminal (macOS or Linux):**
 
 ```bash
 mkdir -p .claude/skills
@@ -206,7 +268,7 @@ ln -s ../../.agents/skills/house-figures .claude/skills/house-figures
 On Windows, symbolic links in git need extra configuration, so copy the folder.
 
 
-## Activity: Write a skill and test it
+### Activity: Write a skill and test it
 
 :::{.task}
 ::::{.task-header}
@@ -214,8 +276,20 @@ A house figure style (20 minutes)
 ::::
 ::::{.task-container}
 
-**1. Create** `.agents/skills/house-figures/SKILL.md`, then copy the
-`house-figures` folder into `.claude/skills/`:
+**1. Baseline, before the skill exists.** In Claude Code, ask:
+
+**Prompt (Claude Code):**
+
+```text
+Make a figure of mass_post_g by treatment_arm for the voles data, for a
+lab report.
+```
+
+Keep the code it gives you. Doing this first, before you create the skill,
+guarantees the baseline was written without it.
+
+**2. Create the skill.** Create `.agents/skills/house-figures/SKILL.md`
+containing:
 
 ```markdown
 ---
@@ -245,15 +319,25 @@ description: >-
 List which rules you applied, and any you could not apply and why.
 ```
 
-**2. Without the skill.** In a session where the skill is not invoked, ask:
+Then copy the `house-figures` folder into `.claude/skills/`, in your file
+manager or in the terminal:
 
-```
-Make a figure of mass_post_g by treatment_arm for the voles data, for a
-lab report.
+**In the terminal (macOS, Linux or Git Bash):**
+
+```bash
+mkdir -p .claude/skills
+cp -r .agents/skills/house-figures .claude/skills/
 ```
 
-**3. With the skill.** In a new session, invoke it by name
-(`/house-figures`) and ask the same thing.
+**3. With the skill.** Leave Claude Code (`/exit`) and start it again, so it
+finds the new skill. Invoke the skill by name and ask the same thing:
+
+**Prompt (Claude Code):**
+
+```text
+/house-figures Make a figure of mass_post_g by treatment_arm for the voles
+data, for a lab report.
+```
 
 **4. Grade it.** For each of the six rules, record whether the output complies:
 
@@ -269,10 +353,14 @@ lab report.
 Run the code and look at the figure. Code that names the right functions can
 still produce the wrong picture.
 
-**5. Test the trigger.** Without naming the skill, ask "Give me a quick look at
-mass_post_g by arm" (exploratory, so the skill should *not* load), then "Polish
-this figure for the poster" (it *should* load). If either goes the wrong way,
-rewrite the description and test again.
+**Payoff.** What did the skill do for you, how long did checking it take, and
+would you use it again for the next figure?
+
+**5. Test the trigger.** In a new Claude Code conversation (`/clear`), without
+naming the skill, ask "Give me a quick look at mass_post_g by arm"
+(exploratory, so the skill should *not* load). Then, in another new
+conversation, ask "Polish this figure for the poster" (it *should* load). If
+either goes the wrong way, rewrite the description and test again.
 
 **6. Test a rule under pressure.** Ask the assistant to "add significance stars
 between the groups". Rule 6 says it should decline without a fitted model.
@@ -289,7 +377,7 @@ Posit Assistant reads `.agents/skills/` directly, so you do not need the copy in
 :::
 
 
-## Skills you did not write
+### Skills you did not write
 
 Each tool ships built-in skills. Claude Code bundles skills such as
 `/code-review` and `/debug`. Collections of shared skills are published online,
@@ -308,7 +396,7 @@ code from the internet. *Going further* below gives you one to practise on:
 - **Check:** the canary shows a file was loaded, not that its rules were
   followed; grade the output rule by rule, and run the figure code.
 - **Reproduce:** your `AGENTS.md` now states the reproducibility rules (renv,
-  fresh session, seeds). They are requests; Blocks 7 and 9 check whether the
+  fresh R session, seeds). They are requests; Blocks 7 and 9 check whether the
   agent kept to them.
 - **Record:** add a line to `docs/ai-log.md` naming the skill you tested and
   what you changed in its output.
@@ -331,7 +419,7 @@ likely explanation?**
 
 `r longmcq(c(
   "Instruction files can contain code; skills cannot",
-  answer = "Instructions load into every session automatically; a skill loads only when invoked by name or judged relevant from its description",
+  answer = "Instructions load into every conversation automatically; a skill loads only when invoked by name or judged relevant from its description",
   "Skills are enforced; instructions are advisory",
   "Instruction files work only with Copilot"
 ))`
@@ -400,12 +488,13 @@ The rules themselves:
   document's folder.
 ```
 
-Place them where your tool looks:
+(The "hashpipe" is the `#|` at the start of a chunk-option line.) Place them
+where your tool looks:
 
 - **Claude Code:** `.claude/rules/quarto.md`, beginning with front matter that
   restricts it to Quarto files:
 
-  ```
+  ```text
   ---
   paths:
     - "**/*.qmd"
@@ -415,7 +504,7 @@ Place them where your tool looks:
 - **Copilot:** `.github/instructions/quarto.instructions.md`, beginning with
   this front matter:
 
-  ```
+  ```text
   ---
   applyTo: "**/*.qmd"
   ---
@@ -450,7 +539,7 @@ before you install it.
 
 The bundle contains:
 
-```
+```text
 pub-figures/
 ├── SKILL.md                when to use it, the rules, a pre-flight checklist
 ├── theme-project.R         theme_project() and palette functions
@@ -493,10 +582,12 @@ colorspace, ragg, colorBlindness, emmeans and ggpubr; if your project uses
 renv and they are not in its lockfile, add them yourself before the test,
 rather than letting the assistant install packages.
 
-**4. Same prompt, new skill.** In a new session, without naming the skill, ask
-the prompt from the house-figures activity:
+**4. Same prompt, new skill.** Restart Claude Code so it finds the skill, then,
+without naming the skill, ask the prompt from the house-figures activity:
 
-```
+**Prompt (Claude Code):**
+
+```text
 Make a figure of mass_post_g by treatment_arm for the voles data, for a
 lab report.
 ```
@@ -561,6 +652,14 @@ show_skill_file("pub-figures", "SKILL.md")
 ```{r, eval = FALSE, file = here::here("files", "skills", "pub-figures", "patchwork-template.R")}
 ```
 :::
+
+
+## Glossary
+
+```{r}
+#| echo: false
+glossary_table()
+```
 
 
 ## References

@@ -116,12 +116,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     if (p) document.documentElement.setAttribute("data-palette", p);
   } catch (e) {}
 })();
-</script><script src="site_libs/font-awesome-6.7.2/js/script.js"></script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+</script><script src="site_libs/font-awesome-6.7.2/js/script.js"></script><script src="site_libs/kePrint-0.0.1/kePrint.js"></script><link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
 <link rel="stylesheet" href="include/palette.css">
+<link rel="stylesheet" href="include/diagrams.css">
 </head>
 <body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -485,7 +487,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 1: AI-Assisted R Programming</span></a>
+ <span class="menu-text">Block 1: AI-assisted R programming</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -521,7 +523,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./11f-enforced-controls.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 6: Enforced controls: permissions, hooks and review gates</span></a>
+ <span class="menu-text">Block 6: Enforced controls: permissions and detection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -633,6 +635,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#write-the-validation-rules-independently" id="toc-write-the-validation-rules-independently" class="nav-link" data-scroll-target="#write-the-validation-rules-independently">Write the validation rules independently</a></li>
   </ul>
 </li>
+  <li><a href="#glossary" id="toc-glossary" class="nav-link" data-scroll-target="#glossary">Glossary</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></nav>
     </div>
@@ -679,7 +682,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td>Validation and audit scripts</td>
-<td>You, or a separate session</td>
+<td>You, or a separate AI conversation</td>
 <td>Written from the codebook, independently of the cleaning code, so one misunderstanding cannot pass both.</td>
 </tr>
 <tr class="even">
@@ -689,44 +692,101 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
+<p>The <a class="glossary">codebook<span class="def">A table describing each variable: its type, valid range, missing-value codes, unit and label mappings. It is the data dictionary from Day 2 with machine-readable rules, and you own it, not the AI.</span></a> is the hub. The cleaning and the checks both read it, but neither reads the other, so a misunderstanding in one is caught by the other:</p>
+<div class="dia dia-lanes" role="figure" aria-label="The cleaning pipeline and its owners. The raw data are pinned by a checksum and profiled with R. You write the codebook from the profile and the data provider's note. Two independent branches read the codebook: the AI cleans with the skill, writing scripts/01_clean.R, the clean data and the cleaning and exclusion logs; the validation rules are transcribed from the codebook separately. The tests and the audit then compare the raw data, the clean data and the logs.">
+<div class="dia-flow">
+<div class="dia-label">
+<p>Facts first</p>
+</div>
+<div class="dia-node dia-file">
+<p><code>data/raw/voles_raw.csv</code>, pinned by a checksum</p>
+</div>
+<div class="dia-arrow">
+<p>profiled in R</p>
+</div>
+<div class="dia-node dia-plain">
+<p><code>00_profile.R</code> output</p>
+</div>
+<div class="dia-arrow">
+<p>plus the provider’s note</p>
+</div>
+<div class="dia-node dia-you">
+<p><code>docs/codebook.csv</code></p>
+</div>
+</div>
+<div class="dia-flow">
+<div class="dia-label">
+<p>Two branches that read the codebook, never each other</p>
+</div>
+<div class="dia-branches">
+<div class="dia-flow">
+<div class="dia-node dia-ai">
+<p>Skill writes and runs <code>scripts/01_clean.R</code></p>
+</div>
+<div class="dia-arrow">
+<p>writes</p>
+</div>
+<div class="dia-node dia-file">
+<p>Clean data, cleaning log, exclusion log</p>
+</div>
+</div>
+<div class="dia-flow">
+<div class="dia-node dia-check">
+<p>Validation rules in <code>validate_voles.R</code>, transcribed from the codebook</p>
+</div>
+</div>
+</div>
+</div>
+<div class="dia-flow">
+<div class="dia-label">
+<p>Then compare</p>
+</div>
+<div class="dia-node dia-check">
+<p>Tests and audit: raw data unchanged, every row accounted for, every change logged</p>
+</div>
+</div>
+<div class="dia-caption">
+<p>Independence is the point: one misunderstanding cannot pass both branches.</p>
+</div>
+</div>
 <p>You will work on a version of the voles data with errors planted in it. Your instructor holds the answer key, so at the end you can measure what your pipeline caught and what it missed.</p>
 <p><em>⏱ ~54 minutes</em></p>
-<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Important
+Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>Why not simply ask the AI to clean the data?</strong> In a 2025 study, language models given deliberately polluted tables found missing values in standard formats but struggled with codes such as <code>-1</code>, rarely detected non-exact duplicates, and did worse as errors increased (Spreafico et al., 2025). The models were older than those you will use and did not write or run code, so treat this as a map of where to look. Those error classes are planted in this block’s data.</p>
+<p><strong>Why not simply ask the AI to clean the data?</strong> In a 2025 study, language models given deliberately polluted tables found missing values in standard formats but struggled with codes such as <code>-1</code> (a <a class="glossary">sentinel value<span class="def">A number with a special meaning, such as 9999 for “not recorded” or -1 for “run failed”. It must be documented in a codebook and recoded before analysis.</span></a>), rarely detected non-exact duplicates, and did worse as errors increased (Spreafico et al., 2025). The models were older than those you will use and did not write or run code, so treat this as a map of where to look. Those error classes are planted in this block’s data.</p>
 </div>
 </div>
 <section id="the-repository-layout" class="level2"><h2 class="anchored" data-anchor-id="the-repository-layout">The repository layout</h2>
-<pre><code>repo/
-├── .agents/skills/clean-with-codebook/SKILL.md   the skill (single copy)
-├── .claude/
-│   ├── settings.json                  permission rules for Claude Code
-│   └── skills/clean-with-codebook     symbolic link to the folder above
-├── .gitattributes                     stops line-ending changes to raw data
-├── data/
-│   ├── raw/voles_raw.csv              never edited by anyone
-│   └── derived/                       cleaning outputs and logs
-├── docs/
-│   ├── data_note.md                   the data provider's note
-│   └── codebook.csv                   you write this in Step 2
-├── scripts/
-│   ├── 00_profile.R                   provided
-│   ├── 01_clean.R                     written by the agent in Step 4
-│   ├── 02_validate.R                  provided
-│   ├── 03_audit_cleaning.R            provided
-│   └── functions/validate_voles.R     provided
-└── tests/
-    ├── fixtures/raw_checksum.txt      you create this in Step 0
-    └── test_cleaning.R                provided</code></pre>
-<p>If your fork does not already contain <code>.agents/skills/clean-with-codebook/</code>, download the skill and unzip it into <code>.agents/skills/</code>:</p>
+<p>This is the part of <a href="./11a-setup-claude-code.html">your workshop repository</a> that Block 7 uses:</p>
+<pre><code>.agents/skills/clean-with-codebook/SKILL.md   the skill
+.claude/
+├── settings.json                  the deny rules, from Block 6
+└── skills/clean-with-codebook/    a copy of the skill folder above
+.gitattributes                     stops line-ending changes to raw data
+data/
+├── raw/voles_raw.csv              never edited by anyone
+└── derived/                       cleaning outputs and logs
+docs/
+├── data_note.md                   the data provider's note
+└── codebook.csv                   you write this in Step 2
+scripts/
+├── 00_profile.R                   provided
+├── 01_clean.R                     written by the agent in Step 4
+├── 02_validate.R                  provided
+├── 03_audit_cleaning.R            provided
+└── functions/validate_voles.R     provided
+tests/
+├── fixtures/raw_checksum.txt      you create this in Step 0
+└── test_cleaning.R                provided</code></pre>
+<p>If your workshop repository does not already contain <code>.agents/skills/clean-with-codebook/</code>, download the skill and unzip it into <code>.agents/skills/</code>:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <button class="btn btn-success" onclick="
@@ -757,9 +817,7 @@ Important
   " output_extension=".zip"><i class="fa fa-save"></i> Download clean-with-codebook.zip</button>
 </div>
 </div>
-<p>Claude Code reads skills from <code>.claude/skills/</code>, so copy the <code>clean-with-codebook</code> folder there as well. On macOS or Linux you can link it instead, so there is only one copy to keep in step:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a><span class="fu">mkdir</span> <span class="at">-p</span> .claude/skills</span>
-<span id="cb2-2"><a href="#cb2-2" aria-label="2"></a><span class="fu">ln</span> <span class="at">-s</span> ../../.agents/skills/clean-with-codebook .claude/skills/clean-with-codebook</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Claude Code reads skills from <code>.claude/skills/</code>, so copy the <code>clean-with-codebook</code> folder there as well, so that <code>.claude/skills/clean-with-codebook/SKILL.md</code> exists. (On macOS or Linux you can use a symbolic link instead, as in <a href="./11e-instructions-skills.html">Block 5</a>.)</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -772,90 +830,100 @@ Important
 </div>
 <div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Posit Assistant reads <code>.agents/skills/</code> directly, so no copy or link is needed.</p>
+<p>Posit Assistant reads <code>.agents/skills/</code> directly, so no copy is needed.</p>
 </div>
 </div>
 </div>
 </section><section id="step-0-lock-the-raw-data" class="level2"><h2 class="anchored" data-anchor-id="step-0-lock-the-raw-data">Step 0: Lock the raw data</h2>
-<p>Everything later depends on the raw file being exactly what the data provider sent. The template comes with the controls from the <a href="./11f-enforced-controls.html">enforced-controls block</a> already in place; here you add a checksum and confirm the rest are working.</p>
-<p><strong>1. Record a checksum and commit it.</strong> Run this once, yourself:</p>
+<p>Everything later depends on the raw file being exactly what the data provider sent. The deny rules from <a href="./11f-enforced-controls.html">Block 6</a> already protect it; here you add a <a class="glossary">checksum<span class="def">A short fingerprint computed from a file’s contents, for example with tools::md5sum(). Any change to the file changes the checksum, so it detects changes made by any route.</span></a> and confirm the rules work.</p>
+<p><strong>1. Record a checksum and commit it.</strong> Run this once, yourself.</p>
+<p><strong>In the R console:</strong></p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>raw_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-label="2"></a><span class="fu">writeLines</span>(</span>
-<span id="cb3-3"><a href="#cb3-3" aria-label="3"></a>  <span class="fu">unname</span>(tools<span class="sc">::</span><span class="fu">md5sum</span>(raw_path)),</span>
-<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"raw_checksum.txt"</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>raw_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-label="2"></a>checksum_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"raw_checksum.txt"</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-label="3"></a><span class="fu">writeLines</span>(<span class="fu">unname</span>(tools<span class="sc">::</span><span class="fu">md5sum</span>(raw_path)), checksum_path)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>2. Confirm the deny rules are active.</strong> In Claude Code, run <code>/permissions</code>. The rules from the template’s <code>.claude/settings.json</code> should be listed, including <code>Edit(/data/raw/**)</code>.</p>
-<p><strong>3. Test the control, do not assume it.</strong> Ask Claude Code to add a comment line to the top of <code>data/raw/voles_raw.csv</code>. It should be refused. Then run the tests (Step 5) and confirm the checksum test still passes.</p>
+<p>Then commit <code>tests/fixtures/raw_checksum.txt</code>.</p>
+<p><strong>2. Confirm the deny rules are active.</strong> In Claude Code, run <code>/permissions</code>. The rules from <code>.claude/settings.json</code> should be listed, including the <a class="glossary">deny rule<span class="def">A permission rule in the deny list of .claude/settings.json that stops Claude Code’s built-in tools from editing or reading the matching files. It checks shell output redirects such as &gt; file, but not R code or most other commands that change the same files.</span></a> <code>Edit(/data/raw/**)</code>.</p>
+<p><strong>3. Test the control, do not assume it.</strong> Ask:</p>
+<p><strong>Prompt (Claude Code):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>Add a comment line to the top of data/raw/voles_raw.csv.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>It should be refused. Then confirm the file is unchanged.</p>
+<p><strong>In the R console:</strong></p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a><span class="fu">identical</span>(<span class="fu">unname</span>(tools<span class="sc">::</span><span class="fu">md5sum</span>(raw_path)), <span class="fu">readLines</span>(checksum_path))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>R returns <code>TRUE</code>. (The full test file in Step 5 also checks this, but its other tests need the cleaned data, which do not exist yet.)</p>
 <p>The deny rule prevents one route; the checksum detects a change made by any route. <em>Going further</em> lists the full settings file and what each control covers.</p>
 </section><section id="step-1-profile-the-raw-data-r-not-ai" class="level2"><h2 class="anchored" data-anchor-id="step-1-profile-the-raw-data-r-not-ai">Step 1: Profile the raw data (R, not AI)</h2>
-<p>Profiling is counting, and counting is something you should compute rather than ask a model to estimate. Run the provided script yourself:</p>
+<p>Profiling is counting, and counting is something you should compute rather than ask a model to estimate. Run the provided script yourself, in the R console or with <code>Rscript scripts/00_profile.R</code> in the terminal:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a><span class="co"># scripts/00_profile.R ----</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-label="2"></a><span class="co"># Purpose: describe the raw file as entered, before any decision is made.</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-label="3"></a><span class="co"># Every column is read as character so codes such as 9999 or -1 appear</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-label="4"></a><span class="co"># exactly as entered.</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-label="5"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-label="6"></a><span class="fu">library</span>(here)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-label="7"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-label="8"></a>raw_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
-<span id="cb4-9"><a href="#cb4-9" aria-label="9"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>),</span>
-<span id="cb4-10"><a href="#cb4-10" aria-label="10"></a>  <span class="at">col_types =</span> <span class="fu">cols</span>(<span class="at">.default =</span> <span class="fu">col_character</span>())</span>
-<span id="cb4-11"><a href="#cb4-11" aria-label="11"></a>)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-label="12"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-label="13"></a><span class="co"># one row per column: missingness, distinct values, numeric range ----</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-label="14"></a>profile_df <span class="ot">&lt;-</span> raw_df <span class="sc">|&gt;</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-label="15"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"column"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-label="16"></a>  <span class="co"># suppressWarnings: text values become NA here by design</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-label="17"></a>  <span class="fu">mutate</span>(<span class="at">value_num =</span> <span class="fu">suppressWarnings</span>(<span class="fu">as.numeric</span>(value))) <span class="sc">|&gt;</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-label="18"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb4-19"><a href="#cb4-19" aria-label="19"></a>    <span class="at">n_rows =</span> <span class="fu">n</span>(),</span>
-<span id="cb4-20"><a href="#cb4-20" aria-label="20"></a>    <span class="at">n_missing =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(value)),</span>
-<span id="cb4-21"><a href="#cb4-21" aria-label="21"></a>    <span class="at">n_distinct =</span> <span class="fu">n_distinct</span>(value, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-22"><a href="#cb4-22" aria-label="22"></a>    <span class="at">n_numeric =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(value_num)),</span>
-<span id="cb4-23"><a href="#cb4-23" aria-label="23"></a>    <span class="at">min_numeric =</span> <span class="cf">if</span> (<span class="fu">all</span>(<span class="fu">is.na</span>(value_num))) <span class="cn">NA_real_</span> <span class="cf">else</span> <span class="fu">min</span>(value_num, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-24"><a href="#cb4-24" aria-label="24"></a>    <span class="at">max_numeric =</span> <span class="cf">if</span> (<span class="fu">all</span>(<span class="fu">is.na</span>(value_num))) <span class="cn">NA_real_</span> <span class="cf">else</span> <span class="fu">max</span>(value_num, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-25"><a href="#cb4-25" aria-label="25"></a>    <span class="at">.by =</span> column</span>
-<span id="cb4-26"><a href="#cb4-26" aria-label="26"></a>  )</span>
-<span id="cb4-27"><a href="#cb4-27" aria-label="27"></a></span>
-<span id="cb4-28"><a href="#cb4-28" aria-label="28"></a><span class="co"># every distinct label in the categorical columns ----</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-label="29"></a>labels_df <span class="ot">&lt;-</span> raw_df <span class="sc">|&gt;</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-label="30"></a>  <span class="fu">select</span>(sex, treatment_arm) <span class="sc">|&gt;</span></span>
-<span id="cb4-31"><a href="#cb4-31" aria-label="31"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"column"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-label="32"></a>  <span class="fu">count</span>(column, value, <span class="at">sort =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-33"><a href="#cb4-33" aria-label="33"></a></span>
-<span id="cb4-34"><a href="#cb4-34" aria-label="34"></a><span class="co"># identifiers that appear more than once ----</span></span>
-<span id="cb4-35"><a href="#cb4-35" aria-label="35"></a>repeated_ids_df <span class="ot">&lt;-</span> raw_df <span class="sc">|&gt;</span></span>
-<span id="cb4-36"><a href="#cb4-36" aria-label="36"></a>  <span class="fu">count</span>(subject_id) <span class="sc">|&gt;</span></span>
-<span id="cb4-37"><a href="#cb4-37" aria-label="37"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
-<span id="cb4-38"><a href="#cb4-38" aria-label="38"></a></span>
-<span id="cb4-39"><a href="#cb4-39" aria-label="39"></a><span class="fu">print</span>(profile_df, <span class="at">n =</span> <span class="cn">Inf</span>)</span>
-<span id="cb4-40"><a href="#cb4-40" aria-label="40"></a><span class="fu">print</span>(labels_df, <span class="at">n =</span> <span class="cn">Inf</span>)</span>
-<span id="cb4-41"><a href="#cb4-41" aria-label="41"></a><span class="fu">print</span>(repeated_ids_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a><span class="co"># scripts/00_profile.R ----</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-label="2"></a><span class="co"># Purpose: describe the raw file as entered, before any decision is made.</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-label="3"></a><span class="co"># Every column is read as character so codes such as 9999 or -1 appear</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-label="4"></a><span class="co"># exactly as entered.</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-label="5"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-label="6"></a><span class="fu">library</span>(here)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-label="7"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-label="8"></a>raw_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb5-9"><a href="#cb5-9" aria-label="9"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>),</span>
+<span id="cb5-10"><a href="#cb5-10" aria-label="10"></a>  <span class="at">col_types =</span> <span class="fu">cols</span>(<span class="at">.default =</span> <span class="fu">col_character</span>())</span>
+<span id="cb5-11"><a href="#cb5-11" aria-label="11"></a>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-label="12"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-label="13"></a><span class="co"># one row per column: missingness, distinct values, numeric range ----</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-label="14"></a>profile_df <span class="ot">&lt;-</span> raw_df <span class="sc">|&gt;</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-label="15"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"column"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-label="16"></a>  <span class="co"># suppressWarnings: text values become NA here by design</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-label="17"></a>  <span class="fu">mutate</span>(<span class="at">value_num =</span> <span class="fu">suppressWarnings</span>(<span class="fu">as.numeric</span>(value))) <span class="sc">|&gt;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-label="18"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb5-19"><a href="#cb5-19" aria-label="19"></a>    <span class="at">n_rows =</span> <span class="fu">n</span>(),</span>
+<span id="cb5-20"><a href="#cb5-20" aria-label="20"></a>    <span class="at">n_missing =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(value)),</span>
+<span id="cb5-21"><a href="#cb5-21" aria-label="21"></a>    <span class="at">n_distinct =</span> <span class="fu">n_distinct</span>(value, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb5-22"><a href="#cb5-22" aria-label="22"></a>    <span class="at">n_numeric =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(value_num)),</span>
+<span id="cb5-23"><a href="#cb5-23" aria-label="23"></a>    <span class="at">min_numeric =</span> <span class="cf">if</span> (<span class="fu">all</span>(<span class="fu">is.na</span>(value_num))) <span class="cn">NA_real_</span> <span class="cf">else</span> <span class="fu">min</span>(value_num, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb5-24"><a href="#cb5-24" aria-label="24"></a>    <span class="at">max_numeric =</span> <span class="cf">if</span> (<span class="fu">all</span>(<span class="fu">is.na</span>(value_num))) <span class="cn">NA_real_</span> <span class="cf">else</span> <span class="fu">max</span>(value_num, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb5-25"><a href="#cb5-25" aria-label="25"></a>    <span class="at">.by =</span> column</span>
+<span id="cb5-26"><a href="#cb5-26" aria-label="26"></a>  )</span>
+<span id="cb5-27"><a href="#cb5-27" aria-label="27"></a></span>
+<span id="cb5-28"><a href="#cb5-28" aria-label="28"></a><span class="co"># every distinct label in the categorical columns ----</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-label="29"></a>labels_df <span class="ot">&lt;-</span> raw_df <span class="sc">|&gt;</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-label="30"></a>  <span class="fu">select</span>(sex, treatment_arm) <span class="sc">|&gt;</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-label="31"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"column"</span>, <span class="at">values_to =</span> <span class="st">"value"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-label="32"></a>  <span class="fu">count</span>(column, value, <span class="at">sort =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-label="33"></a></span>
+<span id="cb5-34"><a href="#cb5-34" aria-label="34"></a><span class="co"># identifiers that appear more than once ----</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-label="35"></a>repeated_ids_df <span class="ot">&lt;-</span> raw_df <span class="sc">|&gt;</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-label="36"></a>  <span class="fu">count</span>(subject_id) <span class="sc">|&gt;</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-label="37"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb5-38"><a href="#cb5-38" aria-label="38"></a></span>
+<span id="cb5-39"><a href="#cb5-39" aria-label="39"></a><span class="fu">print</span>(profile_df, <span class="at">n =</span> <span class="cn">Inf</span>)</span>
+<span id="cb5-40"><a href="#cb5-40" aria-label="40"></a><span class="fu">print</span>(labels_df, <span class="at">n =</span> <span class="cn">Inf</span>)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-label="41"></a><span class="fu">print</span>(repeated_ids_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Keep the output. It is the factual input to Step 2.</p>
 </section><section id="step-2-draft-the-codebook-then-audit-it" class="level2"><h2 class="anchored" data-anchor-id="step-2-draft-the-codebook-then-audit-it">Step 2: Draft the codebook, then audit it</h2>
 <p>The codebook is the data dictionary you wrote for the README on Day 2 (<a href="./06-reproducibility.html#repro-fix">Fixing it with structure, cleaning and a README</a>), with machine-readable rules added: valid ranges, missing-value codes and label mappings that both the cleaning skill and the validation rules can read.</p>
 <div class="task">
 <div class="task-header">
-<p>Draft and audit the codebook</p>
+<p>Draft and audit the codebook (12 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>1. Let the AI draft it from the profile alone.</strong> Do not give it the data provider’s note yet.</p>
-<pre><code>Here is a profile of a raw data file. Draft docs/codebook.csv with the
-columns: column, type, rule, min, max, missing_codes, unit, source.
-In the source column, state for every entry whether it comes from the
-profile or is your assumption. Do not write any other file.
-
-[paste the output of scripts/00_profile.R]</code></pre>
+<p><strong>1. Let an AI draft it from the profile alone.</strong> Use a browser chat window, not Claude Code: started in your workshop repository, Claude Code could open <code>docs/data_note.md</code> itself, and the point of this step is to see what the AI infers without it. Paste only the profile output.</p>
+<p><strong>Prompt (browser chat):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>Here is a profile of a raw data file. Draft a codebook as CSV with the</span>
+<span id="cb6-2"><a href="#cb6-2" aria-label="2"></a>columns: column, type, rule, min, max, missing_codes, unit, source.</span>
+<span id="cb6-3"><a href="#cb6-3" aria-label="3"></a>In the source column, state for every entry whether it comes from the</span>
+<span id="cb6-4"><a href="#cb6-4" aria-label="4"></a>profile or is your assumption.</span>
+<span id="cb6-5"><a href="#cb6-5" aria-label="5"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-label="6"></a>[paste the output of scripts/00_profile.R]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Save the draft as <code>docs/codebook.csv</code> yourself. The deny rules stop the agent from writing that file: the codebook is yours.</p>
 <p><strong>2. Audit the draft.</strong> Before you open <code>docs/data_note.md</code>, answer:</p>
 <ul>
 <li>Did the draft list <code>9999</code> as a missing-value code, or treat it as a large measurement?</li>
 <li>Did it notice that <code>-1</code> is a code?</li>
 <li>Where did its <code>min</code> and <code>max</code> come from? A range read off the data includes the errors in the data, so it cannot be used to detect them. Valid ranges must come from the biology or the protocol.</li>
 </ul>
-<p><strong>3. Correct it against the data provider’s note.</strong> Open <code>docs/data_note.md</code> and edit the codebook yourself. Every line should be traceable to the note or to a decision you can defend.</p>
+<p><strong>3. Correct it against the data provider’s note.</strong> Open <code>docs/data_note.md</code> and edit the codebook yourself. Every line should be traceable to the note or to a decision you can defend. Commit it.</p>
 </div>
 </div>
 <div class="webex-solution">
@@ -871,61 +939,61 @@ mass_post_g,double,,15,60,9999,g,data note (range from colony records)
 metabolic_rate_post,double,,5,30,-1,&lt;unit&gt;,data note (range from equipment)</code></pre>
 </div>
 </section><section id="step-3-run-the-validation-rules" class="level2"><h2 class="anchored" data-anchor-id="step-3-run-the-validation-rules">Step 3: Run the validation rules</h2>
-<p>Validation rules are transcribed from the codebook, not from the cleaning script. If the same session writes both, a single misunderstanding (for example, that <code>-1</code> is a valid reading) passes both.</p>
-<p>The template provides <code>scripts/functions/validate_voles.R</code>, written from the codebook by a person. It uses the pointblank package: each line is one rule, and <code>interrogate()</code> reports how many rows break it. You do not need to write pointblank code today.</p>
+<p>Validation rules are transcribed from the codebook, not from the cleaning script. If the same AI conversation writes both, a single misunderstanding (for example, that <code>-1</code> is a valid reading) passes both.</p>
+<p>The template provides <code>scripts/functions/validate_voles.R</code>, written from the codebook by a person. It uses the pointblank package: each line is one rule, and <code>interrogate()</code> reports how many rows break it. (pointblank calls the object that holds the rules an “agent”; it has nothing to do with AI agents.) You do not need to write pointblank code today.</p>
 <div class="webex-solution">
 <button>
 The provided version
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a><span class="co"># scripts/functions/validate_voles.R ----</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a><span class="co"># Rules transcribed from docs/codebook.csv by a human, not by the agent</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-label="3"></a><span class="co"># that writes the cleaning script.</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-label="4"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a>voles_col_types <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a>  readr<span class="sc">::</span><span class="fu">cols</span>(</span>
-<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a>    <span class="at">subject_id =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
-<span id="cb7-8"><a href="#cb7-8" aria-label="8"></a>    <span class="at">sex =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
-<span id="cb7-9"><a href="#cb7-9" aria-label="9"></a>    <span class="at">treatment_arm =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
-<span id="cb7-10"><a href="#cb7-10" aria-label="10"></a>    <span class="at">mass_pre_g =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
-<span id="cb7-11"><a href="#cb7-11" aria-label="11"></a>    <span class="at">mass_post_g =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
-<span id="cb7-12"><a href="#cb7-12" aria-label="12"></a>    <span class="at">metabolic_rate_post =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
-<span id="cb7-13"><a href="#cb7-13" aria-label="13"></a>    <span class="at">.default =</span> readr<span class="sc">::</span><span class="fu">col_character</span>()</span>
-<span id="cb7-14"><a href="#cb7-14" aria-label="14"></a>  )</span>
-<span id="cb7-15"><a href="#cb7-15" aria-label="15"></a>}</span>
-<span id="cb7-16"><a href="#cb7-16" aria-label="16"></a></span>
-<span id="cb7-17"><a href="#cb7-17" aria-label="17"></a>validate_voles <span class="ot">&lt;-</span> <span class="cf">function</span>(data, label) {</span>
-<span id="cb7-18"><a href="#cb7-18" aria-label="18"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-label="19"></a>    pointblank<span class="sc">::</span><span class="fu">create_agent</span>(<span class="at">label =</span> label) <span class="sc">|&gt;</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-label="20"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_not_null</span>(<span class="at">columns =</span> <span class="fu">c</span>(subject_id, sex, treatment_arm)) <span class="sc">|&gt;</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-label="21"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_regex</span>(<span class="at">columns =</span> subject_id, <span class="at">regex =</span> <span class="st">"^V[0-9]{3}$"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-label="22"></a>    pointblank<span class="sc">::</span><span class="fu">rows_distinct</span>(<span class="at">columns =</span> subject_id) <span class="sc">|&gt;</span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-label="23"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_in_set</span>(<span class="at">columns =</span> sex, <span class="at">set =</span> <span class="fu">c</span>(<span class="st">"M"</span>, <span class="st">"F"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb7-24"><a href="#cb7-24" aria-label="24"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_in_set</span>(</span>
-<span id="cb7-25"><a href="#cb7-25" aria-label="25"></a>      <span class="at">columns =</span> treatment_arm,</span>
-<span id="cb7-26"><a href="#cb7-26" aria-label="26"></a>      <span class="at">set =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)</span>
-<span id="cb7-27"><a href="#cb7-27" aria-label="27"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb7-28"><a href="#cb7-28" aria-label="28"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_between</span>(</span>
-<span id="cb7-29"><a href="#cb7-29" aria-label="29"></a>      <span class="at">columns =</span> <span class="fu">c</span>(mass_pre_g, mass_post_g),</span>
-<span id="cb7-30"><a href="#cb7-30" aria-label="30"></a>      <span class="at">left =</span> <span class="dv">15</span>, <span class="at">right =</span> <span class="dv">60</span>, <span class="at">na_pass =</span> <span class="cn">TRUE</span></span>
-<span id="cb7-31"><a href="#cb7-31" aria-label="31"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb7-32"><a href="#cb7-32" aria-label="32"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_between</span>(</span>
-<span id="cb7-33"><a href="#cb7-33" aria-label="33"></a>      <span class="at">columns =</span> metabolic_rate_post,</span>
-<span id="cb7-34"><a href="#cb7-34" aria-label="34"></a>      <span class="at">left =</span> <span class="dv">5</span>, <span class="at">right =</span> <span class="dv">30</span>, <span class="at">na_pass =</span> <span class="cn">TRUE</span></span>
-<span id="cb7-35"><a href="#cb7-35" aria-label="35"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb7-36"><a href="#cb7-36" aria-label="36"></a>    pointblank<span class="sc">::</span><span class="fu">interrogate</span>()</span>
-<span id="cb7-37"><a href="#cb7-37" aria-label="37"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a><span class="co"># scripts/functions/validate_voles.R ----</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a><span class="co"># Rules transcribed from docs/codebook.csv by a human, not by the agent</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a><span class="co"># that writes the cleaning script.</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-label="5"></a>voles_col_types <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb8-6"><a href="#cb8-6" aria-label="6"></a>  readr<span class="sc">::</span><span class="fu">cols</span>(</span>
+<span id="cb8-7"><a href="#cb8-7" aria-label="7"></a>    <span class="at">subject_id =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
+<span id="cb8-8"><a href="#cb8-8" aria-label="8"></a>    <span class="at">sex =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
+<span id="cb8-9"><a href="#cb8-9" aria-label="9"></a>    <span class="at">treatment_arm =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
+<span id="cb8-10"><a href="#cb8-10" aria-label="10"></a>    <span class="at">mass_pre_g =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
+<span id="cb8-11"><a href="#cb8-11" aria-label="11"></a>    <span class="at">mass_post_g =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
+<span id="cb8-12"><a href="#cb8-12" aria-label="12"></a>    <span class="at">metabolic_rate_post =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
+<span id="cb8-13"><a href="#cb8-13" aria-label="13"></a>    <span class="at">.default =</span> readr<span class="sc">::</span><span class="fu">col_character</span>()</span>
+<span id="cb8-14"><a href="#cb8-14" aria-label="14"></a>  )</span>
+<span id="cb8-15"><a href="#cb8-15" aria-label="15"></a>}</span>
+<span id="cb8-16"><a href="#cb8-16" aria-label="16"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-label="17"></a>validate_voles <span class="ot">&lt;-</span> <span class="cf">function</span>(data, label) {</span>
+<span id="cb8-18"><a href="#cb8-18" aria-label="18"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-label="19"></a>    pointblank<span class="sc">::</span><span class="fu">create_agent</span>(<span class="at">label =</span> label) <span class="sc">|&gt;</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-label="20"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_not_null</span>(<span class="at">columns =</span> <span class="fu">c</span>(subject_id, sex, treatment_arm)) <span class="sc">|&gt;</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-label="21"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_regex</span>(<span class="at">columns =</span> subject_id, <span class="at">regex =</span> <span class="st">"^V[0-9]{3}$"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-label="22"></a>    pointblank<span class="sc">::</span><span class="fu">rows_distinct</span>(<span class="at">columns =</span> subject_id) <span class="sc">|&gt;</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-label="23"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_in_set</span>(<span class="at">columns =</span> sex, <span class="at">set =</span> <span class="fu">c</span>(<span class="st">"M"</span>, <span class="st">"F"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-label="24"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_in_set</span>(</span>
+<span id="cb8-25"><a href="#cb8-25" aria-label="25"></a>      <span class="at">columns =</span> treatment_arm,</span>
+<span id="cb8-26"><a href="#cb8-26" aria-label="26"></a>      <span class="at">set =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-label="27"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-label="28"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_between</span>(</span>
+<span id="cb8-29"><a href="#cb8-29" aria-label="29"></a>      <span class="at">columns =</span> <span class="fu">c</span>(mass_pre_g, mass_post_g),</span>
+<span id="cb8-30"><a href="#cb8-30" aria-label="30"></a>      <span class="at">left =</span> <span class="dv">15</span>, <span class="at">right =</span> <span class="dv">60</span>, <span class="at">na_pass =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-label="31"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-label="32"></a>    pointblank<span class="sc">::</span><span class="fu">col_vals_between</span>(</span>
+<span id="cb8-33"><a href="#cb8-33" aria-label="33"></a>      <span class="at">columns =</span> metabolic_rate_post,</span>
+<span id="cb8-34"><a href="#cb8-34" aria-label="34"></a>      <span class="at">left =</span> <span class="dv">5</span>, <span class="at">right =</span> <span class="dv">30</span>, <span class="at">na_pass =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-label="35"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb8-36"><a href="#cb8-36" aria-label="36"></a>    pointblank<span class="sc">::</span><span class="fu">interrogate</span>()</span>
+<span id="cb8-37"><a href="#cb8-37" aria-label="37"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
-<p><strong>Run the rules on the raw data. They should fail.</strong> If raw data pass every rule, either the data are already clean or the rules are too weak, and you should suspect the second.</p>
+<p><strong>Run the rules on the raw data. They should fail.</strong> If raw data pass every rule, either the data are already clean or the rules are too weak, and you should suspect the second. Run the provided <code>scripts/02_validate.R</code> in the R console:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a><span class="co"># scripts/02_validate.R ----</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"validate_voles.R"</span>))</span>
-<span id="cb8-5"><a href="#cb8-5" aria-label="5"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-label="6"></a>raw_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>), <span class="at">col_types =</span> <span class="fu">voles_col_types</span>())</span>
-<span id="cb8-7"><a href="#cb8-7" aria-label="7"></a><span class="fu">validate_voles</span>(raw_df, <span class="st">"Raw data: expected to FAIL"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a><span class="co"># scripts/02_validate.R ----</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"validate_voles.R"</span>))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-label="6"></a>raw_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>), <span class="at">col_types =</span> <span class="fu">voles_col_types</span>())</span>
+<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a><span class="fu">validate_voles</span>(raw_df, <span class="st">"Raw data: expected to FAIL"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Note which rules fail and how many rows each flags. Every failure is a problem that the cleaning must resolve or log.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
@@ -957,53 +1025,53 @@ Warning
 <div class="callout-body-container callout-body">
 <div class="cell" data-layout-align="center">
 <div class="cell-output cell-output-stdout">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a><span class="co">---</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a><span class="an">name:</span><span class="co"> clean-with-codebook</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a><span class="an">description:</span><span class="co"> &gt;-</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a><span class="co">  Writes or revises a reproducible R cleaning script that applies a</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a><span class="co">  human-authored codebook (docs/codebook.csv) to raw tabular data. Use when</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-label="6"></a><span class="co">  asked to clean, recode or prepare raw data in a project that has a codebook.</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a><span class="co">  Not for exploratory analysis or modelling.</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-label="9"></a><span class="co">---</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-label="10"></a></span>
-<span id="cb9-11"><a href="#cb9-11" aria-label="11"></a><span class="fu"># Clean data against a codebook</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-label="12"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-label="13"></a><span class="fu">## Hard constraints</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-label="14"></a><span class="ss">1. </span>Never modify anything under data/raw/. Read raw files with explicit</span>
-<span id="cb9-15"><a href="#cb9-15" aria-label="15"></a>   column types.</span>
-<span id="cb9-16"><a href="#cb9-16" aria-label="16"></a><span class="ss">2. </span>The codebook is the only source of rules. Do not infer units, ranges,</span>
-<span id="cb9-17"><a href="#cb9-17" aria-label="17"></a>   missing-value codes or label mappings that the codebook does not state.</span>
-<span id="cb9-18"><a href="#cb9-18" aria-label="18"></a><span class="ss">3. </span>Do not edit docs/, scripts/functions/, scripts/02_validate.R,</span>
-<span id="cb9-19"><a href="#cb9-19" aria-label="19"></a>   scripts/03_audit_cleaning.R or anything under tests/. If a check fails,</span>
-<span id="cb9-20"><a href="#cb9-20" aria-label="20"></a>   report it; never change a check to make it pass.</span>
-<span id="cb9-21"><a href="#cb9-21" aria-label="21"></a><span class="ss">4. </span>Never drop a row silently. Every excluded row goes in the exclusion log</span>
-<span id="cb9-22"><a href="#cb9-22" aria-label="22"></a>   with a reason.</span>
-<span id="cb9-23"><a href="#cb9-23" aria-label="23"></a><span class="ss">5. </span>Every changed cell goes in the cleaning log.</span>
-<span id="cb9-24"><a href="#cb9-24" aria-label="24"></a><span class="ss">6. </span>A value outside a codebook range that no codebook rule explains is set to</span>
-<span id="cb9-25"><a href="#cb9-25" aria-label="25"></a>   NA, logged with rule "out_of_range_query", and listed in the final report.</span>
-<span id="cb9-26"><a href="#cb9-26" aria-label="26"></a>   Never correct it by guessing a unit or decimal error.</span>
-<span id="cb9-27"><a href="#cb9-27" aria-label="27"></a><span class="ss">7. </span>No imputation.</span>
-<span id="cb9-28"><a href="#cb9-28" aria-label="28"></a><span class="ss">8. </span>Tidyverse style, native pipe, here::here() for all paths.</span>
-<span id="cb9-29"><a href="#cb9-29" aria-label="29"></a></span>
-<span id="cb9-30"><a href="#cb9-30" aria-label="30"></a><span class="fu">## Procedure</span></span>
-<span id="cb9-31"><a href="#cb9-31" aria-label="31"></a><span class="ss">1. </span>Present a plan before writing anything: every rule you will apply, the</span>
-<span id="cb9-32"><a href="#cb9-32" aria-label="32"></a>   codebook row it comes from, and the order. Wait for the user to confirm.</span>
-<span id="cb9-33"><a href="#cb9-33" aria-label="33"></a><span class="ss">2. </span>If the data contain a value the codebook does not cover, stop and ask.</span>
-<span id="cb9-34"><a href="#cb9-34" aria-label="34"></a><span class="ss">3. </span>Write scripts/01_clean.R and run it in a fresh R session.</span>
-<span id="cb9-35"><a href="#cb9-35" aria-label="35"></a><span class="ss">4. </span>Run scripts/02_validate.R on the clean data and run the tests in tests/.</span>
-<span id="cb9-36"><a href="#cb9-36" aria-label="36"></a>   Report the results verbatim.</span>
-<span id="cb9-37"><a href="#cb9-37" aria-label="37"></a></span>
-<span id="cb9-38"><a href="#cb9-38" aria-label="38"></a><span class="fu">## Outputs (exact columns)</span></span>
-<span id="cb9-39"><a href="#cb9-39" aria-label="39"></a><span class="ss">- </span>data/derived/voles_clean.csv: the codebook columns plus raw_row, the row</span>
-<span id="cb9-40"><a href="#cb9-40" aria-label="40"></a>  number in the raw file.</span>
-<span id="cb9-41"><a href="#cb9-41" aria-label="41"></a><span class="ss">- </span>data/derived/exclusion_log.csv: raw_row, subject_id, reason.</span>
-<span id="cb9-42"><a href="#cb9-42" aria-label="42"></a><span class="ss">- </span>data/derived/cleaning_log.csv: raw_row, subject_id, column, old_value,</span>
-<span id="cb9-43"><a href="#cb9-43" aria-label="43"></a>  new_value, rule.</span>
-<span id="cb9-44"><a href="#cb9-44" aria-label="44"></a></span>
-<span id="cb9-45"><a href="#cb9-45" aria-label="45"></a><span class="fu">## Final report</span></span>
-<span id="cb9-46"><a href="#cb9-46" aria-label="46"></a>Row counts in, out and excluded; every value set to NA for query; any gaps</span>
-<span id="cb9-47"><a href="#cb9-47" aria-label="47"></a>in the codebook you found.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a><span class="co">---</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a><span class="an">name:</span><span class="co"> clean-with-codebook</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a><span class="an">description:</span><span class="co"> &gt;-</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-label="4"></a><span class="co">  Writes or revises a reproducible R cleaning script that applies a</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-label="5"></a><span class="co">  human-authored codebook (docs/codebook.csv) to raw tabular data. Use when</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-label="6"></a><span class="co">  asked to clean, recode or prepare raw data in a project that has a codebook.</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-label="7"></a><span class="co">  Not for exploratory analysis or modelling.</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-label="8"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-label="9"></a><span class="co">---</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-label="10"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-label="11"></a><span class="fu"># Clean data against a codebook</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-label="12"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-label="13"></a><span class="fu">## Hard constraints</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-label="14"></a><span class="ss">1. </span>Never modify anything under data/raw/. Read raw files with explicit</span>
+<span id="cb10-15"><a href="#cb10-15" aria-label="15"></a>   column types.</span>
+<span id="cb10-16"><a href="#cb10-16" aria-label="16"></a><span class="ss">2. </span>The codebook is the only source of rules. Do not infer units, ranges,</span>
+<span id="cb10-17"><a href="#cb10-17" aria-label="17"></a>   missing-value codes or label mappings that the codebook does not state.</span>
+<span id="cb10-18"><a href="#cb10-18" aria-label="18"></a><span class="ss">3. </span>Do not edit docs/, scripts/functions/, scripts/02_validate.R,</span>
+<span id="cb10-19"><a href="#cb10-19" aria-label="19"></a>   scripts/03_audit_cleaning.R or anything under tests/. If a check fails,</span>
+<span id="cb10-20"><a href="#cb10-20" aria-label="20"></a>   report it; never change a check to make it pass.</span>
+<span id="cb10-21"><a href="#cb10-21" aria-label="21"></a><span class="ss">4. </span>Never drop a row silently. Every excluded row goes in the exclusion log</span>
+<span id="cb10-22"><a href="#cb10-22" aria-label="22"></a>   with a reason.</span>
+<span id="cb10-23"><a href="#cb10-23" aria-label="23"></a><span class="ss">5. </span>Every changed cell goes in the cleaning log.</span>
+<span id="cb10-24"><a href="#cb10-24" aria-label="24"></a><span class="ss">6. </span>A value outside a codebook range that no codebook rule explains is set to</span>
+<span id="cb10-25"><a href="#cb10-25" aria-label="25"></a>   NA, logged with rule "out_of_range_query", and listed in the final report.</span>
+<span id="cb10-26"><a href="#cb10-26" aria-label="26"></a>   Never correct it by guessing a unit or decimal error.</span>
+<span id="cb10-27"><a href="#cb10-27" aria-label="27"></a><span class="ss">7. </span>No imputation.</span>
+<span id="cb10-28"><a href="#cb10-28" aria-label="28"></a><span class="ss">8. </span>Tidyverse style, native pipe, here::here() for all paths.</span>
+<span id="cb10-29"><a href="#cb10-29" aria-label="29"></a></span>
+<span id="cb10-30"><a href="#cb10-30" aria-label="30"></a><span class="fu">## Procedure</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-label="31"></a><span class="ss">1. </span>Present a plan before writing anything: every rule you will apply, the</span>
+<span id="cb10-32"><a href="#cb10-32" aria-label="32"></a>   codebook row it comes from, and the order. Wait for the user to confirm.</span>
+<span id="cb10-33"><a href="#cb10-33" aria-label="33"></a><span class="ss">2. </span>If the data contain a value the codebook does not cover, stop and ask.</span>
+<span id="cb10-34"><a href="#cb10-34" aria-label="34"></a><span class="ss">3. </span>Write scripts/01_clean.R and run it in a fresh R session.</span>
+<span id="cb10-35"><a href="#cb10-35" aria-label="35"></a><span class="ss">4. </span>Run scripts/02_validate.R on the clean data and run the tests in tests/.</span>
+<span id="cb10-36"><a href="#cb10-36" aria-label="36"></a>   Report the results verbatim.</span>
+<span id="cb10-37"><a href="#cb10-37" aria-label="37"></a></span>
+<span id="cb10-38"><a href="#cb10-38" aria-label="38"></a><span class="fu">## Outputs (exact columns)</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-label="39"></a><span class="ss">- </span>data/derived/voles_clean.csv: the codebook columns plus raw_row, the row</span>
+<span id="cb10-40"><a href="#cb10-40" aria-label="40"></a>  number in the raw file.</span>
+<span id="cb10-41"><a href="#cb10-41" aria-label="41"></a><span class="ss">- </span>data/derived/exclusion_log.csv: raw_row, subject_id, reason.</span>
+<span id="cb10-42"><a href="#cb10-42" aria-label="42"></a><span class="ss">- </span>data/derived/cleaning_log.csv: raw_row, subject_id, column, old_value,</span>
+<span id="cb10-43"><a href="#cb10-43" aria-label="43"></a>  new_value, rule.</span>
+<span id="cb10-44"><a href="#cb10-44" aria-label="44"></a></span>
+<span id="cb10-45"><a href="#cb10-45" aria-label="45"></a><span class="fu">## Final report</span></span>
+<span id="cb10-46"><a href="#cb10-46" aria-label="46"></a>Row counts in, out and excluded; every value set to NA for query; any gaps</span>
+<span id="cb10-47"><a href="#cb10-47" aria-label="47"></a>in the codebook you found.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -1011,12 +1079,13 @@ Warning
 </div>
 <div class="task">
 <div class="task-header">
-<p>Plan, review, then execute</p>
+<p>Plan, review, then execute (15 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>1.</strong> With your repository committed and clean, start Claude Code in plan mode (<code>Shift+Tab</code> until the mode shows <code>plan</code>, or <code>claude --permission-mode plan</code>) and invoke the skill:</p>
-<pre><code>/clean-with-codebook
-Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.</code></pre>
+<p><strong>1. Start in plan mode and invoke the skill.</strong> With your repository committed and clean, start Claude Code in <code>plan</code> mode (<code>Shift+Tab</code> until the mode shows <code>plan</code>, or <code>claude --permission-mode plan</code>), then:</p>
+<p><strong>Prompt (Claude Code):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>/clean-with-codebook</span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -1040,110 +1109,120 @@ Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.</code
 <li>no file outside <code>scripts/01_clean.R</code> and <code>data/derived/</code> will be written;</li>
 <li>duplicates are handled by a stated rule, with each exclusion logged.</li>
 </ul>
-<p><strong>3.</strong> Approve, let it execute, and note every time it stopped to ask you something. A well-behaved agent should stop at least once.</p>
+<p><strong>3. Approve, and keep approving each step.</strong> When Claude Code asks how to proceed, choose <strong>Yes, manually approve edits</strong>, so it still asks before each change (see the <a href="./11-AI-programming-integrated.html#cc-quick-reference">quick reference</a>). Read each request, and note every time it stopped to ask you something. A well-behaved agent should stop at least once.</p>
 </div>
 </div>
 </section><section id="step-5-check-the-result" class="level2"><h2 class="anchored" data-anchor-id="step-5-check-the-result">Step 5: Check the result</h2>
 <p>Five checks, each catching something the others cannot.</p>
-<p><strong>1. Validation on clean data should pass.</strong> Run <code>validate_voles()</code> on <code>data/derived/voles_clean.csv</code>.</p>
-<p><strong>2. The tests: raw data unchanged and every row accounted for.</strong></p>
+<p><strong>1. Validation on clean data should pass.</strong></p>
+<p><strong>In the R console:</strong></p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a><span class="co"># tests/test_cleaning.R ----</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a><span class="fu">library</span>(testthat)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"validate_voles.R"</span>))</span>
-<span id="cb11-4"><a href="#cb11-4" aria-label="4"></a></span>
-<span id="cb11-5"><a href="#cb11-5" aria-label="5"></a>read_chr <span class="ot">&lt;-</span> <span class="cf">function</span>(...) {</span>
-<span id="cb11-6"><a href="#cb11-6" aria-label="6"></a>  readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
-<span id="cb11-7"><a href="#cb11-7" aria-label="7"></a>    here<span class="sc">::</span><span class="fu">here</span>(...),</span>
-<span id="cb11-8"><a href="#cb11-8" aria-label="8"></a>    <span class="at">col_types =</span> readr<span class="sc">::</span><span class="fu">cols</span>(<span class="at">.default =</span> readr<span class="sc">::</span><span class="fu">col_character</span>())</span>
-<span id="cb11-9"><a href="#cb11-9" aria-label="9"></a>  )</span>
-<span id="cb11-10"><a href="#cb11-10" aria-label="10"></a>}</span>
-<span id="cb11-11"><a href="#cb11-11" aria-label="11"></a></span>
-<span id="cb11-12"><a href="#cb11-12" aria-label="12"></a><span class="fu">test_that</span>(<span class="st">"raw data are unchanged"</span>, {</span>
-<span id="cb11-13"><a href="#cb11-13" aria-label="13"></a>  recorded <span class="ot">&lt;-</span> <span class="fu">readLines</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"raw_checksum.txt"</span>))</span>
-<span id="cb11-14"><a href="#cb11-14" aria-label="14"></a>  current <span class="ot">&lt;-</span> <span class="fu">unname</span>(tools<span class="sc">::</span><span class="fu">md5sum</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>)))</span>
-<span id="cb11-15"><a href="#cb11-15" aria-label="15"></a>  <span class="fu">expect_identical</span>(current, recorded)</span>
-<span id="cb11-16"><a href="#cb11-16" aria-label="16"></a>})</span>
-<span id="cb11-17"><a href="#cb11-17" aria-label="17"></a></span>
-<span id="cb11-18"><a href="#cb11-18" aria-label="18"></a><span class="fu">test_that</span>(<span class="st">"every raw row is either in the clean data or in the exclusion log"</span>, {</span>
-<span id="cb11-19"><a href="#cb11-19" aria-label="19"></a>  raw_df <span class="ot">&lt;-</span> <span class="fu">read_chr</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>)</span>
-<span id="cb11-20"><a href="#cb11-20" aria-label="20"></a>  clean_df <span class="ot">&lt;-</span> <span class="fu">read_chr</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"voles_clean.csv"</span>)</span>
-<span id="cb11-21"><a href="#cb11-21" aria-label="21"></a>  excluded_df <span class="ot">&lt;-</span> <span class="fu">read_chr</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"exclusion_log.csv"</span>)</span>
-<span id="cb11-22"><a href="#cb11-22" aria-label="22"></a></span>
-<span id="cb11-23"><a href="#cb11-23" aria-label="23"></a>  <span class="fu">expect_equal</span>(<span class="fu">nrow</span>(raw_df), <span class="fu">nrow</span>(clean_df) <span class="sc">+</span> <span class="fu">nrow</span>(excluded_df))</span>
-<span id="cb11-24"><a href="#cb11-24" aria-label="24"></a>  <span class="fu">expect_setequal</span>(</span>
-<span id="cb11-25"><a href="#cb11-25" aria-label="25"></a>    <span class="fu">c</span>(clean_df<span class="sc">$</span>raw_row, excluded_df<span class="sc">$</span>raw_row),</span>
-<span id="cb11-26"><a href="#cb11-26" aria-label="26"></a>    <span class="fu">as.character</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(raw_df)))</span>
-<span id="cb11-27"><a href="#cb11-27" aria-label="27"></a>  )</span>
-<span id="cb11-28"><a href="#cb11-28" aria-label="28"></a>  <span class="fu">expect_false</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(excluded_df<span class="sc">$</span>reason) <span class="sc">|</span> excluded_df<span class="sc">$</span>reason <span class="sc">==</span> <span class="st">""</span>))</span>
-<span id="cb11-29"><a href="#cb11-29" aria-label="29"></a>})</span>
-<span id="cb11-30"><a href="#cb11-30" aria-label="30"></a></span>
-<span id="cb11-31"><a href="#cb11-31" aria-label="31"></a><span class="fu">test_that</span>(<span class="st">"clean data pass every codebook rule"</span>, {</span>
-<span id="cb11-32"><a href="#cb11-32" aria-label="32"></a>  clean_df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
-<span id="cb11-33"><a href="#cb11-33" aria-label="33"></a>    here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"voles_clean.csv"</span>),</span>
-<span id="cb11-34"><a href="#cb11-34" aria-label="34"></a>    <span class="at">col_types =</span> <span class="fu">voles_col_types</span>()</span>
-<span id="cb11-35"><a href="#cb11-35" aria-label="35"></a>  )</span>
-<span id="cb11-36"><a href="#cb11-36" aria-label="36"></a>  agent <span class="ot">&lt;-</span> <span class="fu">validate_voles</span>(clean_df, <span class="st">"Clean data"</span>)</span>
-<span id="cb11-37"><a href="#cb11-37" aria-label="37"></a>  <span class="fu">expect_true</span>(pointblank<span class="sc">::</span><span class="fu">all_passed</span>(agent))</span>
-<span id="cb11-38"><a href="#cb11-38" aria-label="38"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"validate_voles.R"</span>))</span>
+<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>clean_df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"voles_clean.csv"</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a>  <span class="at">col_types =</span> <span class="fu">voles_col_types</span>()</span>
+<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-label="6"></a><span class="fu">validate_voles</span>(clean_df, <span class="st">"Clean data: expected to pass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Run with <code>testthat::test_file(here::here("tests", "test_cleaning.R"))</code>.</p>
-<p><strong>3. Audit the logs against the data.</strong> The cleaning log was written by the agent, so check it rather than trust it:</p>
+<p><strong>2. The tests: raw data unchanged and every row accounted for.</strong> The provided <code>tests/test_cleaning.R</code>:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a><span class="co"># scripts/03_audit_cleaning.R ----</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"validate_voles.R"</span>))</span>
-<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-label="6"></a>to_long <span class="ot">&lt;-</span> <span class="cf">function</span>(data, value_name) {</span>
-<span id="cb12-7"><a href="#cb12-7" aria-label="7"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-label="8"></a>    <span class="fu">pivot_longer</span>(</span>
-<span id="cb12-9"><a href="#cb12-9" aria-label="9"></a>      <span class="sc">-</span>raw_row,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-label="10"></a>      <span class="at">names_to =</span> <span class="st">"column"</span>,</span>
-<span id="cb12-11"><a href="#cb12-11" aria-label="11"></a>      <span class="at">values_to =</span> value_name,</span>
-<span id="cb12-12"><a href="#cb12-12" aria-label="12"></a>      <span class="at">values_transform =</span> as.character</span>
-<span id="cb12-13"><a href="#cb12-13" aria-label="13"></a>    )</span>
-<span id="cb12-14"><a href="#cb12-14" aria-label="14"></a>}</span>
-<span id="cb12-15"><a href="#cb12-15" aria-label="15"></a></span>
-<span id="cb12-16"><a href="#cb12-16" aria-label="16"></a>raw_long_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>), <span class="at">col_types =</span> <span class="fu">voles_col_types</span>()) <span class="sc">|&gt;</span></span>
-<span id="cb12-17"><a href="#cb12-17" aria-label="17"></a>  <span class="fu">mutate</span>(<span class="at">raw_row =</span> <span class="fu">as.character</span>(<span class="fu">row_number</span>())) <span class="sc">|&gt;</span></span>
-<span id="cb12-18"><a href="#cb12-18" aria-label="18"></a>  <span class="fu">to_long</span>(<span class="st">"raw_value"</span>)</span>
-<span id="cb12-19"><a href="#cb12-19" aria-label="19"></a></span>
-<span id="cb12-20"><a href="#cb12-20" aria-label="20"></a>clean_long_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"voles_clean.csv"</span>), <span class="at">col_types =</span> <span class="fu">voles_col_types</span>()) <span class="sc">|&gt;</span></span>
-<span id="cb12-21"><a href="#cb12-21" aria-label="21"></a>  <span class="fu">to_long</span>(<span class="st">"clean_value"</span>)</span>
-<span id="cb12-22"><a href="#cb12-22" aria-label="22"></a></span>
-<span id="cb12-23"><a href="#cb12-23" aria-label="23"></a>cleaning_log_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
-<span id="cb12-24"><a href="#cb12-24" aria-label="24"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"cleaning_log.csv"</span>),</span>
-<span id="cb12-25"><a href="#cb12-25" aria-label="25"></a>  <span class="at">col_types =</span> <span class="fu">cols</span>(<span class="at">.default =</span> <span class="fu">col_character</span>())</span>
-<span id="cb12-26"><a href="#cb12-26" aria-label="26"></a>)</span>
-<span id="cb12-27"><a href="#cb12-27" aria-label="27"></a></span>
-<span id="cb12-28"><a href="#cb12-28" aria-label="28"></a><span class="co"># 1. Truthful: every logged old value matches the raw file ----</span></span>
-<span id="cb12-29"><a href="#cb12-29" aria-label="29"></a>untruthful_df <span class="ot">&lt;-</span> cleaning_log_df <span class="sc">|&gt;</span></span>
-<span id="cb12-30"><a href="#cb12-30" aria-label="30"></a>  <span class="fu">left_join</span>(raw_long_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"raw_row"</span>, <span class="st">"column"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb12-31"><a href="#cb12-31" aria-label="31"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">map2_lgl</span>(old_value, raw_value, identical))</span>
-<span id="cb12-32"><a href="#cb12-32" aria-label="32"></a></span>
-<span id="cb12-33"><a href="#cb12-33" aria-label="33"></a><span class="co"># 2. Complete: every changed cell appears in the log ----</span></span>
-<span id="cb12-34"><a href="#cb12-34" aria-label="34"></a>unlogged_df <span class="ot">&lt;-</span> clean_long_df <span class="sc">|&gt;</span></span>
-<span id="cb12-35"><a href="#cb12-35" aria-label="35"></a>  <span class="fu">left_join</span>(raw_long_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"raw_row"</span>, <span class="st">"column"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb12-36"><a href="#cb12-36" aria-label="36"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">map2_lgl</span>(clean_value, raw_value, identical)) <span class="sc">|&gt;</span></span>
-<span id="cb12-37"><a href="#cb12-37" aria-label="37"></a>  <span class="fu">anti_join</span>(cleaning_log_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"raw_row"</span>, <span class="st">"column"</span>))</span>
-<span id="cb12-38"><a href="#cb12-38" aria-label="38"></a></span>
-<span id="cb12-39"><a href="#cb12-39" aria-label="39"></a>untruthful_df</span>
-<span id="cb12-40"><a href="#cb12-40" aria-label="40"></a>unlogged_df</span>
-<span id="cb12-41"><a href="#cb12-41" aria-label="41"></a></span>
-<span id="cb12-42"><a href="#cb12-42" aria-label="42"></a><span class="co"># 3. What kinds of change were made ----</span></span>
-<span id="cb12-43"><a href="#cb12-43" aria-label="43"></a>cleaning_log_df <span class="sc">|&gt;</span> <span class="fu">count</span>(column, rule, <span class="at">sort =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb12-44"><a href="#cb12-44" aria-label="44"></a></span>
-<span id="cb12-45"><a href="#cb12-45" aria-label="45"></a><span class="co"># 4. Ten logged changes to check by hand against the raw file ----</span></span>
-<span id="cb12-46"><a href="#cb12-46" aria-label="46"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
-<span id="cb12-47"><a href="#cb12-47" aria-label="47"></a>cleaning_log_df <span class="sc">|&gt;</span> <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a><span class="co"># tests/test_cleaning.R ----</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a><span class="fu">library</span>(testthat)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"validate_voles.R"</span>))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-label="4"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-label="5"></a>read_chr <span class="ot">&lt;-</span> <span class="cf">function</span>(...) {</span>
+<span id="cb13-6"><a href="#cb13-6" aria-label="6"></a>  readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb13-7"><a href="#cb13-7" aria-label="7"></a>    here<span class="sc">::</span><span class="fu">here</span>(...),</span>
+<span id="cb13-8"><a href="#cb13-8" aria-label="8"></a>    <span class="at">col_types =</span> readr<span class="sc">::</span><span class="fu">cols</span>(<span class="at">.default =</span> readr<span class="sc">::</span><span class="fu">col_character</span>())</span>
+<span id="cb13-9"><a href="#cb13-9" aria-label="9"></a>  )</span>
+<span id="cb13-10"><a href="#cb13-10" aria-label="10"></a>}</span>
+<span id="cb13-11"><a href="#cb13-11" aria-label="11"></a></span>
+<span id="cb13-12"><a href="#cb13-12" aria-label="12"></a><span class="fu">test_that</span>(<span class="st">"raw data are unchanged"</span>, {</span>
+<span id="cb13-13"><a href="#cb13-13" aria-label="13"></a>  recorded <span class="ot">&lt;-</span> <span class="fu">readLines</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"raw_checksum.txt"</span>))</span>
+<span id="cb13-14"><a href="#cb13-14" aria-label="14"></a>  current <span class="ot">&lt;-</span> <span class="fu">unname</span>(tools<span class="sc">::</span><span class="fu">md5sum</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>)))</span>
+<span id="cb13-15"><a href="#cb13-15" aria-label="15"></a>  <span class="fu">expect_identical</span>(current, recorded)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-label="16"></a>})</span>
+<span id="cb13-17"><a href="#cb13-17" aria-label="17"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-label="18"></a><span class="fu">test_that</span>(<span class="st">"every raw row is either in the clean data or in the exclusion log"</span>, {</span>
+<span id="cb13-19"><a href="#cb13-19" aria-label="19"></a>  raw_df <span class="ot">&lt;-</span> <span class="fu">read_chr</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-label="20"></a>  clean_df <span class="ot">&lt;-</span> <span class="fu">read_chr</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"voles_clean.csv"</span>)</span>
+<span id="cb13-21"><a href="#cb13-21" aria-label="21"></a>  excluded_df <span class="ot">&lt;-</span> <span class="fu">read_chr</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"exclusion_log.csv"</span>)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-label="22"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-label="23"></a>  <span class="fu">expect_equal</span>(<span class="fu">nrow</span>(raw_df), <span class="fu">nrow</span>(clean_df) <span class="sc">+</span> <span class="fu">nrow</span>(excluded_df))</span>
+<span id="cb13-24"><a href="#cb13-24" aria-label="24"></a>  <span class="fu">expect_setequal</span>(</span>
+<span id="cb13-25"><a href="#cb13-25" aria-label="25"></a>    <span class="fu">c</span>(clean_df<span class="sc">$</span>raw_row, excluded_df<span class="sc">$</span>raw_row),</span>
+<span id="cb13-26"><a href="#cb13-26" aria-label="26"></a>    <span class="fu">as.character</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(raw_df)))</span>
+<span id="cb13-27"><a href="#cb13-27" aria-label="27"></a>  )</span>
+<span id="cb13-28"><a href="#cb13-28" aria-label="28"></a>  <span class="fu">expect_false</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(excluded_df<span class="sc">$</span>reason) <span class="sc">|</span> excluded_df<span class="sc">$</span>reason <span class="sc">==</span> <span class="st">""</span>))</span>
+<span id="cb13-29"><a href="#cb13-29" aria-label="29"></a>})</span>
+<span id="cb13-30"><a href="#cb13-30" aria-label="30"></a></span>
+<span id="cb13-31"><a href="#cb13-31" aria-label="31"></a><span class="fu">test_that</span>(<span class="st">"clean data pass every codebook rule"</span>, {</span>
+<span id="cb13-32"><a href="#cb13-32" aria-label="32"></a>  clean_df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb13-33"><a href="#cb13-33" aria-label="33"></a>    here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"voles_clean.csv"</span>),</span>
+<span id="cb13-34"><a href="#cb13-34" aria-label="34"></a>    <span class="at">col_types =</span> <span class="fu">voles_col_types</span>()</span>
+<span id="cb13-35"><a href="#cb13-35" aria-label="35"></a>  )</span>
+<span id="cb13-36"><a href="#cb13-36" aria-label="36"></a>  validation <span class="ot">&lt;-</span> <span class="fu">validate_voles</span>(clean_df, <span class="st">"Clean data"</span>)</span>
+<span id="cb13-37"><a href="#cb13-37" aria-label="37"></a>  <span class="fu">expect_true</span>(pointblank<span class="sc">::</span><span class="fu">all_passed</span>(validation))</span>
+<span id="cb13-38"><a href="#cb13-38" aria-label="38"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>In the R console, run <code>testthat::test_file(here::here("tests", "test_cleaning.R"))</code>.</p>
+<p><strong>3. Audit the logs against the data.</strong> The cleaning log was written by the agent, so check it rather than trust it. Run the provided <code>scripts/03_audit_cleaning.R</code> in the R console:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a><span class="co"># scripts/03_audit_cleaning.R ----</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"validate_voles.R"</span>))</span>
+<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a>to_long <span class="ot">&lt;-</span> <span class="cf">function</span>(data, value_name) {</span>
+<span id="cb14-7"><a href="#cb14-7" aria-label="7"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-label="8"></a>    <span class="fu">pivot_longer</span>(</span>
+<span id="cb14-9"><a href="#cb14-9" aria-label="9"></a>      <span class="sc">-</span>raw_row,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-label="10"></a>      <span class="at">names_to =</span> <span class="st">"column"</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-label="11"></a>      <span class="at">values_to =</span> value_name,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-label="12"></a>      <span class="at">values_transform =</span> as.character</span>
+<span id="cb14-13"><a href="#cb14-13" aria-label="13"></a>    )</span>
+<span id="cb14-14"><a href="#cb14-14" aria-label="14"></a>}</span>
+<span id="cb14-15"><a href="#cb14-15" aria-label="15"></a></span>
+<span id="cb14-16"><a href="#cb14-16" aria-label="16"></a>raw_long_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_raw.csv"</span>), <span class="at">col_types =</span> <span class="fu">voles_col_types</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-label="17"></a>  <span class="fu">mutate</span>(<span class="at">raw_row =</span> <span class="fu">as.character</span>(<span class="fu">row_number</span>())) <span class="sc">|&gt;</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-label="18"></a>  <span class="fu">to_long</span>(<span class="st">"raw_value"</span>)</span>
+<span id="cb14-19"><a href="#cb14-19" aria-label="19"></a></span>
+<span id="cb14-20"><a href="#cb14-20" aria-label="20"></a>clean_long_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"voles_clean.csv"</span>), <span class="at">col_types =</span> <span class="fu">voles_col_types</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-label="21"></a>  <span class="fu">to_long</span>(<span class="st">"clean_value"</span>)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-label="22"></a></span>
+<span id="cb14-23"><a href="#cb14-23" aria-label="23"></a>cleaning_log_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb14-24"><a href="#cb14-24" aria-label="24"></a>  <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"derived"</span>, <span class="st">"cleaning_log.csv"</span>),</span>
+<span id="cb14-25"><a href="#cb14-25" aria-label="25"></a>  <span class="at">col_types =</span> <span class="fu">cols</span>(<span class="at">.default =</span> <span class="fu">col_character</span>())</span>
+<span id="cb14-26"><a href="#cb14-26" aria-label="26"></a>)</span>
+<span id="cb14-27"><a href="#cb14-27" aria-label="27"></a></span>
+<span id="cb14-28"><a href="#cb14-28" aria-label="28"></a><span class="co"># 1. Truthful: every logged old value matches the raw file ----</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-label="29"></a>untruthful_df <span class="ot">&lt;-</span> cleaning_log_df <span class="sc">|&gt;</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-label="30"></a>  <span class="fu">left_join</span>(raw_long_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"raw_row"</span>, <span class="st">"column"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-label="31"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">map2_lgl</span>(old_value, raw_value, identical))</span>
+<span id="cb14-32"><a href="#cb14-32" aria-label="32"></a></span>
+<span id="cb14-33"><a href="#cb14-33" aria-label="33"></a><span class="co"># 2. Complete: every changed cell appears in the log ----</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-label="34"></a>unlogged_df <span class="ot">&lt;-</span> clean_long_df <span class="sc">|&gt;</span></span>
+<span id="cb14-35"><a href="#cb14-35" aria-label="35"></a>  <span class="fu">left_join</span>(raw_long_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"raw_row"</span>, <span class="st">"column"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-label="36"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">map2_lgl</span>(clean_value, raw_value, identical)) <span class="sc">|&gt;</span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-label="37"></a>  <span class="fu">anti_join</span>(cleaning_log_df, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"raw_row"</span>, <span class="st">"column"</span>))</span>
+<span id="cb14-38"><a href="#cb14-38" aria-label="38"></a></span>
+<span id="cb14-39"><a href="#cb14-39" aria-label="39"></a>untruthful_df</span>
+<span id="cb14-40"><a href="#cb14-40" aria-label="40"></a>unlogged_df</span>
+<span id="cb14-41"><a href="#cb14-41" aria-label="41"></a></span>
+<span id="cb14-42"><a href="#cb14-42" aria-label="42"></a><span class="co"># 3. What kinds of change were made ----</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-label="43"></a>cleaning_log_df <span class="sc">|&gt;</span> <span class="fu">count</span>(column, rule, <span class="at">sort =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-44"><a href="#cb14-44" aria-label="44"></a></span>
+<span id="cb14-45"><a href="#cb14-45" aria-label="45"></a><span class="co"># 4. Ten logged changes to check by hand against the raw file ----</span></span>
+<span id="cb14-46"><a href="#cb14-46" aria-label="46"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb14-47"><a href="#cb14-47" aria-label="47"></a>cleaning_log_df <span class="sc">|&gt;</span> <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>untruthful_df</code> and <code>unlogged_df</code> should both have zero rows. An unlogged change is the most dangerous outcome in this block: a value altered with no record. If a row appears, inspect it; a difference in number formatting is harmless, a changed value is not. For the ten sampled changes, open the raw file yourself and confirm each one.</p>
-<p><strong>4. Reproduce it without the agent.</strong> Your <code>AGENTS.md</code> and the skill asked for a script that runs in a fresh R session with the packages in <code>renv.lock</code>. Check, rather than trust. Commit the outputs, then in the terminal:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"renv::status()"</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a><span class="ex">Rscript</span> scripts/01_clean.R</span>
-<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a><span class="fu">git</span> status <span class="at">--short</span> data/derived</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> should report that the project is in a consistent state. If the agent installed or used a package that is not in <code>renv.lock</code>, it says so; decide whether you want the package, then update the lockfile with <code><a href="https://rstudio.github.io/renv/reference/snapshot.html">renv::snapshot()</a></code> as on <a href="./01-projects.html">Day 1</a>. <code>Rscript</code> runs the script in a fresh session, and the same script on the same raw data must write the same outputs, so <code>git status</code> should show no changes. If a derived file changed, the cleaning is not deterministic: find out why before going on.</p>
+<p><strong>4. Reproduce it without the agent.</strong> Your <code>AGENTS.md</code> and the skill asked for a script that runs in a <a class="glossary">fresh R session<span class="def">An R session with nothing loaded from earlier work, such as the one Rscript starts. Code that only works in your current session depends on something you did not record.</span></a> with the packages in the <a class="glossary">lockfile<span class="def">The renv.lock file that records the R version and the exact package versions a project uses, so renv::restore() can rebuild the same environment.</span></a>, <code>renv.lock</code>. Check, rather than trust. Commit the outputs, then:</p>
+<p><strong>In the terminal:</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a><span class="ex">Rscript</span> <span class="at">-e</span> <span class="st">"renv::status()"</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a><span class="ex">Rscript</span> scripts/01_clean.R</span>
+<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a><span class="fu">git</span> status <span class="at">--short</span> data/derived</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> should report that the project is in a consistent state. If the agent installed or used a package that is not in <code>renv.lock</code>, it says so; decide whether you want the package, then update the lockfile with <code><a href="https://rstudio.github.io/renv/reference/snapshot.html">renv::snapshot()</a></code> as on <a href="./01-projects.html">Day 1</a>. <code>Rscript</code> runs the script in a fresh R session, and the same script on the same raw data must write the same outputs, so <code>git status</code> should show no changes. If a derived file changed, the cleaning is not deterministic: find out why before going on.</p>
 <p><strong>5. Grade the pipeline against the planted errors.</strong> Your instructor will now release the answer key. For each planted error, record:</p>
 <table class="caption-top table">
 <colgroup>
@@ -1172,6 +1251,7 @@ Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.</code
 <li>What did the agent do with the mass recorded in kilograms and the value ten times too large? If it “corrected” them, on whose authority? If the provider confirms a kilogram entry, the correction becomes a codebook rule you add, not something the script infers.</li>
 <li>Which of your checks would have caught a script that set every mass to <code>NA</code>?</li>
 </ol>
+<p><strong>Payoff.</strong> What did the agent do, how long did checking it take, and would you automate this again?</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1186,7 +1266,7 @@ Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.</code
 <li>
 <strong>Check:</strong> validation rules transcribed from the codebook, not from the cleaning code; tests; the log audited against the raw file; the answer key.</li>
 <li>
-<strong>Reproduce:</strong> <code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> and a fresh <code>Rscript</code> run that writes identical outputs. Once the clean output is right, freeze it as a reference, as in the <a href="./11i-characterisation-tests.html">characterisation-test block</a>, so a later refactor of <code>01_clean.R</code> must reproduce it exactly.</li>
+<strong>Reproduce:</strong> <code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> and a fresh <code>Rscript</code> run that writes identical outputs. Once the clean output is right, you can freeze it as a reference, as you will in <a href="./11i-characterisation-tests.html">Block 9</a>, so a later refactor of <code>01_clean.R</code> must reproduce it exactly.</li>
 <li>
 <strong>Record:</strong> the codebook, the cleaning and exclusion logs, and a line in <code>docs/ai-log.md</code>: the skill, how many planted errors were handled as intended, and anything you overrode.</li>
 </ul>
@@ -1194,37 +1274,45 @@ Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.</code
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>Why must the codebook be written or confirmed by the analyst rather than inferred by the AI from the data?</strong></p>
-<div id="radio_EDMOTQITFB" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_EDMOTQITFB" value=""><span>Because AI tools cannot read CSV files</span></label><label><input type="radio" autocomplete="off" name="radio_EDMOTQITFB" value="answer"><span>Because missing-value codes, units and valid ranges are facts about how the data were collected; ranges read off the data include the very errors they are meant to detect</span></label><label><input type="radio" autocomplete="off" name="radio_EDMOTQITFB" value=""><span>Because codebooks must be written in a specific file format</span></label><label><input type="radio" autocomplete="off" name="radio_EDMOTQITFB" value=""><span>Because the AI would take too long to profile the data</span></label>
+<div id="radio_RAYZLISHJY" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_RAYZLISHJY" value=""><span>Because AI tools cannot read CSV files</span></label><label><input type="radio" autocomplete="off" name="radio_RAYZLISHJY" value="answer"><span>Because missing-value codes, units and valid ranges are facts about how the data were collected; ranges read off the data include the very errors they are meant to detect</span></label><label><input type="radio" autocomplete="off" name="radio_RAYZLISHJY" value=""><span>Because codebooks must be written in a specific file format</span></label><label><input type="radio" autocomplete="off" name="radio_RAYZLISHJY" value=""><span>Because the AI would take too long to profile the data</span></label>
 </div>
 <p><strong>Your validation rules all pass on the raw data before any cleaning. What is the most likely explanation in this exercise?</strong></p>
-<div id="radio_KHNSYDUCTL" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_KHNSYDUCTL" value=""><span>The cleaning script has already run</span></label><label><input type="radio" autocomplete="off" name="radio_KHNSYDUCTL" value=""><span>pointblank cannot read raw data</span></label><label><input type="radio" autocomplete="off" name="radio_KHNSYDUCTL" value="answer"><span>The rules have gaps, because the raw data are known to contain errors</span></label><label><input type="radio" autocomplete="off" name="radio_KHNSYDUCTL" value=""><span>The data are clean and no cleaning is needed</span></label>
+<div id="radio_INOJTNELFM" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_INOJTNELFM" value=""><span>The cleaning script has already run</span></label><label><input type="radio" autocomplete="off" name="radio_INOJTNELFM" value=""><span>pointblank cannot read raw data</span></label><label><input type="radio" autocomplete="off" name="radio_INOJTNELFM" value="answer"><span>The rules have gaps, because the raw data are known to contain errors</span></label><label><input type="radio" autocomplete="off" name="radio_INOJTNELFM" value=""><span>The data are clean and no cleaning is needed</span></label>
 </div>
-<p><strong>How does the checksum test differ from the permission deny rule?</strong></p>
-<div id="radio_VEWOFIZWDW" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_VEWOFIZWDW" value=""><span>They are equivalent; one is redundant</span></label><label><input type="radio" autocomplete="off" name="radio_VEWOFIZWDW" value="answer"><span>The deny rule blocks one route (the agent's editing tools) before a change happens; the checksum detects a change by any route, after it happens</span></label><label><input type="radio" autocomplete="off" name="radio_VEWOFIZWDW" value=""><span>The checksum prevents edits; the deny rule only reports them</span></label><label><input type="radio" autocomplete="off" name="radio_VEWOFIZWDW" value=""><span>The deny rule works on GitHub; the checksum works only locally</span></label>
+<p><strong>How does the checksum test differ from the deny rule?</strong></p>
+<div id="radio_IMJJWVWQIJ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_IMJJWVWQIJ" value=""><span>They are equivalent; one is redundant</span></label><label><input type="radio" autocomplete="off" name="radio_IMJJWVWQIJ" value="answer"><span>The deny rule blocks one route (the agent's editing tools) before a change happens; the checksum detects a change by any route, after it happens</span></label><label><input type="radio" autocomplete="off" name="radio_IMJJWVWQIJ" value=""><span>The checksum prevents edits; the deny rule only reports them</span></label><label><input type="radio" autocomplete="off" name="radio_IMJJWVWQIJ" value=""><span>The deny rule works on GitHub; the checksum works only locally</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
 <section id="the-step-0-controls-in-full" class="level3"><h3 class="anchored" data-anchor-id="the-step-0-controls-in-full">The Step 0 controls in full</h3>
 <p><strong>Line endings.</strong> The template’s <code>.gitattributes</code> contains this line, so git does not convert line endings, which would change the checksum on Windows:</p>
 <pre><code>data/raw/** -text</code></pre>
-<p><strong>Deny rules.</strong> The template’s <code>.claude/settings.json</code> contains:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a><span class="fu">{</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>  <span class="dt">"permissions"</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>    <span class="dt">"deny"</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a>      <span class="st">"Edit(/data/raw/**)"</span><span class="ot">,</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a>      <span class="st">"Edit(/docs/codebook.csv)"</span><span class="ot">,</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a>      <span class="st">"Edit(/docs/data_note.md)"</span><span class="ot">,</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-label="7"></a>      <span class="st">"Edit(/scripts/02_validate.R)"</span><span class="ot">,</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-label="8"></a>      <span class="st">"Edit(/scripts/03_audit_cleaning.R)"</span><span class="ot">,</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-label="9"></a>      <span class="st">"Edit(/scripts/functions/**)"</span><span class="ot">,</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-label="10"></a>      <span class="st">"Edit(/tests/**)"</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-label="11"></a>    <span class="ot">]</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-label="12"></a>  <span class="fu">}</span></span>
-<span id="cb15-13"><a href="#cb15-13" aria-label="13"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>A leading <code>/</code> anchors each pattern to the project root. Posit Assistant has no documented path rules for file edits; use the guard hook from the <a href="./11f-enforced-controls.html">enforced-controls block</a> instead.</p>
+<p><strong>Deny rules.</strong> This is the <code>.claude/settings.json</code> in your workshop repository, the same file you read in <a href="./11f-enforced-controls.html">Block 6</a>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a><span class="fu">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a>  <span class="dt">"permissions"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-label="3"></a>    <span class="dt">"deny"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-label="4"></a>      <span class="st">"Edit(/data/raw/**)"</span><span class="ot">,</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-label="5"></a>      <span class="st">"Edit(/docs/data_note.md)"</span><span class="ot">,</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-label="6"></a>      <span class="st">"Edit(/docs/codebook.csv)"</span><span class="ot">,</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-label="7"></a>      <span class="st">"Edit(/scripts/02_validate.R)"</span><span class="ot">,</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-label="8"></a>      <span class="st">"Edit(/scripts/03_audit_cleaning.R)"</span><span class="ot">,</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-label="9"></a>      <span class="st">"Edit(/scripts/functions/validate_voles.R)"</span><span class="ot">,</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-label="10"></a>      <span class="st">"Edit(/tests/fixtures/**)"</span><span class="ot">,</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-label="11"></a>      <span class="st">"Edit(/tests/make_reference.R)"</span><span class="ot">,</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-label="12"></a>      <span class="st">"Edit(/tests/test_cleaning.R)"</span><span class="ot">,</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-label="13"></a>      <span class="st">"Edit(/.github/**)"</span><span class="ot">,</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-label="14"></a>      <span class="st">"Edit(/.claude/**)"</span><span class="ot">,</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-label="15"></a>      <span class="st">"Edit(/.posit/**)"</span><span class="ot">,</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-label="16"></a>      <span class="st">"Edit(/hooks/**)"</span><span class="ot">,</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-label="17"></a>      <span class="st">"Read(/.Renviron)"</span><span class="ot">,</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-label="18"></a>      <span class="st">"Read(/.env)"</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-label="19"></a>    <span class="ot">]</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-label="20"></a>  <span class="fu">}</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-label="21"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A leading <code>/</code> anchors each pattern to the project root. The rules protect specific files rather than whole folders, so the agent can still write <code>scripts/01_clean.R</code> and <code>data/derived/</code>. Posit Assistant has no documented path rules for file edits; use the guard hook from the <em>Going further</em> section of <a href="./11f-enforced-controls.html">Block 6</a> instead.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1235,20 +1323,59 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>What each control covers.</strong> The permission rule blocks the agent’s file-editing tools. It does not cover commands the agent runs through the shell or R: an R script that the agent runs is a different route. The checksum test catches a change made by <em>any</em> route, but only after the fact. On the Copilot cloud agent, where you have no local permission file, the checksum test running in CI plus branch protection is your control. Use both where you can: one prevents, the other detects.</p>
+<p><strong>What each control covers.</strong> The deny rule blocks the agent’s file-editing tools, and shell output redirects such as <code>&gt; file</code>. It does not cover R code the agent runs: an R script that writes to <code>data/raw/</code> is a different route. The checksum test catches a change made by <em>any</em> route, but only after the fact. On the Copilot cloud agent, where you have no local permission file, the checksum test running in CI plus branch protection is your control. Use both where you can: one prevents, the other detects.</p>
 </div>
 </div>
-<p><strong>Data governance.</strong> A deny rule on editing does not stop data reaching the model provider; see <a href="./11d-context-disclosure-autonomy.html">the context-and-disclosure block</a>.</p>
+<p><strong>Data governance.</strong> A deny rule on editing does not stop data reaching the model provider; see <a href="./11d-context-disclosure-autonomy.html">Block 4</a>.</p>
 </section><section id="write-the-validation-rules-independently" class="level3"><h3 class="anchored" data-anchor-id="write-the-validation-rules-independently">Write the validation rules independently</h3>
-<p>Instead of using the provided <code>validate_voles.R</code>, you can have the rules written by a <strong>new</strong> session with no access to any cleaning code:</p>
-<pre><code>Using only docs/codebook.csv, write scripts/functions/validate_voles.R
-containing a function validate_voles(data, label) that builds a pointblank
-agent with one validation step per codebook rule, and interrogates it. Also
-write voles_col_types(), returning readr column types for the codebook
-columns, with character as the default for anything else. Do not read or write
-any other file.</code></pre>
-<p>Compare what it writes with the provided version in Step 3. A rule it missed, or a range it took from the data rather than the codebook, is the kind of error the separate session is meant to expose.</p>
-</section></section><section id="references" class="level2"><h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Instead of using the provided <code>validate_voles.R</code>, you can have the rules written by an AI that has never seen the cleaning code, for example a browser chat window given only the codebook:</p>
+<p><strong>Prompt (browser chat):</strong></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a>Using only the codebook below, write an R file containing a function</span>
+<span id="cb18-2"><a href="#cb18-2" aria-label="2"></a>validate_voles(data, label) that builds a pointblank agent with one</span>
+<span id="cb18-3"><a href="#cb18-3" aria-label="3"></a>validation step per codebook rule, and interrogates it. Also write</span>
+<span id="cb18-4"><a href="#cb18-4" aria-label="4"></a>voles_col_types(), returning readr column types for the codebook columns,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-label="5"></a>with character as the default for anything else.</span>
+<span id="cb18-6"><a href="#cb18-6" aria-label="6"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-label="7"></a>[paste docs/codebook.csv]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Compare what it writes with the provided version in Step 3. A rule it missed, or a range it took from the data rather than the codebook, is the kind of error the separate conversation is meant to expose.</p>
+</section></section><section id="glossary" class="level2"><h2 class="anchored" data-anchor-id="glossary">Glossary</h2>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<thead><tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">definition</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">checksum</td>
+<td style="text-align: left;">A short fingerprint computed from a file's contents, for example with tools::md5sum(). Any change to the file changes the checksum, so it detects changes made by any route.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">codebook</td>
+<td style="text-align: left;">A table describing each variable: its type, valid range, missing-value codes, unit and label mappings. It is the data dictionary from Day 2 with machine-readable rules, and you own it, not the AI.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">deny rule</td>
+<td style="text-align: left;">A permission rule in the deny list of .claude/settings.json that stops Claude Code's built-in tools from editing or reading the matching files. It checks shell output redirects such as &gt; file, but not R code or most other commands that change the same files.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">fresh R session</td>
+<td style="text-align: left;">An R session with nothing loaded from earlier work, such as the one Rscript starts. Code that only works in your current session depends on something you did not record.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lockfile</td>
+<td style="text-align: left;">The renv.lock file that records the R version and the exact package versions a project uses, so renv::restore() can rebuild the same environment.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">sentinel value</td>
+<td style="text-align: left;">A number with a special meaning, such as 9999 for "not recorded" or -1 for "run failed". It must be documented in a codebook and recoded before analysis.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section><section id="references" class="level2"><h2 class="anchored" data-anchor-id="references">References</h2>
 <ul>
 <li>Spreafico, M., Tassini, L., Sancricca, C. and Cappiello, C. (2025) ‘Lost in the pipeline: how well do large language models handle data preparation?’, arXiv preprint 2511.21708. <a href="https://doi.org/10.48550/arXiv.2511.21708" class="uri">https://doi.org/10.48550/arXiv.2511.21708</a>
 </li>
@@ -2005,8 +2132,8 @@ window.onresize = move_sidebar;
     }
   });
   </script><nav class="page-navigation"><div class="nav-page nav-page-previous">
-      <a href="./11f-enforced-controls.html" class="pagination-link" aria-label="Block 6: Enforced controls: permissions, hooks and review gates">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Block 6: Enforced controls: permissions, hooks and review gates</span>
+      <a href="./11f-enforced-controls.html" class="pagination-link" aria-label="Block 6: Enforced controls: permissions and detection">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Block 6: Enforced controls: permissions and detection</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">

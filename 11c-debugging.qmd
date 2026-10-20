@@ -26,7 +26,9 @@ the data, and where it cannot stand in for knowing the biology.
 
 ## Setup
 
-Load the voles data:
+Load the voles data.
+
+**In the R console:**
 
 ```{r}
 #| eval: false
@@ -34,13 +36,19 @@ library(tidyverse)
 voles <- read_csv(here::here("data", "raw", "voles_metabolism.csv"))
 ```
 
-Use Claude Code, started from your project folder. If you have no agent, a chat
-window works for every exercise; inline completion works for Exercise 1.
+Use Claude Code, started from your workshop repository's root folder. If you
+have no `r glossary("agent")`, a chat window works for every exercise; inline
+completion works for Exercise 1.
+
+Claude Code cannot see the objects in your R console, such as `voles` or
+`high_dose`. It can read the files in your repository and run code itself, so
+it sees your data only by reading the file or running a command.
+[Block 4](11d-context-disclosure-autonomy.qmd) looks at what each tool can see.
 
 
 ## Exercise 1: A syntax error
 
-You wrote this to count voles per treatment:
+You wrote this in your script to count voles per treatment:
 
 ```{r}
 #| eval: false
@@ -56,7 +64,10 @@ Error in geom_barchart(): could not find function "geom_barchart"
 
 **1. Ask for a fix.** In Claude Code or a chat window, paste the code and the
 error and ask. With inline completion, paste both into your script as a block
-comment, add `# Fix this code:`, and let the assistant suggest a continuation.
+comment, add `# Fix this code:`, and let the `r glossary("assistant")`
+suggest a continuation.
+
+**In the R script** (for inline completion):
 
 ```{r}
 #| eval: false
@@ -91,7 +102,8 @@ class of error to recognise.
 
 ## Exercise 2: A logic error
 
-You wrote this to compute mean post-treatment mass for high-dose voles:
+You wrote this in your script to compute mean post-treatment mass for
+high-dose voles:
 
 ```{r}
 #| eval: false
@@ -102,7 +114,7 @@ high_dose |>
   summarise(mean_mass = mean(mass_post_g))
 ```
 
-The code runs without error and returns:
+The code runs without error. R returns:
 
 ```
 # A tibble: 1 × 1
@@ -115,7 +127,9 @@ There is no error message to paste. The code does exactly what you asked; the
 bug is in what you asked for. No assistant can diagnose this reliably without
 knowing what your data contain.
 
-**1. Inspect the data before asking for help.** Three calls take seconds:
+**1. Inspect the data before asking for help.** Three calls take seconds.
+
+**In the R console:**
 
 ```{r}
 #| eval: false
@@ -129,9 +143,11 @@ The first two show that the values are `Control`, `Low_dose` and `High_dose`
 have diagnosed the bug without an AI.
 
 **2. Ask with the evidence in hand.** Paste the code and the diagnostic output
-together and ask for confirmation:
+together and ask for confirmation.
 
-```
+**Prompt (Claude Code or a chat window):**
+
+```text
 I am trying to compute mean post-treatment mass for high-dose voles.
 My code:
 
@@ -150,9 +166,10 @@ The exercise is to ask with the diagnostic context already in place, not to ask
 the AI to diagnose blind. AI is quick at typo-spotting and syntax recall;
 `distinct()` is quicker at telling you what is in your data.
 
-**With Claude Code**, you can ask it to run the diagnostics itself. Ask it to
-show the commands and their output, and read the output yourself before
-accepting its diagnosis.
+**With Claude Code**, you can ask it to run the diagnostics itself. Because it
+cannot see `high_dose` in your console, it will read the data file and rerun
+the code. Ask it to show the commands and their output, and read the output
+yourself before accepting its diagnosis.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -181,7 +198,7 @@ do.
 
 ## Exercise 3: A correct-looking but wrong result
 
-You want the mean change in body mass by treatment arm:
+You wrote this to get the mean change in body mass by treatment arm:
 
 ```{r}
 #| eval: false
@@ -190,7 +207,7 @@ voles |>
   summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
 ```
 
-It runs. There is no error and no `NaN`. It returns something like:
+It runs. There is no error and no `NaN`. R returns something like:
 
 ```
 # A tibble: 3 × 2
@@ -206,8 +223,10 @@ wrong. But the result is the reverse of the truth. The treatment was designed
 to increase body mass, and the dataset was built so that mass rises with dose.
 The table says that mass falls, and falls most at the highest dose.
 
-The data are clean, so `glimpse()`, `distinct()` and `count()` report nothing
-unusual. The fault is in the arithmetic: `mass_pre_g - mass_post_g` measures
+The data contain nothing that explains it: apart from one deliberate missing
+value in `metabolic_rate_post`, which this calculation does not use,
+`glimpse()`, `distinct()` and `count()` report nothing unusual. The fault is in
+the arithmetic: `mass_pre_g - mass_post_g` measures
 loss, when you wanted gain.
 
 :::{.callout-note}
@@ -272,9 +291,10 @@ When code fails, order matters: inspect the data first, ask the AI second.
 
 - **Check:** inspect the data before asking, and write one sentence explaining
   each fix; state the expected sign and size of a result before trusting it.
-- **Reproduce:** rerun the fixed code from a fresh R session, so the fix does
-  not depend on an object left over from your experiments.
-- **Record:** nothing to log yet; the AI-use log starts in Block 4.
+- **Reproduce:** rerun the fixed code in a `r glossary("fresh R session")`, so
+  the fix does not depend on an object left over from your experiments.
+- **Record:** nothing to log yet; the AI-use log starts in
+  [Block 4](11d-context-disclosure-autonomy.qmd).
 :::
 
 
@@ -350,3 +370,11 @@ most common cause is:**
   "The ggplot2 package is not loaded",
   "The variable contains missing values"
 ))`
+
+
+## Glossary
+
+```{r}
+#| echo: false
+glossary_table()
+```

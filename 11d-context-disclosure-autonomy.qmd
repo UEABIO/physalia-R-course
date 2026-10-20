@@ -9,13 +9,13 @@ library(here)
 library(webexercises)
 ```
 
-Two questions decide how far you can trust anything an AI assistant does with
-your code:
+Two questions decide how far you can trust anything an AI
+`r glossary("assistant")` does with your code:
 
 1. **What can it see?** Its answers are only as good as its context, and
    everything it sees has left your machine.
 2. **What can it do?** An assistant that advises leaves you as the filter on
-   every change. An agent that acts removes that filter.
+   every change. An `r glossary("agent")` that acts removes that filter.
 
 This block covers both, using Claude Code in the terminal. If you use Posit
 Assistant instead, the collapsed boxes give the differences.
@@ -23,7 +23,7 @@ Assistant instead, the collapsed boxes give the differences.
 *⏱ ~33 minutes*
 
 
-# Part A: What can the assistant see? {.unnumbered}
+## Part A: What can the assistant see?
 
 | Surface | Example | What it can see | Can it act? |
 |---|---|---|---|
@@ -47,7 +47,7 @@ any data-specific claim against the real object.
 :::
 
 
-## Exercise 1: Context decides the answer
+### Exercise 1: Context decides the answer
 
 :::{.task}
 ::::{.task-header}
@@ -55,10 +55,12 @@ The same error, three levels of context (10 minutes)
 ::::
 ::::{.task-container}
 
-**1. Error only.** In a browser chat, open a fresh session and paste only this,
-asking "What does this error mean?":
+**1. Error only.** Open a new browser chat and ask "What does this error
+mean?", pasting only this:
 
-```
+**Prompt (browser chat):**
+
+```text
 Error in `mutate()`:
 ℹ In argument: `mass_change = mass_post - mass_pre_g`.
 Caused by error:
@@ -67,9 +69,11 @@ Caused by error:
 
 The answer can only reason from the error text.
 
-**2. Error plus code plus structure.** In a new session, paste:
+**2. Error plus code plus structure.** Open another new chat and paste:
 
-```
+**Prompt (browser chat):**
+
+```text
 I am running this code:
 
   voles |>
@@ -98,14 +102,20 @@ What is wrong?
 
 It should name the missing `_g` suffix.
 
-**3. No paste at all.** Save the failing code in a script in your project.
-Start Claude Code from the project folder and ask only: "Why does the mutate()
-call in my script fail?" Claude Code can open the script and run code to
-inspect the data.
+**3. No paste at all.** Save the failing code in a script in your workshop
+repository. Start Claude Code from the repository's root folder, in `default`
+mode, and ask only:
 
-Then ask: "How do you know the column names?" Compare its answer with what you
-know it was given. If it claims to have seen something it could not have seen,
-you have found the unreliability described in the callout above.
+**Prompt (Claude Code):**
+
+```text
+Why does the mutate() call in my script fail?
+```
+
+Claude Code can open the script and run code to inspect the data. Then ask:
+"How do you know the column names?" Compare its answer with what you know it
+was given. If it claims to have seen something it could not have seen, you have
+found the unreliability described in the callout above.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -122,10 +132,74 @@ The lesson is not that one route is correct. The answer is only as good as the
 context, and context reaches the model by more than one route.
 
 
-## Disclosure: every route out of your machine
+### Disclosure: every route out of your machine
 
 Everything an assistant sees is sent to a model provider. Data leave your
 machine by four routes:
+
+:::::: {.dia .dia-lanes role="figure" aria-label="Four routes by which data leave your machine for the model provider, and which tools use each route"}
+::::: {.dia-flow}
+::: {.dia-label}
+Route 1: what you paste
+:::
+::: {.dia-node .dia-you}
+Errors, output and results you paste into a chat or prompt
+:::
+::: {.dia-arrow}
+any tool
+:::
+::: {.dia-node .dia-plain}
+Model provider
+:::
+:::::
+::::: {.dia-flow}
+::: {.dia-label}
+Route 2: files it reads
+:::
+::: {.dia-node .dia-file}
+Copilot: the open file. Claude Code and Posit Assistant: the whole project
+folder
+:::
+::: {.dia-arrow}
+read
+:::
+::: {.dia-node .dia-plain}
+Model provider
+:::
+:::::
+::::: {.dia-flow}
+::: {.dia-label}
+Route 3: session context the IDE injects
+:::
+::: {.dia-node .dia-file}
+Your live R session: data frames, loaded packages, console history
+:::
+::: {.dia-arrow}
+Posit Assistant only
+:::
+::: {.dia-node .dia-plain}
+Model provider
+:::
+:::::
+::::: {.dia-flow}
+::: {.dia-label}
+Route 4: output of commands it runs
+:::
+::: {.dia-node .dia-ai}
+The agent runs `print(voles)` or `head data.csv`
+:::
+::: {.dia-arrow}
+Claude Code, Posit Assistant
+:::
+::: {.dia-node .dia-plain}
+Model provider
+:::
+:::::
+::: {.dia-caption}
+Everything on the left of an arrow reaches the model provider. Know which
+routes your tool can use before you decide what to show it.
+:::
+::::::
 
 1. **What you paste.** Errors, outputs, printed results.
 2. **Files it reads.** A data file in the repository or project folder.
@@ -153,9 +227,9 @@ amounts:
 your institution permits sending this kind of data to this provider; whether
 your ethics approval and data-sharing agreements allow it; and whether a
 synthetic or anonymised copy would serve instead. Tool settings that restrict
-reading (see the [enforced-controls block](11f-enforced-controls.qmd)) reduce
-accidental exposure, but they do not make an agent safe for confidential data:
-any command it runs that prints data sends that data to the provider.
+reading (see [Block 6](11f-enforced-controls.qmd)) reduce accidental exposure,
+but they do not make an agent safe for confidential data: any command it runs
+that prints data sends that data to the provider.
 
 For personal or confidential data, let the agent work on a synthetic copy and
 run the final code on the real data yourself, outside the agent's workspace.
@@ -165,20 +239,26 @@ configuration you have read.
 :::
 
 
-## Context you hold in your head
+### Context you hold in your head
 
-*Instructor demonstration, about 3 minutes.*
+:::{.callout-note}
+## Instructor demonstration (3 minutes)
 
 A data file can supply column names and types, but not your scientific
-question or your design intent. Your instructor will ask a fresh chat this:
+question or your design intent. Your instructor will ask a new browser chat
+this:
 
-```
+**Prompt (browser chat):**
+
+```text
 I have a dataset with pre and post measurements. How should I analyse it?
 ```
 
-and then, in a new session, this:
+and then, in another new chat, this:
 
-```
+**Prompt (browser chat):**
+
+```text
 I have 72 voles, balanced across three treatment arms (Control, Low_dose,
 High_dose) and two sexes (M, F). Each animal has body mass measured before
 and after treatment, and a single post-treatment metabolic-rate reading.
@@ -196,12 +276,15 @@ mixed models); the second can return a recommendation, because the design and
 the question now exist outside your head. Treat even the better answer as a
 proposal to check against a statistics text or a colleague. Choosing the
 primary analysis is your decision, not the assistant's.
+:::
 
 
-# Part B: What can the assistant do? {.unnumbered}
+## Part B: What can the assistant do?
 
-The model is the same at every level below. What changes is what it is
-permitted to do, and therefore where you sit in the loop.
+The model is the same at every level below. What changes is its
+`r glossary("permission mode")`: what it is allowed to do without asking, and
+therefore where you sit in the loop. Each level is a `r glossary("rung")` on an
+autonomy ladder.
 
 | Rung | What happens | Claude Code | Posit Assistant |
 |---|---|---|---|
@@ -212,12 +295,15 @@ permitted to do, and therefore where you sit in the loop.
 | 4. Act, partly unsupervised | Some actions without asking | `acceptEdits` mode | Auto mode |
 | 5. Act, unsupervised | No prompts | `bypassPermissions` | YOLO mode |
 
-A sixth rung, acting remotely on a branch and returning a pull request, is
-covered in *Going further* below.
+In Claude Code, rungs 1 and 2 both use `plan` mode; they differ only in what you
+ask for, an answer or a plan. Rung 6, acting remotely on a branch and returning
+a pull request, is covered in *Going further* below.
 
-In Claude Code, `Shift+Tab` cycles `default`, `acceptEdits` and `plan`. In Posit
-Assistant, `/plan`, `/auto`, `/yolo` and `/restricted` switch modes. Use rungs 0
-to 3 throughout this course. Do not use rung 5.
+In Claude Code, `Shift+Tab` cycles `default`, `acceptEdits` and `plan`; the
+[Claude Code quick reference](11-AI-programming-integrated.qmd#cc-quick-reference)
+in Block 1 lists the other commands you need. In Posit Assistant, `/plan`,
+`/auto`, `/yolo` and `/restricted` switch modes. Use rungs 0 to 3 throughout
+this course. Do not use rung 5.
 
 :::{.callout-warning}
 **Read the rung's small print.** `acceptEdits` in Claude Code approves more than
@@ -228,19 +314,18 @@ Each step up the ladder removes a moment when you would have seen the action
 before it happened.
 
 **Approval fatigue is real.** At rung 3, an approval prompt you click through
-without reading is rung 5 with extra steps. The
-[enforced-controls block](11f-enforced-controls.qmd) covers the rules that hold
-however tired you are.
+without reading is rung 5 with extra steps. [Block 6](11f-enforced-controls.qmd)
+covers the rules that hold however tired you are.
 :::
 
-Higher rungs make standing instructions matter more. In Ask mode, a convention
-the assistant does not know costs you a re-read. In agent mode, the assistant
-acts on its guess, and the guess lands in your files. That is why the
-[instructions-and-skills block](11e-instructions-skills.qmd) comes next, and
-why the [enforced-controls block](11f-enforced-controls.qmd) follows it.
+Higher rungs make instruction files matter more. At rung 1, a convention the
+assistant does not know costs you a re-read. From rung 3 upwards, the agent
+acts on its guess, and the guess lands in your files. That is why
+[Block 5](11e-instructions-skills.qmd), on instructions and skills, comes next,
+and why [Block 6](11f-enforced-controls.qmd), on enforced controls, follows it.
 
 
-## Exercise 2: The same task, rising autonomy
+### Exercise 2: The same task, rising autonomy
 
 :::{.task}
 ::::{.task-header}
@@ -248,38 +333,50 @@ Ask, plan, act (15 minutes)
 ::::
 ::::{.task-container}
 
-Use your forked workshop repository, **committed and clean**, so every change is
-a diff you can inspect or revert. Never run an agent with uncommitted work you
-are not prepared to lose.
+Use your workshop repository, **committed and clean**, so every change is a diff
+you can inspect or revert. Never run an agent with uncommitted work you are not
+prepared to lose.
 
-**1. Ask.** Start Claude Code in plan mode (`claude --permission-mode plan`)
-and ask:
+**1. Ask.** Start Claude Code in `plan` mode.
 
+**In the terminal:**
+
+```bash
+claude --permission-mode plan
 ```
-In scripts/clean_voles.R, how would I add a column mass_change equal to
+
+**Prompt (Claude Code):**
+
+```text
+In scripts/explore_voles.R, how would I add a column mass_change equal to
 mass_post_g minus mass_pre_g?
 ```
 
 Read the answer. Confirm with `git status` that nothing changed.
 
-**2. Plan.** Still in plan mode, give a goal that spans several files:
+**2. Plan.** Still in `plan` mode, give a goal that spans several files:
 
-```
-In the voles pipeline, add a derived mass_change column (mass_post_g minus
-mass_pre_g) in the cleaning step, create a new script that plots mass_change
-by treatment_arm, and make sure the pipeline still runs end to end.
+**Prompt (Claude Code):**
+
+```text
+In scripts/explore_voles.R, add a derived mass_change column (mass_post_g
+minus mass_pre_g), create a new script scripts/explore_mass_change_plot.R
+that plots mass_change by treatment_arm, and check that both scripts run
+from a fresh R session.
 ```
 
 Before approving, check that the plan names every file it will touch, does not
 touch raw data, says where the plot script goes, and says how it will check the
-pipeline runs. Amend the plan in conversation if any of that is missing.
+scripts run. Amend the plan in conversation if any of that is missing.
 
-**3. Act, with approval.** Approve the plan and make sure you are in `default`
-mode, in which Claude Code asks before each edit or command (`Shift+Tab`
-switches modes). Read each approval prompt before answering it. Refuse at least one action you consider out of scope, and
-note how the agent responds.
+**3. Act, with approval.** When Claude Code asks whether to proceed, choose
+**Yes, manually approve edits**, so it stays in `default` mode and asks before
+each edit or command. Read each approval prompt before answering it. Refuse at
+least one action you consider out of scope, and note how the agent responds.
 
-**4. Review.** When it finishes:
+**4. Review.** When it finishes, look at what changed:
+
+**In the terminal:**
 
 ```bash
 git status
@@ -287,18 +384,29 @@ git diff
 ```
 
 Read the diff as you would a colleague's contribution. The agent's statement
-that the pipeline "still runs" is a claim; run the pipeline yourself to check
-it.
+that the scripts "still run" is a claim; run them yourself to check it, in the
+fresh R session that `Rscript` starts:
+
+**In the terminal:**
+
+```bash
+Rscript scripts/explore_voles.R
+Rscript scripts/explore_mass_change_plot.R
+```
 
 **5. Compare.** At which rung did you decide the most? At which rung would you
 have missed an unwanted change if you had not read the diff?
 
-**6. Start your AI-use log.** Create `docs/ai-log.md` and write the first line
-yourself, rather than asking the agent, in the form set out in Block 1:
+**Payoff.** What did the agent do, how long did checking it take, and would you
+automate this again?
 
-```
-2026-10-19; Claude Code (model as reported in the session); added mass_change
-and a plot script; kept both after reading the diff; rejected one
+**6. Start your AI-use log.** Create `docs/ai-log.md` and write the first line
+of your `r glossary("AI-use log")` yourself, rather than asking the agent, in
+the form set out in Block 1. For example:
+
+```text
+2026-10-19; Claude Code (model as shown above the Claude Code prompt); added
+mass_change and a plot script; kept both after reading the diff; rejected one
 out-of-scope edit.
 ```
 
@@ -350,7 +458,7 @@ know them?**
   "It cannot; it must be guessing",
   answer = "It read a file in your project or ran code that printed the data, and that output entered its context",
   "It can see every file on your computer",
-  "It remembers your data from a previous session"
+  "It remembers your data from a previous conversation"
 ))`
 
 **In Claude Code's acceptEdits mode, what does the agent do without asking?**
@@ -366,7 +474,7 @@ know them?**
 
 `r longmcq(c(
   "The agent's own report that the task succeeded",
-  "The approval prompts you saw during the session",
+  "The approval prompts you saw while it worked",
   answer = "Inspecting the changes with git status and git diff, and running the code yourself",
   "The plan the agent proposed before starting"
 ))`
@@ -392,20 +500,28 @@ github.com can also see files in the repository you open it from.
 | 5. Act, unsupervised | — |
 | 6. Act remotely | Cloud agent |
 
-The sixth rung, the **Copilot cloud agent**, works on the repository on GitHub,
-in an environment GitHub runs. It takes a task such as an issue, works on its
-own branch and returns a pull request. Copilot Free includes only limited agent
+Rung 6, the **Copilot cloud agent**, works on the repository on GitHub, in an
+environment GitHub runs. It takes a task such as an issue, works on its own
+branch and returns a pull request. Copilot Free includes only limited agent
 features; check GitHub's plans page to see whether your plan includes the cloud
-agent. The cloud agent appears in the *Going further* section of the
-[characterisation-test block](11i-characterisation-tests.qmd), where its pull
-request meets a review gate.
+agent. The cloud agent appears in the *Going further* section of
+[Block 9](11i-characterisation-tests.qmd), where its pull request meets a review
+gate.
 
 ### Exercise: context you hold in your head
 
-To try the demonstration above yourself, ask a fresh browser chat the first
-prompt, then a new session the second, and compare the answers. A data file
+To try the demonstration above yourself, ask a new browser chat the first
+prompt, then another new chat the second, and compare the answers. A data file
 can supply column names and types, but not your scientific question or your
 design intent.
+
+
+## Glossary
+
+```{r}
+#| echo: false
+glossary_table()
+```
 
 
 ## References

@@ -12,18 +12,20 @@ library(kableExtra)
 ```
 
 :::{.callout-note}
-**Prerequisite.** This block uses the project folder from
+**Prerequisite.** This block uses the OSF project folder from
 <https://osf.io/jgeq9/> (`ANALYSIS.R` and its data files) and the twelve
-problems, P1–P12, that you catalogued in the [manual code-review chapter](07-code-review.qmd). That
-catalogue is the answer key you will use to grade the AI. If you have not
-completed that chapter, your instructor will give you the answer key after
-Part 3; do not look at it before you have run your review.
+problems, P1–P12, that you catalogued in the
+[manual code-review chapter](07-code-review.qmd). That catalogue is the answer
+key you will use to grade the AI. If you have not completed that chapter, your
+instructor will give you the answer key after Part 3; do not look at it before
+you have run your review.
 :::
 
 :::{.callout-note}
-**The framing for this session.** The [manual code-review chapter](07-code-review.qmd) argued that
-the *Reliable* question (does the code do what the analyst intended?) is one
-that no tool can answer for you. This block does not retract that. It asks a
+**The framing for this session.** The
+[manual code-review chapter](07-code-review.qmd) argued that the *Reliable*
+question (does the code do what the analyst intended?) is one that no tool can
+answer for you. This block does not retract that. It asks a
 narrower question: where is an AI reviewer useful, and can you tell when it is
 wrong? You are reviewing a script whose problems you already know, so you can
 grade the machine rather than trust it.
@@ -75,7 +77,7 @@ is why you will measure it yourself in Part 3.
 The practical rule: **treat every AI finding as a claim to verify, and treat
 the absence of a finding as no evidence that the problem is absent.**
 
-:::{.callout-tip}
+:::{.callout-note}
 **Opening poll** *(type in chat)*
 
 "If an AI code reviewer told you your analysis was clean, would you trust it
@@ -100,7 +102,7 @@ Give the AI the same scaffold you used in the manual review.
 ### The four things a review prompt should contain
 
 1. **A role and a standard.** For example: "You are a critical code reviewer
-   for an ecology journal applying the four Rs (Reported, Run, Reliable,
+   for an evolutionary-biology journal applying the four Rs (Reported, Run, Reliable,
    Reproducible)." This gives the output a structure you can check.
 2. **The intended analysis.** The AI cannot judge *Reported* or *Reliable*
    without knowing what the code is meant to do. State the model from the OSF
@@ -114,27 +116,32 @@ Give the AI the same scaffold you used in the manual review.
 
 :::{.task}
 ::::{.task-header}
-**Activity: write the review prompt (7 minutes)**
+Write the review prompt (7 minutes)
 ::::
 
 ::::{.task-container}
 
-Start from the working draft below and check it contains all four elements.
-The room splits in two for a controlled comparison:
+**1. Start from the draft.** Open the working draft below and check it contains
+all four elements.
 
-- **Group A** includes the line about the 9999 sentinel in the skeleton below.
+**2. Split the room.** The room splits in two for a controlled comparison:
+
+- **Group A** keeps the line about the 9999 `r glossary("sentinel value")`.
 - **Group B** deletes it.
 
 Everything else stays the same.
 
 `r hide("Working draft")`
-```
+
+**Prompt (Claude Code, or a chat window):**
+
+```text
 You are a critical code reviewer for an evolutionary-biology journal.
 Review ANALYSIS.R using the four Rs: Reported, Run, Reliable, Reproducible.
 
 The intended analysis (from the pre-registration) is:
   total offspring (TO, a count: non-negative integer, often overdispersed)
-  modelled as TO ~ strain * diet + (1 | block), with block as a random effect.
+  modelled as TO ~ strain * diet + (1 | B), with block B as a random effect.
 
 Rules:
 - Do NOT praise the code. Report only problems.
@@ -159,36 +166,58 @@ Organise your output by the four Rs.
 
 ### Path A: Claude Code, read-only
 
-Start Claude Code in `plan` mode from the OSF project folder. At this rung the
-agent can read every file in the project but cannot change any, which is what
-a review needs.
+For the Group A and Group B comparison to mean anything, the
+`r glossary("agent")` must see the script and nothing else. If it can open the
+data files, it can find the 9999 code by itself, and Group B's missing line no
+longer matters. So review a copy of the script on its own.
+
+**1. Copy the script into an empty folder.** Make a new folder outside the OSF
+project folder, copy `ANALYSIS.R` into it, and nothing else.
+
+**2. Start Claude Code there in `plan` mode.** In `plan` mode
+(`r glossary("rung")` 1 or 2 of the ladder in
+[Block 4](11d-context-disclosure-autonomy.qmd)) the agent can read files but
+cannot change any, which is what a review needs.
+
+**In the terminal:**
 
 ```bash
-cd path/to/osf-project
+cd path/to/review-folder
 claude --permission-mode plan
 ```
 
-1. Starting from the project folder lets the agent see the data files as well
-   as `ANALYSIS.R`.
-2. Give it your Part 2 prompt.
-3. Save its review to a file of your own before moving on.
+**3. Give it your Part 2 prompt.**
+
+**4. Save the review yourself.** `plan` mode cannot write files, so copy its
+review into a text file of your own before moving on.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
-Open the OSF project in RStudio or Positron and switch Posit Assistant to Ask
-mode, so it can read but not change anything. Give it your Part 2 prompt and
-save the review as above. For the optional step below, switch back to normal
-mode, so it asks before running anything.
+Open the folder holding only `ANALYSIS.R` in RStudio or Positron, and switch
+Posit Assistant to Ask mode, so it can read but not change anything. Give it
+your Part 2 prompt and copy the review into a file yourself. For the optional
+step below, open the full OSF project folder and use Normal mode, so it asks
+before running anything.
 :::
 
 ### Path A, step 2: let it run the script (optional)
 
 An agent that can execute R can turn the *Run* question from a prediction into
-evidence. Switch to rung 3 (acting with approval: `Shift+Tab` to `default`
-mode in Claude Code) and ask:
+evidence. The script needs its data, so this step uses the full OSF project
+folder. Exit Claude Code (`/exit`), then start it again in that folder in
+`default` mode (rung 3: acting with approval).
 
+**In the terminal:**
+
+```bash
+cd path/to/osf-project
+claude
 ```
+
+**Prompt (Claude Code):**
+
+```text
 Run ANALYSIS.R from a fresh R session with Rscript and report the exact
 output and any errors. Do not install packages; if a package is missing,
 report which one. Do not edit any file.
@@ -196,14 +225,14 @@ report which one. Do not edit any file.
 
 Read the approval prompt before approving the command, and read the output it
 reports. If it says "the script runs", find the command it ran and the output it
-saw. A claim that the script runs, with no command and no output, is a
-prediction. Missing packages on your machine are a finding about the
-environment, not about the code.
+saw in the conversation. A `r glossary("claimed execution")`, with no command
+and no output, is a prediction. Missing packages on your machine are a finding
+about the environment, not about the code.
 
 ### Path B: chat window
 
 If you have no agent, paste the whole of `ANALYSIS.R` into any chat window,
-followed by your Part 2 prompt.
+followed by your Part 2 prompt. Paste the script only, not the data.
 
 :::{.callout-warning}
 **The chat window's failure mode.** A chat window cannot run anything. Asked
@@ -214,29 +243,30 @@ running?", and treat any claim about reproduced results as unsupported.
 
 :::{.task}
 ::::{.task-header}
-**Activity: grade the machine (10 minutes)**
+Grade the machine (10 minutes)
 ::::
 
 ::::{.task-container}
 
-Open your P1–P12 catalogue beside the AI's review and score it:
+**1. Score the review.** Open your P1–P12 catalogue beside the AI's review:
 
 - **Hits:** which of P1–P12 did it identify correctly?
 - **Misses:** which did it miss? Look especially at P4 (precedence) and P8
   (sentinel), the silent, consequential ones.
 - **False positives:** what did it flag that is not a real problem, or describe
-  wrongly?
+  wrongly? Each one is a `r glossary("false positive")`.
 - **Execution claims:** did it claim the script runs or reproduces? On what
   evidence?
 
-Post your group (A or B), your hit count, your most consequential miss and your
-most confident false positive in the chat, with line numbers.
+**2. Post your result.** In the chat, post your group (A or B), your hit count,
+your most consequential miss and your most confident false positive, with line
+numbers.
 
 ::::
 :::
 
 :::{.callout-note}
-**Debrief (5 minutes)**
+## Debrief (5 minutes)
 
 1. Compare P8 hit rates between Group A and Group B. The script alone does not
    reveal that 9999 is a code; the data and your knowledge do. What does that
@@ -256,9 +286,9 @@ most confident false positive in the chat, with line numbers.
   of a finding is no evidence that the problem is absent.
 - **Reproduce:** a claim that the script runs counts only with the command and
   the output from a fresh R session.
-- **Record:** add a line to `docs/ai-log.md` in your workshop repository: the
-  tool, its hit count, and its most confident false positive. The README for
-  this project is the one you built on Day 2.
+- **Record:** add a line to `docs/ai-log.md` in your workshop repository (not
+  the OSF project folder): the tool, its hit count, and its most confident
+  false positive. The README for the OSF project is the one you built on Day 2.
 :::
 
 
@@ -293,9 +323,9 @@ it is useful to you.
 
 If your repository is on GitHub, open a pull request containing `ANALYSIS.R` and
 request Copilot as a reviewer. Its comments appear on the changed lines, like a
-colleague's. It reads the repository's custom instructions
-(`.github/copilot-instructions.md`, or `AGENTS.md` as in the
-[instructions-and-skills block](11e-instructions-skills.qmd)), but none of
+colleague's. It reads the repository's instruction files
+(`.github/copilot-instructions.md`, or `AGENTS.md` as in
+[Block 5](11e-instructions-skills.qmd)), but none of
 those exist in the OSF folder yet. To have Copilot apply the standard from
 Part 2, add your review rules (the four Rs, the intended analysis, no praise,
 NEEDS HUMAN CHECK) to `.github/copilot-instructions.md` in that repository
@@ -321,7 +351,7 @@ skill_download_button("research-readme")
 
 - **Posit Assistant and GitHub Copilot** read `.agents/skills/` directly.
 - **Claude Code** reads `.claude/skills/`. Link or copy the folder there, as
-  described in the [instructions-and-skills block](11e-instructions-skills.qmd).
+  described in [Block 5](11e-instructions-skills.qmd).
 - **Chat window:** you do not need to install anything. You will run the two
   scripts yourself and paste the template into the chat.
 
@@ -349,6 +379,8 @@ automatic summaries **describe; they do not interpret**. So you generate the
 facts mechanically, and the AI only assembles and phrases them.
 
 ##### Step 1: Generate the inputs yourself (R, not AI)
+
+**In the R console**, from the OSF project folder:
 
 ```{r readme-inputs}
 #| eval: false
@@ -378,7 +410,9 @@ ask you for what it cannot find.
 **Chat path:** paste the structure from `references/readme_template.md` and the
 output you just generated, with this prompt:
 
-```
+**Prompt (chat window):**
+
+```text
 Draft a research README.md for this analysis repository, using exactly the
 sections in the template I paste below, in order.
 
@@ -388,7 +422,7 @@ versions. Where a value is missing, insert a visible placeholder:
 
 Per-column summaries: [paste describe_project_csvs() output]
 Dependencies: [paste print_lockfile() output]
-Run order: 01_data_cleaning.R, then 02_analysis.R.
+Run order: ANALYSIS.R (the only analysis script in the folder).
 
 Add an AI declaration stating that an AI assisted in drafting this README,
 naming the model and today's date. Make no claims about AI use elsewhere.
@@ -396,7 +430,7 @@ naming the model and today's date. Make no claims about AI use elsewhere.
 
 :::{.task}
 ::::{.task-header}
-**Activity: audit the README (10 minutes)**
+Audit the README (10 minutes)
 ::::
 
 ::::{.task-container}
@@ -409,10 +443,13 @@ Audit the draft against three of the skill's rules:
    not supply? Did the `2 to 9999` range survive, or was it "tidied" into
    something plausible and wrong?
 3. **README only.** Confirm with `git status` that nothing except `README.md`
-   changed.
+   changed. A folder downloaded from OSF is not a git repository: run
+   `git init` and commit everything before Pass 2, so there is something to
+   compare against.
 
 Note the worst fabrication or interpretation you caught, and whether the
-README's offspring range alone would have led you back to P8.
+README's offspring range alone would have led you back to P8. The
+`r glossary("AI declaration")` should say no more than you told it.
 
 ::::
 :::
@@ -476,23 +513,13 @@ show_skill_file("research-readme", "references/readme_template.md")
 
 ## Glossary
 
-```{r glossary-crai}
+```{r}
 #| echo: false
-tribble(
-  ~Term,                        ~Definition,
-  "Agent",                      "An AI that can read across a project's files and, depending on its mode, edit them and run commands, as opposed to a chat window that sees only pasted text",
-  "Read-only rung",             "A mode in which the assistant can read but not change anything: Claude Code plan mode, Posit Assistant Ask mode",
-  "False positive (in review)", "A problem the AI reports confidently that is not real, or is described wrongly",
-  "Claimed execution",          "A statement that code runs or reproduces, made without a command and its output to support it",
-  "Sentinel value",             "A number with a special meaning (9999 = not recorded); detectable from the data or from your instruction, not from the code alone",
-  "AI declaration",             "A README statement recording that an AI assisted, naming the model and date, and making no claims about AI use elsewhere (see Going further)"
-) |>
-  kbl() |>
-  kable_styling(bootstrap_options = c("striped", "hover"))
+glossary_table()
 ```
 
 
-## Reading
+## References
 
 - **Ivimey-Cook, E.R., et al. (2023).** Implementing code review in the
   scientific workflow: insights from ecology and evolutionary biology.
