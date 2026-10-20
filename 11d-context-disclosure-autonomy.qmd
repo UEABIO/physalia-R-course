@@ -62,7 +62,7 @@ mean?", pasting only this:
 
 ```text
 Error in `mutate()`:
-ℹ In argument: `mass_change = mass_post - mass_pre_g`.
+ℹ In argument: `mass_change_g = mass_post - mass_pre_g`.
 Caused by error:
 ! object 'mass_post' not found
 ```
@@ -77,12 +77,12 @@ The answer can only reason from the error text.
 I am running this code:
 
   voles |>
-    mutate(mass_change = mass_post - mass_pre_g)
+    mutate(mass_change_g = mass_post - mass_pre_g)
 
 and getting:
 
   Error in `mutate()`:
-  ℹ In argument: `mass_change = mass_post - mass_pre_g`.
+  ℹ In argument: `mass_change_g = mass_post - mass_pre_g`.
   Caused by error:
   ! object 'mass_post' not found
 
@@ -102,20 +102,26 @@ What is wrong?
 
 It should name the missing `_g` suffix.
 
-**3. No paste at all.** Save the failing code in a script in your workshop
-repository. Start Claude Code from the repository's root folder, in `default`
-mode, and ask only:
+**3. No paste at all.** Save the failing code as `scripts/scratch_error.R` in
+your workshop repository (`usethis::edit_file("scripts/scratch_error.R")` in
+the R console creates and opens it). In the project's Terminal tab, start
+Claude Code in `default` mode with `claude`, and ask only:
 
 **Prompt (Claude Code):**
 
 ```text
-Why does the mutate() call in my script fail?
+Why does the mutate() call in scripts/scratch_error.R fail?
 ```
 
 Claude Code can open the script and run code to inspect the data. Then ask:
 "How do you know the column names?" Compare its answer with what you know it
 was given. If it claims to have seen something it could not have seen, you have
 found the unreliability described in the callout above.
+
+**You are done when** you can say which of the three answers named the real
+cause, and why. Then delete the scratch file, so Exercise 2 starts clean: in the
+R console, `file.remove(here::here("scripts", "scratch_error.R"))`, or delete it
+from the Files pane.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -305,6 +311,13 @@ in Block 1 lists the other commands you need. In Posit Assistant, `/plan`,
 `/auto`, `/yolo` and `/restricted` switch modes. Use rungs 0 to 3 throughout
 this course. Do not use rung 5.
 
+**Where a routine task is safe.** Rung 3 is the everyday working level, and
+it is safe for routine work such as adding a derived column and a plot script
+to an exploratory analysis. Three things make it safe: you start from a
+committed repository, so any change can be reverted; every edit and command is
+shown to you before it happens; and a test then checks the result,
+independently of the agent's report. Exercise 2 below is exactly this.
+
 :::{.callout-warning}
 **Read the rung's small print.** `acceptEdits` in Claude Code approves more than
 edits: it also auto-approves common file commands such as `mkdir`, `touch`, `mv`
@@ -333,11 +346,13 @@ Ask, plan, act (15 minutes)
 ::::
 ::::{.task-container}
 
-Use your workshop repository, **committed and clean**, so every change is a diff
-you can inspect or revert. Never run an agent with uncommitted work you are not
-prepared to lose.
+**Start:** your workshop repository on `main`, **committed and clean** (the Git
+pane shows no changed files), so every change is a diff you can inspect or
+revert. Never run an agent with uncommitted work you are not prepared to lose.
+While Claude Code runs in the Terminal tab, do your checking from the R console
+and the Git pane, as in [checking work](11a-setup-claude-code.qmd#checking-work).
 
-**1. Ask.** Start Claude Code in `plan` mode.
+**1. Ask.** In the project's Terminal tab, start Claude Code in `plan` mode.
 
 **In the terminal:**
 
@@ -348,51 +363,57 @@ claude --permission-mode plan
 **Prompt (Claude Code):**
 
 ```text
-In scripts/explore_voles.R, how would I add a column mass_change equal to
+In scripts/explore_voles.R, how would I add a column mass_change_g equal to
 mass_post_g minus mass_pre_g?
 ```
 
-Read the answer. Confirm with `git status` that nothing changed.
+Read the answer. The Git pane should still show no changed files.
 
 **2. Plan.** Still in `plan` mode, give a goal that spans several files:
 
 **Prompt (Claude Code):**
 
 ```text
-In scripts/explore_voles.R, add a derived mass_change column (mass_post_g
-minus mass_pre_g), create a new script scripts/explore_mass_change_plot.R
-that plots mass_change by treatment_arm, and check that both scripts run
-from a fresh R session.
+In scripts/explore_voles.R, add a derived mass_change_g column (mass_post_g
+minus mass_pre_g). Create a new script scripts/explore_mass_change_plot.R
+that plots mass_change_g by treatment_arm and saves the figure to outputs/
+with ggsave(). Then check that both scripts run in a fresh R session.
 ```
 
 Before approving, check that the plan names every file it will touch, does not
-touch raw data, says where the plot script goes, and says how it will check the
+touch raw data, saves the figure to `outputs/`, and says how it will check the
 scripts run. Amend the plan in conversation if any of that is missing.
 
 **3. Act, with approval.** When Claude Code asks whether to proceed, choose
 **Yes, manually approve edits**, so it stays in `default` mode and asks before
 each edit or command. Read each approval prompt before answering it. Refuse at
 least one action you consider out of scope, and note how the agent responds.
+If nothing is out of scope, refuse its first `Rscript` call: you will run the
+check yourself in step 4.
 
-**4. Review.** When it finishes, look at what changed:
+**4. Review and check.** When it finishes, open each changed file in the Git
+pane and click **Diff**. Read the diff as you would a colleague's
+contribution. The agent's statement that the scripts "still run" is a claim;
+check it yourself. Restart R (*Session → Restart R*), then in the R console:
 
-**In the terminal:**
+**In the R console:**
 
-```bash
-git status
-git diff
+```{r}
+#| eval: false
+testthat::test_file(here::here("tests", "test_explore.R"))
 ```
 
-Read the diff as you would a colleague's contribution. The agent's statement
-that the scripts "still run" is a claim; run them yourself to check it, in the
-fresh R session that `Rscript` starts:
+The first test checks that `mass_change_g` really is post minus pre; the
+second runs the plot script in a fresh R session and checks that a figure
+arrived in `outputs/`, with no stray `Rplots.pdf`.
 
-**In the terminal:**
+**You are done when** both tests pass and you have read every line of the
+diff.
 
-```bash
-Rscript scripts/explore_voles.R
-Rscript scripts/explore_mass_change_plot.R
-```
+**If it goes wrong:** select the unwanted change in the Git pane and click
+**Revert**, then ask again with a clearer prompt. If you run out of time,
+switch to the `block5-done` branch from the Git pane's branch menu at the end
+of Block 5.
 
 **5. Compare.** At which rung did you decide the most? At which rung would you
 have missed an unwanted change if you had not read the diff?
@@ -400,24 +421,33 @@ have missed an unwanted change if you had not read the diff?
 **Payoff.** What did the agent do, how long did checking it take, and would you
 automate this again?
 
-**6. Start your AI-use log.** Create `docs/ai-log.md` and write the first line
-of your `r glossary("AI-use log")` yourself, rather than asking the agent, in
-the form set out in Block 1. For example:
+**6. Start your AI-use log.** Create `docs/ai-log.md`
+(`usethis::edit_file("docs/ai-log.md")` in the R console) and write the first
+line of your `r glossary("AI-use log")` yourself, rather than asking the
+agent, in the form set out in Block 1. Keep each entry on one line. For
+example:
 
 ```text
-2026-10-19; Claude Code (model as shown above the Claude Code prompt); added
-mass_change and a plot script; kept both after reading the diff; rejected one
-out-of-scope edit.
+2026-10-19; Claude Code (model as shown above the Claude Code prompt); added mass_change_g and a plot script; kept both after reading the diff; rejected one out-of-scope edit
 ```
 
-Commit it with the agent's changes. You will add a line after each block in
-which an agent does work.
+Commit it with the agent's changes from the Git pane. You will add a line after
+each block in which an agent does work; `tests/test_ai_log.R` checks every line
+has this form.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
 Use Ask mode for step 1, `/plan` for step 2, and Normal mode for step 3. The
-review in step 4 is the same: `git status` and `git diff` in the terminal.
+review and the test in step 4 are the same: the Git pane and the R console.
+:::
+
+:::{.callout-note collapse="true"}
+## At the command line
+
+The same checks from a terminal (after `/exit`, or in a second Terminal tab):
+`git status`, `git diff`, and
+`Rscript -e "testthat::test_file('tests/test_explore.R')"`.
 :::
 
 ::::
@@ -441,8 +471,11 @@ review in step 4 is the same: `git status` and `git diff` in the terminal.
 :::{.callout-note}
 ## Check · Reproduce · Record
 
-- **Check:** `git status` and `git diff` after every agent action; the agent's
-  report that something "still runs" is a claim until you run it.
+- **You can now:** hand an agent a routine multi-file change at rung 3,
+  **trusted because** you read every diff and a test you did not write checks
+  the result.
+- **Check:** the Git pane's diff after every agent action; the agent's report
+  that something "still runs" is a claim until a test confirms it.
 - **Reproduce:** work only in a committed, clean repository, so every change
   is a diff you can inspect or revert.
 - **Record:** your AI-use log starts here, in `docs/ai-log.md`.
@@ -475,7 +508,7 @@ know them?**
 `r longmcq(c(
   "The agent's own report that the task succeeded",
   "The approval prompts you saw while it worked",
-  answer = "Inspecting the changes with git status and git diff, and running the code yourself",
+  answer = "Reading the diff in the Git pane (or with git diff), and running the code or its tests yourself",
   "The plan the agent proposed before starting"
 ))`
 

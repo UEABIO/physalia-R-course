@@ -33,16 +33,21 @@ Load the voles data.
 ```{r}
 #| eval: false
 library(tidyverse)
-voles <- read_csv(here::here("data", "raw", "voles_metabolism.csv"))
+library(here)
+voles <- read_csv(here("data", "raw", "voles_metabolism.csv"))
 ```
 
-Use Claude Code, started from your workshop repository's root folder. If you
-have no `r glossary("agent")`, a chat window works for every exercise; inline
+Use Claude Code, started in your workshop project's Terminal tab. If you have
+no `r glossary("agent")`, a chat window works for every exercise; inline
 completion works for Exercise 1.
 
 Claude Code cannot see the objects in your R console, such as `voles` or
 `high_dose`. It can read the files in your repository and run code itself, so
-it sees your data only by reading the file or running a command.
+it sees your data only by reading the file or running a command. Each `Rscript`
+command it runs is a fresh R process, too: nothing carries over between its
+commands, which is why it reads the data file again each time. Check its work
+in the R console, as [checking work](11a-setup-claude-code.qmd#checking-work)
+describes.
 [Block 4](11d-context-disclosure-autonomy.qmd) looks at what each tool can see.
 
 
@@ -62,10 +67,28 @@ R returns:
 Error in geom_barchart(): could not find function "geom_barchart"
 ```
 
+**Start state:** `voles` is loaded in your R console, and Claude Code (or a chat
+window) is open.
+
 **1. Ask for a fix.** In Claude Code or a chat window, paste the code and the
-error and ask. With inline completion, paste both into your script as a block
-comment, add `# Fix this code:`, and let the `r glossary("assistant")`
-suggest a continuation.
+error and ask.
+
+**Prompt (Claude Code):**
+
+```text
+This code gives an error:
+
+  ggplot(voles, aes(x = treatment_arm)) +
+    geom_barchart()
+
+Error in geom_barchart(): could not find function "geom_barchart"
+
+What is wrong, and what is the fix?
+```
+
+With inline completion, paste both into your script as a block comment, add
+`# Fix this code:`, and let the `r glossary("assistant")` suggest a
+continuation.
 
 **In the R script** (for inline completion):
 
@@ -99,6 +122,12 @@ class of error to recognise.
 
 `r unhide()`
 
+**You are done when** the corrected plot draws a bar for each treatment arm, and
+you have written your one-sentence explanation.
+
+**If it goes wrong:** if the fix produces a different error, paste that error
+back in the same conversation; the assistant now has two clues.
+
 
 ## Exercise 2: A logic error
 
@@ -123,9 +152,13 @@ The code runs without error. R returns:
 1       NaN
 ```
 
+**Start state:** `voles` is loaded in your R console.
+
 There is no error message to paste. The code does exactly what you asked; the
 bug is in what you asked for. No assistant can diagnose this reliably without
-knowing what your data contain.
+knowing what your data contain, and the next step gives it exactly that: three
+calls that put the evidence in front of you and, once pasted, in front of the
+assistant.
 
 **1. Inspect the data before asking for help.** Three calls take seconds.
 
@@ -168,8 +201,16 @@ the AI to diagnose blind. AI is quick at typo-spotting and syntax recall;
 
 **With Claude Code**, you can ask it to run the diagnostics itself. Because it
 cannot see `high_dose` in your console, it will read the data file and rerun
-the code. Ask it to show the commands and their output, and read the output
-yourself before accepting its diagnosis.
+the code.
+
+**Prompt (Claude Code):**
+
+```text
+Read data/raw/voles_metabolism.csv and check why filtering treatment_arm
+for "high_dose" returns no rows. Show me each command you run and its output.
+```
+
+Read the output yourself before accepting its diagnosis.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -195,8 +236,16 @@ do.
 
 `r unhide()`
 
+**You are done when** `nrow(high_dose)` is 24 and the mean is a number, not
+`NaN`.
+
+**If it goes wrong:** if `nrow()` is still zero, run
+`voles |> distinct(treatment_arm)` again and copy the value exactly as printed.
+
 
 ## Exercise 3: A correct-looking but wrong result
+
+**Start state:** `voles` is loaded in your R console.
 
 You wrote this to get the mean change in body mass by treatment arm:
 
@@ -243,9 +292,19 @@ High_dose. Then compare. The mismatch between "positive and increasing" and
 "negative and decreasing" is the diagnosis.
 
 **2. You may ask an AI for a second opinion, with the expected direction
-included.** "This should show mass gain increasing with dose, but the values
-are negative and decreasing; what is wrong?" will usually get the sign error
-named. A prompt with only the code and output usually will not.
+included.** A prompt that states the expectation will usually get the sign error
+named; one with only the code and output usually will not.
+
+**Prompt (Claude Code):**
+
+```text
+This should show mass gain increasing with dose, but the values are negative
+and decreasing. What is wrong?
+
+  voles |>
+    mutate(mass_change_g = mass_pre_g - mass_post_g) |>
+    summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
+```
 
 `r hide("Solution")`
 
@@ -261,6 +320,12 @@ original ran without complaint because subtraction works in either direction;
 the only signal that it was wrong was knowing what the answer should be.
 
 `r unhide()`
+
+**You are done when** your corrected means are positive and increase from
+Control to High_dose, as you predicted in step 1.
+
+**If it goes wrong:** if the values are still negative, check which mass you
+subtract from which: post minus pre is gain.
 
 
 ## The debugging checklist
@@ -289,6 +354,9 @@ When code fails, order matters: inspect the data first, ask the AI second.
 :::{.callout-note}
 ## Check · Reproduce · Record
 
+- **You can now:** use an assistant to diagnose and fix errors in your own
+  code, **trusted because** you inspect the data first, explain each fix in a
+  sentence, and compare every clean-running result with what you expected.
 - **Check:** inspect the data before asking, and write one sentence explaining
   each fix; state the expected sign and size of a result before trusting it.
 - **Reproduce:** rerun the fixed code in a `r glossary("fresh R session")`, so

@@ -681,57 +681,75 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>Two further checks on the statistics, robustness to alternative analyses and simulation with parameter recovery, are in <em>Going further</em> at the end of the page.</p>
+<p>As in every block, you check the agent’s work from the R console and the Git pane, not the Terminal tab Claude Code is using (see <a href="./11a-setup-claude-code.html#checking-work">checking work</a>).</p>
 <p><em>⏱ ~30 minutes</em></p>
 <section id="part-a-translation-with-an-equivalence-check" class="level2"><h2 class="anchored" data-anchor-id="part-a-translation-with-an-equivalence-check">Part A: Translation with an equivalence check</h2>
 <p><em>⏱ ~15 minutes</em></p>
 <p>Translating code (base R to tidyverse, or SPSS, Stata or SAS to R) is a task AI does quickly. The characterisation-test idea from <a href="./11i-characterisation-tests.html">Block 9</a> applies directly: an <a class="glossary">equivalence check<span class="def">A comparison showing that two versions of code, such as an original and an AI translation, give the same output once only presentation (types, row order) is normalised.</span></a> runs both versions and compares the outputs.</p>
-<p>Run the base R script in the R console, then ask Claude Code for the translation and paste it into the same R session, so both objects exist for the comparison.</p>
+<p>This time the translation goes into a file, as a function, and the template already ships the test that checks it: <code>tests/test_translation.R</code> keeps the original base R code as the reference and compares the two. The agent writes the code; the test, which it did not write, decides whether it is equivalent.</p>
 <div class="task">
 <div class="task-header">
 <p>Translate and compare (15 minutes)</p>
 </div>
 <div class="task-container">
+<p><strong>Start:</strong> your workshop repository, committed and clean, with Claude Code in <code>default</code> mode in the Terminal tab.</p>
 <p><strong>1. Run the original.</strong> In the R console:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a>voles <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>),</span>
-<span id="cb1-2"><a href="#cb1-2" aria-label="2"></a>                  <span class="at">stringsAsFactors =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-label="3"></a>rate_mean <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(metabolic_rate_post <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-label="4"></a>                       <span class="at">data =</span> voles, <span class="at">FUN =</span> mean)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-label="5"></a>rate_n <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(metabolic_rate_post <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-label="6"></a>                    <span class="at">data =</span> voles, <span class="at">FUN =</span> length)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-label="7"></a><span class="fu">names</span>(rate_n)[<span class="dv">3</span>] <span class="ot">&lt;-</span> <span class="st">"n"</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-label="8"></a>legacy_summary <span class="ot">&lt;-</span> <span class="fu">merge</span>(rate_mean, rate_n, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-label="2"></a><span class="fu">library</span>(here)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-label="3"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-label="4"></a>voles <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>),</span>
+<span id="cb1-5"><a href="#cb1-5" aria-label="5"></a>                  <span class="at">stringsAsFactors =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-label="6"></a>rate_mean <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(metabolic_rate_post <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-label="7"></a>                       <span class="at">data =</span> voles, <span class="at">FUN =</span> mean)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-label="8"></a>rate_n <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(metabolic_rate_post <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-label="9"></a>                    <span class="at">data =</span> voles, <span class="at">FUN =</span> length)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-label="10"></a><span class="fu">names</span>(rate_n)[<span class="dv">3</span>] <span class="ot">&lt;-</span> <span class="st">"n"</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-label="11"></a>legacy_summary <span class="ot">&lt;-</span> <span class="fu">merge</span>(rate_mean, rate_n, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>))</span>
+<span id="cb1-12"><a href="#cb1-12" aria-label="12"></a>legacy_summary</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>2. Ask for a translation.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>Translate this base R code into tidyverse code that produces a tibble called</span>
-<span id="cb2-2"><a href="#cb2-2" aria-label="2"></a>tidy_summary with the same columns as legacy_summary. Show me the code only;</span>
-<span id="cb2-3"><a href="#cb2-3" aria-label="3"></a>do not run it and do not edit any file.</span>
-<span id="cb2-4"><a href="#cb2-4" aria-label="4"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-label="5"></a>[paste the base R script from step 1]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Paste the translation into the R console, in the same session as step 1, so both <code>legacy_summary</code> and <code>tidy_summary</code> exist.</p>
-<p><strong>3. Compare.</strong> Normalise only <em>presentation</em> (type and row order), never values. In the R console:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>Translate this base R code into a tidyverse function summarise_rate_tidy(data)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-label="2"></a>in scripts/functions/summaries.R. It takes the tibble returned by load_voles()</span>
+<span id="cb2-3"><a href="#cb2-3" aria-label="3"></a>and returns one row per treatment_arm and sex, with the columns treatment_arm,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-label="4"></a>sex, metabolic_rate_post (the mean) and n. Use the native pipe. Do not edit</span>
+<span id="cb2-5"><a href="#cb2-5" aria-label="5"></a>any other file.</span>
+<span id="cb2-6"><a href="#cb2-6" aria-label="6"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-label="7"></a>[paste the base R code from step 1]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Approve the edit when asked, after reading it.</p>
+<p><strong>3. Compare.</strong> Normalise only <em>presentation</em> (type and row order), never values. <code><a href="https://waldo.r-lib.org/reference/compare.html">waldo::compare()</a></code> prints any difference that remains in a readable form. In the R console:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>normalise <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb3-2"><a href="#cb3-2" aria-label="2"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-label="3"></a>    <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a>    <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.factor), as.character)) <span class="sc">|&gt;</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a>    <span class="fu">arrange</span>(treatment_arm, sex)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-label="6"></a>}</span>
-<span id="cb3-7"><a href="#cb3-7" aria-label="7"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-label="8"></a>testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">normalise</span>(tidy_summary), <span class="fu">normalise</span>(legacy_summary))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-label="2"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summaries.R"</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-label="3"></a>tidy_summary <span class="ot">&lt;-</span> <span class="fu">summarise_rate_tidy</span>(<span class="fu">load_voles</span>())</span>
+<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a>normalise <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-label="6"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-label="7"></a>    <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-label="8"></a>    <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.factor), as.character)) <span class="sc">|&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-label="9"></a>    <span class="fu">arrange</span>(treatment_arm, sex)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-label="10"></a>}</span>
+<span id="cb3-11"><a href="#cb3-11" aria-label="11"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-label="12"></a>waldo<span class="sc">::</span><span class="fu">compare</span>(<span class="fu">normalise</span>(tidy_summary), <span class="fu">normalise</span>(legacy_summary))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>4. Find the difference.</strong> If the comparison fails after normalising, you have found a real difference in behaviour. Find it before reading on.</p>
+<p><strong>4. Find the difference.</strong> If <code><a href="https://waldo.r-lib.org/reference/compare.html">waldo::compare()</a></code> reports a difference after normalising, you have found a real difference in behaviour. A column with a different name is presentation: ask for it to be renamed. A different value is behaviour: find out why before reading on. If it reports no difference, read how the translation handled the missing value anyway.</p>
 <div class="webex-solution">
 <button>
 The difference
 </button>
 <p><code><a href="https://rdrr.io/r/stats/aggregate.html">aggregate()</a></code> with a formula drops rows with a missing value in any variable in the formula, silently. The one animal with no <code>metabolic_rate_post</code> is excluded from both the mean and the count. A direct translation using <code>summarise(mean(metabolic_rate_post), n())</code> returns <code>NA</code> for that cell’s mean and counts the animal in <code>n</code>. Neither version is “the translation”; they make different decisions about missing data. Decide which you want, write it explicitly (<code>na.rm = TRUE</code> and a count of non-missing values), and record the decision. This is the same problem as the “unchanged is not correct” step of <a href="./11i-characterisation-tests.html">Block 9</a>, reached from a different direction.</p>
 </div>
-<p><strong>5. Log it.</strong> Add a line to <code>docs/ai-log.md</code>, for example:</p>
-<pre><code>2026-10-19; Claude Code (model as shown above the Claude Code prompt);
-translated summary script to tidyverse; kept translation, changed
-missing-value handling to na.rm = TRUE after equivalence check.</code></pre>
+<p><strong>5. Run the shipped test.</strong> Restart R (<em>Session → Restart R</em>) so nothing from your experiments is left, then in the R console:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_translation.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The test keeps the original code as its reference. If you decided the translation should handle the missing value differently from the original, the test fails, correctly: change the reference in the test and say why in your commit message. That is a recorded decision, not a fix.</p>
+<p><strong>6. Log it and commit.</strong> Add a line to <code>docs/ai-log.md</code>, for example:</p>
+<pre><code>2026-10-19; Claude Code (model as shown above the Claude Code prompt); translated summary script to tidyverse; kept the translation, matched the original's missing-value handling after the equivalence check</code></pre>
+<p>Then commit <code>summaries.R</code> and the log from the Git pane, with a message that records the missing-value decision.</p>
+<p><strong>You are done when</strong> <code>test_translation.R</code> passes in a fresh R session and your commit message records how missing values are handled.</p>
+<p><strong>If it goes wrong:</strong> if the agent edited anything other than <code>summaries.R</code>, select the file in the Git pane and choose <strong>Revert</strong>. If you run short of time, write <code>summarise_rate_tidy()</code> yourself from the hidden explanation above.</p>
 </div>
 </div>
 <p>When translating from other software, you usually cannot run the original inside R. Export its results to a file, compare against those, and expect differences in defaults: how missing values are handled, how quantiles are defined, and how results are rounded. Each difference needs a decision, not a tolerance setting.</p>
@@ -739,49 +757,83 @@ missing-value handling to na.rm = TRUE after equivalence check.</code></pre>
 <p><em>⏱ ~7 minutes</em></p>
 <p>A number typed into a report is a number that can be mistyped, or left unchanged when the data change. When an assistant drafts the text, it may also “helpfully” restate numbers it saw earlier in the conversation. Every number in the prose should come from inline code. In a code chunk of your report:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a><span class="co"># fit the pre-registered primary analysis</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-label="2"></a>voles_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-label="3"></a>  <span class="fu">mutate</span>(<span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)))</span>
-<span id="cb5-4"><a href="#cb5-4" aria-label="4"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-label="5"></a>fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(mass_post_g <span class="sc">~</span> mass_pre_g <span class="sc">+</span> treatment_arm <span class="sc">+</span> sex, <span class="at">data =</span> voles_df)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-label="6"></a>ci <span class="ot">&lt;-</span> <span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
-<span id="cb5-7"><a href="#cb5-7" aria-label="7"></a>primary <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb5-8"><a href="#cb5-8" aria-label="8"></a>  <span class="at">estimate =</span> <span class="fu">unname</span>(<span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
-<span id="cb5-9"><a href="#cb5-9" aria-label="9"></a>  <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
-<span id="cb5-10"><a href="#cb5-10" aria-label="10"></a>  <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
-<span id="cb5-11"><a href="#cb5-11" aria-label="11"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a><span class="co"># fit the pre-registered primary analysis</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-label="5"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-label="6"></a>voles_df <span class="ot">&lt;-</span> <span class="fu">load_voles</span>() <span class="sc">|&gt;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-label="7"></a>  <span class="fu">mutate</span>(<span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)))</span>
+<span id="cb6-8"><a href="#cb6-8" aria-label="8"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-label="9"></a>fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(mass_post_g <span class="sc">~</span> mass_pre_g <span class="sc">+</span> treatment_arm <span class="sc">+</span> sex, <span class="at">data =</span> voles_df)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-label="10"></a>ci <span class="ot">&lt;-</span> <span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
+<span id="cb6-11"><a href="#cb6-11" aria-label="11"></a>primary <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb6-12"><a href="#cb6-12" aria-label="12"></a>  <span class="at">estimate =</span> <span class="fu">unname</span>(<span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
+<span id="cb6-13"><a href="#cb6-13" aria-label="13"></a>  <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
+<span id="cb6-14"><a href="#cb6-14" aria-label="14"></a>  <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
+<span id="cb6-15"><a href="#cb6-15" aria-label="15"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>and in the text of the report:</p>
 <pre><code>High-dose voles were `r round(primary$estimate, 2)` g heavier than controls
 after treatment (95% CI `r round(primary$lower, 2)` to
 `r round(primary$upper, 2)` g).</code></pre>
-<p>Your <code>AGENTS.md</code> should already say never to type numerical results into text. That is a request. The function below is the check: it lists prose lines in a <code>.qmd</code> file that still contain numbers outside inline code, for you to review by eye.</p>
+<p>Your <code>AGENTS.md</code> says never to type numerical results into text. That is a request, and the model usually follows it. What makes it hold is a check: the template ships <code>find_typed_numbers()</code>, which lists the prose lines of a <code>.qmd</code> file that still contain numbers outside inline code, for you to review.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span><code>scripts/functions/typed_numbers.R</code>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a><span class="co"># scripts/functions/typed_numbers.R ----</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a><span class="co"># List the prose lines of a .qmd file that still contain numbers outside</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a><span class="co"># inline code, for you to review by eye. Years, design sizes and YAML values</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a><span class="co"># are flagged too, so treat each hit as a question, not an error.</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-label="5"></a>find_typed_numbers <span class="ot">&lt;-</span> <span class="cf">function</span>(path) {</span>
+<span id="cb8-6"><a href="#cb8-6" aria-label="6"></a>  lines <span class="ot">&lt;-</span> <span class="fu">readLines</span>(path, <span class="at">warn =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-label="7"></a>  is_fence <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"^```"</span>, lines)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-label="8"></a>  in_chunk <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(is_fence) <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">1</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-label="9"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-label="10"></a>  tibble<span class="sc">::</span><span class="fu">tibble</span>(<span class="at">line =</span> <span class="fu">seq_along</span>(lines), <span class="at">text =</span> lines) <span class="sc">|&gt;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-label="11"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span>in_chunk, <span class="sc">!</span>is_fence) <span class="sc">|&gt;</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-label="12"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">prose =</span> <span class="fu">gsub</span>(<span class="st">"`</span><span class="sc">\\</span><span class="st">{?r</span><span class="sc">\\</span><span class="st">}? [^`]*`"</span>, <span class="st">""</span>, text)) <span class="sc">|&gt;</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-label="13"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"[0-9]+</span><span class="sc">\\</span><span class="st">.[0-9]+|</span><span class="sc">\\</span><span class="st">b[0-9]{2,}</span><span class="sc">\\</span><span class="st">b"</span>, prose, <span class="at">perl =</span> <span class="cn">TRUE</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-label="14"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(line, text)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-label="15"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
 <div class="task">
 <div class="task-header">
 <p>Scan a report (3 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>1. Define the check.</strong> In the R console:</p>
+<p><strong>Start:</strong> the template’s <code>reports/example_report.qmd</code>, an interim summary of the voles trial with some numbers typed in.</p>
+<p><strong>1. Scan it.</strong> In the R console:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a>find_typed_numbers <span class="ot">&lt;-</span> <span class="cf">function</span>(path) {</span>
-<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>  lines <span class="ot">&lt;-</span> <span class="fu">readLines</span>(path, <span class="at">warn =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-label="3"></a>  is_fence <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"^```"</span>, lines)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-label="4"></a>  in_chunk <span class="ot">&lt;-</span> <span class="fu">cumsum</span>(is_fence) <span class="sc">%%</span> <span class="dv">2</span> <span class="sc">==</span> <span class="dv">1</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a>  <span class="fu">tibble</span>(<span class="at">line =</span> <span class="fu">seq_along</span>(lines), <span class="at">text =</span> lines) <span class="sc">|&gt;</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a>    <span class="fu">filter</span>(<span class="sc">!</span>in_chunk, <span class="sc">!</span>is_fence) <span class="sc">|&gt;</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-label="8"></a>    <span class="fu">mutate</span>(<span class="at">prose =</span> <span class="fu">gsub</span>(<span class="st">"`</span><span class="sc">\\</span><span class="st">{?r</span><span class="sc">\\</span><span class="st">}? [^`]*`"</span>, <span class="st">""</span>, text)) <span class="sc">|&gt;</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-label="9"></a>    <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"[0-9]+</span><span class="sc">\\</span><span class="st">.[0-9]+|</span><span class="sc">\\</span><span class="st">b[0-9]{2,}</span><span class="sc">\\</span><span class="st">b"</span>, prose, <span class="at">perl =</span> <span class="cn">TRUE</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-label="10"></a>    <span class="fu">select</span>(line, text)</span>
-<span id="cb7-11"><a href="#cb7-11" aria-label="11"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"typed_numbers.R"</span>))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a><span class="fu">find_typed_numbers</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"reports"</span>, <span class="st">"example_report.qmd"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a>  <span class="fu">print</span>(<span class="at">n =</span> <span class="cn">Inf</span>, <span class="at">width =</span> <span class="cn">Inf</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>2. Run it on a real report.</strong> Point it at the Quarto report you wrote on Day 3, or any <code>.qmd</code> file you have:</p>
-<div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a><span class="fu">find_typed_numbers</span>(<span class="st">"path/to/your_report.qmd"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>2. Sort the hits.</strong> The scan flags five lines. Decide for each one whether it is a typed result that should be inline code, or a number that is fine as text.</p>
+<div class="webex-solution">
+<button>
+Which are which
+</button>
+<p>Lines 37 and 38 are typed results: the 1.53 g difference with its interval, and the mean of 29.4 g. Both would go stale the moment the data changed, and both should be inline code. The other three are questions with a reasonable “no” answer: the date in the YAML header (line 3), the design size of 12 per group (line 28), and “95%” in “95% CI” (line 34).</p>
 </div>
-<p>It will also flag years, sample sizes from the design and the YAML header, so treat each hit as a question, not an error. For each typed result you find, decide whether it should be inline code.</p>
+<p><strong>You are done when</strong> you can say which two lines are typed results and why the other three can stay.</p>
+<p><strong>If it goes wrong:</strong> if <code>find_typed_numbers()</code> is not found, check that the <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> line ran without an error.</p>
 </div>
 </div>
+<p>The same scan works on any <code>.qmd</code> you write, including your Quarto report from Day 3. Every hit is a question, not an error.</p>
 </section><section id="part-c-the-repository-you-leave-with" class="level2"><h2 class="anchored" data-anchor-id="part-c-the-repository-you-leave-with">Part C: The repository you leave with</h2>
 <p><em>⏱ ~8 minutes</em></p>
 <p>Over the day your repository has collected most of what a reader needs: a <a class="glossary">codebook<span class="def">A table describing each variable: its type, valid range, missing-value codes, unit and label mappings. It is the data dictionary from Day 2 with machine-readable rules, and you own it, not the AI.</span></a> (Block 7), cleaning and exclusion logs, scripts with a run order, a <a class="glossary">lockfile<span class="def">The renv.lock file that records the R version and the exact package versions a project uses, so renv::restore() can rebuild the same environment.</span></a>, tests with a reference you captured (Block 9), and an <a class="glossary">AI-use log<span class="def">A record written at the time of each piece of AI-assisted work, in the form: date; tool and model; task; what you kept or changed. It becomes the AI declaration in a README.</span></a>. A README pulls that record together. One rule applies throughout: the AI may assemble and phrase facts you can trace to a file, and must not invent any. Anything it cannot find in those files becomes a visible placeholder for you to fill.</p>
@@ -818,25 +870,40 @@ after treatment (95% CI `r round(primary$lower, 2)` to
 <p>Draft from the record, then audit (8 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>1. Draft.</strong> With the repository committed and clean, in Claude Code in <code>default</code> mode:</p>
+<p><strong>Start:</strong> your workshop repository, committed and clean. If Block 7 or 9 is unfinished, switch to the <code>block9-done</code> branch from the Git pane’s branch menu first, so the files the README draws on exist.</p>
+<p><strong>1. Run the whole suite first.</strong> Restart R (<em>Session → Restart R</em>), then in the R console:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a>renv<span class="sc">::</span><span class="fu">status</span>()</span>
+<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a>callr<span class="sc">::</span><span class="fu">r</span>(\(d) testthat<span class="sc">::</span><span class="fu">test_dir</span>(d), <span class="fu">list</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> should report no problems, and the tests should run with no failures (the README test still skips). This is the evidence the README’s “How to verify” section will point to.</p>
+<p><strong>2. Draft.</strong> In Claude Code, in <code>default</code> mode:</p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a>Create or update README.md for this repository. Use ONLY these sources, and</span>
-<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>name the source of each section:</span>
-<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a>- Data: docs/codebook.csv and docs/data_note.md.</span>
-<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a>- Scripts and run order: the numeric prefixes of the files in scripts/.</span>
-<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a>- Dependencies: the R version and packages pinned in renv.lock, and the</span>
-<span id="cb9-6"><a href="#cb9-6" aria-label="6"></a>  restore command renv::restore().</span>
-<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a>- AI declaration: a summary of docs/ai-log.md, making no claim beyond it.</span>
-<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a>Where a value is not in these files (authors, ORCIDs, licence, DOI, funding,</span>
-<span id="cb9-9"><a href="#cb9-9" aria-label="9"></a>units the codebook leaves blank), insert a visible placeholder:</span>
-<span id="cb9-10"><a href="#cb9-10" aria-label="10"></a>  &lt;!-- TODO: supply [field]: not provided --&gt;</span>
-<span id="cb9-11"><a href="#cb9-11" aria-label="11"></a>Edit README.md only. Show me your plan first.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>2. Audit.</strong> Pick three statements and trace each to a file. Look in particular at the unit of <code>metabolic_rate_post</code>: the codebook leaves it as <code>&lt;unit&gt;</code>, so a README that states a unit has invented it. Check that the <a class="glossary">AI declaration<span class="def">A statement, for example in a README, recording that an AI assisted, naming the tool, model and date, and making no claim about AI use beyond what was recorded.</span></a> says no more than your log.</p>
-<p><strong>3. Confirm the scope.</strong> In the terminal:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a><span class="fu">git</span> status <span class="at">--short</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Only <code>README.md</code> should have changed.</p>
-<p><strong>4. Before you share it.</strong> The placeholders are your to-do list. Work through licence, ORCIDs, DOI and archiving with the <a href="./06-reproducibility.html#repro-sortee">SORTEE checklist from Day 2</a>. Then add the last line to <code>docs/ai-log.md</code>, and commit.</p>
-<p><strong>5. Payoff.</strong> What did the agent do, how long did checking it take, and would you automate this again?</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>Create or update README.md for this repository. Use ONLY these sources, and</span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>name the source of each section:</span>
+<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a>- Data: docs/codebook.csv and docs/data_note.md.</span>
+<span id="cb11-4"><a href="#cb11-4" aria-label="4"></a>- Scripts and run order: the numeric prefixes of the files in scripts/.</span>
+<span id="cb11-5"><a href="#cb11-5" aria-label="5"></a>- Dependencies: the R version and packages pinned in renv.lock, and the</span>
+<span id="cb11-6"><a href="#cb11-6" aria-label="6"></a>  restore command renv::restore().</span>
+<span id="cb11-7"><a href="#cb11-7" aria-label="7"></a>- How to verify: the command</span>
+<span id="cb11-8"><a href="#cb11-8" aria-label="8"></a>  callr::r(\(d) testthat::test_dir(d), list(here::here("tests"))), and what</span>
+<span id="cb11-9"><a href="#cb11-9" aria-label="9"></a>  the tests check.</span>
+<span id="cb11-10"><a href="#cb11-10" aria-label="10"></a>- AI declaration: a summary of docs/ai-log.md, making no claim beyond it.</span>
+<span id="cb11-11"><a href="#cb11-11" aria-label="11"></a>Where a value is not in these files (authors, ORCIDs, licence, DOI, funding,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-label="12"></a>units the codebook leaves blank), insert a visible placeholder in exactly</span>
+<span id="cb11-13"><a href="#cb11-13" aria-label="13"></a>this form:</span>
+<span id="cb11-14"><a href="#cb11-14" aria-label="14"></a>  **TODO: supply [field]: not provided**</span>
+<span id="cb11-15"><a href="#cb11-15" aria-label="15"></a>Edit README.md only. Show me your plan first.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>3. Let the test audit it.</strong> The template ships <code>tests/test_readme.R</code>, which checks the README against the files it was drafted from: the R version and <code><a href="https://rstudio.github.io/renv/reference/restore.html">renv::restore()</a></code>, every package version against <code>renv.lock</code>, every numbered script, no leftover <code>{{</code> tokens, and no invented unit for <code>metabolic_rate_post</code> (the codebook leaves it as <code>&lt;unit&gt;</code>). In the R console:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_readme.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>It also reports how many placeholders are left. Then trace one statement the test cannot check by hand: confirm that the <a class="glossary">AI declaration<span class="def">A statement, for example in a README, recording that an AI assisted, naming the tool, model and date, and making no claim about AI use beyond what was recorded.</span></a> says no more than your log.</p>
+<p><strong>4. Confirm the scope.</strong> The Git pane should show only <code>README.md</code> as changed.</p>
+<p><strong>5. Before you share it.</strong> The placeholders are your to-do list. Work through licence, ORCIDs, DOI and archiving with the <a href="./06-reproducibility.html#repro-sortee">SORTEE checklist from Day 2</a>. Then add the last line to <code>docs/ai-log.md</code>, and commit.</p>
+<p><strong>6. Payoff.</strong> What did the agent do, how long did checking it take, and would you automate this again?</p>
+<p><strong>You are done when</strong> <code>test_readme.R</code> passes and the whole suite passes in a fresh R session.</p>
+<p><strong>If it goes wrong:</strong> if the agent changed any file other than <code>README.md</code>, select it in the Git pane and choose <strong>Revert</strong>. If the README test fails, ask Claude Code to fix only the statements the test names, and run it again.</p>
 </div>
 </div>
 <p>A fuller version of this task is in the <em>Going further</em> section of <a href="./11h-code-review.html">Block 8</a>. There, you run two helper scripts yourself to describe every data file and read the lockfile, and a skill assembles the README from their output under the same no-invention rule. Check your institution’s and target journal’s current policy for what must be declared about AI use, and where.</p>
@@ -852,6 +919,8 @@ after treatment (95% CI `r round(primary$lower, 2)` to
 <div class="callout-body-container callout-body">
 <ul>
 <li>
+<strong>You can now:</strong> have an agent translate analysis code and draft a README, <strong>trusted because</strong> shipped tests compare the translation with the original and the README with its sources, and the whole suite passes in a fresh R session.</li>
+<li>
 <strong>Check:</strong> an equivalence test between the original and the translation; a scan for typed numbers; every README statement traced to a file.</li>
 <li>
 <strong>Reproduce:</strong> numbers come from code, so the report updates when the data do; the README’s dependencies come from <code>renv.lock</code>, not from memory.</li>
@@ -862,12 +931,12 @@ after treatment (95% CI `r round(primary$lower, 2)` to
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>A translated script and the original disagree only after you convert factors to characters and sort the rows. What should you do next?</strong></p>
-<div id="radio_GONPNXHWKU" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_GONPNXHWKU" value=""><span>Increase the tolerance until the test passes</span></label><label><input type="radio" autocomplete="off" name="radio_GONPNXHWKU" value=""><span>Accept the translation, since the AI wrote it</span></label><label><input type="radio" autocomplete="off" name="radio_GONPNXHWKU" value="answer"><span>Find the behavioural difference (for example, missing-value handling), decide which behaviour is correct, and record the decision</span></label><label><input type="radio" autocomplete="off" name="radio_GONPNXHWKU" value=""><span>Revert to the original script</span></label>
+<div id="radio_ZSUXJFXHZJ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value=""><span>Increase the tolerance until the test passes</span></label><label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value=""><span>Accept the translation, since the AI wrote it</span></label><label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value="answer"><span>Find the behavioural difference (for example, missing-value handling), decide which behaviour is correct, and record the decision</span></label><label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value=""><span>Revert to the original script</span></label>
 </div>
 <p><strong>The README draft gives the unit of <code>metabolic_rate_post</code>, but your codebook leaves it blank. What should you do?</strong></p>
-<div id="radio_BOPEYDBZDJ" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_BOPEYDBZDJ" value=""><span>Keep it; the AI probably knows the usual unit for metabolic rate</span></label><label><input type="radio" autocomplete="off" name="radio_BOPEYDBZDJ" value=""><span>Delete the column from the README</span></label><label><input type="radio" autocomplete="off" name="radio_BOPEYDBZDJ" value="answer"><span>Replace it with a placeholder and get the unit from the data provider: the AI invented it, and the codebook is the source of truth</span></label><label><input type="radio" autocomplete="off" name="radio_BOPEYDBZDJ" value=""><span>Add the unit to the codebook to match the README</span></label>
+<div id="radio_ESUDKTCUEE" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value=""><span>Keep it; the AI probably knows the usual unit for metabolic rate</span></label><label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value=""><span>Delete the column from the README</span></label><label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value="answer"><span>Replace it with a placeholder and get the unit from the data provider: the AI invented it, and the codebook is the source of truth</span></label><label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value=""><span>Add the unit to the codebook to match the README</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
@@ -888,29 +957,33 @@ estimates the same quantity. Do not recommend one.</code></pre>
 <p><strong>2. Judge each one yourself.</strong> Mark each alternative defensible or not, with a reason. Check especially whether it estimates the <em>same</em> quantity.</p>
 <p><strong>3. Run the defensible ones</strong> and report them beside the primary analysis.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>voles_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)))</span>
-<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a>specs_df <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
-<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a>  <span class="sc">~</span>spec,                       <span class="sc">~</span>formula,</span>
-<span id="cb12-6"><a href="#cb12-6" aria-label="6"></a>  <span class="st">"Primary: ANCOVA"</span>,           <span class="st">"mass_post_g ~ mass_pre_g + treatment_arm + sex"</span>,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-label="7"></a>  <span class="st">"Change score"</span>,              <span class="st">"I(mass_post_g - mass_pre_g) ~ treatment_arm + sex"</span>,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-label="8"></a>  <span class="st">"ANCOVA with arm-by-sex"</span>,    <span class="st">"mass_post_g ~ mass_pre_g + treatment_arm * sex"</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-label="9"></a>)</span>
-<span id="cb12-10"><a href="#cb12-10" aria-label="10"></a></span>
-<span id="cb12-11"><a href="#cb12-11" aria-label="11"></a>spec_results_df <span class="ot">&lt;-</span> specs_df <span class="sc">|&gt;</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-label="12"></a>  <span class="fu">mutate</span>(<span class="at">result =</span> <span class="fu">map</span>(formula, \(f) {</span>
-<span id="cb12-13"><a href="#cb12-13" aria-label="13"></a>    fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">as.formula</span>(f), <span class="at">data =</span> voles_df)</span>
-<span id="cb12-14"><a href="#cb12-14" aria-label="14"></a>    ci <span class="ot">&lt;-</span> <span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
-<span id="cb12-15"><a href="#cb12-15" aria-label="15"></a>    <span class="fu">tibble</span>(</span>
-<span id="cb12-16"><a href="#cb12-16" aria-label="16"></a>      <span class="at">estimate =</span> <span class="fu">unname</span>(<span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
-<span id="cb12-17"><a href="#cb12-17" aria-label="17"></a>      <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
-<span id="cb12-18"><a href="#cb12-18" aria-label="18"></a>      <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
-<span id="cb12-19"><a href="#cb12-19" aria-label="19"></a>    )</span>
-<span id="cb12-20"><a href="#cb12-20" aria-label="20"></a>  })) <span class="sc">|&gt;</span></span>
-<span id="cb12-21"><a href="#cb12-21" aria-label="21"></a>  <span class="fu">unnest</span>(result)</span>
-<span id="cb12-22"><a href="#cb12-22" aria-label="22"></a></span>
-<span id="cb12-23"><a href="#cb12-23" aria-label="23"></a>spec_results_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a><span class="fu">library</span>(here)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
+<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a>voles_df <span class="ot">&lt;-</span> <span class="fu">load_voles</span>() <span class="sc">|&gt;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a>  <span class="fu">mutate</span>(<span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)))</span>
+<span id="cb14-7"><a href="#cb14-7" aria-label="7"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-label="8"></a>specs_df <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
+<span id="cb14-9"><a href="#cb14-9" aria-label="9"></a>  <span class="sc">~</span>spec,                       <span class="sc">~</span>formula,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-label="10"></a>  <span class="st">"Primary: ANCOVA"</span>,           <span class="st">"mass_post_g ~ mass_pre_g + treatment_arm + sex"</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-label="11"></a>  <span class="st">"Change score"</span>,              <span class="st">"I(mass_post_g - mass_pre_g) ~ treatment_arm + sex"</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" aria-label="12"></a>  <span class="st">"ANCOVA with arm-by-sex"</span>,    <span class="st">"mass_post_g ~ mass_pre_g + treatment_arm * sex"</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-label="13"></a>)</span>
+<span id="cb14-14"><a href="#cb14-14" aria-label="14"></a></span>
+<span id="cb14-15"><a href="#cb14-15" aria-label="15"></a>spec_results_df <span class="ot">&lt;-</span> specs_df <span class="sc">|&gt;</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-label="16"></a>  <span class="fu">mutate</span>(<span class="at">result =</span> <span class="fu">map</span>(formula, \(f) {</span>
+<span id="cb14-17"><a href="#cb14-17" aria-label="17"></a>    fit <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">as.formula</span>(f), <span class="at">data =</span> voles_df)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-label="18"></a>    ci <span class="ot">&lt;-</span> <span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
+<span id="cb14-19"><a href="#cb14-19" aria-label="19"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb14-20"><a href="#cb14-20" aria-label="20"></a>      <span class="at">estimate =</span> <span class="fu">unname</span>(<span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
+<span id="cb14-21"><a href="#cb14-21" aria-label="21"></a>      <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
+<span id="cb14-22"><a href="#cb14-22" aria-label="22"></a>      <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
+<span id="cb14-23"><a href="#cb14-23" aria-label="23"></a>    )</span>
+<span id="cb14-24"><a href="#cb14-24" aria-label="24"></a>  })) <span class="sc">|&gt;</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-label="25"></a>  <span class="fu">unnest</span>(result)</span>
+<span id="cb14-26"><a href="#cb14-26" aria-label="26"></a></span>
+<span id="cb14-27"><a href="#cb14-27" aria-label="27"></a>spec_results_df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="webex-solution">
 <button>
@@ -935,8 +1008,8 @@ Warning
 </div>
 <section id="check-your-understanding-robustness" class="level4"><h4 class="anchored" data-anchor-id="check-your-understanding-robustness">Check your understanding: robustness</h4>
 <p><strong>Why should the arm-by-sex interaction model not appear in the same robustness table as the primary ANCOVA?</strong></p>
-<div id="radio_YLTQQERAKA" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_YLTQQERAKA" value=""><span>Interaction models cannot be fitted with lm()</span></label><label><input type="radio" autocomplete="off" name="radio_YLTQQERAKA" value="answer"><span>Its High_dose coefficient estimates the effect in the reference sex only, a different quantity from the primary estimand</span></label><label><input type="radio" autocomplete="off" name="radio_YLTQQERAKA" value=""><span>It always gives a larger estimate</span></label><label><input type="radio" autocomplete="off" name="radio_YLTQQERAKA" value=""><span>Robustness tables may contain only two models</span></label>
+<div id="radio_GBEVLZLNOW" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value=""><span>Interaction models cannot be fitted with lm()</span></label><label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value="answer"><span>Its High_dose coefficient estimates the effect in the reference sex only, a different quantity from the primary estimand</span></label><label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value=""><span>It always gives a larger estimate</span></label><label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value=""><span>Robustness tables may contain only two models</span></label>
 </div>
 </section></section><section id="simulation-and-parameter-recovery" class="level3"><h3 class="anchored" data-anchor-id="simulation-and-parameter-recovery">Simulation and parameter recovery</h3>
 <p>If you simulate data from a mechanism whose parameters you chose, a correct analysis should recover those parameters on average, and its 95% confidence intervals should contain the true values about 95% of the time. This tests the analysis code against a known answer, which real data never provide.</p>
@@ -962,12 +1035,12 @@ Warning
 <p><strong>1. Simulation code.</strong> Give the AI the data-generating mechanism above, word for word, and ask for a function <code>simulate_voles()</code> returning a tibble with columns <code>treatment_arm</code>, <code>sex</code>, <code>mass_pre_g</code> and <code>mass_post_g</code>.</p>
 <p><strong>2. Check the simulated data against the specification.</strong> Before using the function, run it once and check that it matches what you wrote:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a>sim_df <span class="ot">&lt;-</span> <span class="fu">simulate_voles</span>()</span>
-<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a>sim_df <span class="sc">|&gt;</span> <span class="fu">count</span>(treatment_arm, sex)            <span class="co"># 12 per cell?</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-label="4"></a>sim_df <span class="sc">|&gt;</span> <span class="fu">summarise</span>(<span class="fu">mean</span>(mass_pre_g), <span class="fu">sd</span>(mass_pre_g))</span>
-<span id="cb13-5"><a href="#cb13-5" aria-label="5"></a>sim_df <span class="sc">|&gt;</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-label="6"></a>  <span class="fu">summarise</span>(<span class="at">mean_post =</span> <span class="fu">mean</span>(mass_post_g), <span class="at">.by =</span> <span class="fu">c</span>(treatment_arm, sex))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>sim_df <span class="ot">&lt;-</span> <span class="fu">simulate_voles</span>()</span>
+<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>sim_df <span class="sc">|&gt;</span> <span class="fu">count</span>(treatment_arm, sex)            <span class="co"># 12 per cell?</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a>sim_df <span class="sc">|&gt;</span> <span class="fu">summarise</span>(<span class="fu">mean</span>(mass_pre_g), <span class="fu">sd</span>(mass_pre_g))</span>
+<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a>sim_df <span class="sc">|&gt;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a>  <span class="fu">summarise</span>(<span class="at">mean_post =</span> <span class="fu">mean</span>(mass_post_g), <span class="at">.by =</span> <span class="fu">c</span>(treatment_arm, sex))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>High_dose should be about 1.5 g above Control within each sex, and males about 1 g above females. If not, the simulation is wrong, and nothing built on it can be trusted.</p>
 <p><strong>3. Analysis code, in a separate session.</strong> Without showing it the simulation code, ask the AI for a function <code>estimate_high_vs_control(data)</code> that fits the model above and returns the High_dose estimate and its 95% confidence interval.</p>
@@ -977,78 +1050,78 @@ Warning
 Reference code
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a>simulate_voles <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_per_cell =</span> <span class="dv">12</span>, <span class="at">effect_low =</span> <span class="fl">0.8</span>,</span>
-<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a>                           <span class="at">effect_high =</span> <span class="fl">1.5</span>, <span class="at">sex_effect =</span> <span class="fl">1.0</span>,</span>
-<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a>                           <span class="at">slope_pre =</span> <span class="fl">0.9</span>, <span class="at">sd_pre =</span> <span class="dv">2</span>, <span class="at">sd_resid =</span> <span class="fl">0.8</span>) {</span>
-<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a>  tidyr<span class="sc">::</span><span class="fu">expand_grid</span>(</span>
-<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a>    <span class="at">treatment_arm =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>),</span>
-<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a>    <span class="at">sex =</span> <span class="fu">c</span>(<span class="st">"F"</span>, <span class="st">"M"</span>),</span>
-<span id="cb14-7"><a href="#cb14-7" aria-label="7"></a>    <span class="at">animal =</span> <span class="fu">seq_len</span>(n_per_cell)</span>
-<span id="cb14-8"><a href="#cb14-8" aria-label="8"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb14-9"><a href="#cb14-9" aria-label="9"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb14-10"><a href="#cb14-10" aria-label="10"></a>      <span class="at">mass_pre_g =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(dplyr<span class="sc">::</span><span class="fu">n</span>(), <span class="at">mean =</span> <span class="dv">28</span>, <span class="at">sd =</span> sd_pre),</span>
-<span id="cb14-11"><a href="#cb14-11" aria-label="11"></a>      <span class="at">arm_effect =</span> dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
-<span id="cb14-12"><a href="#cb14-12" aria-label="12"></a>        treatment_arm <span class="sc">==</span> <span class="st">"Low_dose"</span> <span class="sc">~</span> effect_low,</span>
-<span id="cb14-13"><a href="#cb14-13" aria-label="13"></a>        treatment_arm <span class="sc">==</span> <span class="st">"High_dose"</span> <span class="sc">~</span> effect_high,</span>
-<span id="cb14-14"><a href="#cb14-14" aria-label="14"></a>        <span class="at">.default =</span> <span class="dv">0</span></span>
-<span id="cb14-15"><a href="#cb14-15" aria-label="15"></a>      ),</span>
-<span id="cb14-16"><a href="#cb14-16" aria-label="16"></a>      <span class="at">mass_post_g =</span> <span class="dv">28</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> slope_pre) <span class="sc">+</span> slope_pre <span class="sc">*</span> mass_pre_g <span class="sc">+</span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-label="17"></a>        arm_effect <span class="sc">+</span> sex_effect <span class="sc">*</span> (sex <span class="sc">==</span> <span class="st">"M"</span>) <span class="sc">+</span></span>
-<span id="cb14-18"><a href="#cb14-18" aria-label="18"></a>        stats<span class="sc">::</span><span class="fu">rnorm</span>(dplyr<span class="sc">::</span><span class="fu">n</span>(), <span class="at">sd =</span> sd_resid)</span>
-<span id="cb14-19"><a href="#cb14-19" aria-label="19"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb14-20"><a href="#cb14-20" aria-label="20"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(treatment_arm, sex, mass_pre_g, mass_post_g)</span>
-<span id="cb14-21"><a href="#cb14-21" aria-label="21"></a>}</span>
-<span id="cb14-22"><a href="#cb14-22" aria-label="22"></a></span>
-<span id="cb14-23"><a href="#cb14-23" aria-label="23"></a>estimate_high_vs_control <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb14-24"><a href="#cb14-24" aria-label="24"></a>  data <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb14-25"><a href="#cb14-25" aria-label="25"></a>    data,</span>
-<span id="cb14-26"><a href="#cb14-26" aria-label="26"></a>    <span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>))</span>
-<span id="cb14-27"><a href="#cb14-27" aria-label="27"></a>  )</span>
-<span id="cb14-28"><a href="#cb14-28" aria-label="28"></a>  fit <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(mass_post_g <span class="sc">~</span> mass_pre_g <span class="sc">+</span> treatment_arm <span class="sc">+</span> sex, <span class="at">data =</span> data)</span>
-<span id="cb14-29"><a href="#cb14-29" aria-label="29"></a>  ci <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
-<span id="cb14-30"><a href="#cb14-30" aria-label="30"></a>  tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
-<span id="cb14-31"><a href="#cb14-31" aria-label="31"></a>    <span class="at">estimate =</span> <span class="fu">unname</span>(stats<span class="sc">::</span><span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
-<span id="cb14-32"><a href="#cb14-32" aria-label="32"></a>    <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
-<span id="cb14-33"><a href="#cb14-33" aria-label="33"></a>    <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
-<span id="cb14-34"><a href="#cb14-34" aria-label="34"></a>  )</span>
-<span id="cb14-35"><a href="#cb14-35" aria-label="35"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a>simulate_voles <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_per_cell =</span> <span class="dv">12</span>, <span class="at">effect_low =</span> <span class="fl">0.8</span>,</span>
+<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a>                           <span class="at">effect_high =</span> <span class="fl">1.5</span>, <span class="at">sex_effect =</span> <span class="fl">1.0</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a>                           <span class="at">slope_pre =</span> <span class="fl">0.9</span>, <span class="at">sd_pre =</span> <span class="dv">2</span>, <span class="at">sd_resid =</span> <span class="fl">0.8</span>) {</span>
+<span id="cb16-4"><a href="#cb16-4" aria-label="4"></a>  tidyr<span class="sc">::</span><span class="fu">expand_grid</span>(</span>
+<span id="cb16-5"><a href="#cb16-5" aria-label="5"></a>    <span class="at">treatment_arm =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>),</span>
+<span id="cb16-6"><a href="#cb16-6" aria-label="6"></a>    <span class="at">sex =</span> <span class="fu">c</span>(<span class="st">"F"</span>, <span class="st">"M"</span>),</span>
+<span id="cb16-7"><a href="#cb16-7" aria-label="7"></a>    <span class="at">animal =</span> <span class="fu">seq_len</span>(n_per_cell)</span>
+<span id="cb16-8"><a href="#cb16-8" aria-label="8"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-label="9"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb16-10"><a href="#cb16-10" aria-label="10"></a>      <span class="at">mass_pre_g =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(dplyr<span class="sc">::</span><span class="fu">n</span>(), <span class="at">mean =</span> <span class="dv">28</span>, <span class="at">sd =</span> sd_pre),</span>
+<span id="cb16-11"><a href="#cb16-11" aria-label="11"></a>      <span class="at">arm_effect =</span> dplyr<span class="sc">::</span><span class="fu">case_when</span>(</span>
+<span id="cb16-12"><a href="#cb16-12" aria-label="12"></a>        treatment_arm <span class="sc">==</span> <span class="st">"Low_dose"</span> <span class="sc">~</span> effect_low,</span>
+<span id="cb16-13"><a href="#cb16-13" aria-label="13"></a>        treatment_arm <span class="sc">==</span> <span class="st">"High_dose"</span> <span class="sc">~</span> effect_high,</span>
+<span id="cb16-14"><a href="#cb16-14" aria-label="14"></a>        <span class="at">.default =</span> <span class="dv">0</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-label="15"></a>      ),</span>
+<span id="cb16-16"><a href="#cb16-16" aria-label="16"></a>      <span class="at">mass_post_g =</span> <span class="dv">28</span> <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> slope_pre) <span class="sc">+</span> slope_pre <span class="sc">*</span> mass_pre_g <span class="sc">+</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-label="17"></a>        arm_effect <span class="sc">+</span> sex_effect <span class="sc">*</span> (sex <span class="sc">==</span> <span class="st">"M"</span>) <span class="sc">+</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-label="18"></a>        stats<span class="sc">::</span><span class="fu">rnorm</span>(dplyr<span class="sc">::</span><span class="fu">n</span>(), <span class="at">sd =</span> sd_resid)</span>
+<span id="cb16-19"><a href="#cb16-19" aria-label="19"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-label="20"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(treatment_arm, sex, mass_pre_g, mass_post_g)</span>
+<span id="cb16-21"><a href="#cb16-21" aria-label="21"></a>}</span>
+<span id="cb16-22"><a href="#cb16-22" aria-label="22"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-label="23"></a>estimate_high_vs_control <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb16-24"><a href="#cb16-24" aria-label="24"></a>  data <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb16-25"><a href="#cb16-25" aria-label="25"></a>    data,</span>
+<span id="cb16-26"><a href="#cb16-26" aria-label="26"></a>    <span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>))</span>
+<span id="cb16-27"><a href="#cb16-27" aria-label="27"></a>  )</span>
+<span id="cb16-28"><a href="#cb16-28" aria-label="28"></a>  fit <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(mass_post_g <span class="sc">~</span> mass_pre_g <span class="sc">+</span> treatment_arm <span class="sc">+</span> sex, <span class="at">data =</span> data)</span>
+<span id="cb16-29"><a href="#cb16-29" aria-label="29"></a>  ci <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
+<span id="cb16-30"><a href="#cb16-30" aria-label="30"></a>  tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb16-31"><a href="#cb16-31" aria-label="31"></a>    <span class="at">estimate =</span> <span class="fu">unname</span>(stats<span class="sc">::</span><span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
+<span id="cb16-32"><a href="#cb16-32" aria-label="32"></a>    <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
+<span id="cb16-33"><a href="#cb16-33" aria-label="33"></a>    <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
+<span id="cb16-34"><a href="#cb16-34" aria-label="34"></a>  )</span>
+<span id="cb16-35"><a href="#cb16-35" aria-label="35"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>n_sim <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>true_effect <span class="ot">&lt;-</span> <span class="fl">1.5</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a>results_df <span class="ot">&lt;-</span> <span class="fu">seq_len</span>(n_sim) <span class="sc">|&gt;</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a>  <span class="fu">map</span>(\(i) <span class="fu">estimate_high_vs_control</span>(<span class="fu">simulate_voles</span>(<span class="at">effect_high =</span> true_effect))) <span class="sc">|&gt;</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-label="7"></a>  <span class="fu">list_rbind</span>()</span>
-<span id="cb15-8"><a href="#cb15-8" aria-label="8"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-label="9"></a>results_df <span class="sc">|&gt;</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-label="10"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb15-11"><a href="#cb15-11" aria-label="11"></a>    <span class="at">bias          =</span> <span class="fu">mean</span>(estimate) <span class="sc">-</span> true_effect,</span>
-<span id="cb15-12"><a href="#cb15-12" aria-label="12"></a>    <span class="at">bias_mcse     =</span> <span class="fu">sd</span>(estimate) <span class="sc">/</span> <span class="fu">sqrt</span>(n_sim),</span>
-<span id="cb15-13"><a href="#cb15-13" aria-label="13"></a>    <span class="at">coverage      =</span> <span class="fu">mean</span>(lower <span class="sc">&lt;=</span> true_effect <span class="sc">&amp;</span> upper <span class="sc">&gt;=</span> true_effect),</span>
-<span id="cb15-14"><a href="#cb15-14" aria-label="14"></a>    <span class="at">coverage_mcse =</span> <span class="fu">sqrt</span>(coverage <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> coverage) <span class="sc">/</span> n_sim),</span>
-<span id="cb15-15"><a href="#cb15-15" aria-label="15"></a>    <span class="at">empirical_se  =</span> <span class="fu">sd</span>(estimate)</span>
-<span id="cb15-16"><a href="#cb15-16" aria-label="16"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a>n_sim <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-label="3"></a>true_effect <span class="ot">&lt;-</span> <span class="fl">1.5</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-label="4"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-label="5"></a>results_df <span class="ot">&lt;-</span> <span class="fu">seq_len</span>(n_sim) <span class="sc">|&gt;</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-label="6"></a>  <span class="fu">map</span>(\(i) <span class="fu">estimate_high_vs_control</span>(<span class="fu">simulate_voles</span>(<span class="at">effect_high =</span> true_effect))) <span class="sc">|&gt;</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-label="7"></a>  <span class="fu">list_rbind</span>()</span>
+<span id="cb17-8"><a href="#cb17-8" aria-label="8"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-label="9"></a>results_df <span class="sc">|&gt;</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-label="10"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb17-11"><a href="#cb17-11" aria-label="11"></a>    <span class="at">bias          =</span> <span class="fu">mean</span>(estimate) <span class="sc">-</span> true_effect,</span>
+<span id="cb17-12"><a href="#cb17-12" aria-label="12"></a>    <span class="at">bias_mcse     =</span> <span class="fu">sd</span>(estimate) <span class="sc">/</span> <span class="fu">sqrt</span>(n_sim),</span>
+<span id="cb17-13"><a href="#cb17-13" aria-label="13"></a>    <span class="at">coverage      =</span> <span class="fu">mean</span>(lower <span class="sc">&lt;=</span> true_effect <span class="sc">&amp;</span> upper <span class="sc">&gt;=</span> true_effect),</span>
+<span id="cb17-14"><a href="#cb17-14" aria-label="14"></a>    <span class="at">coverage_mcse =</span> <span class="fu">sqrt</span>(coverage <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> coverage) <span class="sc">/</span> n_sim),</span>
+<span id="cb17-15"><a href="#cb17-15" aria-label="15"></a>    <span class="at">empirical_se  =</span> <span class="fu">sd</span>(estimate)</span>
+<span id="cb17-16"><a href="#cb17-16" aria-label="16"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Bias should be within about two Monte Carlo standard errors of zero. Coverage should be within about two Monte Carlo standard errors of 0.95, roughly 0.936 to 0.964 with 1,000 runs.</p>
 <p><strong>5. Prove the check can fail.</strong> Replace the analysis with a version that models the change the wrong way round, as in <a href="./11c-debugging.html">Block 3</a>:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a>estimate_buggy <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a>  data <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a>    data,</span>
-<span id="cb16-4"><a href="#cb16-4" aria-label="4"></a>    <span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)),</span>
-<span id="cb16-5"><a href="#cb16-5" aria-label="5"></a>    <span class="at">mass_change_g =</span> mass_pre_g <span class="sc">-</span> mass_post_g</span>
-<span id="cb16-6"><a href="#cb16-6" aria-label="6"></a>  )</span>
-<span id="cb16-7"><a href="#cb16-7" aria-label="7"></a>  fit <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(mass_change_g <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex, <span class="at">data =</span> data)</span>
-<span id="cb16-8"><a href="#cb16-8" aria-label="8"></a>  ci <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
-<span id="cb16-9"><a href="#cb16-9" aria-label="9"></a>  tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
-<span id="cb16-10"><a href="#cb16-10" aria-label="10"></a>    <span class="at">estimate =</span> <span class="fu">unname</span>(stats<span class="sc">::</span><span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
-<span id="cb16-11"><a href="#cb16-11" aria-label="11"></a>    <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
-<span id="cb16-12"><a href="#cb16-12" aria-label="12"></a>    <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
-<span id="cb16-13"><a href="#cb16-13" aria-label="13"></a>  )</span>
-<span id="cb16-14"><a href="#cb16-14" aria-label="14"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a>estimate_buggy <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb18-2"><a href="#cb18-2" aria-label="2"></a>  data <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb18-3"><a href="#cb18-3" aria-label="3"></a>    data,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-label="4"></a>    <span class="at">treatment_arm =</span> <span class="fu">factor</span>(treatment_arm, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Low_dose"</span>, <span class="st">"High_dose"</span>)),</span>
+<span id="cb18-5"><a href="#cb18-5" aria-label="5"></a>    <span class="at">mass_change_g =</span> mass_pre_g <span class="sc">-</span> mass_post_g</span>
+<span id="cb18-6"><a href="#cb18-6" aria-label="6"></a>  )</span>
+<span id="cb18-7"><a href="#cb18-7" aria-label="7"></a>  fit <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(mass_change_g <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex, <span class="at">data =</span> data)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-label="8"></a>  ci <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">confint</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>, ]</span>
+<span id="cb18-9"><a href="#cb18-9" aria-label="9"></a>  tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb18-10"><a href="#cb18-10" aria-label="10"></a>    <span class="at">estimate =</span> <span class="fu">unname</span>(stats<span class="sc">::</span><span class="fu">coef</span>(fit)[<span class="st">"treatment_armHigh_dose"</span>]),</span>
+<span id="cb18-11"><a href="#cb18-11" aria-label="11"></a>    <span class="at">lower =</span> <span class="fu">unname</span>(ci[<span class="dv">1</span>]),</span>
+<span id="cb18-12"><a href="#cb18-12" aria-label="12"></a>    <span class="at">upper =</span> <span class="fu">unname</span>(ci[<span class="dv">2</span>])</span>
+<span id="cb18-13"><a href="#cb18-13" aria-label="13"></a>  )</span>
+<span id="cb18-14"><a href="#cb18-14" aria-label="14"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Rerun the recovery with <code>estimate_buggy()</code>. Bias should be about −3 g and coverage near zero. A check you have never seen fail is a check you are assuming works.</p>
 </div>
@@ -1068,8 +1141,8 @@ Warning
 </div>
 <section id="check-your-understanding-simulation" class="level4"><h4 class="anchored" data-anchor-id="check-your-understanding-simulation">Check your understanding: simulation</h4>
 <p><strong>A simulation recovers the true effect with negligible bias and 95% coverage. What has it shown?</strong></p>
-<div id="radio_NDSTVSQIEP" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_NDSTVSQIEP" value=""><span>That the real data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_NDSTVSQIEP" value="answer"><span>That the analysis code estimates the intended quantity correctly when the data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_NDSTVSQIEP" value=""><span>That the study has adequate power</span></label><label><input type="radio" autocomplete="off" name="radio_NDSTVSQIEP" value=""><span>That the model's assumptions hold for the real data</span></label>
+<div id="radio_JVWZCYUMUA" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value=""><span>That the real data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value="answer"><span>That the analysis code estimates the intended quantity correctly when the data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value=""><span>That the study has adequate power</span></label><label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value=""><span>That the model's assumptions hold for the real data</span></label>
 </div>
 </section></section></section><section id="glossary" class="level2"><h2 class="anchored" data-anchor-id="glossary">Glossary</h2>
 <div class="cell" data-layout-align="center">

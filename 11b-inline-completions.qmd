@@ -24,8 +24,19 @@ GitHub Copilot is the main tool.
 
 ## Setup
 
-Use **one** completion provider at a time during this block, so you know which
-tool produced each suggestion.
+You signed in to GitHub Copilot in the pre-work
+([Setting up Claude Code](11a-setup-claude-code.qmd), Step 6). Use **one**
+completion provider at a time during this block, so you know which tool
+produced each suggestion.
+
+Check it still works: open a blank R script and type
+`# Calculate the mean of 1 to 100`. Within a second or two you should see
+ghost text such as `mean(1:100)`. If nothing appears, press Enter to move to the
+next line and wait.
+
+**If no ghost text appears,** follow the instructor's screen for this block and
+fix the set-up at the break, rather than losing the block to it. The set-up
+routes, if you skipped the pre-work:
 
 - **RStudio:** enable GitHub Copilot in RStudio's options and sign in to
   GitHub.
@@ -33,11 +44,6 @@ tool produced each suggestion.
   GitHub Copilot as the provider.
 - **VS Code:** Copilot's AI features are built in. Select **Use AI Features**
   from the Copilot icon in the Status Bar and sign in with GitHub.
-
-Check it works: open a blank R script and type
-`# Calculate the mean of 1 to 100`. Within a second or two you should see
-ghost text such as `mean(1:100)`. If nothing appears, press Enter to move to the
-next line and wait.
 
 Copilot Free allows a limited number of completions per month (2,000 at the
 time of writing); paid Copilot plans do not meter completions. Completions send
@@ -81,6 +87,9 @@ A session-aware provider therefore adds one more lever: what you have loaded.
 The context demonstration (10 minutes)
 ::::
 ::::{.task-container}
+
+**Start state:** your workshop project is open, and inline completion produced
+ghost text in the set-up check.
 
 You will use `voles_metabolism.csv`, a small synthetic dataset chosen because
 its column names are unlikely to appear in any model's training data. The
@@ -152,6 +161,13 @@ How different were the two outputs? Did the second use column names that exist
 in the data? Did the model compute the change in the right direction (post
 minus pre)?
 
+**You are done when** you have recorded both suggestions and can say what the
+second one had that the first did not.
+
+**If it goes wrong:** if a suggestion never appears, type the comment again on a
+new line; if your script stops running, *Session → Restart R* and run it from
+the top.
+
 ::::
 :::
 
@@ -173,7 +189,10 @@ Build a small analysis (10 minutes)
 ::::
 ::::{.task-container}
 
-In the script from step 2, drive inline completion through two analysis steps.
+**Start state:** the script from step 2 of the context demonstration, with
+`voles` loaded.
+
+In that script, drive inline completion through two analysis steps.
 Write the comment for each step first, then accept, reject or modify the
 suggestion.
 
@@ -188,6 +207,53 @@ For each step, record the comment you wrote, the suggested code, and one line
 saying whether you accepted, modified or rejected it. The point of the record is
 to make you notice when you accepted something without inspecting it.
 
+**You are done when** a fresh R session (*Session → Restart R*, then run the
+script from the top) produces the summary table and one plot without error.
+
+**If it goes wrong:** delete the last suggestion you accepted, and write a more
+specific comment naming the data frame and its columns.
+
+`r hide("An example")`
+
+```{r, eval = FALSE}
+# Voles metabolism trial: effect of treatment on body mass
+library(tidyverse)
+library(here)
+
+voles <- read_csv(
+  here("data", "raw", "voles_metabolism.csv"),
+  col_types = cols(
+    subject_id = col_character(),
+    sex = col_character(),
+    treatment_arm = col_character(),
+    mass_pre_g = col_double(),
+    mass_post_g = col_double(),
+    metabolic_rate_post = col_double()
+  )
+) |>
+  mutate(mass_change_g = mass_post_g - mass_pre_g)
+
+# mean and SD of mass_change_g by treatment_arm and sex, with n per cell
+voles |>
+  summarise(
+    mean_change_g = mean(mass_change_g),
+    sd_change_g = sd(mass_change_g),
+    n = n(),
+    .by = c(treatment_arm, sex)
+  ) |>
+  arrange(treatment_arm, sex)
+
+# mass_change_g against metabolic_rate_post, coloured by treatment_arm
+ggplot(voles, aes(metabolic_rate_post, mass_change_g, colour = treatment_arm)) +
+  geom_point() +
+  labs(x = "Metabolic rate (post-treatment)", y = "Change in mass (g)")
+```
+
+The plot drops the one animal with no metabolic rate and says so in a warning:
+read the warning rather than ignore it.
+
+`r unhide()`
+
 ::::
 :::
 
@@ -195,6 +261,9 @@ to make you notice when you accepted something without inspecting it.
 :::{.callout-note}
 ## Check · Reproduce · Record
 
+- **You can now:** steer inline completion with a specific comment and the
+  right code above the cursor, **trusted because** you decided on every
+  suggestion and the script runs from a fresh R session.
 - **Check:** accept, modify or reject every suggestion deliberately; your
   record of each decision is what makes you notice an unexamined acceptance.
 - **Reproduce:** a suggestion that names your columns correctly came from

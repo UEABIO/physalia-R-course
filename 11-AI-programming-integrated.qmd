@@ -72,16 +72,18 @@ Each block from Block 2 onwards ends with a *Going further* section that is not 
 
 ## Materials
 
-Participants will work with a synthetic biological dataset (`voles_metabolism.csv`) and a workshop template repository that they fork before the day (its layout is in [Your workshop repository](11a-setup-claude-code.qmd#your-workshop-repository)). The template uses `renv` for project-local packages, so after forking and opening the project, run `renv::restore()` once as part of the pre-work. Block 7 uses a copy of the voles data with errors planted in it, which your instructor supplies, and Block 8 uses the project folder from <https://osf.io/jgeq9/> that you reviewed by hand on Day 2.
+Participants will work with a synthetic biological dataset (`voles_metabolism.csv`) and a workshop template repository that they fork before the day (its layout is in [Your workshop repository](11a-setup-claude-code.qmd#your-workshop-repository)). The template uses `renv` for project-local packages, so after forking and opening the project, run `renv::restore()` once as part of the pre-work. Block 7 uses a copy of the voles data with errors planted in it (`data/raw/voles_raw.csv`), which ships with the template, and Block 8 uses the project folder from <https://osf.io/jgeq9/> that you reviewed by hand on Day 2.
+
+The template also ships a `tests/` folder. Each test waits (skips) until the block that creates its files is done, so the folder grows into one test suite that you run at 16:00 to confirm the whole day's work still holds. And it has three checkpoint branches, `block5-done`, `block7-done` and `block9-done`: if you fall behind, switch to the next one from the Git pane's branch menu and carry on. Nobody needs to finish every exercise to finish the day.
 
 
 ## A note on platform variation
 
-- **Claude Code** runs in a terminal: the Terminal tab in RStudio, the integrated terminal in Positron or VS Code, or your system terminal. It works alongside any IDE, and it acts on the project folder you start it from. The main text of every block uses it.
+- **Claude Code** runs in the Terminal tab of RStudio or Positron, which starts in your project's root folder: the folder Claude Code acts on. The main text of every block uses it, and checks its work from the R console and the Git pane (see [checking work](11a-setup-claude-code.qmd#checking-work)).
 - **Posit Assistant** is the alternative: the in-IDE chat and agent in RStudio and Positron, which can see your live R session as well as your project files. See [What's new in Posit AI](https://docs.posit.co/posit-ai/whats-new/). Where it differs from Claude Code, a collapsed *Using Posit Assistant* box says how.
 - **GitHub Copilot** provides the inline completions in Block 2, in all three IDEs.
 
-**Verification is the workshop's only non-negotiable.** AI tools generate plausible code quickly. They do not guarantee correctness, and they do not relieve you of responsibility for what your code does. Every exercise in this workshop ends with a verification step. Treat that step as the most important part of the exercise.
+**Verification is the workshop's only non-negotiable.** AI tools generate plausible code quickly. They do not guarantee correctness, and they do not relieve you of responsibility for what your code does. Every exercise in this workshop ends with a verification step. Treat that step as the most important part of the exercise. Verification is also what lets you automate with confidence: once you can check an agent's work quickly and independently, you can hand it more of the work.
 
 
 ## The thread through the day: Check · Reproduce · Record
@@ -89,7 +91,7 @@ Participants will work with a synthetic biological dataset (`voles_metabolism.cs
 Every block applies the same three habits to a different task, and each block ends with a short box saying what it added to each:
 
 - **Check.** Treat everything an AI produces as a claim, and verify it with something independent of the AI: the data, a test, a reference you hold, `git diff`, or your own knowledge of the biology.
-- **Reproduce.** Make sure the result does not depend on the session it came from. The code runs from a `r glossary("fresh R session")`, the package versions are the ones in the `r glossary("lockfile")` (`renv.lock`), and nothing was installed or changed that you did not see. Day 1 introduced `renv`; Day 4 checks that an agent has kept to it.
+- **Reproduce.** Make sure the result does not depend on the session it came from. The code runs from a `r glossary("fresh R session")`, the package versions are the ones in the `r glossary("lockfile")` (`renv.lock`), and nothing was installed or changed that you did not see. Day 1 introduced `renv`; Day 4 checks that an agent has kept to it. The tests you add during the day form one suite, and at 16:00 it runs in a fresh R session to show that everything still holds.
 - **Record.** Leave the evidence a reader needs: a codebook, a log of every change to the data, numbers computed in code rather than typed, and a log of your AI use. On Day 2 you saw what a reviewable project needs ([TADA! and the README](06-reproducibility.qmd#repro-fix), and [the SORTEE checklist](06-reproducibility.qmd#repro-sortee)); Day 4 shows how AI can help produce that record without inventing any of it.
 
 By the end of the day your workshop repository holds that record. Each block adds to it, and Block 10 draws it together in a README:
@@ -151,12 +153,12 @@ Many journals, funders and institutions now ask authors to declare AI use. A log
 
 ## Claude Code quick reference {#cc-quick-reference}
 
-Keep this open during the day. All of these are typed in the terminal where Claude Code is running.
+Keep this open during the day. Everything in the right-hand column is typed at the Claude Code prompt, unless it says otherwise; [Where am I typing?](11a-setup-claude-code.qmd#where-am-i-typing) explains the four places you type.
 
 | To... | Do this |
 |---|---|
-| Start Claude Code in your workshop repository | `cd` to the repository's root folder, then `claude` |
-| Start in read-only planning mode | `claude --permission-mode plan` |
+| Start Claude Code in your workshop repository | Open the project in RStudio or Positron, then type `claude` in its Terminal tab |
+| Start in read-only planning mode | In the Terminal tab: `claude --permission-mode plan` |
 | Change how much it may do without asking | `Shift+Tab` cycles the permission modes: `default` (asks before edits and commands) → `acceptEdits` → `plan` (read only) |
 | Stop it while it is working | `Ctrl+C` |
 | Approve a plan it has made | Choose **"Yes, manually approve edits"**, so it still asks before each change. Choose "No, keep planning" to change the plan first |
@@ -164,6 +166,8 @@ Keep this open during the day. All of these are typed in the terminal where Clau
 | See the permission rules in force | `/permissions` |
 | See which model it is using, for your AI-use log | It is shown above the prompt; `/model` also opens a picker |
 | Leave | `/exit` |
+| Check its work while it runs | Use the R console and the Git pane, not the Terminal tab Claude Code is using: see [checking work](11a-setup-claude-code.qmd#checking-work) |
+| Run one shell command without leaving it | Start the line with `!`. The output is added to the conversation, so it reaches the model |
 
 Use `default` mode unless a block says otherwise. When it asks to edit a file or run a command, read the request before you answer: approving without reading turns `default` into no protection at all.
 
@@ -204,7 +208,7 @@ If you remember nothing else from this block, remember that the AI sees only wha
 
 Take three minutes. Think about the two questions below on your own, then post a short answer to each in the Zoom chat. The facilitator picks out the most interesting answers to discuss as a group.
 
-1. What kinds of task would you not delegate to AI at all?
+1. What is one task you would like to hand to an agent by 16:00, and how would you check it? And is there anything you would not delegate at all?
 
 2. How do you use AI tools at the moment? Chat in the browser, IDE chats, terminal agents such as Claude Code?
 

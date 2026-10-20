@@ -57,5 +57,6 @@ ggsave(
   device = ragg::agg_png, bg = "white"
 )
 
-# Accessibility check; investigator to run and inspect.
-colorBlindness::cvdPlot(fig1)
+# Accessibility check; investigator to run and inspect. Wrapped in
+# interactive() so a run with Rscript does not write a stray Rplots.pdf.
+if (interactive()) colorBlindness::cvdPlot(fig1)

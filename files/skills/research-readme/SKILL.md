@@ -73,6 +73,14 @@ find the data, restore the environment, run the scripts in order and
 understand every variable? List any section still holding a placeholder. On
 confirmation, write README.md to the project root.
 
+## Stage 6: Check the README against its sources
+If the project has tests/test_readme.R, run it in a fresh R session
+(Rscript -e "testthat::test_file('tests/test_readme.R')") and report the
+output verbatim. Otherwise compare the README yourself: the R and package
+versions against read_lockfile(), every numbered script against the scripts
+folder, and every unit against the user's answers. Report the number of
+placeholders left.
+
 ## AI declaration
 State that an AI assisted in generating this README, naming the model if the
 user wishes, with the date. Make no claims about AI use elsewhere in the
@@ -80,7 +88,7 @@ project unless the user states them, and then record exactly what they state.
 
 ## Placeholders
 Write every unknown value as a visible placeholder, in exactly this form:
-<!-- TODO: supply [field]: not provided -->
+**TODO: supply [field]: not provided**
 Flag a missing code licence and a missing code or data DOI as blocking for
 submission, but still write the file so the user has a working draft.
 

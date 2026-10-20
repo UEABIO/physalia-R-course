@@ -31,16 +31,22 @@ disable-model-invocation: true
 1. Present a plan before writing anything: every rule you will apply, the
    codebook row it comes from, and the order. Wait for the user to confirm.
 2. If the data contain a value the codebook does not cover, stop and ask.
-3. Write scripts/01_clean.R and run it in a fresh R session.
-4. Run scripts/02_validate.R on the clean data and run the tests in tests/.
-   Report the results verbatim.
+3. Write scripts/01_clean.R. It reads docs/codebook.csv when it runs; do not
+   copy rules into the script by hand. Run it in a fresh R session
+   (Rscript scripts/01_clean.R), then run it a second time and confirm the
+   outputs are identical.
+4. Run scripts/02_validate.R (raw data should fail, clean data should pass)
+   and every test: Rscript -e "testthat::test_dir('tests')". Report both
+   outputs verbatim, including skips.
 
 ## Outputs (exact columns)
-- data/derived/voles_clean.csv: the codebook columns plus raw_row, the row
-  number in the raw file.
-- data/derived/exclusion_log.csv: raw_row, subject_id, reason.
+- data/derived/voles_clean.csv: raw_row, then the codebook columns. raw_row
+  is the 1-based row number in the raw file, not counting the header.
+- data/derived/exclusion_log.csv: raw_row, subject_id (as it appears in the
+  raw file), reason.
 - data/derived/cleaning_log.csv: raw_row, subject_id, column, old_value,
   new_value, rule.
+- rule is one of: missing_code, label_recode, id_format, out_of_range_query.
 
 ## Final report
 Row counts in, out and excluded; every value set to NA for query; any gaps

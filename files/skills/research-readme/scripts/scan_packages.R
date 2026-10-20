@@ -29,8 +29,8 @@ print_lockfile <- function(lock_path = "renv.lock") {
     cat(
       "No lockfile found at ", lock_path, ".\n",
       "FINDING: package versions were not recorded.\n",
-      "README text: <!-- TODO: supply R version and key package versions: ",
-      "not recorded; resolve before submission -->\n",
+      "README text: **TODO: supply R version and key package versions: ",
+      "not recorded; resolve before submission**\n",
       sep = ""
     )
     return(invisible(info))

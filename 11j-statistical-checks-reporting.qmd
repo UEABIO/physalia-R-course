@@ -24,6 +24,10 @@ Two further checks on the statistics, robustness to alternative analyses and
 simulation with parameter recovery, are in *Going further* at the end of the
 page.
 
+As in every block, you check the agent's work from the R console and the Git
+pane, not the Terminal tab Claude Code is using (see
+[checking work](11a-setup-claude-code.qmd#checking-work)).
+
 *⏱ ~30 minutes*
 
 
@@ -36,9 +40,10 @@ does quickly. The characterisation-test idea from
 [Block 9](11i-characterisation-tests.qmd) applies directly: an
 `r glossary("equivalence check")` runs both versions and compares the outputs.
 
-Run the base R script in the R console, then ask Claude Code for the
-translation and paste it into the same R session, so both objects exist for
-the comparison.
+This time the translation goes into a file, as a function, and the template
+already ships the test that checks it: `tests/test_translation.R` keeps the
+original base R code as the reference and compares the two. The agent writes
+the code; the test, which it did not write, decides whether it is equivalent.
 
 :::{.task}
 ::::{.task-header}
@@ -46,11 +51,17 @@ Translate and compare (15 minutes)
 ::::
 ::::{.task-container}
 
+**Start:** your workshop repository, committed and clean, with Claude Code in
+`default` mode in the Terminal tab.
+
 **1. Run the original.** In the R console:
 
 ```{r}
 #| eval: false
-voles <- read.csv(here::here("data", "raw", "voles_metabolism.csv"),
+library(tidyverse)
+library(here)
+
+voles <- read.csv(here("data", "raw", "voles_metabolism.csv"),
                   stringsAsFactors = TRUE)
 rate_mean <- aggregate(metabolic_rate_post ~ treatment_arm + sex,
                        data = voles, FUN = mean)
@@ -58,6 +69,7 @@ rate_n <- aggregate(metabolic_rate_post ~ treatment_arm + sex,
                     data = voles, FUN = length)
 names(rate_n)[3] <- "n"
 legacy_summary <- merge(rate_mean, rate_n, by = c("treatment_arm", "sex"))
+legacy_summary
 ```
 
 **2. Ask for a translation.**
@@ -65,21 +77,27 @@ legacy_summary <- merge(rate_mean, rate_n, by = c("treatment_arm", "sex"))
 **Prompt (Claude Code):**
 
 ```text
-Translate this base R code into tidyverse code that produces a tibble called
-tidy_summary with the same columns as legacy_summary. Show me the code only;
-do not run it and do not edit any file.
+Translate this base R code into a tidyverse function summarise_rate_tidy(data)
+in scripts/functions/summaries.R. It takes the tibble returned by load_voles()
+and returns one row per treatment_arm and sex, with the columns treatment_arm,
+sex, metabolic_rate_post (the mean) and n. Use the native pipe. Do not edit
+any other file.
 
-[paste the base R script from step 1]
+[paste the base R code from step 1]
 ```
 
-Paste the translation into the R console, in the same session as step 1, so
-both `legacy_summary` and `tidy_summary` exist.
+Approve the edit when asked, after reading it.
 
 **3. Compare.** Normalise only *presentation* (type and row order), never
-values. In the R console:
+values. `waldo::compare()` prints any difference that remains in a readable
+form. In the R console:
 
 ```{r}
 #| eval: false
+source(here("scripts", "functions", "load_voles.R"))
+source(here("scripts", "functions", "summaries.R"))
+tidy_summary <- summarise_rate_tidy(load_voles())
+
 normalise <- function(data) {
   data |>
     as_tibble() |>
@@ -87,11 +105,14 @@ normalise <- function(data) {
     arrange(treatment_arm, sex)
 }
 
-testthat::expect_equal(normalise(tidy_summary), normalise(legacy_summary))
+waldo::compare(normalise(tidy_summary), normalise(legacy_summary))
 ```
 
-**4. Find the difference.** If the comparison fails after normalising, you have
-found a real difference in behaviour. Find it before reading on.
+**4. Find the difference.** If `waldo::compare()` reports a difference after
+normalising, you have found a real difference in behaviour. A column with a
+different name is presentation: ask for it to be renamed. A different value is
+behaviour: find out why before reading on. If it reports no difference, read
+how the translation handled the missing value anyway.
 
 `r hide("The difference")`
 
@@ -107,13 +128,34 @@ decision. This is the same problem as the "unchanged is not correct" step of
 
 `r unhide()`
 
-**5. Log it.** Add a line to `docs/ai-log.md`, for example:
+**5. Run the shipped test.** Restart R (*Session → Restart R*) so nothing from
+your experiments is left, then in the R console:
+
+```{r}
+#| eval: false
+testthat::test_file(here::here("tests", "test_translation.R"))
+```
+
+The test keeps the original code as its reference. If you decided the
+translation should handle the missing value differently from the original,
+the test fails, correctly: change the reference in the test and say why in
+your commit message. That is a recorded decision, not a fix.
+
+**6. Log it and commit.** Add a line to `docs/ai-log.md`, for example:
 
 ```
-2026-10-19; Claude Code (model as shown above the Claude Code prompt);
-translated summary script to tidyverse; kept translation, changed
-missing-value handling to na.rm = TRUE after equivalence check.
+2026-10-19; Claude Code (model as shown above the Claude Code prompt); translated summary script to tidyverse; kept the translation, matched the original's missing-value handling after the equivalence check
 ```
+
+Then commit `summaries.R` and the log from the Git pane, with a message that
+records the missing-value decision.
+
+**You are done when** `test_translation.R` passes in a fresh R session and your
+commit message records how missing values are handled.
+
+**If it goes wrong:** if the agent edited anything other than `summaries.R`,
+select the file in the Git pane and choose **Revert**. If you run short of
+time, write `summarise_rate_tidy()` yourself from the hidden explanation above.
 
 ::::
 :::
@@ -138,7 +180,11 @@ the prose should come from inline code. In a code chunk of your report:
 ```{r}
 #| eval: false
 # fit the pre-registered primary analysis
-voles_df <- read_csv(here("data", "raw", "voles_metabolism.csv"), show_col_types = FALSE) |>
+library(tidyverse)
+library(here)
+source(here("scripts", "functions", "load_voles.R"))
+
+voles_df <- load_voles() |>
   mutate(treatment_arm = factor(treatment_arm, levels = c("Control", "Low_dose", "High_dose")))
 
 fit <- lm(mass_post_g ~ mass_pre_g + treatment_arm + sex, data = voles_df)
@@ -158,10 +204,17 @@ after treatment (95% CI `r knitr::inline_expr("round(primary$lower, 2)")` to
 `r knitr::inline_expr("round(primary$upper, 2)")` g).
 ```
 
-Your `AGENTS.md` should already say never to type numerical results into text.
-That is a request. The function below is the check: it lists prose lines in a
-`.qmd` file that still contain numbers outside inline code, for you to review
-by eye.
+Your `AGENTS.md` says never to type numerical results into text. That is a
+request, and the model usually follows it. What makes it hold is a check: the
+template ships `find_typed_numbers()`, which lists the prose lines of a `.qmd`
+file that still contain numbers outside inline code, for you to review.
+
+:::{.callout-note collapse="true"}
+## `scripts/functions/typed_numbers.R`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "typed_numbers.R")}
+```
+:::
 
 :::{.task}
 ::::{.task-header}
@@ -169,37 +222,43 @@ Scan a report (3 minutes)
 ::::
 ::::{.task-container}
 
-**1. Define the check.** In the R console:
+**Start:** the template's `reports/example_report.qmd`, an interim summary
+of the voles trial with some numbers typed in.
+
+**1. Scan it.** In the R console:
 
 ```{r}
 #| eval: false
-find_typed_numbers <- function(path) {
-  lines <- readLines(path, warn = FALSE)
-  is_fence <- grepl("^```", lines)
-  in_chunk <- cumsum(is_fence) %% 2 == 1
-
-  tibble(line = seq_along(lines), text = lines) |>
-    filter(!in_chunk, !is_fence) |>
-    mutate(prose = gsub("`\\{?r\\}? [^`]*`", "", text)) |>
-    filter(grepl("[0-9]+\\.[0-9]+|\\b[0-9]{2,}\\b", prose, perl = TRUE)) |>
-    select(line, text)
-}
+source(here::here("scripts", "functions", "typed_numbers.R"))
+find_typed_numbers(here::here("reports", "example_report.qmd")) |>
+  print(n = Inf, width = Inf)
 ```
 
-**2. Run it on a real report.** Point it at the Quarto report you wrote on
-Day 3, or any `.qmd` file you have:
+**2. Sort the hits.** The scan flags five lines. Decide for each one whether it
+is a typed result that should be inline code, or a number that is fine as
+text.
 
-```{r}
-#| eval: false
-find_typed_numbers("path/to/your_report.qmd")
-```
+`r hide("Which are which")`
 
-It will also flag years, sample sizes from the design and the YAML header, so
-treat each hit as a question, not an error. For each typed result you find,
-decide whether it should be inline code.
+Lines 37 and 38 are typed results: the 1.53 g difference with its interval,
+and the mean of 29.4 g. Both would go stale the moment the data changed, and
+both should be inline code. The other three are questions with a reasonable
+"no" answer: the date in the YAML header (line 3), the design size of 12 per
+group (line 28), and "95%" in "95% CI" (line 34).
+
+`r unhide()`
+
+**You are done when** you can say which two lines are typed results and why the
+other three can stay.
+
+**If it goes wrong:** if `find_typed_numbers()` is not found, check that the
+`source()` line ran without an error.
 
 ::::
 :::
+
+The same scan works on any `.qmd` you write, including your Quarto report from
+Day 3. Every hit is a question, not an error.
 
 
 ## Part C: The repository you leave with
@@ -248,8 +307,24 @@ Draft from the record, then audit (8 minutes)
 ::::
 ::::{.task-container}
 
-**1. Draft.** With the repository committed and clean, in Claude Code in
-`default` mode:
+**Start:** your workshop repository, committed and clean. If Block 7 or 9 is
+unfinished, switch to the `block9-done` branch from the Git pane's branch menu
+first, so the files the README draws on exist.
+
+**1. Run the whole suite first.** Restart R (*Session → Restart R*), then in
+the R console:
+
+```{r}
+#| eval: false
+renv::status()
+callr::r(\(d) testthat::test_dir(d), list(here::here("tests")))
+```
+
+`renv::status()` should report no problems, and the tests should run with no
+failures (the README test still skips). This is the evidence the README's
+"How to verify" section will point to.
+
+**2. Draft.** In Claude Code, in `default` mode:
 
 **Prompt (Claude Code):**
 
@@ -260,33 +335,49 @@ name the source of each section:
 - Scripts and run order: the numeric prefixes of the files in scripts/.
 - Dependencies: the R version and packages pinned in renv.lock, and the
   restore command renv::restore().
+- How to verify: the command
+  callr::r(\(d) testthat::test_dir(d), list(here::here("tests"))), and what
+  the tests check.
 - AI declaration: a summary of docs/ai-log.md, making no claim beyond it.
 Where a value is not in these files (authors, ORCIDs, licence, DOI, funding,
-units the codebook leaves blank), insert a visible placeholder:
-  <!-- TODO: supply [field]: not provided -->
+units the codebook leaves blank), insert a visible placeholder in exactly
+this form:
+  **TODO: supply [field]: not provided**
 Edit README.md only. Show me your plan first.
 ```
 
-**2. Audit.** Pick three statements and trace each to a file. Look in
-particular at the unit of `metabolic_rate_post`: the codebook leaves it as
-`<unit>`, so a README that states a unit has invented it. Check that the
-`r glossary("AI declaration")` says no more than your log.
+**3. Let the test audit it.** The template ships `tests/test_readme.R`, which
+checks the README against the files it was drafted from: the R version and
+`renv::restore()`, every package version against `renv.lock`, every numbered
+script, no leftover `{{` tokens, and no invented unit for
+`metabolic_rate_post` (the codebook leaves it as `<unit>`). In the R console:
 
-**3. Confirm the scope.** In the terminal:
-
-```bash
-git status --short
+```{r}
+#| eval: false
+testthat::test_file(here::here("tests", "test_readme.R"))
 ```
 
-Only `README.md` should have changed.
+It also reports how many placeholders are left. Then trace one statement the
+test cannot check by hand: confirm that the `r glossary("AI declaration")`
+says no more than your log.
 
-**4. Before you share it.** The placeholders are your to-do list. Work through
+**4. Confirm the scope.** The Git pane should show only `README.md` as
+changed.
+
+**5. Before you share it.** The placeholders are your to-do list. Work through
 licence, ORCIDs, DOI and archiving with the
 [SORTEE checklist from Day 2](06-reproducibility.qmd#repro-sortee). Then add the
 last line to `docs/ai-log.md`, and commit.
 
-**5. Payoff.** What did the agent do, how long did checking it take, and would
+**6. Payoff.** What did the agent do, how long did checking it take, and would
 you automate this again?
+
+**You are done when** `test_readme.R` passes and the whole suite passes in a
+fresh R session.
+
+**If it goes wrong:** if the agent changed any file other than `README.md`,
+select it in the Git pane and choose **Revert**. If the README test fails,
+ask Claude Code to fix only the statements the test names, and run it again.
 
 ::::
 :::
@@ -302,6 +393,10 @@ about AI use, and where.
 :::{.callout-note}
 ## Check · Reproduce · Record
 
+- **You can now:** have an agent translate analysis code and draft a README,
+  **trusted because** shipped tests compare the translation with the original
+  and the README with its sources, and the whole suite passes in a fresh R
+  session.
 - **Check:** an equivalence test between the original and the translation; a
   scan for typed numbers; every README statement traced to a file.
 - **Reproduce:** numbers come from code, so the report updates when the data
@@ -375,7 +470,11 @@ reason. Check especially whether it estimates the *same* quantity.
 
 ```{r}
 #| eval: false
-voles_df <- read_csv(here("data", "raw", "voles_metabolism.csv"), show_col_types = FALSE) |>
+library(tidyverse)
+library(here)
+source(here("scripts", "functions", "load_voles.R"))
+
+voles_df <- load_voles() |>
   mutate(treatment_arm = factor(treatment_arm, levels = c("Control", "Low_dose", "High_dose")))
 
 specs_df <- tribble(

@@ -128,9 +128,12 @@ Adapt, connect, verify (15 minutes)
 ::::
 ::::{.task-container}
 
-Work in your workshop repository, committed and clean.
+**Start:** your workshop repository on `main`, committed and clean, with no
+`AGENTS.md` yet. Check the agent's work from the R console and Git pane, as in
+[checking work](11a-setup-claude-code.qmd#checking-work).
 
-**1. Baseline.** With no `AGENTS.md` present, start Claude Code in `plan` mode.
+**1. Baseline.** With no `AGENTS.md` present, start Claude Code in `plan` mode
+in the project's Terminal tab.
 
 **In the terminal:**
 
@@ -142,15 +145,20 @@ claude --permission-mode plan
 
 ```text
 Read data/raw/voles_metabolism.csv and make a quick exploratory plot of
-mass_post_g by treatment arm.
+mass_post_g by treatment arm. Show the R code in your reply; do not create
+any files.
 ```
 
-Keep the answer.
+Keep the answer. Asking for the code in the reply matters: in `plan` mode it
+may otherwise describe a plan with no code, and the canary in step 5 would have
+nowhere to appear.
 
-**2. Copy the starting draft.** Create `AGENTS.md` in the repository root
-containing the draft below. It includes a `r glossary("canary")`: a fixed first
-line the assistant is asked to put in any R code it writes, so you can see
-whether the file was loaded.
+**2. Copy the starting draft.** In the R console,
+`usethis::edit_file("AGENTS.md")` creates `AGENTS.md` in the repository root
+and opens it. Paste in the draft below. It includes a `r glossary("canary")`: a
+fixed first line the assistant is asked to put in any R code it writes, so you
+can see whether the file was loaded. The "Tests" rules ask the agent to prove
+its own work after every edit, which later blocks rely on.
 
 ```markdown
 # Project conventions: voles analysis
@@ -167,14 +175,28 @@ When you write or edit R code, make the first line of the first code block:
 ## R style
 - Tidyverse style, native pipe |>, snake_case names, <- for assignment.
 - Write TRUE and FALSE, never T and F.
-- Build every path with here::here(). Never use setwd() or rm(list = ls()).
+- Build every path with here::here() (or here() after library(here)). Never
+  use setwd() or rm(list = ls()).
 - Read CSV files with readr and explicit col_types.
 
 ## Reproducibility
 - Packages are managed with renv. Do not call install.packages(); ask before
   adding a package.
+- Do not edit renv.lock.
 - Set a seed immediately before any random step.
 - Every script must run in a fresh R session.
+- Every script must run with Rscript from the project root; after writing one,
+  run it that way and report the exit status.
+- Save figures with ggsave() to outputs/.
+
+## Tests
+- After editing any R file, run Rscript -e "testthat::test_dir('tests')" and
+  paste the final summary line verbatim.
+- Never edit anything in tests/fixtures/, an existing expectation or a
+  tolerance to make a test pass.
+- Every new function in scripts/functions/ gets a test with at least one
+  known-answer case on a small tibble, including an NA; expected values are
+  worked out by hand, never by running the code under test.
 
 ## Data integrity
 - Never drop rows silently; state the reason for every filter in a comment.
@@ -192,15 +214,26 @@ When you write or edit R code, make the first line of the first code block:
 **3. Make it yours.** Delete any rule you do not actually follow. Then add one
 style convention you genuinely follow that the draft does not state, and one
 reproducibility or statistical convention you always apply. Keep the canary
-line. Later blocks rely on the "Statistics" and "Working with me" rules, so keep
-those too.
+line. Later blocks rely on the "Tests", "Statistics" and "Working with me" rules,
+so keep those too.
 
 **4. Connect Claude Code.** Create `CLAUDE.md` in the repository root
-containing only the line `@AGENTS.md`.
+containing only the line `@AGENTS.md`. In the R console:
 
-**5. Verify.** Commit. Then leave Claude Code (`/exit`) and start it again from
-the repository root, so it loads the new files at the start of the
-conversation, and repeat the step 1 prompt.
+**In the R console:**
+
+```{r}
+#| eval: false
+writeLines("@AGENTS.md", here::here("CLAUDE.md"))
+testthat::test_file(here::here("tests", "test_controls.R"))
+```
+
+The test confirms that `CLAUDE.md` holds exactly that one line and that the
+shipped deny rules are all still in place.
+
+**5. Verify.** Commit from the Git pane. Then leave Claude Code (`/exit`) and
+start it again in the Terminal tab, so it loads the new files at the start of
+the conversation, and repeat the step 1 prompt.
 
 - If the canary appears, the file is being loaded.
 - If the canary is missing, the file is not reaching Claude Code. Check the
@@ -208,6 +241,13 @@ conversation, and repeat the step 1 prompt.
   Claude Code from the repository root.
 - A canary shows that the file was **loaded**, not that every rule was
   **followed**. Check the plot code against each rule you wrote.
+
+**You are done when** the canary appears in the code and the `CLAUDE.md` test
+passes.
+
+**If it goes wrong:** if the canary still does not appear after one restart,
+switch to the `block5-done` branch from the Git pane's branch menu, which has a
+working `AGENTS.md` and `CLAUDE.md`, and compare it with yours.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -255,17 +295,26 @@ invoke it by name. Claude Code and Posit Assistant both support this field.
 
 This course keeps the master copy of each skill in `.agents/skills/`, which
 other tools also read, and **copies** the folder into `.claude/skills/` for
-Claude Code. If you change a skill, copy it again. On macOS or Linux you can
-use a `r glossary("symbolic link")` instead, so there is only one copy:
+Claude Code. If you change a skill, copy it again. Copying from the R console
+works the same on every system:
 
-**In the terminal (macOS or Linux):**
+**In the R console:**
 
-```bash
-mkdir -p .claude/skills
-ln -s ../../.agents/skills/house-figures .claude/skills/house-figures
+```{r}
+#| eval: false
+fs::dir_copy(
+  here::here(".agents", "skills", "house-figures"),
+  here::here(".claude", "skills", "house-figures"),
+  overwrite = TRUE
+)
 ```
 
-On Windows, symbolic links in git need extra configuration, so copy the folder.
+On macOS or Linux you can use a `r glossary("symbolic link")` instead, so there
+is only one copy: `fs::link_create(here::here(".agents", "skills",
+"house-figures"), here::here(".claude", "skills", "house-figures"))`. Claude
+Code follows the link, but it stores the full path, so recreate it if you move
+the project. On Windows, symbolic links need extra configuration, so copy the
+folder.
 
 
 ### Activity: Write a skill and test it
@@ -276,20 +325,25 @@ A house figure style (20 minutes)
 ::::
 ::::{.task-container}
 
-**1. Baseline, before the skill exists.** In Claude Code, ask:
+**Start:** Claude Code running in `default` mode in your workshop project's
+Terminal tab, with your `AGENTS.md` from the previous activity committed.
+
+**1. Baseline, before the skill exists.** Ask:
 
 **Prompt (Claude Code):**
 
 ```text
 Make a figure of mass_post_g by treatment_arm for the voles data, for a
-lab report.
+lab report. Save the code as scripts/fig_baseline.R.
 ```
 
-Keep the code it gives you. Doing this first, before you create the skill,
-guarantees the baseline was written without it.
+Approve the edit when asked. Doing this first, before you create the skill,
+guarantees the baseline was written without it, and the saved file gives the
+later steps something to point at.
 
-**2. Create the skill.** Create `.agents/skills/house-figures/SKILL.md`
-containing:
+**2. Create the skill.** In the R console,
+`usethis::edit_file(".agents/skills/house-figures/SKILL.md")` creates the
+folder and the file and opens it. Paste in:
 
 ```markdown
 ---
@@ -319,24 +373,28 @@ description: >-
 List which rules you applied, and any you could not apply and why.
 ```
 
-Then copy the `house-figures` folder into `.claude/skills/`, in your file
-manager or in the terminal:
+Then copy the `house-figures` folder into `.claude/skills/`.
 
-**In the terminal (macOS, Linux or Git Bash):**
+**In the R console:**
 
-```bash
-mkdir -p .claude/skills
-cp -r .agents/skills/house-figures .claude/skills/
+```{r}
+#| eval: false
+fs::dir_copy(
+  here::here(".agents", "skills", "house-figures"),
+  here::here(".claude", "skills", "house-figures"),
+  overwrite = TRUE
+)
 ```
 
-**3. With the skill.** Leave Claude Code (`/exit`) and start it again, so it
-finds the new skill. Invoke the skill by name and ask the same thing:
+**3. With the skill.** Leave Claude Code (`/exit`) and start it again with
+`claude`, so it finds the new skill. Invoke the skill by name and ask the same
+thing:
 
 **Prompt (Claude Code):**
 
 ```text
 /house-figures Make a figure of mass_post_g by treatment_arm for the voles
-data, for a lab report.
+data, for a lab report. Save the code as scripts/fig_house.R.
 ```
 
 **4. Grade it.** For each of the six rules, record whether the output complies:
@@ -350,21 +408,34 @@ data, for a lab report.
 | 5. n per group shown | | |
 | 6. No unrequested p-values | | |
 
-Run the code and look at the figure. Code that names the right functions can
-still produce the wrong picture.
+Run both scripts in a fresh R session and look at the figures:
+`callr::rscript(here::here("scripts", "fig_baseline.R"))`, then the same for
+`fig_house.R`. Code that names the right functions can still produce the
+wrong picture.
+
+**You are done when** the grading table is filled in from the figures you
+looked at, not from the agent's list of rules it applied.
+
+**If it goes wrong:** if the skill does not appear when you type `/`, check
+that `.claude/skills/house-figures/SKILL.md` exists and restart Claude Code.
+If you are out of time, switch to the `block5-done` branch from the Git pane's
+branch menu.
 
 **Payoff.** What did the skill do for you, how long did checking it take, and
 would you use it again for the next figure?
 
-**5. Test the trigger.** In a new Claude Code conversation (`/clear`), without
-naming the skill, ask "Give me a quick look at mass_post_g by arm"
-(exploratory, so the skill should *not* load). Then, in another new
-conversation, ask "Polish this figure for the poster" (it *should* load). If
-either goes the wrong way, rewrite the description and test again.
+**5. Test the trigger (optional, if time allows).** In a new Claude Code
+conversation (`/clear`), without naming the skill, ask "Give me a quick look at
+mass_post_g by arm" (exploratory, so the skill should *not* load). Then, in
+another new conversation, ask "Polish the figure in scripts/fig_baseline.R for
+the poster" (it *should* load). If either goes the wrong way, rewrite the
+description and test again.
 
-**6. Test a rule under pressure.** Ask the assistant to "add significance stars
-between the groups". Rule 6 says it should decline without a fitted model.
-Note whether it did. A skill is an instruction, not a guarantee.
+**6. Test a rule under pressure (optional).** Ask the assistant to "add
+significance stars between the groups in scripts/fig_house.R". Rule 6 says it
+should decline without a fitted model. Note whether it did. A skill is an
+instruction, not a guarantee: what makes the output trustworthy is the grading
+you did in step 4, which you can repeat on every figure.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -393,6 +464,10 @@ code from the internet. *Going further* below gives you one to practise on:
 :::{.callout-note}
 ## Check · Reproduce · Record
 
+- **You can now:** state your conventions once and have every conversation
+  follow them, and package a procedure as a skill you invoke by name,
+  **trusted because** the canary and `tests/test_controls.R` show the files are
+  connected, and you grade the output rule by rule.
 - **Check:** the canary shows a file was loaded, not that its rules were
   followed; grade the output rule by rule, and run the figure code.
 - **Reproduce:** your `AGENTS.md` now states the reproducibility rules (renv,
@@ -576,8 +651,10 @@ which one loaded. Move `house-figures` out of both skills folders (or rename
 `SKILL.md` inside it) before going on. Overlapping descriptions are a real
 hazard once you collect skills from several sources.
 
-**3. Install.** Unzip the download into `.agents/skills/`, and copy it into
-`.claude/skills/` for Claude Code, as above. The skill uses ggdist,
+**3. Install.** In the R console,
+`unzip(file.choose(), exdir = here::here(".agents", "skills"))` lets you pick
+the downloaded zip and unpacks it into `.agents/skills/`; then copy it into
+`.claude/skills/` for Claude Code with `fs::dir_copy()`, as above. The skill uses ggdist,
 colorspace, ragg, colorBlindness, emmeans and ggpubr; if your project uses
 renv and they are not in its lockfile, add them yourself before the test,
 rather than letting the assistant install packages.
@@ -603,9 +680,12 @@ for you, and look at the result.
 
 **6. Test a rule under pressure.** Ask it to "add significance stars between
 the groups" without fitting a model. The skill says it must insert a legend
-placeholder rather than invent p-values. Then fit
-`lm(mass_post_g ~ treatment_arm, data = voles)` and ask again: it should now
-use the `emmeans-bridge.R` pattern with an adjusted p-value.
+placeholder rather than invent p-values. Then give it a fitted model it can
+actually see. Claude Code cannot see objects in your R console, so a model you
+fit there does not count: ask it to add
+`model <- lm(mass_post_g ~ treatment_arm, data = voles)` to the figure script
+itself, or paste the output of `summary(model)` into the prompt. Ask again: it
+should now use the `emmeans-bridge.R` pattern with an adjusted p-value.
 
 **7. Compare.** Which skill would you hand to a colleague? Which would you
 trust without rereading it after an update? A long skill encodes more of your

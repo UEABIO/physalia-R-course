@@ -16,6 +16,13 @@ columns and produce plausible values while having treated a missing-value code
 as a measurement, kept the same animal twice, or dropped a row nobody noticed.
 None of these raises an error.
 
+By the end of this block you will have checks that catch each of these
+automatically, every time the cleaning runs: a test that fails if any value
+changed without a log entry, one that fails if a row disappears, one that
+fails if more values became missing than the codebook explains, and one that
+fails if the raw data change at all. That is what makes it safe to let an
+agent write the cleaning script.
+
 This block treats cleaning as four artefacts, each with a different owner:
 
 | Artefact | Owner | Why |
@@ -119,31 +126,44 @@ data/
 └── derived/                       cleaning outputs and logs
 docs/
 ├── data_note.md                   the data provider's note
+├── profile.csv                    written by 00_profile.R in Step 1
 └── codebook.csv                   you write this in Step 2
 scripts/
 ├── 00_profile.R                   provided
 ├── 01_clean.R                     written by the agent in Step 4
-├── 02_validate.R                  provided
+├── 02_validate.R                  provided: raw should fail, clean pass
 ├── 03_audit_cleaning.R            provided
 └── functions/validate_voles.R     provided
 tests/
 ├── fixtures/raw_checksum.txt      you create this in Step 0
-└── test_cleaning.R                provided
+├── test_cleaning.R                provided
+└── test_audit.R                   provided
 ```
 
 If your workshop repository does not already contain
 `.agents/skills/clean-with-codebook/`, download the skill and unzip it into
-`.agents/skills/`:
+`.agents/skills/`. In the R console, `unzip(file.choose(), exdir =
+here::here(".agents", "skills"))` lets you pick the downloaded zip:
 
 ```{r}
 #| echo: false
 skill_download_button("clean-with-codebook")
 ```
 
-Claude Code reads skills from `.claude/skills/`, so copy the
-`clean-with-codebook` folder there as well, so that
-`.claude/skills/clean-with-codebook/SKILL.md` exists. (On macOS or Linux you
-can use a symbolic link instead, as in [Block 5](11e-instructions-skills.qmd).)
+Claude Code reads skills from `.claude/skills/`, so copy the folder there as
+well. In the R console:
+
+```{r}
+#| eval: false
+fs::dir_copy(
+  here::here(".agents", "skills", "clean-with-codebook"),
+  here::here(".claude", "skills", "clean-with-codebook"),
+  overwrite = TRUE
+)
+```
+
+(On macOS or Linux you can use a symbolic link instead, as in
+[Block 5](11e-instructions-skills.qmd).)
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -158,6 +178,10 @@ Everything later depends on the raw file being exactly what the data provider
 sent. The deny rules from [Block 6](11f-enforced-controls.qmd) already protect
 it; here you add a `r glossary("checksum")` and confirm the rules work.
 
+**Start:** your workshop repository open, committed and clean, on the `main`
+branch. (If you are behind and need Block 5's files, switch to `block5-done`
+from the Git pane's branch menu first.)
+
 **1. Record a checksum and commit it.** Run this once, yourself.
 
 **In the R console:**
@@ -166,10 +190,11 @@ it; here you add a `r glossary("checksum")` and confirm the rules work.
 #| eval: false
 raw_path <- here::here("data", "raw", "voles_raw.csv")
 checksum_path <- here::here("tests", "fixtures", "raw_checksum.txt")
+fs::dir_create(here::here("tests", "fixtures"))
 writeLines(unname(tools::md5sum(raw_path)), checksum_path)
 ```
 
-Then commit `tests/fixtures/raw_checksum.txt`.
+Then commit `tests/fixtures/raw_checksum.txt` from the Git pane.
 
 **2. Confirm the deny rules are active.** In Claude Code, run `/permissions`.
 The rules from `.claude/settings.json` should be listed, including the
@@ -189,11 +214,21 @@ It should be refused. Then confirm the file is unchanged.
 
 ```{r}
 #| eval: false
+raw_path <- here::here("data", "raw", "voles_raw.csv")
+checksum_path <- here::here("tests", "fixtures", "raw_checksum.txt")
 identical(unname(tools::md5sum(raw_path)), readLines(checksum_path))
 ```
 
-R returns `TRUE`. (The full test file in Step 5 also checks this, but its other
-tests need the cleaned data, which do not exist yet.)
+R returns `TRUE`. (The test file in Step 5 checks this too; its other tests
+skip until the cleaned data exist.)
+
+**You are done when** the checksum is committed, the edit was refused and R
+returned `TRUE`.
+
+**If it goes wrong:** if R returns `FALSE`, the raw file changed: open the Git
+pane, **Revert** `data/raw/voles_raw.csv`, and run the check again. If the
+agent offers another way to make the edit after the refusal (a shell command,
+say), decline it.
 
 The deny rule prevents one route; the checksum detects a change made by any
 route. *Going further* lists the full settings file and what each control
@@ -203,55 +238,27 @@ covers.
 ## Step 1: Profile the raw data (R, not AI)
 
 Profiling is counting, and counting is something you should compute rather
-than ask a model to estimate. Run the provided script yourself, in the R
-console or with `Rscript scripts/00_profile.R` in the terminal:
+than ask a model to estimate. Run the provided script yourself.
+
+**In the R console:**
 
 ```{r}
 #| eval: false
-# scripts/00_profile.R ----
-# Purpose: describe the raw file as entered, before any decision is made.
-# Every column is read as character so codes such as 9999 or -1 appear
-# exactly as entered.
-library(tidyverse)
-library(here)
-
-raw_df <- read_csv(
-  here("data", "raw", "voles_raw.csv"),
-  col_types = cols(.default = col_character())
-)
-
-# one row per column: missingness, distinct values, numeric range ----
-profile_df <- raw_df |>
-  pivot_longer(everything(), names_to = "column", values_to = "value") |>
-  # suppressWarnings: text values become NA here by design
-  mutate(value_num = suppressWarnings(as.numeric(value))) |>
-  summarise(
-    n_rows = n(),
-    n_missing = sum(is.na(value)),
-    n_distinct = n_distinct(value, na.rm = TRUE),
-    n_numeric = sum(!is.na(value_num)),
-    min_numeric = if (all(is.na(value_num))) NA_real_ else min(value_num, na.rm = TRUE),
-    max_numeric = if (all(is.na(value_num))) NA_real_ else max(value_num, na.rm = TRUE),
-    .by = column
-  )
-
-# every distinct label in the categorical columns ----
-labels_df <- raw_df |>
-  select(sex, treatment_arm) |>
-  pivot_longer(everything(), names_to = "column", values_to = "value") |>
-  count(column, value, sort = TRUE)
-
-# identifiers that appear more than once ----
-repeated_ids_df <- raw_df |>
-  count(subject_id) |>
-  filter(n > 1)
-
-print(profile_df, n = Inf)
-print(labels_df, n = Inf)
-print(repeated_ids_df)
+source(here::here("scripts", "00_profile.R"))
 ```
 
-Keep the output. It is the factual input to Step 2.
+`r hide("The provided scripts/00_profile.R")`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "00_profile.R")}
+```
+
+`r unhide()`
+
+It prints the profile in full and also saves it as `docs/profile.csv`, which
+you can open with
+`View(readr::read_csv(here::here("docs", "profile.csv"), show_col_types = FALSE))`
+(in Positron, the Data Explorer) and paste from in Step 2. Keep it: it is the
+factual input to the codebook.
 
 
 ## Step 2: Draft the codebook, then audit it
@@ -280,11 +287,13 @@ columns: column, type, rule, min, max, missing_codes, unit, source.
 In the source column, state for every entry whether it comes from the
 profile or is your assumption.
 
-[paste the output of scripts/00_profile.R]
+[paste the contents of docs/profile.csv]
 ```
 
-Save the draft as `docs/codebook.csv` yourself. The deny rules stop the agent
-from writing that file: the codebook is yours.
+Save the draft as `docs/codebook.csv` yourself, in the RStudio or Positron
+editor (*File → New File → Text File*). Avoid Excel: it can change the quoted
+`rule` fields and the encoding without telling you. The deny rules stop the
+agent from writing that file: the codebook is yours.
 
 **2. Audit the draft.** Before you open `docs/data_note.md`, answer:
 
@@ -297,7 +306,15 @@ from writing that file: the codebook is yours.
 
 **3. Correct it against the data provider's note.** Open `docs/data_note.md`
 and edit the codebook yourself. Every line should be traceable to the note or
-to a decision you can defend. Commit it.
+to a decision you can defend. Where the note does not give a unit (it does not
+for metabolic rate), write `<unit>` rather than a guess: Block 10's README
+check relies on unknowns staying visible. Commit it.
+
+**You are done when** `docs/codebook.csv` is committed, with every rule
+traceable to the note or to your own decision.
+
+**If it goes wrong:** if you are short of time, copy the codebook below into
+`docs/codebook.csv` and commit it; it is what most groups converge on.
 
 ::::
 :::
@@ -329,74 +346,44 @@ and `interrogate()` reports how many rows break it. (pointblank calls the
 object that holds the rules an "agent"; it has nothing to do with AI agents.)
 You do not need to write pointblank code today.
 
-`r hide("The provided version")`
+`r hide("The provided scripts/functions/validate_voles.R")`
 
-```{r}
-#| eval: false
-# scripts/functions/validate_voles.R ----
-# Rules transcribed from docs/codebook.csv by a human, not by the agent
-# that writes the cleaning script.
-
-voles_col_types <- function() {
-  readr::cols(
-    subject_id = readr::col_character(),
-    sex = readr::col_character(),
-    treatment_arm = readr::col_character(),
-    mass_pre_g = readr::col_double(),
-    mass_post_g = readr::col_double(),
-    metabolic_rate_post = readr::col_double(),
-    .default = readr::col_character()
-  )
-}
-
-validate_voles <- function(data, label) {
-  data |>
-    pointblank::create_agent(label = label) |>
-    pointblank::col_vals_not_null(columns = c(subject_id, sex, treatment_arm)) |>
-    pointblank::col_vals_regex(columns = subject_id, regex = "^V[0-9]{3}$") |>
-    pointblank::rows_distinct(columns = subject_id) |>
-    pointblank::col_vals_in_set(columns = sex, set = c("M", "F")) |>
-    pointblank::col_vals_in_set(
-      columns = treatment_arm,
-      set = c("Control", "Low_dose", "High_dose")
-    ) |>
-    pointblank::col_vals_between(
-      columns = c(mass_pre_g, mass_post_g),
-      left = 15, right = 60, na_pass = TRUE
-    ) |>
-    pointblank::col_vals_between(
-      columns = metabolic_rate_post,
-      left = 5, right = 30, na_pass = TRUE
-    ) |>
-    pointblank::interrogate()
-}
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "validate_voles.R")}
 ```
 
 `r unhide()`
 
 **Run the rules on the raw data. They should fail.** If raw data pass every
 rule, either the data are already clean or the rules are too weak, and you
-should suspect the second. Run the provided `scripts/02_validate.R` in the R
-console:
+should suspect the second. Run the provided script.
+
+**In the R console:**
 
 ```{r}
 #| eval: false
-# scripts/02_validate.R ----
-library(tidyverse)
-library(here)
-source(here("scripts", "functions", "validate_voles.R"))
-
-raw_df <- read_csv(here("data", "raw", "voles_raw.csv"), col_types = voles_col_types())
-validate_voles(raw_df, "Raw data: expected to FAIL")
+source(here::here("scripts", "02_validate.R"))
 ```
 
-Note which rules fail and how many rows each flags. Every failure is a problem
-that the cleaning must resolve or log.
+It prints one line per data set, for example `Raw data (expected to FAIL): 7
+of 10 rules fail`, and opens the full report in the Viewer, where you can see
+which rules fail and how many rows each flags. It also lists any value that
+could not be read as a number: such a value would become `NA` and slip past
+the range rules, so the list should be empty. Once the cleaning has run, the
+same script also validates the clean data, which should pass.
+
+`r hide("The provided scripts/02_validate.R")`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "02_validate.R")}
+```
+
+`r unhide()`
+
+Every failure is a problem that the cleaning must resolve or log.
 
 :::{.callout-warning}
 `na_pass = TRUE` lets genuine missing values through. It would also let
 through a cleaning script that replaced *every* mass with `NA`. Validation
-alone cannot catch over-cleaning; the audit in Step 5 can.
+alone cannot catch over-cleaning; `tests/test_audit.R` in Step 5 can.
 :::
 
 
@@ -423,9 +410,12 @@ Plan, review, then execute (15 minutes)
 ::::
 ::::{.task-container}
 
-**1. Start in plan mode and invoke the skill.** With your repository committed
-and clean, start Claude Code in `plan` mode (`Shift+Tab` until the mode shows
-`plan`, or `claude --permission-mode plan`), then:
+**Start:** the codebook committed, the Git pane showing no changed files, and
+`.claude/skills/clean-with-codebook/SKILL.md` present.
+
+**1. Start in plan mode and invoke the skill.** In the Terminal tab, start
+Claude Code in `plan` mode (`claude --permission-mode plan`, or `Shift+Tab`
+until the mode shows `plan`), then:
 
 **Prompt (Claude Code):**
 
@@ -451,7 +441,20 @@ Switch to plan mode with `/plan`, then invoke the skill with the same prompt.
 proceed, choose **Yes, manually approve edits**, so it still asks before each
 change (see the [quick reference](11-AI-programming-integrated.qmd#cc-quick-reference)).
 Read each request, and note every time it stopped to ask you something. A
-well-behaved agent should stop at least once.
+well-behaved agent should stop at least once. While it works, keep the Terminal
+tab for Claude Code and watch the Git pane: new files should appear only in
+`scripts/` and `data/derived/` (see
+[checking work](11a-setup-claude-code.qmd#checking-work)).
+
+**You are done when** `data/derived/` contains `voles_clean.csv`,
+`cleaning_log.csv` and `exclusion_log.csv`, and the agent has reported the
+output of `02_validate.R` and of the tests verbatim, as the skill requires.
+
+**If it goes wrong:** if the agent stalls, loops or writes outside
+`scripts/` and `data/derived/`, stop it with `Ctrl+C`, **Revert** its changes
+in the Git pane, and switch to the `block7-done` branch from the Git pane's
+branch menu. It contains a working `01_clean.R` and its three outputs, so you
+can carry on with Step 5.
 
 ::::
 :::
@@ -459,158 +462,141 @@ well-behaved agent should stop at least once.
 
 ## Step 5: Check the result
 
-Five checks, each catching something the others cannot.
+**Start:** the three files in `data/derived/` exist, whether the agent wrote
+them or you switched to `block7-done`.
 
-**1. Validation on clean data should pass.**
+Five checks, each catching something the others cannot. Checks 1 to 3 are the
+core; if the room is behind, your instructor runs 4 and 5.
+
+**1. The tests (the core check).** Two provided test files check everything
+that can be checked mechanically. Restart R (*Session → Restart R*), then:
 
 **In the R console:**
 
 ```{r}
 #| eval: false
-source(here::here("scripts", "functions", "validate_voles.R"))
-clean_df <- readr::read_csv(
-  here::here("data", "derived", "voles_clean.csv"),
-  col_types = voles_col_types()
-)
-validate_voles(clean_df, "Clean data: expected to pass")
+testthat::test_file(here::here("tests", "test_cleaning.R"))
+testthat::test_file(here::here("tests", "test_audit.R"))
 ```
 
-**2. The tests: raw data unchanged and every row accounted for.** The provided
-`tests/test_cleaning.R`:
+`tests/test_cleaning.R` checks that the raw data are unchanged (the checksum
+from Step 0), that every raw row is either in the clean data or in the
+exclusion log with a reason, and that the clean data pass every codebook rule.
+
+`tests/test_audit.R` checks the agent's record of its own work, reading the
+raw data as text, exactly as entered:
+
+- every old value in the cleaning log matches the raw file, so the log tells
+  the truth;
+- every new value in the log is the value in the clean file;
+- every cell that changed appears in the log, so nothing was altered without
+  a record (the most dangerous outcome in this block);
+- every rule named in the log is one of the agreed four (`missing_code`,
+  `label_recode`, `id_format`, `out_of_range_query`);
+- every excluded row's `subject_id` is the one in the raw file;
+- no more values became `NA` than the codebook's missing-value codes and
+  ranges explain, which catches over-cleaning that validation alone misses.
+
+**You are done when** both files pass with no failures.
+
+**If it goes wrong:** a failing test names the problem. Ask the agent to fix
+`01_clean.R`, not the test: the tests and checks are deny-protected, and a
+check changed to pass proves nothing. If time is short, switch to
+`block7-done` and run the tests there.
+
+`r hide("The provided tests/test_cleaning.R")`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "tests", "test_cleaning.R")}
+```
+
+`r unhide()`
+
+`r hide("The provided tests/test_audit.R")`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "tests", "test_audit.R")}
+```
+
+`r unhide()`
+
+**2. Validation on clean data passes.** Run `02_validate.R` again:
+
+**In the R console:**
 
 ```{r}
 #| eval: false
-# tests/test_cleaning.R ----
-library(testthat)
-source(here::here("scripts", "functions", "validate_voles.R"))
-
-read_chr <- function(...) {
-  readr::read_csv(
-    here::here(...),
-    col_types = readr::cols(.default = readr::col_character())
-  )
-}
-
-test_that("raw data are unchanged", {
-  recorded <- readLines(here::here("tests", "fixtures", "raw_checksum.txt"))
-  current <- unname(tools::md5sum(here::here("data", "raw", "voles_raw.csv")))
-  expect_identical(current, recorded)
-})
-
-test_that("every raw row is either in the clean data or in the exclusion log", {
-  raw_df <- read_chr("data", "raw", "voles_raw.csv")
-  clean_df <- read_chr("data", "derived", "voles_clean.csv")
-  excluded_df <- read_chr("data", "derived", "exclusion_log.csv")
-
-  expect_equal(nrow(raw_df), nrow(clean_df) + nrow(excluded_df))
-  expect_setequal(
-    c(clean_df$raw_row, excluded_df$raw_row),
-    as.character(seq_len(nrow(raw_df)))
-  )
-  expect_false(any(is.na(excluded_df$reason) | excluded_df$reason == ""))
-})
-
-test_that("clean data pass every codebook rule", {
-  clean_df <- readr::read_csv(
-    here::here("data", "derived", "voles_clean.csv"),
-    col_types = voles_col_types()
-  )
-  validation <- validate_voles(clean_df, "Clean data")
-  expect_true(pointblank::all_passed(validation))
-})
+source(here::here("scripts", "02_validate.R"))
 ```
 
-In the R console, run
-`testthat::test_file(here::here("tests", "test_cleaning.R"))`.
+It should now print `Clean data (expected to PASS): all rules pass` below the
+raw-data line.
 
-**3. Audit the logs against the data.** The cleaning log was written by the
-agent, so check it rather than trust it. Run the provided
-`scripts/03_audit_cleaning.R` in the R console:
+**3. Read the log yourself.** Tests check consistency; they cannot tell you
+whether a change was the right decision. The provided audit script shows what
+kinds of change were made and samples ten logged changes for you to check by
+eye against the raw file.
+
+**In the R console:**
 
 ```{r}
 #| eval: false
-# scripts/03_audit_cleaning.R ----
-library(tidyverse)
-library(here)
-source(here("scripts", "functions", "validate_voles.R"))
-
-to_long <- function(data, value_name) {
-  data |>
-    pivot_longer(
-      -raw_row,
-      names_to = "column",
-      values_to = value_name,
-      values_transform = as.character
-    )
-}
-
-raw_long_df <- read_csv(here("data", "raw", "voles_raw.csv"), col_types = voles_col_types()) |>
-  mutate(raw_row = as.character(row_number())) |>
-  to_long("raw_value")
-
-clean_long_df <- read_csv(here("data", "derived", "voles_clean.csv"), col_types = voles_col_types()) |>
-  to_long("clean_value")
-
-cleaning_log_df <- read_csv(
-  here("data", "derived", "cleaning_log.csv"),
-  col_types = cols(.default = col_character())
-)
-
-# 1. Truthful: every logged old value matches the raw file ----
-untruthful_df <- cleaning_log_df |>
-  left_join(raw_long_df, by = c("raw_row", "column")) |>
-  filter(!map2_lgl(old_value, raw_value, identical))
-
-# 2. Complete: every changed cell appears in the log ----
-unlogged_df <- clean_long_df |>
-  left_join(raw_long_df, by = c("raw_row", "column")) |>
-  filter(!map2_lgl(clean_value, raw_value, identical)) |>
-  anti_join(cleaning_log_df, by = c("raw_row", "column"))
-
-untruthful_df
-unlogged_df
-
-# 3. What kinds of change were made ----
-cleaning_log_df |> count(column, rule, sort = TRUE)
-
-# 4. Ten logged changes to check by hand against the raw file ----
-set.seed(2026)
-cleaning_log_df |> slice_sample(n = 10)
+source(here::here("scripts", "03_audit_cleaning.R"))
 ```
 
-`untruthful_df` and `unlogged_df` should both have zero rows. An unlogged
-change is the most dangerous outcome in this block: a value altered with no
-record. If a row appears, inspect it; a difference in number formatting is
-harmless, a changed value is not. For the ten sampled changes, open the raw file
-yourself and confirm each one.
+`r hide("The provided scripts/03_audit_cleaning.R")`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "03_audit_cleaning.R")}
+```
+
+`r unhide()`
+
+For the ten sampled changes, open the raw file (`View()`, or Positron's Data
+Explorer) and confirm each one.
 
 **4. Reproduce it without the agent.** Your `AGENTS.md` and the skill asked for
 a script that runs in a `r glossary("fresh R session")` with the packages in
 the `r glossary("lockfile")`, `renv.lock`. Check, rather than trust. Commit the
-outputs, then:
+outputs from the Git pane, then:
 
-**In the terminal:**
+**In the R console:**
 
-```bash
-Rscript -e "renv::status()"
-Rscript scripts/01_clean.R
-git status --short data/derived
+```{r}
+#| eval: false
+renv::status()
+callr::rscript(here::here("scripts", "01_clean.R"))
 ```
 
 `renv::status()` should report that the project is in a consistent state. If
-the agent installed or used a package that is not in `renv.lock`, it says so;
-decide whether you want the package, then update the lockfile with
-`renv::snapshot()` as on [Day 1](01-projects.qmd). `Rscript` runs the script in
-a fresh R session, and the same script on the same raw data must write the same
-outputs, so `git status` should show no changes. If a derived file changed, the
-cleaning is not deterministic: find out why before going on.
+the agent used a package that is not in `renv.lock`, it says so; decide
+whether you want the package, then update the lockfile yourself with
+`renv::snapshot()` as on [Day 1](01-projects.qmd) (the agent is denied that
+file). `callr::rscript()` runs the script in a fresh R session, and the same
+script on the same raw data must write the same outputs, so the Git pane
+should show no changes. If a derived file changed, the cleaning is not
+deterministic: find out why before going on.
+
+:::{.callout-note collapse="true"}
+## At the command line
+
+The same checks from a terminal (after `/exit`, or in a second Terminal tab):
+`Rscript -e "testthat::test_dir('tests')"`, `Rscript -e "renv::status()"`,
+`Rscript scripts/01_clean.R` and `git status --short data/derived`. See
+[checking work](11a-setup-claude-code.qmd#checking-work).
+:::
 
 **5. Grade the pipeline against the planted errors.** Your instructor will now
 release the answer key. For each planted error, record:
 
 | Planted error | Failed validation on raw? | Handled as intended? | In the log? |
 |---|---|---|---|
-| | | | |
+| 9999 in `mass_post_g` (two animals) | | | |
+| `-1` in `metabolic_rate_post` | | | |
+| `treatment_arm` label in lower case | | | |
+| `treatment_arm` label in upper case | | | |
+| `sex` spelled out | | | |
+| `mass_pre_g` recorded in kilograms | | | |
+| `mass_pre_g` ten times too large | | | |
+| Exact duplicate row | | | |
+| Near duplicate with a malformed ID | | | |
 
 The first column measures your *rules*; the second measures the *cleaning*;
 the third measures the *record*. A planted error that passed validation on raw
@@ -635,10 +621,15 @@ automate this again?
 :::{.callout-note}
 ## Check · Reproduce · Record
 
+- **You can now:** hand an agent the cleaning of a raw data file against a
+  codebook you own, **trusted because** two test files prove the raw data are
+  untouched, every row is accounted for, every change is logged truthfully,
+  and nothing became missing that the codebook does not explain.
 - **Check:** validation rules transcribed from the codebook, not from the
-  cleaning code; tests; the log audited against the raw file; the answer key.
-- **Reproduce:** `renv::status()` and a fresh `Rscript` run that writes
-  identical outputs. Once the clean output is right, you can freeze it as a
+  cleaning code; tests; the log read by you against the raw file; the answer
+  key.
+- **Reproduce:** `renv::status()` and a fresh `callr::rscript()` run that
+  writes identical outputs. Once the clean output is right, you can freeze it as a
   reference, as you will in [Block 9](11i-characterisation-tests.qmd), so a
   later refactor of `01_clean.R` must reproduce it exactly.
 - **Record:** the codebook, the cleaning and exclusion logs, and a line in
@@ -696,28 +687,11 @@ data/raw/** -text
 **Deny rules.** This is the `.claude/settings.json` in your workshop
 repository, the same file you read in [Block 6](11f-enforced-controls.qmd):
 
-```json
-{
-  "permissions": {
-    "deny": [
-      "Edit(/data/raw/**)",
-      "Edit(/docs/data_note.md)",
-      "Edit(/docs/codebook.csv)",
-      "Edit(/scripts/02_validate.R)",
-      "Edit(/scripts/03_audit_cleaning.R)",
-      "Edit(/scripts/functions/validate_voles.R)",
-      "Edit(/tests/fixtures/**)",
-      "Edit(/tests/make_reference.R)",
-      "Edit(/tests/test_cleaning.R)",
-      "Edit(/.github/**)",
-      "Edit(/.claude/**)",
-      "Edit(/.posit/**)",
-      "Edit(/hooks/**)",
-      "Read(/.Renviron)",
-      "Read(/.env)"
-    ]
-  }
-}
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: json
+cat(readLines(here::here("_instructor", "template-files", ".claude", "settings.json")), sep = "\n")
 ```
 
 A leading `/` anchors each pattern to the project root. The rules protect

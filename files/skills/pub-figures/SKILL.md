@@ -23,7 +23,8 @@ If information you need is missing (the audience, a variable's unit, the fitted 
 
 ## Project toolkit
 
-The packages this skill assumes are pinned in `renv.lock`:
+The packages this skill uses are listed below. Check that each one you need is
+in `renv.lock`; if one is missing, stop and ask before installing anything:
 
 - `ggplot2`, `patchwork`, `here`, `scales` for core plotting, composition, paths, and label formatting.
 - `ggdist` for raincloud and half-eye distributions: `stat_halfeye()`, `stat_pointinterval()`.
@@ -172,7 +173,7 @@ Always save to `outputs/figures/` via `here::here()` in both PDF and PNG formats
 The agent cannot verify visual accessibility. Insert this line at the end of the script and flag it for the investigator to run and inspect:
 
 ```r
-colorBlindness::cvdPlot(fig1)
+if (interactive()) colorBlindness::cvdPlot(fig1)
 ```
 
 If the four-panel simulation shows groups becoming indistinguishable under deuteranopia, protanopia, or tritanopia, the palette or redundant encoding must be revised. For brand-seeded scales, a failed check requires falling back to the `colorspace` default named in the colour table; brand intent does not override accessibility.
@@ -194,7 +195,7 @@ Before declaring the script complete, confirm:
 - Default theme is `theme_project()`, `theme_minimal()`, or `theme_classic()`. Never `theme_grey()`.
 - `theme_project()` base font size matches the audience floor (12 pt journal; 14 to 20 pt otherwise).
 - File saved to `outputs/figures/` as both PDF and PNG with explicit dimensions.
-- `cvdPlot()` call inserted at the end of the script with a comment flagging it for the investigator.
+- `cvdPlot()` call, wrapped in `if (interactive())`, inserted at the end of the script with a comment flagging it for the investigator.
 
 ## Supplementary files in this skill directory
 

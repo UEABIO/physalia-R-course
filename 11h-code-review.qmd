@@ -77,6 +77,15 @@ is why you will measure it yourself in Part 3.
 The practical rule: **treat every AI finding as a claim to verify, and treat
 the absence of a finding as no evidence that the problem is absent.**
 
+**What AI review is reliably good for.** Used that way, an AI reviewer earns
+its place. It is good at summarising what a script does, which is a fast way
+into someone else's code; at flagging missing documentation, unexplained
+filters and hard-coded paths; at finding run errors when it can actually
+execute the code; and as a second pair of eyes that never tires on line 300.
+Next week, run your saved review prompt (from Part 2) on a script before you
+share it, and spend your own attention on the *Reliable* questions it cannot
+answer.
+
 :::{.callout-note}
 **Opening poll** *(type in chat)*
 
@@ -124,12 +133,21 @@ Write the review prompt (7 minutes)
 **1. Start from the draft.** Open the working draft below and check it contains
 all four elements.
 
-**2. Split the room.** The room splits in two for a controlled comparison:
+**2. Split the room.** The room splits in two for a controlled comparison.
+Surnames A–M are **Group A**; N–Z are **Group B**.
 
 - **Group A** keeps the line about the 9999 `r glossary("sentinel value")`.
 - **Group B** deletes it.
 
 Everything else stays the same.
+
+**3. Keep it.** Save your version of the prompt as `docs/review-prompt.md` in
+your **workshop** repository, to reuse after the course. In the R console,
+with the workshop project open, `usethis::edit_file("docs/review-prompt.md")`
+creates and opens the file; paste the prompt and save.
+
+**You are done when** your prompt has all four elements and is saved in
+`docs/review-prompt.md`.
 
 `r hide("Working draft")`
 
@@ -171,18 +189,25 @@ For the Group A and Group B comparison to mean anything, the
 data files, it can find the 9999 code by itself, and Group B's missing line no
 longer matters. So review a copy of the script on its own.
 
-**1. Copy the script into an empty folder.** Make a new folder outside the OSF
-project folder, copy `ANALYSIS.R` into it, and nothing else.
+**1. Copy the script into an empty project.** With the OSF project open, in
+the R console:
+
+```{r}
+#| eval: false
+usethis::create_project("~/ai-review", open = FALSE)
+fs::file_copy(here::here("ANALYSIS.R"), "~/ai-review/ANALYSIS.R")
+```
+
+Then open `~/ai-review` in a new window: in RStudio, *File → Open Project in
+New Session*; in Positron, *File → New Window* and open the folder there.
 
 **2. Start Claude Code there in `plan` mode.** In `plan` mode
 (`r glossary("rung")` 1 or 2 of the ladder in
 [Block 4](11d-context-disclosure-autonomy.qmd)) the agent can read files but
-cannot change any, which is what a review needs.
-
-**In the terminal:**
+cannot change any, which is what a review needs. In the new window's
+Terminal tab:
 
 ```bash
-cd path/to/review-folder
 claude --permission-mode plan
 ```
 
@@ -190,6 +215,12 @@ claude --permission-mode plan
 
 **4. Save the review yourself.** `plan` mode cannot write files, so copy its
 review into a text file of your own before moving on.
+
+**You are done when** you have the review saved in a file.
+
+**If it goes wrong:** if Claude Code lists data files, you started it in the
+OSF project window, not the `ai-review` one: `/exit`, switch windows and start
+again. If you have no agent, use Path B.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -204,14 +235,12 @@ before running anything.
 ### Path A, step 2: let it run the script (optional)
 
 An agent that can execute R can turn the *Run* question from a prediction into
-evidence. The script needs its data, so this step uses the full OSF project
-folder. Exit Claude Code (`/exit`), then start it again in that folder in
-`default` mode (rung 3: acting with approval).
-
-**In the terminal:**
+evidence. The script needs its data, so this step uses the full OSF project.
+Exit Claude Code (`/exit`), switch to the OSF project's window, and start
+Claude Code in `default` mode (rung 3: acting with approval) in its Terminal
+tab:
 
 ```bash
-cd path/to/osf-project
 claude
 ```
 
@@ -262,6 +291,15 @@ Grade the machine (10 minutes)
 your most consequential miss and your most confident false positive, with line
 numbers.
 
+**3. Decide.** Which one finding would you act on first, and what would you
+check before acting on it?
+
+**You are done when** every P1–P12 problem is marked hit or miss, and you have
+listed the false positives.
+
+**If it goes wrong:** if your review never arrived, grade a neighbour's review
+posted in the chat; the comparison works the same way.
+
 ::::
 :::
 
@@ -282,10 +320,14 @@ numbers.
 :::{.callout-note}
 ## Check · Reproduce · Record
 
+- **You can now:** hand a script to an AI reviewer with a prompt that makes its
+  output checkable, **trusted because** you grade it against problems you
+  already know, and treat every finding as a claim.
 - **Check:** grade every AI finding against the P1–P12 answer key; the absence
   of a finding is no evidence that the problem is absent.
 - **Reproduce:** a claim that the script runs counts only with the command and
-  the output from a fresh R session.
+  the output from a fresh R session; to run one yourself, see
+  [checking work](11a-setup-claude-code.qmd#checking-work).
 - **Record:** add a line to `docs/ai-log.md` in your workshop repository (not
   the OSF project folder): the tool, its hit count, and its most confident
   false positive. The README for the OSF project is the one you built on Day 2.
@@ -361,6 +403,11 @@ look for `research-readme`. In any tool, the test is behaviour: when you invoke
 the skill's "Before executing" section requires. If it is not, the skill did
 not load.
 
+**Put the folder under version control first.** A folder downloaded from OSF
+is not a git repository, so there would be nothing to compare the README
+against. With the OSF project open in RStudio or Positron, run
+`usethis::use_git()` in the R console and let it make the first commit.
+
 You run this in two passes. The first shows the failure; the second shows the
 fix.
 
@@ -380,14 +427,16 @@ facts mechanically, and the AI only assembles and phrases them.
 
 ##### Step 1: Generate the inputs yourself (R, not AI)
 
-**In the R console**, from the OSF project folder:
+**In the R console**, with the OSF project open in RStudio or Positron (so that
+`here::here()` points at it, not at your workshop repository):
 
 ```{r readme-inputs}
 #| eval: false
 skill_dir <- here::here(".agents", "skills", "research-readme", "scripts")
 
 source(file.path(skill_dir, "describe_csv.R"))
-describe_project_csvs(here::here())   # type, missing count and range per column
+# type, missing count and range per column, printed in full for pasting
+describe_project_csvs(here::here()) |> print(n = Inf, width = Inf)
 
 source(file.path(skill_dir, "scan_packages.R"))
 print_lockfile(here::here("renv.lock"))  # R and package versions, or a finding
@@ -418,7 +467,7 @@ sections in the template I paste below, in order.
 
 Use ONLY the facts I provide. Do not invent DOIs, ORCIDs, units or package
 versions. Where a value is missing, insert a visible placeholder:
-  <!-- TODO: supply [field]: not provided -->
+  **TODO: supply [field]: not provided**
 
 Per-column summaries: [paste describe_project_csvs() output]
 Dependencies: [paste print_lockfile() output]
@@ -442,10 +491,8 @@ Audit the draft against three of the skill's rules:
 2. **Describe, do not interpret.** Did the AI assign units or meanings you did
    not supply? Did the `2 to 9999` range survive, or was it "tidied" into
    something plausible and wrong?
-3. **README only.** Confirm with `git status` that nothing except `README.md`
-   changed. A folder downloaded from OSF is not a git repository: run
-   `git init` and commit everything before Pass 2, so there is something to
-   compare against.
+3. **README only.** The Git pane should show that nothing except `README.md`
+   changed since the commit you made before Pass 1.
 
 Note the worst fabrication or interpretation you caught, and whether the
 README's offspring range alone would have led you back to P8. The
