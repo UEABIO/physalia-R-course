@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Block 4: Iterations with purrr – Advancing in R</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./05-tidy-evaluation.html" rel="next">
+<link href="./03-functions.html" rel="prev">
+<link href="./images/logos/logo.jpg" rel="icon" type="image/jpeg">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-3419ea62b3ca2d77d3d547f86109e84e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-eaeb381c6b7494c50009502241a4985c.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-3419ea62b3ca2d77d3d547f86109e84e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3cd6fa5ecd0fee40c2234918e716a3f1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-5e085bcf7aec51ebc43195740e218434.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-3cd6fa5ecd0fee40c2234918e716a3f1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light"><script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script><script>
+// Apply the saved colour palette before the page paints (see include/palette.js)
+(function () {
+  try {
+    var p = localStorage.getItem("advancing-r-palette");
+    if (p) document.documentElement.setAttribute("data-palette", p);
+    if (localStorage.getItem("advancing-r-cvd") === "on") document.documentElement.setAttribute("data-cvd", "on");
+  } catch (e) {}
+})();
+</script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
+<link rel="stylesheet" href="include/booktem.css">
+<link rel="stylesheet" href="include/webex.css">
+<link rel="stylesheet" href="include/glossary.css">
+<link rel="stylesheet" href="include/style.css">
+<link rel="stylesheet" href="include/palette.css">
+<link rel="stylesheet" href="include/diagrams.css">
+</head>
+<body class="nav-sidebar floating quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top"><nav class="quarto-secondary-nav"><div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./01-projects.html">Day 1: Advancing in R</a></li><li class="breadcrumb-item"><a href="./04-iteration.html">Block 4: Iterations with purrr</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav></header><!-- content --><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto"><div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Advancing in R</a> 
+        <div class="sidebar-tools-main">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Day 1: Advancing in R</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01-projects.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 1: Project-based workflows</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02-tidyverse.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 2: Getting more out of tidyverse</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03-functions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 3: Writing functions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./04-iteration.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Block 4: Iterations with purrr</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./05-tidy-evaluation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 5: Tidy evaluation and data masking</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false">
+ <span class="menu-text">Day 2: Reproducibility</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./06-reproducibility.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 1: Reproducibility</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./07-code-review.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 2: Code Review</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false">
+ <span class="menu-text">Day 3: Data Visualisation</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 ">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 1: Foundations and graph crimes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08b-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 2: Choosing the right figure</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08c-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 3: Themes and scales</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08d-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 4: Extensions in action</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08e-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 5: Saving figures correctly</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./08f-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Writing figure legends</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false">
+ <span class="menu-text">Day 3: Quarto</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 ">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./09-quarto-workshop-revised.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 1: Quarto</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false">
+ <span class="menu-text">Day 3: GitHub</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 ">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10-github.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 1: GitHub</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./10a-github-automation-tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 2: GitHub Automations</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false">
+ <span class="menu-text">Day 4: AI-assisted programming</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 ">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11-AI-programming-integrated.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 1: AI-assisted R programming</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11a-setup-claude-code.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Setting up Claude Code</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11b-inline-completions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 2: Inline completions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11c-debugging.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 3: Debugging with AI</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11d-context-disclosure-autonomy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 4: Context, disclosure and autonomy</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11e-instructions-skills.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 5: Instructions and skills</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11f-enforced-controls.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 6: Enforced controls: permissions and detection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11g-data-cleaning.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 7: Data cleaning and validation with AI</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11h-code-review.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 8: AI-assisted code review</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11i-characterisation-tests.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 9: Functionalise a script step and prove the result is unchanged</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11j-statistical-checks-reporting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 10: Checking the statistics, and reporting the results</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false">
+ <span class="menu-text">Appendices</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" role="navigation" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 ">
+<li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./r-basics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">A</span>&nbsp; <span class="chapter-title">R basics</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tidy-data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">B</span>&nbsp; <span class="chapter-title">Tidy data</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./join.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">C</span>&nbsp; <span class="chapter-title">Joins</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./12-gt.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">D</span>&nbsp; <span class="chapter-title">Making tables with gt</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./12a-ggplot.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">E</span>&nbsp; <span class="chapter-title">ggplot</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./12b-ggplot2.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">F</span>&nbsp; <span class="chapter-title">ggplot2</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./working_with_large_data.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">G</span>&nbsp; <span class="chapter-title">Working with larger data</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./references.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">References</span></a>
+  </div>
+</li>
+      </ul>
+</li>
+    </ul>
+</div>
+</nav><div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active"><h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+<li>
+<a href="#part-a-the-map-toolkit" id="toc-part-a-the-map-toolkit" class="nav-link active" data-scroll-target="#part-a-the-map-toolkit">Part A: the <code>map</code> toolkit</a>
+  <ul class="collapse">
+<li><a href="#anonymous-functions-x-and-the-you-will-still-see" id="toc-anonymous-functions-x-and-the-you-will-still-see" class="nav-link" data-scroll-target="#anonymous-functions-x-and-the-you-will-still-see">Anonymous functions: <code>\(x)</code>, and the <code>~</code> you will still see</a></li>
+  <li><a href="#returning-a-data-frame-map-list_rbind" id="toc-returning-a-data-frame-map-list_rbind" class="nav-link" data-scroll-target="#returning-a-data-frame-map-list_rbind">Returning a data frame: <code>map() |&gt; list_rbind()</code></a></li>
+  <li><a href="#the-base-r-family-in-one-paragraph" id="toc-the-base-r-family-in-one-paragraph" class="nav-link" data-scroll-target="#the-base-r-family-in-one-paragraph">The base R family, in one paragraph</a></li>
+  <li><a href="#map2-and-pmap-and-imap-iterating-over-more-than-one-input" id="toc-map2-and-pmap-and-imap-iterating-over-more-than-one-input" class="nav-link" data-scroll-target="#map2-and-pmap-and-imap-iterating-over-more-than-one-input"><code>map2</code> and <code>pmap</code> and <code>imap</code>: iterating over more than one input</a></li>
+  <li><a href="#walk-iteration-for-side-effects" id="toc-walk-iteration-for-side-effects" class="nav-link" data-scroll-target="#walk-iteration-for-side-effects"><code>walk</code>: iteration for side effects</a></li>
+  </ul>
+</li>
+  <li>
+<a href="#part-b-iteration-on-the-running-example" id="toc-part-b-iteration-on-the-running-example" class="nav-link" data-scroll-target="#part-b-iteration-on-the-running-example">Part B: iteration on the running example</a>
+  <ul class="collapse">
+<li><a href="#applying-a-function-to-each-cell" id="toc-applying-a-function-to-each-cell" class="nav-link" data-scroll-target="#applying-a-function-to-each-cell">Applying a function to each cell</a></li>
+  <li><a href="#unnesting-back-to-a-flat-table" id="toc-unnesting-back-to-a-flat-table" class="nav-link" data-scroll-target="#unnesting-back-to-a-flat-table">Unnesting back to a flat table</a></li>
+  <li><a href="#a-real-refactor-decompose-the-function" id="toc-a-real-refactor-decompose-the-function" class="nav-link" data-scroll-target="#a-real-refactor-decompose-the-function">A real refactor: decompose the function</a></li>
+  <li><a href="#the-iteration-rewritten" id="toc-the-iteration-rewritten" class="nav-link" data-scroll-target="#the-iteration-rewritten">The iteration, rewritten</a></li>
+  <li><a href="#activity-iterate-over-a-different-grouping" id="toc-activity-iterate-over-a-different-grouping" class="nav-link" data-scroll-target="#activity-iterate-over-a-different-grouping">Activity: iterate over a different grouping</a></li>
+  <li><a href="#extension-exercise-plots-in-a-list-column" id="toc-extension-exercise-plots-in-a-list-column" class="nav-link" data-scroll-target="#extension-exercise-plots-in-a-list-column">Extension exercise: plots in a list-column</a></li>
+  </ul>
+</li>
+  </ul></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./01-projects.html">Day 1: Advancing in R</a></li><li class="breadcrumb-item"><a href="./04-iteration.html">Block 4: Iterations with purrr</a></li></ol></nav><div class="quarto-title">
+<h1 class="title">Block 4: Iterations with purrr</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header><p><em>Roughly 55 minutes. First the <code>map</code> toolkit, then the same tools applied to the running example so that the three function calls from Block 3 become one pipeline.</em></p>
+<p>The refactored script still has three explicit calls, one per species. A fourth species means a fourth call. Iteration removes the per-group calls entirely: the function is applied to each group automatically.</p>
+<section id="part-a-the-map-toolkit" class="level2"><h2 class="anchored" data-anchor-id="part-a-the-map-toolkit">Part A: the <code>map</code> toolkit</h2>
+<p><code>purrr::map(.x, .f)</code> applies the function <code>.f</code> to each element of <code>.x</code> and returns a list. It is the tidyverse counterpart of base R’s <code><a href="https://rdrr.io/r/base/lapply.html">lapply()</a></code>.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a>vec_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">b =</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">20</span>, <span class="at">c =</span> <span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-label="2"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-label="3"></a>purrr<span class="sc">::</span><span class="fu">map</span>(vec_list, mean)   <span class="co"># a list of three means</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>map()</code> always returns a list, which is maximally general but often more than you want. The typed variants return an atomic vector and <em>fail</em> if the result is not of that type, which is a feature: it catches mistakes early.</p>
+<table class="caption-top table">
+<thead><tr class="header">
+<th>Function</th>
+<th>Returns</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>map()</code></td>
+<td>a list</td>
+</tr>
+<tr class="even">
+<td><code>map_lgl()</code></td>
+<td>a logical vector</td>
+</tr>
+<tr class="odd">
+<td><code>map_int()</code></td>
+<td>an integer vector</td>
+</tr>
+<tr class="even">
+<td><code>map_dbl()</code></td>
+<td>a double vector</td>
+</tr>
+<tr class="odd">
+<td><code>map_chr()</code></td>
+<td>a character vector</td>
+</tr>
+</tbody>
+</table>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, mean)   <span class="co"># a named numeric vector, not a list</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This type-safety is the reason to prefer <code>map_*()</code> over base <code><a href="https://rdrr.io/r/base/lapply.html">sapply()</a></code>. <code><a href="https://rdrr.io/r/base/lapply.html">sapply()</a></code> guesses the output type and can return a vector, a matrix or a list depending on the input, so a function that worked on Tuesday can silently return a different shape on Wednesday. <code>map_dbl()</code> either returns a double vector or errors.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The base R alternative: a <code>for</code> loop
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Before <code>map()</code>, the same job needs a loop with manual bookkeeping: pre-allocate an output container, then assign into it by index.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>vec_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">b =</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">20</span>, <span class="at">c =</span> <span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-label="2"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-label="3"></a>means <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"double"</span>, <span class="fu">length</span>(vec_list))   <span class="co"># pre-allocate data type and length</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a><span class="fu">names</span>(means) <span class="ot">&lt;-</span> <span class="fu">names</span>(vec_list)                <span class="co"># carry names across by hand</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-label="6"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-label="7"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(vec_list)) {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-label="8"></a>  means[[i]] <span class="ot">&lt;-</span> <span class="fu">mean</span>(vec_list[[i]])</span>
+<span id="cb3-9"><a href="#cb3-9" aria-label="9"></a>}</span>
+<span id="cb3-10"><a href="#cb3-10" aria-label="10"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-label="11"></a>means</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>purrr::map_dbl(vec_list, mean)</code> collapses all of this into one call. The loop is not wrong, and understanding it is worth doing, but three jobs are now yours rather than the function’s: choosing the container type, sizing it, and preserving names. Growing the vector instead of pre-allocating (<code>means &lt;- c(means, ...)</code> inside the loop) copies the whole object on every iteration, which turns linear work into quadratic and is the classic loop performance trap. <code>map_dbl()</code> handles the container, the sizing and the names, and fixes the return type. The gain is that the bookkeeping is done for you; speed is about the same, because a correctly pre-allocated loop and <code>map_dbl()</code> run in comparable time.</p>
+</div>
+</div>
+</div>
+<section id="anonymous-functions-x-and-the-you-will-still-see" class="level3"><h3 class="anchored" data-anchor-id="anonymous-functions-x-and-the-you-will-still-see">Anonymous functions: <code>\(x)</code>, and the <code>~</code> you will still see</h3>
+<p>When the callback is not already a named function, write it inline. The modern form is the R 4.1 shorthand <code>\(x)</code>:</p>
+<div class="tabset-margin-container"></div><div class="panel-tabset">
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="" aria-current="page">Updated</a></li>
+<li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">Original</a></li>
+</ul>
+<div class="tab-content">
+<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, \(x) <span class="fu">sum</span>(x) <span class="sc">/</span> <span class="fu">length</span>(x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, <span class="cf">function</span>(x) <span class="fu">sum</span>(x) <span class="sc">/</span> <span class="fu">length</span>(x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+<p>You will frequently meet the older purrr formula-lambda, <code>~ sum(.x) / length(.x)</code>, where <code>.x</code> (or <code>.</code>) stands for the current element. It still works, but <code>\(x)</code> is clearer because the argument has a real name, and it is ordinary R rather than purrr-specific syntax. We use <code>\(x)</code> throughout.</p>
+<p>Extra arguments can be passed either inside the lambda or as trailing arguments to <code>map()</code>:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, \(x) <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))   <span class="co"># inside the lambda</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-label="2"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, mean, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)           <span class="co"># forwarded by map()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="returning-a-data-frame-map-list_rbind" class="level3"><h3 class="anchored" data-anchor-id="returning-a-data-frame-map-list_rbind">Returning a data frame: <code>map() |&gt; list_rbind()</code>
+</h3>
+<p>To stack per-element tibbles into one tibble, run <code>map()</code> and then <code>list_rbind()</code>.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a><span class="co"># Example:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>),</span>
+<span id="cb7-3"><a href="#cb7-3" aria-label="3"></a>                    <span class="at">pattern =</span> <span class="st">"</span><span class="sc">\\</span><span class="st">.csv$"</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-label="4"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a>all_data <span class="ot">&lt;-</span> files <span class="sc">|&gt;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(\(f) readr<span class="sc">::</span><span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a>  purrr<span class="sc">::</span><span class="fu">list_rbind</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a><span class="co"># --- Setup: write the penguins data out as several CSV files ---</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a><span class="co"># In a real project these files would already exist; here we create them</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a><span class="co"># so the reading example has something to read. We split by island, so</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a><span class="co"># each file holds the penguins recorded at one location.</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-label="5"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-label="6"></a><span class="fu">dir.create</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-label="7"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-label="8"></a>penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-label="9"></a>  <span class="fu">group_by</span>(island) <span class="sc">|&gt;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-label="10"></a>  <span class="fu">group_walk</span>(\(rows, key) {</span>
+<span id="cb8-11"><a href="#cb8-11" aria-label="11"></a>    <span class="fu">write_csv</span>(rows, <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>, <span class="fu">paste0</span>(key<span class="sc">$</span>island, <span class="st">".csv"</span>)))</span>
+<span id="cb8-12"><a href="#cb8-12" aria-label="12"></a>  })</span>
+<span id="cb8-13"><a href="#cb8-13" aria-label="13"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-label="14"></a><span class="co"># --- Reading the files back in ---</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-label="15"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>),</span>
+<span id="cb8-16"><a href="#cb8-16" aria-label="16"></a>                    <span class="at">pattern =</span> <span class="st">"</span><span class="sc">\\</span><span class="st">.csv$"</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-label="17"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-label="18"></a></span>
+<span id="cb8-19"><a href="#cb8-19" aria-label="19"></a><span class="co"># example to show list format before rbind</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-label="20"></a>files <span class="sc">|&gt;</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-label="21"></a>  <span class="fu">map</span>(\(f) <span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>))</span>
+<span id="cb8-22"><a href="#cb8-22" aria-label="22"></a></span>
+<span id="cb8-23"><a href="#cb8-23" aria-label="23"></a><span class="co"># combined dataframe</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-label="24"></a>all_data <span class="ot">&lt;-</span> files <span class="sc">|&gt;</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-label="25"></a>  <span class="fu">map</span>(\(f) <span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-label="26"></a>  <span class="fu">list_rbind</span>()</span>
+<span id="cb8-27"><a href="#cb8-27" aria-label="27"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-label="28"></a>all_data</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Warning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You will see <code>map_dfr()</code> and <code>map_dfc()</code> in older code and tutorials. These are <strong>superseded</strong>: the current idiom is <code>map() |&gt; list_rbind()</code> for row-binding and <code>map() |&gt; list_cbind()</code> for column-binding. They are clearer about the two separate steps (apply, then combine) and are the forms the tidyverse now recommends.</p>
+</div>
+</div>
+</section><section id="the-base-r-family-in-one-paragraph" class="level3"><h3 class="anchored" data-anchor-id="the-base-r-family-in-one-paragraph">The base R family, in one paragraph</h3>
+<p>You will encounter <code><a href="https://rdrr.io/r/base/lapply.html">lapply()</a></code>, <code><a href="https://rdrr.io/r/base/lapply.html">sapply()</a></code>, <code><a href="https://rdrr.io/r/base/lapply.html">vapply()</a></code> and <code><a href="https://rdrr.io/r/base/apply.html">apply()</a></code> in existing code, and parallel iteration via <code>foreach</code> or <code>furrr</code>. The translation is direct: <code>lapply(x, f)</code> is <code>map(x, f)</code>; <code>sapply(x, f)</code> is one of the typed <code>map_*()</code> variants depending on the return type. Parallel back-ends such as <code><a href="https://furrr.futureverse.org/reference/future_map.html">furrr::future_map()</a></code> mirror <code>map()</code>’s interface for when a computation is genuinely slow and embarrassingly parallel. We mention these so you recognise them; for new code, <code>purrr</code> is the consistent default and parallelism is a later optimisation, applied only after profiling shows it is needed.</p>
+</section><section id="map2-and-pmap-and-imap-iterating-over-more-than-one-input" class="level3"><h3 class="anchored" data-anchor-id="map2-and-pmap-and-imap-iterating-over-more-than-one-input">
+<code>map2</code> and <code>pmap</code> and <code>imap</code>: iterating over more than one input</h3>
+<p><code>map2(.x, .y, .f)</code> walks two collections in parallel, passing one element from each to the function. <code>pmap(.l, .f)</code> generalises to any number of inputs, taking a list (or a data frame, treating each column as an input).</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a>sizes  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>widths <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a>purrr<span class="sc">::</span><span class="fu">map2_dbl</span>(sizes, widths, \(s, w) s <span class="sc">*</span> w)   <span class="co"># 10 18 28</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a>sizes   <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a>widths  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a>heights <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-label="4"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-label="5"></a><span class="co"># pmap takes a list of vectors; each call receives one element from each.</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-label="6"></a><span class="fu">pmap_dbl</span>(<span class="fu">list</span>(sizes, widths, heights), \(s, w, h) s <span class="sc">*</span> w <span class="sc">*</span> h)  <span class="co"># 10 36 84</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>imap(.x, .f)</code> is <code>map2()</code> with the element’s name (or its position, if the input is unnamed) supplied as the second argument:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>purrr<span class="sc">::</span><span class="fu">imap_chr</span>(vec_list, \(x, nm) <span class="fu">paste0</span>(nm, <span class="st">": mean "</span>, <span class="fu">mean</span>(x)))</span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a><span class="co">#&gt;              a              b              c </span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a><span class="co">#&gt;  "a: mean 5.5" "b: mean 15.5" "c: mean 25.5" </span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span><code>pmap()</code> over the rows of a data frame
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a><span class="co"># pmap walks any number of inputs in parallel. A data frame is just a named</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a><span class="co"># list of columns, so passing one lets each column become an argument.</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a><span class="co"># The function's parameter names should match the column names.</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a>penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a>  <span class="fu">select</span>(species, body_mass_g, flipper_length_mm) <span class="sc">|&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-label="6"></a>  <span class="fu">drop_na</span>() <span class="sc">|&gt;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-label="7"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">3</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-label="8"></a>  <span class="fu">pmap_chr</span>(\(species, body_mass_g, flipper_length_mm) {</span>
+<span id="cb12-9"><a href="#cb12-9" aria-label="9"></a>    glue<span class="sc">::</span><span class="fu">glue</span>(<span class="st">"{species}: Body weight {body_mass_g}g, Flipper length {flipper_length_mm}mm "</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-label="10"></a>  })</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Adelie: Body weight 3750g, Flipper length 181mm "
+[2] "Adelie: Body weight 3800g, Flipper length 186mm "
+[3] "Adelie: Body weight 3250g, Flipper length 195mm "</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section><section id="walk-iteration-for-side-effects" class="level3"><h3 class="anchored" data-anchor-id="walk-iteration-for-side-effects">
+<code>walk</code>: iteration for side effects</h3>
+<p>When you iterate to <em>do</em> something (write files, print plots) rather than to <em>return</em> a value, use <code>walk()</code>/<code>walk2()</code>. They run the function for its side effect and return their input invisibly, so the console is not flooded with output.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a><span class="co"># Write each split of the data to its own file, silently</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a>peng_grouped <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> </span>
+<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a>peng_split <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">group_split</span>(peng_grouped)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-label="7"></a><span class="co"># name each list element after its species, taken from the data itself</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-label="8"></a><span class="fu">names</span>(peng_split) <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">group_keys</span>(peng_grouped)<span class="sc">$</span>species</span>
+<span id="cb14-9"><a href="#cb14-9" aria-label="9"></a></span>
+<span id="cb14-10"><a href="#cb14-10" aria-label="10"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-label="11"></a>purrr<span class="sc">::</span><span class="fu">walk2</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" aria-label="12"></a>  peng_split, <span class="fu">names</span>(peng_split),</span>
+<span id="cb14-13"><a href="#cb14-13" aria-label="13"></a>  \(data, nm) readr<span class="sc">::</span><span class="fu">write_csv</span>(data, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="fu">paste0</span>(nm, <span class="st">".csv"</span>)))</span>
+<span id="cb14-14"><a href="#cb14-14" aria-label="14"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Note the slightly different approach here: we split the data into a named list and passed it to <code>walk2()</code>. In the earlier file-writing example we used <code>group_walk()</code> instead, a variant designed to work directly on data after <code>group_by()</code>.</p>
+</div>
+</div>
+</section></section><section id="part-b-iteration-on-the-running-example" class="level2"><h2 class="anchored" data-anchor-id="part-b-iteration-on-the-running-example">Part B: iteration on the running example</h2>
+<p>Recall the list-column from Block 2: <code>group_by(species) |&gt; nest()</code> puts each species’ tibble into one cell of a <code>data</code> column.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a>species_data <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>()</span>
+<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a>species_data</span>
+<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a><span class="co"># # A tibble: 3 x 2</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-label="7"></a><span class="co"># # Groups:   species [3]</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-label="8"></a><span class="co">#   species   data               </span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-label="9"></a><span class="co">#   &lt;chr&gt;     &lt;list&gt;             </span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-label="10"></a><span class="co"># 1 Adelie    &lt;tibble [151 x 16]&gt;</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-label="11"></a><span class="co"># 2 Gentoo    &lt;tibble [123 x 16]&gt;</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-label="12"></a><span class="co"># 3 Chinstrap &lt;tibble [68 x 16]&gt; </span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We use the classic <code>group_by() |&gt; nest()</code> rather than the newer <code>nest(.by = species)</code>. Both nest the data the same way, but only the first leaves the result grouped by <code>species</code> (which is why we <code>ungroup()</code> before unnesting below). The explicit grouping step is clearer and backward-compatible.</p>
+</div>
+</div>
+<section id="applying-a-function-to-each-cell" class="level3"><h3 class="anchored" data-anchor-id="applying-a-function-to-each-cell">Applying a function to each cell</h3>
+<p>Used inside <code>mutate()</code>, <code>map()</code> applies a function to each cell of a list-column and stores the result as a new list-column:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a>species_models <span class="ot">&lt;-</span> species_data <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, \(d) <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> d)),</span>
+<span id="cb16-4"><a href="#cb16-4" aria-label="4"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, \(m) broom<span class="sc">::</span><span class="fu">tidy</span>(m, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-label="5"></a>    <span class="at">n_obs =</span> purrr<span class="sc">::</span><span class="fu">map_int</span>(data, nrow)</span>
+<span id="cb16-6"><a href="#cb16-6" aria-label="6"></a>  )</span>
+<span id="cb16-7"><a href="#cb16-7" aria-label="7"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-label="8"></a>species_models</span>
+<span id="cb16-9"><a href="#cb16-9" aria-label="9"></a><span class="co"># # A tibble: 3 x 5</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-label="10"></a><span class="co"># # Groups:   species [3]</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-label="11"></a><span class="co">#   species   data                model  coefs            n_obs</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-label="12"></a><span class="co">#   &lt;chr&gt;     &lt;list&gt;              &lt;list&gt; &lt;list&gt;           &lt;int&gt;</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-label="13"></a><span class="co"># 1 Adelie    &lt;tibble [151 x 16]&gt; &lt;lm&gt;   &lt;tibble [2 x 7]&gt;   151</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-label="14"></a><span class="co"># 2 Gentoo    &lt;tibble [123 x 16]&gt; &lt;lm&gt;   &lt;tibble [2 x 7]&gt;   123</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-label="15"></a><span class="co"># 3 Chinstrap &lt;tibble [68 x 16]&gt;  &lt;lm&gt;   &lt;tibble [2 x 7]&gt;    68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Three things to notice. The <code>model</code> cell holds a fitted <code>lm</code> per species; the <code>coefs</code> cell holds a tidied tibble per species; and <code>n_obs</code> is an ordinary integer column, not a list-column, because <code>map_int()</code> returns an atomic vector. The typed variants slot straight into a tibble.</p>
+</section><section id="unnesting-back-to-a-flat-table" class="level3"><h3 class="anchored" data-anchor-id="unnesting-back-to-a-flat-table">Unnesting back to a flat table</h3>
+<p>For a manuscript coefficient table, expand the <code>coefs</code> list-column back into rows. <code>unnest()</code> is the dual of <code>nest()</code>: each cell’s tibble becomes rows, with the surrounding columns repeated.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a>coefficient_table <span class="ot">&lt;-</span> species_models <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-label="3"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(species, coefs) <span class="sc">|&gt;</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-label="4"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section><section id="a-real-refactor-decompose-the-function" class="level3"><h3 class="anchored" data-anchor-id="a-real-refactor-decompose-the-function">A real refactor: decompose the function</h3>
+<p>There is a tension. <code>fit_species_model()</code> filters <em>and</em> fits, but <code>nest()</code> has already done the filtering. Calling it inside the iteration would filter twice. That tension is information: the function is doing two jobs. Split them.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a><span class="co"># R/functions/modelling_functions.R -- revised</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-label="2"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-label="3"></a><span class="co">#' Fit body mass ~ flipper length on pre-filtered data</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-label="4"></a><span class="co">#' @param data A data frame, assumed to be one species' worth.</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-label="5"></a><span class="co">#' @return A fitted lm object.</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-label="6"></a>fit_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb18-7"><a href="#cb18-7" aria-label="7"></a>  <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-label="8"></a>}</span>
+<span id="cb18-9"><a href="#cb18-9" aria-label="9"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-label="10"></a><span class="co">#' Tidy a fitted lm with confidence intervals</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-label="11"></a><span class="co">#' @param model A fitted lm object.</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-label="12"></a><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-label="13"></a><span class="co">#' @return A tibble of tidied coefficients.</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-label="14"></a>tidy_model <span class="ot">&lt;-</span> <span class="cf">function</span>(model, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
+<span id="cb18-15"><a href="#cb18-15" aria-label="15"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> conf_level)</span>
+<span id="cb18-16"><a href="#cb18-16" aria-label="16"></a>}</span>
+<span id="cb18-17"><a href="#cb18-17" aria-label="17"></a></span>
+<span id="cb18-18"><a href="#cb18-18" aria-label="18"></a><span class="co">#' Fit for one species (wrapper preserving the old interface)</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-label="19"></a><span class="co">#' @param data A data frame with a `species` column.</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-label="20"></a><span class="co">#' @param sp Character of length 1. Species to filter to.</span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-label="21"></a><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-label="22"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
+<span id="cb18-23"><a href="#cb18-23" aria-label="23"></a>  <span class="cf">if</span> (<span class="sc">!</span>sp <span class="sc">%in%</span> <span class="fu">unique</span>(data<span class="sc">$</span>species)) {</span>
+<span id="cb18-24"><a href="#cb18-24" aria-label="24"></a>    <span class="fu">stop</span>(<span class="st">"Species '"</span>, sp, <span class="st">"' is not in the data. "</span>,</span>
+<span id="cb18-25"><a href="#cb18-25" aria-label="25"></a>         <span class="st">"Available species: "</span>,</span>
+<span id="cb18-26"><a href="#cb18-26" aria-label="26"></a>         <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(data<span class="sc">$</span>species)), <span class="at">collapse =</span> <span class="st">", "</span>))</span>
+<span id="cb18-27"><a href="#cb18-27" aria-label="27"></a>  }</span>
+<span id="cb18-28"><a href="#cb18-28" aria-label="28"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-label="29"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> sp) <span class="sc">|&gt;</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-label="30"></a>    <span class="fu">fit_model</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-label="31"></a>    <span class="fu">tidy_model</span>(<span class="at">conf_level =</span> conf_level) <span class="sc">|&gt;</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-label="32"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> sp, <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb18-33"><a href="#cb18-33" aria-label="33"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>fit_model()</code> and <code>tidy_model()</code> now exist independently and compose. The old public interface survives as a wrapper, so existing callers and the tests from Block 3 still pass with no edits. The behaviour is unchanged and only the internals have improved, which is what a refactor should achieve.</p>
+</section><section id="the-iteration-rewritten" class="level3"><h3 class="anchored" data-anchor-id="the-iteration-rewritten">The iteration, rewritten</h3>
+<p>With single-responsibility functions, the iteration uses them directly and reads cleanly:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-label="1"></a>species_models <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-label="2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-label="3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-label="4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb19-5"><a href="#cb19-5" aria-label="5"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, fit_model),</span>
+<span id="cb19-6"><a href="#cb19-6" aria-label="6"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, tidy_model)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-label="7"></a>  )</span>
+<span id="cb19-8"><a href="#cb19-8" aria-label="8"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-label="9"></a>coefficient_table <span class="ot">&lt;-</span> species_models <span class="sc">|&gt;</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-label="10"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-label="11"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(species, coefs) <span class="sc">|&gt;</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-label="12"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The modelling logic that began as three copy-pasted blocks in Block 3, and became three function calls by the end of that block, is now one pipeline that applies the same function to every group.</p>
+</section><section id="activity-iterate-over-a-different-grouping" class="level3"><h3 class="anchored" data-anchor-id="activity-iterate-over-a-different-grouping">Activity: iterate over a different grouping</h3>
+<div class="task">
+<div class="task-header">
+<p>Iterate over a different grouping</p>
+</div>
+<div class="task-container">
+<p>The penguins data has an <code>island</code> column (“Biscoe”, “Dream”, “Torgersen”). Fit a separate <code>body_mass_g ~ flipper_length_mm</code> model for each island and produce a tidied coefficient table, using the nest pattern.</p>
+</div>
+</div>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-label="1"></a>island_coefs <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-label="2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(island) <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-label="3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-label="4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb20-5"><a href="#cb20-5" aria-label="5"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, fit_model),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-label="6"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, tidy_model)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-label="7"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-label="8"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-label="9"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(island, coefs) <span class="sc">|&gt;</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-label="10"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><code>fit_model()</code> and <code>tidy_model()</code> are reused unchanged. They never knew they would iterate over species; they work for islands too, because each has a single responsibility and no hidden assumption about the grouping.</p>
+</div>
+</section><section id="extension-exercise-plots-in-a-list-column" class="level3"><h3 class="anchored" data-anchor-id="extension-exercise-plots-in-a-list-column">Extension exercise: plots in a list-column</h3>
+<div class="task">
+<div class="task-header">
+<p>Extension exercise: plots in a list-column</p>
+</div>
+<div class="task-container">
+<p>A list-column can hold plots as readily as models. Using the nested data, add a <code>plot</code> column made with <code>map()</code> that holds one scatter plot per species, then draw them together with <code><a href="https://patchwork.data-imaginist.com/reference/wrap_plots.html">patchwork::wrap_plots()</a></code>. Hint: build each plot inside <code>\(d) ggplot(d, ...)</code>.</p>
+</div>
+</div>
+<div class="webex-solution">
+<button>
+Solution
+</button>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-label="1"></a>species_plots <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-label="2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-label="3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-label="4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb21-5"><a href="#cb21-5" aria-label="5"></a>    <span class="at">plot =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, \(d)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-label="6"></a>      ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(d, ggplot2<span class="sc">::</span><span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-label="7"></a>        ggplot2<span class="sc">::</span><span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-label="8"></a>        ggplot2<span class="sc">::</span><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-label="9"></a>        ggplot2<span class="sc">::</span><span class="fu">theme_minimal</span>())</span>
+<span id="cb21-10"><a href="#cb21-10" aria-label="10"></a>  )</span>
+<span id="cb21-11"><a href="#cb21-11" aria-label="11"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-label="12"></a>patchwork<span class="sc">::</span><span class="fu">wrap_plots</span>(species_plots<span class="sc">$</span>plot)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>The same <code>nest |&gt; mutate(map(...))</code> pattern that fits models also builds figures. Once you see a cell as “any R object”, models, plots and tables are all just list-columns.</p>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Where this leaves us.</strong> Copy-paste is gone. One pipeline fits a model per group, whatever the group is. But <code>fit_model()</code> still hardcodes the response and predictor: it only ever fits body mass on flipper length. Block 5 removes that last limitation.</p>
+</div>
+</div>
+
+
+</section></section></main><!-- /main --><script>
+
+/* update total correct if #webex-total_correct exists */
+update_total_correct = function() {
+  console.log("webex: update total_correct");
+
+  var t = document.getElementsByClassName("webex-total_correct");
+  for (var i = 0; i < t.length; i++) {
+    p = t[i].parentElement;
+    var correct = p.getElementsByClassName("webex-correct").length;
+    var solvemes = p.getElementsByClassName("webex-solveme").length;
+    var radiogroups = p.getElementsByClassName("webex-radiogroup").length;
+    var selects = p.getElementsByClassName("webex-select").length;
+
+    t[i].innerHTML = correct + " of " + (solvemes + radiogroups + selects) + " correct";
+  }
+}
+
+/* webex-solution button toggling function */
+b_func = function() {
+  console.log("webex: toggle hide");
+
+  var cl = this.parentElement.classList;
+  if (cl.contains('open')) {
+    cl.remove("open");
+  } else {
+    cl.add("open");
+  }
+}
+
+/* check answers */
+check_func = function() {
+  console.log("webex: check answers");
+
+  var cl = this.parentElement.classList;
+  if (cl.contains('unchecked')) {
+    cl.remove("unchecked");
+    this.innerHTML = "Hide Answers";
+  } else {
+    cl.add("unchecked");
+    this.innerHTML = "Show Answers";
+  }
+}
+
+/* function for checking solveme answers */
+solveme_func = function(e) {
+  console.log("webex: check solveme");
+
+  var real_answers = JSON.parse(this.dataset.answer);
+  var my_answer = this.value;
+  var cl = this.classList;
+  if (cl.contains("ignorecase")) {
+    my_answer = my_answer.toLowerCase();
+  }
+  if (cl.contains("nospaces")) {
+    my_answer = my_answer.replace(/ /g, "")
+  }
+
+  if (my_answer == "") {
+    cl.remove("webex-correct");
+    cl.remove("webex-incorrect");
+  } else if (real_answers.includes(my_answer)) {
+    cl.add("webex-correct");
+    cl.remove("webex-incorrect");
+  } else {
+    cl.add("webex-incorrect");
+    cl.remove("webex-correct");
+  }
+
+  // match numeric answers within a specified tolerance
+  if(this.dataset.tol > 0){
+    var tol = JSON.parse(this.dataset.tol);
+    var matches = real_answers.map(x => Math.abs(x - my_answer) < tol)
+    if (matches.reduce((a, b) => a + b, 0) > 0) {
+      cl.add("webex-correct");
+    } else {
+      cl.remove("webex-correct");
+    }
+  }
+
+  // added regex bit
+  if (cl.contains("regex")){
+    answer_regex = RegExp(real_answers.join("|"))
+    if (answer_regex.test(my_answer)) {
+      cl.add("webex-correct");
+    }
+  }
+
+  update_total_correct();
+}
+
+/* function for checking select answers */
+select_func = function(e) {
+  console.log("webex: check select");
+
+  var cl = this.classList
+
+  /* add style */
+  cl.remove("webex-incorrect");
+  cl.remove("webex-correct");
+  if (this.value == "answer") {
+    cl.add("webex-correct");
+  } else if (this.value != "blank") {
+    cl.add("webex-incorrect");
+  }
+
+  update_total_correct();
+}
+
+/* function for checking radiogroups answers */
+radiogroups_func = function(e) {
+  console.log("webex: check radiogroups");
+
+  var checked_button = document.querySelector('input[name=' + this.id + ']:checked');
+  var cl = checked_button.parentElement.classList;
+  var labels = checked_button.parentElement.parentElement.children;
+
+  /* get rid of styles */
+  for (i = 0; i < labels.length; i++) {
+    labels[i].classList.remove("webex-incorrect");
+    labels[i].classList.remove("webex-correct");
+  }
+
+  /* add style */
+  if (checked_button.value == "answer") {
+    cl.add("webex-correct");
+  } else {
+    cl.add("webex-incorrect");
+  }
+
+  update_total_correct();
+}
+
+window.onload = function() {
+  console.log("webex onload");
+  /* set up solution buttons */
+  var buttons = document.getElementsByTagName("button");
+
+  for (var i = 0; i < buttons.length; i++) {
+    if (buttons[i].parentElement.classList.contains('webex-solution')) {
+      buttons[i].onclick = b_func;
+    }
+  }
+
+  var check_sections = document.getElementsByClassName("webex-check");
+  console.log("check:", check_sections.length);
+  for (var i = 0; i < check_sections.length; i++) {
+    check_sections[i].classList.add("unchecked");
+
+    let btn = document.createElement("button");
+    btn.innerHTML = "Show Answers";
+    btn.classList.add("webex-check-button");
+    btn.onclick = check_func;
+    check_sections[i].appendChild(btn);
+
+    let spn = document.createElement("span");
+    spn.classList.add("webex-total_correct");
+    check_sections[i].appendChild(spn);
+  }
+
+  /* set up webex-solveme inputs */
+  var solveme = document.getElementsByClassName("webex-solveme");
+
+  for (var i = 0; i < solveme.length; i++) {
+    /* make sure input boxes don't auto-anything */
+    solveme[i].setAttribute("autocomplete","off");
+    solveme[i].setAttribute("autocorrect", "off");
+    solveme[i].setAttribute("autocapitalize", "off");
+    solveme[i].setAttribute("spellcheck", "false");
+    solveme[i].value = "";
+
+    /* adjust answer for ignorecase or nospaces */
+    var cl = solveme[i].classList;
+    var real_answer = solveme[i].dataset.answer;
+    if (cl.contains("ignorecase")) {
+      real_answer = real_answer.toLowerCase();
+    }
+    if (cl.contains("nospaces")) {
+      real_answer = real_answer.replace(/ /g, "");
+    }
+    solveme[i].dataset.answer = real_answer;
+
+    /* attach checking function */
+    solveme[i].onkeyup = solveme_func;
+    solveme[i].onchange = solveme_func;
+
+    solveme[i].insertAdjacentHTML("afterend", " <span class='webex-icon'></span>")
+  }
+
+  /* set up radiogroups */
+  var radiogroups = document.getElementsByClassName("webex-radiogroup");
+  for (var i = 0; i < radiogroups.length; i++) {
+    radiogroups[i].onchange = radiogroups_func;
+  }
+
+  /* set up selects */
+  var selects = document.getElementsByClassName("webex-select");
+  for (var i = 0; i < selects.length; i++) {
+    selects[i].onchange = select_func;
+    selects[i].insertAdjacentHTML("afterend", " <span class='webex-icon'></span>")
+  }
+
+  update_total_correct();
+}
+
+</script><script>
+// open rdrr links externally ----
+
+var exlinks = document.querySelectorAll("a[href^='https://rdrr.io']");
+var exlink_func = function(){
+  window.open(this.href);
+  return false;
+};
+for (var i = 0; i < exlinks.length; i++) {
+    exlinks[i].addEventListener('click', exlink_func, false);
+}
+
+// visible second sidebar in mobile ----
+
+function move_sidebar() {
+  var toc = document.getElementById("TOC");
+  var small_sidebar = document.querySelector("#quarto-sidebar .sidebar-menu-container");
+  var right_sidebar = document.getElementById("quarto-margin-sidebar");
+
+  if (window.innerWidth < 768) {
+    small_sidebar.append(toc);
+  } else {
+    right_sidebar.append(toc);
+  }
+}
+move_sidebar();
+window.onresize = move_sidebar;
+</script><script>
+// Display settings toolbar in the sidebar: colour palette, night mode and
+// colour-blind friendly mode. Choices are stored in this browser only.
+(function () {
+  var KEY = "advancing-r-palette";
+  var CVD_KEY = "advancing-r-cvd";
+  var palettes = [
+    { id: "classic",    name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",     name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap",  name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",     name: "Gentoo",       dot: "#5f96c2" },
+    { id: "rockhopper", name: "Rockhopper",   dot: "#d74ea2" },
+    { id: "king",       name: "King",         dot: "#d95f02" },
+    { id: "emperor",    name: "Emperor",      dot: "#46337e" }
+  ];
+  var root = document.documentElement;
+
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function currentPalette() { return root.getAttribute("data-palette") || "classic"; }
+  function cvdOn() { return root.getAttribute("data-cvd") === "on"; }
+  function isDark() { return document.body.classList.contains("quarto-dark"); }
+  function paletteInfo(id) {
+    for (var i = 0; i < palettes.length; i++) if (palettes[i].id === id) return palettes[i];
+    return palettes[0];
+  }
+
+  function applyPalette(id) {
+    if (id === "classic") root.removeAttribute("data-palette");
+    else root.setAttribute("data-palette", id);
+    store(KEY, id);
+    sync();
+  }
+  function setCvd(on) {
+    if (on) root.setAttribute("data-cvd", "on"); else root.removeAttribute("data-cvd");
+    store(CVD_KEY, on ? "on" : "off");
+    sync();
+  }
+
+  // Keep every control's label and state in line with the page
+  function sync() {
+    var p = paletteInfo(currentPalette());
+    document.querySelectorAll(".site-tool-palette .tool-state").forEach(function (el) {
+      el.textContent = p.name;
+    });
+    document.querySelectorAll(".palette-option").forEach(function (o) {
+      o.setAttribute("aria-checked", o.dataset.palette === p.id ? "true" : "false");
+    });
+    document.querySelectorAll(".site-tool-night").forEach(function (b) {
+      b.setAttribute("aria-checked", isDark() ? "true" : "false");
+      b.querySelector(".bi").className = "bi " + (isDark() ? "bi-moon-stars-fill" : "bi-moon-stars");
+      b.querySelector(".tool-state").textContent = isDark() ? "On" : "Off";
+    });
+    document.querySelectorAll(".site-tool-cvd").forEach(function (b) {
+      b.setAttribute("aria-checked", cvdOn() ? "true" : "false");
+      b.querySelector(".bi").className = "bi " + (cvdOn() ? "bi-eye-fill" : "bi-eye");
+      b.querySelector(".tool-state").textContent = cvdOn() ? "On" : "Off";
+    });
+  }
+
+  function button(cls, icon, label, extra) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "site-tool " + cls;
+    for (var k in extra) b.setAttribute(k, extra[k]);
+    b.innerHTML = '<i class="bi ' + icon + '" aria-hidden="true"></i>' +
+      '<span class="tool-label">' + label + '</span>' +
+      '<span class="tool-state"></span>';
+    return b;
+  }
+
+  function buildToolbar(anchor, n) {
+    var bar = document.createElement("div");
+    bar.className = "site-tools";
+    bar.setAttribute("role", "toolbar");
+    bar.setAttribute("aria-label", "Display settings");
+
+    // 1. Palette (opens a menu)
+    var pal = button("site-tool-palette", "bi-palette", "Palette",
+      { "aria-haspopup": "true", "aria-expanded": "false", id: "site-tool-palette-" + n,
+        title: "Change the colour palette" });
+    var menu = document.createElement("div");
+    menu.className = "palette-menu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-labelledby", pal.id);
+    menu.hidden = true;
+    menu.innerHTML = '<div class="palette-title">Colour palette</div>';
+    palettes.forEach(function (p) {
+      var o = document.createElement("button");
+      o.type = "button";
+      o.className = "palette-option";
+      o.setAttribute("role", "menuitemradio");
+      o.dataset.palette = p.id;
+      o.innerHTML = '<span class="dot' + (p.id === "emperor" ? " emperor" : "") +
+        '" style="background:' + p.dot + '"></span><span>' + p.name +
+        '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { applyPalette(p.id); close(); pal.focus(); });
+      menu.appendChild(o);
+    });
+
+    function place() {
+      var r = pal.getBoundingClientRect();
+      var left = Math.min(r.left, window.innerWidth - menu.offsetWidth - 8);
+      menu.style.left = Math.max(8, left) + "px";
+      menu.style.top = (r.bottom + 6) + "px";
+    }
+    function open() {
+      menu.hidden = false; place();
+      pal.setAttribute("aria-expanded", "true");
+      var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
+      if (sel) sel.focus();
+    }
+    function close() { menu.hidden = true; pal.setAttribute("aria-expanded", "false"); }
+
+    pal.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+    menu.addEventListener("keydown", function (e) {
+      var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === "Escape") { close(); pal.focus(); }
+      if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    });
+    document.addEventListener("click", function (e) {
+      if (!menu.contains(e.target) && e.target !== pal) close();
+    });
+    window.addEventListener("resize", function () { if (!menu.hidden) place(); });
+    window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
+
+    // 2. Night mode (uses Quarto's own dark theme)
+    var night = button("site-tool-night", "bi-moon-stars", "Night mode",
+      { role: "switch", title: "Switch night mode on or off" });
+    night.addEventListener("click", function () {
+      if (window.quartoToggleColorScheme) window.quartoToggleColorScheme();
+      setTimeout(sync, 50);
+    });
+
+    // 3. Colour-blind friendly mode
+    var cvd = button("site-tool-cvd", "bi-eye", "Colour-blind",
+      { role: "switch",
+        title: "Colour-blind friendly: blue/orange quiz feedback and underlined links" });
+    cvd.addEventListener("click", function () { setCvd(!cvdOn()); });
+
+    bar.appendChild(pal);
+    bar.appendChild(night);
+    bar.appendChild(cvd);
+    anchor.insertAdjacentElement("afterend", bar);
+    document.body.appendChild(menu);
+  }
+
+  var anchors = document.querySelectorAll("#quarto-sidebar .sidebar-header");
+  anchors.forEach(function (a, n) { buildToolbar(a, n); });
+  if (anchors.length) root.classList.add("has-site-tools");
+
+  // Stay in sync if dark mode is changed any other way
+  new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  sync();
+})();
+</script><script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script><nav class="page-navigation"><div class="nav-page nav-page-previous">
+      <a href="./03-functions.html" class="pagination-link" aria-label="Block 3: Writing functions">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Block 3: Writing functions</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./05-tidy-evaluation.html" class="pagination-link" aria-label="Block 5: Tidy evaluation and data masking">
+        <span class="nav-page-text">Block 5: Tidy evaluation and data masking</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer"><div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>CC-BY (2026) Philip Leftwich &amp; Ed Ivimey-Cook</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+</body></html>
