@@ -14,15 +14,65 @@ By the end of this block you can let an agent turn working code into a
 function and prove that nothing changed. The proof is a
 `r glossary("characterisation test")`, as in the
 [tidy-evaluation chapter](05-tidy-evaluation.qmd): you freeze the original
-output, and the new code must reproduce it exactly. The agent does the work
-through a shipped skill, and you hold the reference.
+output, and the new code must reproduce it exactly. One request to a shipped
+skill does the work in order: take the snapshot, refactor, write the test.
+It stops twice for you: once to commit the snapshot before any code
+changes, and once to read the diff.
 
 This block follows [the safe vibe-coding
 recipe](11d-context-disclosure-autonomy.qmd#safe-recipe): the protections and
-checks are in place, so your part is one request, one test run and one read of
-the diff.
+checks are in place, so your part is one request, one commit, one read of the
+diff and one test run.
 
 *⏱ ~35 minutes*
+
+:::{.callout-important}
+## Where this fits: same repository, back to the original data
+
+You keep working in the **same workshop repository**, with the `AGENTS.md`
+from Block 5 and the deny rules from Block 6. This block goes back to
+`data/raw/voles_metabolism.csv`, the data you explored in Block 4, **not**
+Block 7's cleaned file. Block 7's tests stay in `tests/` and run with
+everything else: they pass if you finished Block 7 and skip if you did not.
+
+**Start state:** `main` with your Block 7 work committed, or the `block7-done`
+branch. Every file you need is already in the repository; nothing needs
+downloading.
+:::
+
+### Files for this block {#block9-files}
+
+**Shipped with the template, used in earlier blocks.**
+
+| File | First used | Its job here |
+|---|---|---|
+| `data/raw/voles_metabolism.csv` | Block 2 | The data being summarised |
+| `scripts/functions/load_voles.R` | Block 4 (through `explore_voles.R`) | Reads the data with fixed column types |
+| `tests/test_controls.R` | Blocks 5 and 6 | Now also checks that you protected the new test |
+| Deny rules `Edit(/tests/fixtures/**)` and `Edit(/tests/make_reference.R)` in `.claude/settings.json` | Block 6 | Keep the agent's edit tools off the reference and its capture script |
+
+**Shipped with the template, first used here.** You read these; you do not
+write them.
+
+| File | Written by | Its job |
+|---|---|---|
+| `scripts/05_analysis.R`, `scripts/04_load_data.R` | Course team | The original, trusted analysis you will refactor, and the loading step it calls |
+| `tests/make_reference.R` | Course team | The capture script: saves the original output as the reference |
+| `tests/test_reference_guard.R` | Course team | Checks the agent's test reads your reference, and the reference is unchanged since you committed it |
+| `.agents/skills/characterisation-refactor/` (and its copy in `.claude/skills/`) | Course team | The procedure: capture, refactor, test, in that order |
+
+**Created in this block.**
+
+| File | Created by | Step |
+|---|---|---|
+| `tests/fixtures/metabolic_summary.rds` | The skill runs `make_reference.R`; **you** commit it | 1 |
+| `scripts/functions/summary_functions.R`; changes to `scripts/05_analysis.R` | The agent | 1 |
+| `tests/test_summary_functions.R` | The agent | 1 |
+| `Edit(/tests/test_summary_functions.R)` deny rule (saved in `.claude/settings.local.json` or `settings.json`) | You, with `/permissions` | 1 |
+| `tests/test_known_answers.R`; changes to `summary_functions.R` | The agent | 2 |
+| The re-captured reference | You | 2 |
+
+Short of time at any step? The `block9-done` branch has both steps done.
 
 
 ## The code you will refactor
@@ -51,16 +101,22 @@ One thing to notice and leave alone: the data have one missing
 `metabolic_rate_post`, and there is no `na.rm`, so one cell of the result is
 `NA`. Step 2 is about exactly this.
 
-The whole block in one picture: you hold the reference at both ends, and the
-agent works only in between.
+The whole block in one picture: the reference comes from the original code,
+you commit it before anything changes, and from then on only a decision of
+yours replaces it.
 
-::::::: {.dia .dia-lanes role="figure" aria-label="The characterisation-test loop. Steps 0 and 1, refactor without changing the output: you capture the reference in tests/fixtures/; the skill refactors only; you read the diff; the skill writes a test that reads your reference; you protect the new test with /permissions; the test suite passes in a fresh R session. Step 2, when the behaviour should change: you decide the output is wrong; the agent changes the function; the characterisation test fails, correctly; the known-answer test passes; you re-capture, with a commit message saying why. The agent never creates or regenerates the reference."}
+::::::: {.dia .dia-lanes role="figure" aria-label="The characterisation-test loop. Step 1, refactor without changing the output: the skill runs your shipped make_reference.R on the original code; you commit the reference; the skill refactors only; you read the diff; the skill writes a test that reads your reference; you protect the new test with /permissions; the test suite passes in a fresh R session. Step 2, when the behaviour should change: you decide the output is wrong; the agent changes the function; the characterisation test fails, correctly; the known-answer test passes; you re-capture, with a commit message saying why. Nothing regenerates the reference once you have committed it, except your own recorded decision."}
 :::::: {.dia-flow}
 ::: {.dia-label}
-Steps 0 and 1: refactor without changing the output
+Step 1: refactor without changing the output
+:::
+::: {.dia-node .dia-ai}
+Skill: run `make_reference.R` on the original code
+:::
+::: {.dia-arrow}
 :::
 ::: {.dia-node .dia-you}
-Capture the reference in `tests/fixtures/`
+Commit the reference
 :::
 ::: {.dia-arrow}
 :::
@@ -117,64 +173,68 @@ Re-capture, with a commit message saying why
 :::
 ::::::
 ::: {.dia-caption}
-The agent never creates or regenerates the reference. A reference produced by
-the code under test can only confirm that the code agrees with itself.
+A reference made after the code changed is produced by the code under test,
+and can only confirm that the code agrees with itself. Committing it first is
+what makes it a reference.
 :::
 :::::::
 
 
-## Step 0: check the protections and capture the reference
+## Step 0: check the protections {#step-0}
 
 :::{.task}
 ::::{.task-header}
-Recipe check and capture (5 minutes)
+Recipe check (3 minutes)
 ::::
 ::::{.task-container}
 
 **Start state:** your workshop project open in RStudio or Positron, the Git
-pane showing no changes, on the `main` branch.
+pane showing no changes, on `main` (or `block7-done`).
 
 **1. Check the protections.** Start `claude` in the Terminal tab and type
 `/permissions`. The `r glossary("deny rule", display = "deny rules")`
 `Edit(/tests/fixtures/**)` and `Edit(/tests/make_reference.R)` keep the
-agent's edit tools away from the reference; the Git pane shows a change by any
-other route.
+agent's edit tools away from the reference and its capture script; the Git
+pane shows a change by any other route.
 
-**2. Capture the reference yourself, in a fresh R session.** In the R console:
+**2. Check there is no reference yet.** `tests/fixtures/` holds only
+`raw_checksum.txt` (Block 7). The reference does not exist until Step 1
+captures it.
 
-```{r}
-#| eval: false
-callr::rscript(here::here("tests", "make_reference.R"))
-```
+**You are done when** you have seen the two rules, and `tests/fixtures/` has
+no `.rds` file.
 
-`r hide("What make_reference.R does")`
-
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "tests", "make_reference.R")}
-```
-
-`r unhide()`
-
-**3. Commit it.** In the Git pane (RStudio) or Source Control view (Positron),
-commit `tests/fixtures/metabolic_summary.rds` with the message "Capture
-reference output before refactoring". It must come first: after the refactor,
-the script runs through the function under test.
-
-**You are done when** the Git pane shows the reference committed and no
-changed files.
-
-**If it goes wrong:** if the `.rds` changes later, select it in the Git pane
-and choose **Revert**. If you are far behind, switch to the `block9-done`
+**If it goes wrong:** if you are far behind, switch to the `block9-done`
 branch from the Git pane's branch menu and read on.
 
 ::::
 :::
 
+:::{.callout-note collapse="true"}
+## The shipped capture script, `tests/make_reference.R`
 
-## Step 1: refactor with the skill
+It runs the original `05_analysis.R` and saves the result. The course team
+wrote it; a deny rule stops the agent editing it.
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "tests", "make_reference.R")}
+```
+:::
+
+
+## Step 1: snapshot, refactor and test with the skill {#step-1}
 
 The shipped `r glossary("skill")` `characterisation-refactor` (`/skills` lists
-it) carries every rule you would otherwise type: plan first, refactor only,
-stop for your diff review, then write a test that reads **your** reference.
+it) carries every rule you would otherwise type, and works in order:
+
+1. **Snapshot.** It runs your `make_reference.R` on the original code, then
+   stops for you to commit the result. It runs the script only if no
+   reference exists yet and `scripts/` has no uncommitted changes.
+2. **Refactor only**, then stop for your diff review.
+3. **Test**: a test that reads **your** committed reference.
+
+Who runs the capture script matters less than *when*: before any code
+changes, from a script you trust, and committed by you. After that, git and
+`test_reference_guard.R` notice any change to the reference.
 
 :::{.callout-note collapse="true"}
 ## `characterisation-refactor/SKILL.md`
@@ -189,12 +249,12 @@ show_skill_file("characterisation-refactor", "SKILL.md")
 
 :::{.task}
 ::::{.task-header}
-One request, one diff, one test run (18 minutes)
+One request, one commit, one diff, one test run (20 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** the reference committed, and Claude Code running in Manual
-mode in the Terminal tab (`/clear` if the conversation from Step 0 is still
+**Start state:** Step 0 done, the Git pane clean, and Claude Code running in
+Manual mode in the Terminal tab (`/clear` if an earlier conversation is still
 open).
 
 **1. Ask.**
@@ -206,38 +266,57 @@ open).
 summarise_metabolic_rate() in scripts/functions/summary_functions.R.
 ```
 
-Read its plan, choose **"Yes, manually approve edits"**, and read each edit
-before approving it.
+Read its plan: it should say it will capture the reference first. Choose
+**"Yes, manually approve edits"**, and read each request before approving it.
 
-**2. Read the diff when it stops.** Select each changed file in the Git pane
-and choose **Diff**, then tell it to carry on and write the test.
+**2. Commit the reference when it stops.** The only new file in the Git pane
+should be `tests/fixtures/metabolic_summary.rds`. Commit it with the message
+"Capture reference output before refactoring", then tell the agent to carry
+on.
 
-**3. Protect the new test.** Type `/permissions` and add the deny rule
+**3. Read the diff when it stops again.** Select each changed file in the Git
+pane and choose **Diff**, then tell it to carry on and write the test.
+
+**4. Protect the new test.** Type `/permissions` and add the deny rule
 `Edit(/tests/test_summary_functions.R)`. It takes effect at once, and from now
 on new tests go in new files.
 
-**4. Run the checks.** Restart R (*Session → Restart R*), then in the R
+**5. Run the checks.** Restart R (*Session → Restart R*), then in the R
 console:
 
 ```{r}
 #| eval: false
-callr::r(\(d) testthat::test_dir(d), list(here::here("tests")))
+testthat::test_dir(here::here("tests"))
 ```
 
 | Test | Passing proves |
 |---|---|
-| `test_summary_functions.R` (the agent's) | the function reproduces your reference exactly |
+| `test_summary_functions.R` (written by the agent in this step) | the function reproduces your reference exactly |
 | `test_reference_guard.R` (shipped) | the agent's test reads your reference rather than typing numbers, and the reference is unchanged since you committed it |
-| `test_controls.R` (shipped) | every deny rule is in place, including the new one |
+| `test_controls.R` (shipped, from Block 5) | every deny rule is in place, including the new one |
+
+The other blocks' tests run too; they pass, or skip if you did not do that
+block.
 
 **You are done when** the suite has no failures and the Git pane shows only the
 function, `05_analysis.R` and the new test as changed. Commit them.
 
-**If it goes wrong:** a failure on row order, not values, means the function
-used `.by` without sorting: ask the agent to add
-`dplyr::arrange(treatment_arm, sex)`. If `test_controls.R` says the test is
-unprotected, check the rule's spelling in `/permissions`. Otherwise **Revert**
-the agent's files in the Git pane and ask again, or switch to `block9-done`.
+**If it goes wrong:**
+
+- **The capture.** If the agent declines to run `make_reference.R`, or a
+  guard hook from Block 6 blocks it, capture it yourself: restart R, run
+  `source(here::here("tests", "make_reference.R"))`, commit the `.rds`, and
+  tell the agent the reference is committed.
+- **Changed files.** If anything other than the `.rds` changed before your
+  commit, **Revert** it and ask again.
+- **Row order.** A failure on row order, not values, means the function used
+  `.by` without sorting: ask the agent to add
+  `dplyr::arrange(treatment_arm, sex)`.
+- **The new rule.** If `test_controls.R` says the test is unprotected, check
+  the rule's spelling in `/permissions`.
+
+Otherwise, **Revert** the agent's files and ask again, or switch to
+`block9-done`.
 
 **Payoff.** What did the agent do, how long did checking it take, and would you
 automate this again?
@@ -254,7 +333,7 @@ and `test_reference_guard.R` are what protect the reference.
 :::
 
 
-## Step 2: unchanged is not correct
+## Step 2: unchanged is not correct {#step-2}
 
 Your test passes, **including the `NA` cell**: the refactor faithfully kept a
 missing mean for one group. If you wanted the mean of the animals that were
@@ -343,11 +422,13 @@ test_that("means ignore missing values and n_used counts measured animals", {
 Step 1: the output has changed, and the test tells you so. The known-answer
 test passes.
 
-**4. Re-capture the reference, as a recorded decision.** In the R console:
+**4. Re-capture the reference, as a recorded decision.** This one is yours,
+not the skill's: the skill only captures a reference that does not exist yet.
+Restart R, then in the R console:
 
 ```{r}
 #| eval: false
-callr::rscript(here::here("tests", "make_reference.R"))
+source(here::here("tests", "make_reference.R"))
 ```
 
 **5. Commit, then run the suite.** Commit the reference, the function and the
@@ -377,12 +458,13 @@ judged correct. Judging it correct is a separate step, and it is yours.
 :::{.callout-note}
 ## Check · Reproduce · Record
 
-- **You can now:** let an agent refactor working analysis code into a tested
-  function with one request, **trusted because** your reference proves the
-  output is unchanged and a shipped guard test proves the agent's test uses it.
+- **You can now:** let an agent snapshot, refactor and test working analysis
+  code with one request, **trusted because** the reference came from the
+  original code and you committed it before anything changed, and a shipped
+  guard test proves the agent's test uses it.
 - **Check:** the whole test suite; the diff in the Git pane; the arithmetic of
   the known-answer test.
-- **Reproduce:** the suite passes in a fresh R session (`callr`), with nothing
+- **Reproduce:** the suite passes after *Session → Restart R*, with nothing
   changed under `tests/fixtures/`.
 - **Record:** the re-captured reference is a decision with a commit message
   that says why. Add a line to `docs/ai-log.md`: the request, whether the test
@@ -401,27 +483,28 @@ judged correct. Judging it correct is a separate step, and it is yours.
   "That the original code had no bugs"
 ))`
 
-**Why must the agent never generate the reference file?**
+**Why must the reference be captured and committed before the refactor
+starts?**
 
 `r longmcq(c(
   "Because agents cannot write .rds files",
-  "Because the reference would be too large",
-  answer = "Because a reference produced by the code under test can only confirm that the code agrees with itself",
-  "Because reference files must be written in a different language"
+  "Because git cannot track .rds files once the code has changed",
+  answer = "Because a reference captured after the code changed is produced by the code under test, so it can only confirm that the code agrees with itself",
+  "Because the reference would be too large"
 ))`
 
-**The shipped deny rules protect tests/fixtures/ in Claude Code. Which action
-could still change the reference?**
+**The shipped deny rules protect tests/fixtures/ in Claude Code. Once you have
+committed the reference, which action could still change it?**
 
 `r longmcq(c(
   "Asking the agent to edit the .rds file with its editing tool",
-  answer = "The agent running tests/make_reference.R through the shell",
+  answer = "The agent running tests/make_reference.R again through the shell (git and test_reference_guard.R would show it)",
   "Opening the .rds file in the IDE",
   "Running testthat::test_file() on the test file"
 ))`
 
 
-## Going further (not covered live)
+## Going further (not covered live) {#going-further}
 
 This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
@@ -429,8 +512,10 @@ it is useful to you.
 ::::{.callout-tip collapse="true"}
 ## What the skill does, step by step
 
-The skill turns two prompts into one request. Written out by hand, the two
-prompts are below. Splitting the work matters: a single prompt that writes
+The skill turns a capture and two prompts into one request. Written out by
+hand, the capture is yours: restart R, run
+`source(here::here("tests", "make_reference.R"))`, and commit the `.rds`. The
+two prompts are below. Splitting the work matters: a single prompt that writes
 both the refactor and the test lets one misunderstanding (about row order, say)
 shape both files at once, producing a passing test that proves nothing.
 
@@ -461,16 +546,16 @@ Before trusting a passing test you would check four things: the test reads
 the `.rds` rather than hard-coding numbers; it calls the function rather than
 reimplementing the pipeline; nothing changed under `tests/fixtures/`; and the
 agent's commands (shown in the conversation) include no run of
-`tests/make_reference.R`. The shipped `test_reference_guard.R` now checks the
+`tests/make_reference.R` after the capture you committed. The shipped `test_reference_guard.R` now checks the
 first three automatically; the fourth is why you read approval requests in
 Manual mode.
 
 :::{.callout-warning}
 **What a deny rule does not cover.** Claude Code's deny rules apply to its
 built-in file tools, and to shell output redirects such as `> file`, but not to
-R code or most other commands it runs. An agent that ran
-`Rscript tests/make_reference.R` would overwrite your reference without
-touching an edit tool. That is why git, and `test_reference_guard.R`, are the
+R code or most other commands it runs. The skill relies on that to take the
+first snapshot; an agent that ran `Rscript tests/make_reference.R` again
+later would overwrite your reference without touching an edit tool. That is why git, and `test_reference_guard.R`, are the
 final checks.
 :::
 
@@ -487,8 +572,10 @@ skill_download_button("characterisation-refactor")
 :::{.callout-tip collapse="true"}
 ## Without an agent: write the function and the test yourself
 
-A tidy refactor naturally reaches for the modern `.by` argument. Write this
-first attempt in `scripts/functions/summary_functions.R`:
+Everything here is written by you; only `make_reference.R` and the data are
+shipped. First capture and commit the reference as above. A tidy refactor
+naturally reaches for the modern `.by` argument. Write this first attempt in
+a new file, `scripts/functions/summary_functions.R`:
 
 `r hide("First attempt (deliberately incomplete)")`
 
@@ -625,9 +712,12 @@ Reuse the skill (15 minutes)
 ::::{.task-container}
 
 **1. Capture a reference yourself first.** Pick a second step: the plotting
-code in `scripts/explore_mass_change_plot.R` from
-[Block 4](11d-context-disclosure-autonomy.qmd), or a step from your own
-project. Save its output to `tests/fixtures/` yourself, as in Step 0.
+code in `scripts/explore_mass_change_plot.R`, which you made in
+[Block 4](11d-context-disclosure-autonomy.qmd) (it is on `block5-done` if you
+need it), or a step from your own project. The skill runs only the shipped
+`make_reference.R`, so for any other step the capture is yours: write a small
+capture script modelled on it, run it after restarting R, commit its output
+in `tests/fixtures/`, and protect the script with `/permissions`.
 
 **2. Invoke the skill.**
 
@@ -721,7 +811,8 @@ close it. Nothing reaches `main` until you merge.
 
 A characterisation test is only as stable as the environment it runs in. The
 column types in `load_voles()` handle the finest-grained part. The R version and
-the package set are handled by two GitHub Actions workflows.
+the package set are handled by two GitHub Actions workflows. Neither ships with
+the template: to use them, create each file in `.github/workflows/`.
 
 `r-checks.yml` is the independent check. It runs the tests from a clean
 checkout on every push to `main` and on every pull request:

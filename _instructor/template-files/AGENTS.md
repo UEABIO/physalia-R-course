@@ -52,4 +52,6 @@ When you write or edit R code, make the first line of the first code block:
 
 ## Working with me
 - Before changing more than one file, present a plan and wait for approval.
-- Do not edit anything under data/raw/, tests/fixtures/ or .github/.
+- Do not edit anything under data/raw/, tests/fixtures/ or .github/. The one
+  exception: a skill may run tests/make_reference.R once, to capture a
+  reference that does not exist yet.

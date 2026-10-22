@@ -73,8 +73,8 @@ expects.
 ## Before each run of the course
 
 - [ ] Build the template and the three branches from this checklist.
-- [ ] On each branch, from the R console:
-      `callr::r(\(d) testthat::test_dir(d), list(here::here("tests")))`.
+- [ ] On each branch, restart R, then from the R console:
+      `testthat::test_dir(here::here("tests"))`.
       Expect no failures: on `main` four tests pass (deny rules, Manual mode,
       the `AGENTS.md` canary, the raw-data checksum) and the rest skip; on
       `block9-done` only the Block 10 tests and the `CLAUDE.md` test skip.

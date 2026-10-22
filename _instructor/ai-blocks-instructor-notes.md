@@ -136,5 +136,11 @@ and no unit given.
 - Confirm that the file contains exactly one missing value in
   `metabolic_rate_post`, and note which group it falls in, for the Step 4
   discussion.
+- The skill now takes the first snapshot itself (it runs the shipped
+  `tests/make_reference.R` when no reference exists), then stops for the
+  learner to commit it. If you registered Block 6's guard hook for the
+  demonstration, it blocks that command (it matches `make_reference.R`):
+  remove the hook before Block 9, or have learners capture by hand as the
+  page's *If it goes wrong* describes.
 - Path C depends on account features. Run it once on a participant-type account
   before the session.
