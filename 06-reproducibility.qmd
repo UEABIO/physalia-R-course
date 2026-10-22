@@ -9,6 +9,7 @@ library(tidyverse)
 library(here)
 library(knitr)
 library(kableExtra)
+library(webexercises)
 ```
 
 > **Materials:** Download all files from the course OSF page: **https://osf.io/jgeq9/**
@@ -104,6 +105,22 @@ Write down your real reasons. Gomes et al. (2022) surveyed researchers and group
 > **Gomes, D.G.E., et al. (2022).** Why don't we share data and code? Perceived barriers and benefits to public archiving practices. *Proceedings of the Royal Society B*, 289, 20221113. https://doi.org/10.1098/rspb.2022.1113
 
 :::
+
+### Quick check
+
+**A colleague downloads your archived data and your archived script, runs it, and gets different numbers from the paper. Which kind of reproducibility has failed?**
+
+`r mcq(c("Analytical reproducibility", answer = "Computational reproducibility", "Replicability"))`
+
+**Kellner et al. (2025) tried to run the R code from 497 ecology papers. What share of *all* the papers had code that ran without error?**
+
+`r longmcq(c(answer = "About 7%", "About 27%", "About 50%", "About 75%"))`
+
+`r hide("Why not 27%?")`
+27% is the share of the papers whose data and code could actually be tested. Most papers fell out before that point, because their code was never archived.
+`r unhide()`
+
+**True or false? Data archiving in the British Ecological Society journals is now close to universal, so the reproducibility problem in ecology is largely solved.** `r torf(FALSE)`
 
 ---
 
@@ -303,6 +320,30 @@ The variation you just observed is a direct consequence of underspecified method
 
 This is where the SORTEE Guidelines (Pick et al. 2026) and the TADA! framework (Ivimey-Cook et al. 2025) come in. The same problem is also what code review (next chapter) is designed to catch.
 
+### Quick check
+
+**Gelman & Loken's "garden of forking paths" describes:**
+
+`r longmcq(c(
+  "Analysts deliberately trying models until one gives p < 0.05",
+  answer = "Honest analysts each taking one of many defensible routes through the analysis, with the route only looking inevitable afterwards",
+  "Random sampling error between independent experiments",
+  "Errors introduced when code is copied between projects"
+))`
+
+**True or false? In Gould et al. (2025), analyses that peer reviewers rated highly produced estimates closer to the average.** `r torf(FALSE)`
+
+**Your `"pairwise"` contrast prints `empty_vector - daf = 45`. What number should you post in the chat?** `r fitb(-45, num = TRUE)`
+
+**You fit a negative-binomial GLMM (log link) and run `emmeans(model, ~ strain) |> contrast("trt.vs.ctrl", ref = "empty_vector")`, forgetting `regrid()`. What does the contrast compare?**
+
+`r longmcq(c(
+  "The difference in offspring per worm, the same as with regrid()",
+  answer = "The strains on the log scale, so back-transformed it is a ratio of offspring, not a difference",
+  "The raw coefficients without any adjustment for diet",
+  "Nothing: emmeans stops with an error for log-link models"
+))`
+
 ---
 
 ## Part 3: Diagnosing a bad dataset and script {#repro-diagnosis}
@@ -438,6 +479,21 @@ In the chat: does the final file still contain TO = -46? TO = 2850? What does th
 :::
 
 The key point is that `celegans_repro_final.csv` has had *some* issues addressed (the DAF capitalisation rows removed, some duplicates resolved) but not all of them. The -46 and 2850 values remain. Partial cleaning like this is common in real archives, and it is a genuine reproducibility problem because different analysts working from the "final" file will still handle these values differently.
+
+### Quick check
+
+**`dat_raw |> count(strain)` lists `daf`, `DAF`, `empty_vector` and `empty_vector ` (with a trailing space). How many genuine strains are there?** `r fitb(2, num = TRUE)`
+
+**Three worms have `TO = 9999`. What is the best way to handle them?**
+
+`r longmcq(c(
+  "Keep them: they are real counts and removing data is never justified",
+  "Replace them with 0, because the worms produced no recorded offspring",
+  answer = "Treat them as missing: document the code in a codebook, exclude them in the script and log how many were removed",
+  "Delete the rows by hand in the CSV before loading it"
+))`
+
+**True or false? `celegans_repro_final.csv` has already been cleaned, so it is safe to analyse as it is.** `r torf(FALSE)`
 
 ---
 
@@ -667,6 +723,10 @@ Ivimey-Cook et al. (2025) propose **TADA!** (*Transferable, Available, Documente
 
 All four are needed. A script can be perfectly annotated and still fail on another machine because of a hard-coded path, or be perfectly transferable but unusable because no README says which of seven files to run first, which package versions it needs, or whether anyone is allowed to reuse it. TADA! makes sure all four are in place.
 
+:::{.callout-tip}
+**The TADA Wiki.** For practical, step-by-step help with each letter, use the **TADA Wiki**: https://eivimeycook.github.io/TADA-Wiki/. It has a *Start here* route to getting your code ready to submit, a chapter for each principle, and guidance on licences, choosing a repository, the SORTEE guidelines and code review, with examples in R and Python.
+:::
+
 This is why TADA! comes before code review. Code review evaluates whether code is *Reported, Run, Reliable, Reproducible* (the four Rs of Ivimey-Cook et al. 2023, which we cover this afternoon). But if the code isn't TADA-compliant in the first place — if it won't transfer, isn't available, has no documentation, or isn't annotated — there is nothing for a reviewer to evaluate. TADA! is what makes code reviewable; the review itself comes later.
 
 :::{.task}
@@ -770,6 +830,38 @@ Export the `README.md` from READMEBuilder into your project root, then paste you
 ::::
 :::
 
+### Quick check
+
+**What does `str_trim(str_to_lower(" DAF "))` return?** `r fitb(c("daf", '"daf"'))`
+
+**The cleaning script keeps rows with `filter(TO != 9999, TO >= 0, TO <= 1000)`. What happens to a row where `TO` is `NA`?**
+
+`r longmcq(c(
+  "It is kept, because NA is not equal to 9999",
+  answer = "It is dropped, because filter() keeps only rows where every condition is TRUE, and NA != 9999 gives NA",
+  "filter() stops with an error",
+  "It is kept, and TO is set to 0"
+))`
+
+`r hide("Why this matters")`
+The row disappears without a message and without a line in the exclusion log. If your raw data could contain `NA` offspring counts, count them and log them explicitly, as the script does for 9999.
+`r unhide()`
+
+**You put your code on GitHub and paste the repository URL into the paper. Which TADA! letter is still not met?**
+
+`r mcq(c("Transferable", answer = "Available", "Documented", "Annotated"))`
+
+**Which comment is annotation in the TADA! sense?**
+
+`r longmcq(c(
+  "# read the data",
+  "# load packages",
+  answer = "# Exclude TO = 9999 (code for 'not recorded'); count logged for the methods and Table S1",
+  "# done!"
+))`
+
+**True or false? You must use `renv` to meet TADA!'s *Transferable* principle.** `r torf(FALSE)`
+
 ---
 
 ## Part 5: The SORTEE Guidelines and archiving {#repro-sortee}
@@ -823,6 +915,18 @@ tibble(
   pack_rows("Code review", 15, 16)
 ```
 
+### Quick check
+
+**True or false? Code on a public website with no licence is free for anyone to reuse.** `r torf(FALSE)`
+
+**Which of these gives your code a permanent record with a DOI for the exact version used in the paper?**
+
+`r mcq(c("A public OSF page", "A GitHub repository", answer = "A Zenodo release", "A shared Dropbox folder"))`
+
+**You archive your data and code together on Dryad. Which licence will they carry?**
+
+`r mcq(c(answer = "CC0", "CC BY 4.0", "MIT", "GPL"))`
+
 :::{.callout-tip}
 **Closing reflection** *(type in chat)*
 
@@ -862,6 +966,7 @@ tribble(
 
 - **Ivimey-Cook, E.R., et al. (2023).** Implementing code review in the scientific workflow. *Journal of Evolutionary Biology*, 36, 1347–1356. https://doi.org/10.1111/jeb.14230
 - **Ivimey-Cook, E.R., et al. (2025).** TADA! Simple guidelines to improve analytical code sharing for transparency and reproducibility. *EcoEvoRxiv* (preprint, version 3, 2026). https://doi.org/10.32942/X2D93K. The paper includes the TADA! checklist for several programming languages (Figure S1), and a worked example is at https://eivimeycook.github.io/TADA/
+- **The TADA Wiki.** Practical guides to each TADA! principle, licensing, repositories and code review. https://eivimeycook.github.io/TADA-Wiki/
 - **Pick, J.L., et al. (2026).** The SORTEE guidelines for data and code quality control in ecology and evolutionary biology. *Peer Community Journal*, 6, e20. https://doi.org/10.24072/pcjournal.687
 - **Goodman, S.N., Fanelli, D., & Ioannidis, J.P.A. (2016).** What does research reproducibility mean? *Science Translational Medicine*, 8, 341ps12. https://doi.org/10.1126/scitranslmed.aaf5027
 - **Simmons, J.P., Nelson, L.D., & Simonsohn, U. (2011).** False-positive psychology. *Psychological Science*, 22, 1359–1366. https://doi.org/10.1177/0956797611417632

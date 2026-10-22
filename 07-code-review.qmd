@@ -9,6 +9,7 @@ library(tidyverse)
 library(here)
 library(knitr)
 library(kableExtra)
+library(webexercises)
 ```
 
 > **Materials:** The project folder from the course OSF page (https://osf.io/jgeq9/). It contains the data files, `ANALYSIS.R`, an `old_code.R`, `celegans_analysis.Rmd` (+ rendered `.html`), and five loose image files, all in a single folder.
@@ -57,6 +58,16 @@ D: Not yet, but I think it is possible
 
 Keep the results visible. We will return to them.
 :::
+
+### Quick check
+
+What type of error is each of these?
+
+**A Gaussian model fitted to offspring counts:** `r mcq(c(answer = "Conceptual", "Programmatic", "Syntactic"))`
+
+**`pivot_longer(cols = 3:5)` reshapes the wrong columns after someone reorders the data file:** `r mcq(c("Conceptual", answer = "Programmatic", "Syntactic"))`
+
+**True or false? Syntactic errors are usually the least dangerous of the three, because R stops with a visible error.** `r torf(TRUE)`
 
 ---
 
@@ -107,6 +118,18 @@ Open `ANALYSIS.R`. Without running it, type into the chat one specific example f
 ::::
 
 :::
+
+### Quick check
+
+Which R does each problem in `ANALYSIS.R` fail first?
+
+**`libray(tidyverse)`:** `r mcq(c("Reported", answer = "Run", "Reliable", "Reproducible"))`
+
+**The `9999` sentinel is never handled:** `r mcq(c("Reported", "Run", answer = "Reliable", "Reproducible"))`
+
+**Three models are fitted, and none is named as the result:** `r mcq(c("Reported", "Run", "Reliable", answer = "Reproducible"))`
+
+**The script calls the batch column `block`, but the data dictionary calls it `B`:** `r mcq(c(answer = "Reported", "Run", "Reliable", "Reproducible"))`
 
 ---
 
@@ -355,6 +378,29 @@ When done, paste your SUMMARY and your RECOMMENDATION into the chat.
 3. P12: which of the three models is the answer? Is there any way a journal reviewer reading only the paper would catch this without seeing the code?
 :::
 
+### Quick check
+
+**`filter(strain == "daf" | strain == "empty_vector" & !is.na(diet))` meets a *daf* worm whose diet is `NA`. Is the worm kept or dropped?** `r mcq(c(answer = "Kept", "Dropped"))`
+
+**Which filter does what the author intended (both strains, diet recorded)?**
+
+`r longmcq(c(
+  answer = "strain %in% c('daf', 'empty_vector') & !is.na(diet)",
+  "strain == 'daf' | (strain == 'empty_vector' & !is.na(diet))",
+  "strain == 'daf' | strain == 'empty_vector' | !is.na(diet)",
+  "strain == c('daf', 'empty_vector') & !is.na(diet)"
+))`
+
+`r hide("Why not the last one?")`
+`strain == c('daf', 'empty_vector')` recycles the two-value vector down the column, comparing row 1 with `'daf'`, row 2 with `'empty_vector'`, row 3 with `'daf'` and so on. It runs without an error (at most a recycling warning) and quietly drops about half the worms. Use `%in%`.
+`r unhide()`
+
+**`x <- c(250, NA, 9999)`. What does `sum(complete.cases(x))` return?** `r fitb(2, num = TRUE)`
+
+**`pivot_longer()` creates a column called `total offspring` (with a space). After `write.csv()` and `read.csv()`, what is the column called?** `r fitb("total.offspring")`
+
+**True or false? In the original figure, `geom_smooth(method = "lm")` draws one line per diet across the two strains.** `r torf(FALSE)`
+
 ---
 
 ## Part 4: Fixing the script {#cr-fixing}
@@ -503,6 +549,21 @@ The stages build on each other: Stages 1–2 deliver **data re-use**, Stages 1�
 **What no tool can do for you.** DCQC *structures* the review; it does not pass judgement. Stage 5 ("does the code run?") and Stage 6 ("do the results reproduce?") still require *you* to run the code. And the 4Rs *Reliable* question (does the code do what the analyst intended?) is the one neither DCQC nor an AI assistant can answer for you. That is the human reading you did in Part 3.
 :::
 
+### Quick check
+
+**Why does the corrected script use `glmer.nb()` rather than `glmer(family = poisson)`?**
+
+`r longmcq(c(
+  "Poisson models cannot include random effects",
+  answer = "Brood counts are usually overdispersed (more variable than a Poisson allows), and a negative binomial models that extra variation",
+  "glmer.nb() always gives smaller p-values",
+  "Negative-binomial models do not need the data to be counts"
+))`
+
+**An archive's code runs on the archived data, but its numbers do not match the paper. Up to which SORTEE stage has it passed?** `r fitb(5, num = TRUE)`
+
+**True or false? DCQC runs your code automatically and tells you whether the results reproduce.** `r torf(FALSE)`
+
 ---
 
 ## Part 5: Building the review habit {#cr-habit}
@@ -536,6 +597,19 @@ When you've written your five, post the one you're least sure about and we'll wo
 ### Online lab culture
 
 For groups working entirely online, the **pull request** model on GitHub provides the most practical structure for code review. The author opens a PR, writes a description explaining what the code does and why, and requests review. The reviewer comments on specific lines. Nothing merges until approved. We cover this in the GitHub session tomorrow.
+
+### Quick check
+
+**In your review group, one senior member rewrites everyone's code into their own style. Which consideration is being ignored?**
+
+`r longmcq(c(
+  "Start collaborating early",
+  "Mind the group size",
+  answer = "Normalise errors and make it judgement-free",
+  "Think about credit up front"
+))`
+
+**True or false? It is best to decide how to credit a reviewer after the review, once you know how much they found.** `r torf(FALSE)`
 
 :::{.callout-tip}
 **Closing reflection** *(type in chat)*
@@ -578,6 +652,7 @@ tribble(
 
 - **Ivimey-Cook, E.R., et al. (2023).** Implementing code review in the scientific workflow. *Journal of Evolutionary Biology*, 36, 1347–1356. https://doi.org/10.1111/jeb.14230
 - **Ivimey-Cook, E.R., et al. (2025).** TADA! Simple guidelines to improve analytical code sharing for transparency and reproducibility. *EcoEvoRxiv* (preprint, version 3, 2026). https://doi.org/10.32942/X2D93K
+- **The TADA Wiki.** Includes a chapter on setting up and running code review. https://eivimeycook.github.io/TADA-Wiki/
 - **Pick, J.L., et al. (2026).** The SORTEE guidelines for data and code quality control in ecology and evolutionary biology. *Peer Community Journal*, 6, e20. https://doi.org/10.24072/pcjournal.687
 - **Gould, E., et al. (2025).** Same data, different analysts: variation in effect sizes due to analytical decisions in ecology and evolutionary biology. *BMC Biology*, 23, 35. https://doi.org/10.1186/s12915-024-02101-x
 - **Barnes, N. (2010).** Publish your computer code: it is good enough. *Nature*, 467, 753. https://doi.org/10.1038/467753a
