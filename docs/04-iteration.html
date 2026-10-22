@@ -114,6 +114,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   try {
     var p = localStorage.getItem("advancing-r-palette");
     if (p) document.documentElement.setAttribute("data-palette", p);
+    if (localStorage.getItem("advancing-r-cvd") === "on") document.documentElement.setAttribute("data-cvd", "on");
   } catch (e) {}
 })();
 </script><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
@@ -454,7 +455,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false">
- <span class="menu-text">Day 3: Github</span></a>
+ <span class="menu-text">Day 3: GitHub</span></a>
           <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" role="navigation" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -1327,107 +1328,163 @@ function move_sidebar() {
 move_sidebar();
 window.onresize = move_sidebar;
 </script><script>
-// Colour palette picker: a swatch button next to the dark-mode toggle.
-// The choice is stored in this browser only (localStorage).
+// Display settings toolbar in the sidebar: colour palette, night mode and
+// colour-blind friendly mode. Choices are stored in this browser only.
 (function () {
   var KEY = "advancing-r-palette";
+  var CVD_KEY = "advancing-r-cvd";
   var palettes = [
-    { id: "classic",   name: "Classic teal", dot: "#1f6f6f" },
-    { id: "adelie",    name: "Adelie",       dot: "#c87a8a" },
-    { id: "chinstrap", name: "Chinstrap",    dot: "#6b9d59" },
-    { id: "gentoo",    name: "Gentoo",       dot: "#5f96c2" },
-    { id: "barbie",    name: "Barbie",       dot: "#d74ea2" }
+    { id: "classic",    name: "Classic teal", dot: "#1f6f6f" },
+    { id: "adelie",     name: "Adelie",       dot: "#c87a8a" },
+    { id: "chinstrap",  name: "Chinstrap",    dot: "#6b9d59" },
+    { id: "gentoo",     name: "Gentoo",       dot: "#5f96c2" },
+    { id: "rockhopper", name: "Rockhopper",   dot: "#d74ea2" },
+    { id: "king",       name: "King",         dot: "#d95f02" },
+    { id: "emperor",    name: "Emperor",      dot: "#46337e" }
   ];
+  var root = document.documentElement;
 
-  function current() {
-    return document.documentElement.getAttribute("data-palette") || "classic";
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function currentPalette() { return root.getAttribute("data-palette") || "classic"; }
+  function cvdOn() { return root.getAttribute("data-cvd") === "on"; }
+  function isDark() { return document.body.classList.contains("quarto-dark"); }
+  function paletteInfo(id) {
+    for (var i = 0; i < palettes.length; i++) if (palettes[i].id === id) return palettes[i];
+    return palettes[0];
   }
 
-  function apply(id) {
-    if (id === "classic") document.documentElement.removeAttribute("data-palette");
-    else document.documentElement.setAttribute("data-palette", id);
-    try { localStorage.setItem(KEY, id); } catch (e) {}
+  function applyPalette(id) {
+    if (id === "classic") root.removeAttribute("data-palette");
+    else root.setAttribute("data-palette", id);
+    store(KEY, id);
+    sync();
+  }
+  function setCvd(on) {
+    if (on) root.setAttribute("data-cvd", "on"); else root.removeAttribute("data-cvd");
+    store(CVD_KEY, on ? "on" : "off");
+    sync();
+  }
+
+  // Keep every control's label and state in line with the page
+  function sync() {
+    var p = paletteInfo(currentPalette());
+    document.querySelectorAll(".site-tool-palette .tool-state").forEach(function (el) {
+      el.textContent = p.name;
+    });
     document.querySelectorAll(".palette-option").forEach(function (o) {
-      o.setAttribute("aria-checked", o.dataset.palette === id ? "true" : "false");
+      o.setAttribute("aria-checked", o.dataset.palette === p.id ? "true" : "false");
+    });
+    document.querySelectorAll(".site-tool-night").forEach(function (b) {
+      b.setAttribute("aria-checked", isDark() ? "true" : "false");
+      b.querySelector(".bi").className = "bi " + (isDark() ? "bi-moon-stars-fill" : "bi-moon-stars");
+      b.querySelector(".tool-state").textContent = isDark() ? "On" : "Off";
+    });
+    document.querySelectorAll(".site-tool-cvd").forEach(function (b) {
+      b.setAttribute("aria-checked", cvdOn() ? "true" : "false");
+      b.querySelector(".bi").className = "bi " + (cvdOn() ? "bi-eye-fill" : "bi-eye");
+      b.querySelector(".tool-state").textContent = cvdOn() ? "On" : "Off";
     });
   }
 
-  function build(container, n) {
-    var wrap = document.createElement("div");
-    wrap.className = "palette-picker";
+  function button(cls, icon, label, extra) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "site-tool " + cls;
+    for (var k in extra) b.setAttribute(k, extra[k]);
+    b.innerHTML = '<i class="bi ' + icon + '" aria-hidden="true"></i>' +
+      '<span class="tool-label">' + label + '</span>' +
+      '<span class="tool-state"></span>';
+    return b;
+  }
 
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "palette-toggle";
-    btn.id = "palette-toggle-" + n;
-    btn.title = "Change colour palette";
-    btn.setAttribute("aria-label", "Change colour palette");
-    btn.setAttribute("aria-haspopup", "true");
-    btn.setAttribute("aria-expanded", "false");
+  function buildToolbar(anchor, n) {
+    var bar = document.createElement("div");
+    bar.className = "site-tools";
+    bar.setAttribute("role", "toolbar");
+    bar.setAttribute("aria-label", "Display settings");
 
+    // 1. Palette (opens a menu)
+    var pal = button("site-tool-palette", "bi-palette", "Palette",
+      { "aria-haspopup": "true", "aria-expanded": "false", id: "site-tool-palette-" + n,
+        title: "Change the colour palette" });
     var menu = document.createElement("div");
     menu.className = "palette-menu";
-    menu.id = "palette-menu-" + n;
     menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-labelledby", pal.id);
     menu.hidden = true;
     menu.innerHTML = '<div class="palette-title">Colour palette</div>';
-
     palettes.forEach(function (p) {
       var o = document.createElement("button");
       o.type = "button";
       o.className = "palette-option";
       o.setAttribute("role", "menuitemradio");
       o.dataset.palette = p.id;
-      o.setAttribute("aria-checked", current() === p.id ? "true" : "false");
-      o.innerHTML = '<span class="dot" style="background:' + p.dot + '"></span><span>' + p.name + '</span><span class="tick">✓</span>';
-      o.addEventListener("click", function () { apply(p.id); close(); btn.focus(); });
+      o.innerHTML = '<span class="dot' + (p.id === "emperor" ? " emperor" : "") +
+        '" style="background:' + p.dot + '"></span><span>' + p.name +
+        '</span><span class="tick">✓</span>';
+      o.addEventListener("click", function () { applyPalette(p.id); close(); pal.focus(); });
       menu.appendChild(o);
     });
 
     function place() {
-      var r = btn.getBoundingClientRect();
-      var left = Math.min(r.left - 8, window.innerWidth - menu.offsetWidth - 8);
+      var r = pal.getBoundingClientRect();
+      var left = Math.min(r.left, window.innerWidth - menu.offsetWidth - 8);
       menu.style.left = Math.max(8, left) + "px";
-      menu.style.top = (r.bottom + 8) + "px";
+      menu.style.top = (r.bottom + 6) + "px";
     }
     function open() {
-      menu.hidden = false;
-      place();
-      btn.setAttribute("aria-expanded", "true");
+      menu.hidden = false; place();
+      pal.setAttribute("aria-expanded", "true");
       var sel = menu.querySelector('[aria-checked="true"]') || menu.querySelector(".palette-option");
       if (sel) sel.focus();
     }
-    function close() {
-      menu.hidden = true;
-      btn.setAttribute("aria-expanded", "false");
-    }
+    function close() { menu.hidden = true; pal.setAttribute("aria-expanded", "false"); }
 
-    btn.addEventListener("click", function (e) {
+    pal.addEventListener("click", function (e) {
       e.stopPropagation();
       if (menu.hidden) open(); else close();
     });
     menu.addEventListener("keydown", function (e) {
       var items = Array.prototype.slice.call(menu.querySelectorAll(".palette-option"));
       var i = items.indexOf(document.activeElement);
-      if (e.key === "Escape") { close(); btn.focus(); }
+      if (e.key === "Escape") { close(); pal.focus(); }
       if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
       if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
     });
     document.addEventListener("click", function (e) {
-      if (!wrap.contains(e.target)) close();
+      if (!menu.contains(e.target) && e.target !== pal) close();
     });
     window.addEventListener("resize", function () { if (!menu.hidden) place(); });
     window.addEventListener("scroll", function () { if (!menu.hidden) place(); }, true);
 
-    wrap.appendChild(btn);
-    wrap.appendChild(menu);
-    var toggle = container.querySelector(".quarto-color-scheme-toggle");
-    if (toggle) container.insertBefore(wrap, toggle); else container.appendChild(wrap);
+    // 2. Night mode (uses Quarto's own dark theme)
+    var night = button("site-tool-night", "bi-moon-stars", "Night mode",
+      { role: "switch", title: "Switch night mode on or off" });
+    night.addEventListener("click", function () {
+      if (window.quartoToggleColorScheme) window.quartoToggleColorScheme();
+      setTimeout(sync, 50);
+    });
+
+    // 3. Colour-blind friendly mode
+    var cvd = button("site-tool-cvd", "bi-eye", "Colour-blind",
+      { role: "switch",
+        title: "Colour-blind friendly: blue/orange quiz feedback and underlined links" });
+    cvd.addEventListener("click", function () { setCvd(!cvdOn()); });
+
+    bar.appendChild(pal);
+    bar.appendChild(night);
+    bar.appendChild(cvd);
+    anchor.insertAdjacentElement("afterend", bar);
+    document.body.appendChild(menu);
   }
 
-  document.querySelectorAll(".sidebar-tools-main, .quarto-navbar-tools").forEach(function (c, n) {
-    if (!c.querySelector(".palette-picker")) build(c, n);
-  });
+  var anchors = document.querySelectorAll("#quarto-sidebar .sidebar-header");
+  anchors.forEach(function (a, n) { buildToolbar(a, n); });
+  if (anchors.length) root.classList.add("has-site-tools");
+
+  // Stay in sync if dark mode is changed any other way
+  new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  sync();
 })();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
