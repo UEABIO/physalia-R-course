@@ -43,6 +43,13 @@ When you write or edit R code, make the first line of the first code block:
 - Label each analysis as exploratory or confirmatory.
 - Never type numerical results into text; compute them in code.
 
+## Version control
+- Before you edit any file, run git status.
+- If this folder is not a git repository, stop and ask me to set one up.
+- If there are uncommitted changes, list them and ask whether I want to
+  commit first.
+- Never commit, push or change git settings unless I ask.
+
 ## Working with me
 - Before changing more than one file, present a plan and wait for approval.
 - Do not edit anything under data/raw/, tests/fixtures/ or .github/.

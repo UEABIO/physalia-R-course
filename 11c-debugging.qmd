@@ -31,13 +31,45 @@ library(here)
 voles <- read_csv(here("data", "raw", "voles_metabolism.csv"))
 ```
 
-Use Claude Code, started in your workshop repository's Terminal tab. If you have
-no `r glossary("agent")`, a chat window works for every exercise.
+**How you use Claude Code in this block.** Claude Code is an
+`r glossary("agent")`: given a question, it may search your project, read files
+and offer to run code. In this block you only **ask**, so:
+
+- type `/clear` before each exercise, so each starts a new conversation;
+- end each prompt with *"Answer from what I've pasted: don't read files, run
+  code or edit anything."* Without it, Claude Code may gather evidence itself:
+  when we tested Exercise 2's prompt without that line, it searched the project
+  and read both data files, including the one Block 7 asks you to explore
+  yourself;
+- if it still asks to run a command or edit a file, choose **No**. Manual mode
+  means it must ask first, and your answer is the control.
 
 Claude Code cannot see the objects in your R console, such as `voles`: it sees
-your data only by reading the file or running code, and each `Rscript` command
-it runs starts a fresh R process. Check its work in the R console
+your data only by reading files or running code, and each `Rscript` command it
+runs starts a fresh R process. Check its work in the R console
 ([checking work](11a-setup-claude-code.qmd#checking-work)).
+
+**Expect a line you did not ask for.** Code it suggests is likely to start with
+`# agents-md: active v1`, and its answers may mention project rules such as
+reporting `n`. These come from the repository's instruction file, `AGENTS.md`,
+which Claude Code reads at the start of every conversation: a first sign that
+it sees context you did not paste ([Block 4](11d-context-disclosure-autonomy.qmd)).
+[Block 5](11e-instructions-skills.qmd) explains the line; for now, ignore it.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant or a chat window instead
+
+**Posit Assistant:** type `/ask` first. Ask mode is read-only: it cannot edit
+files or run R code, so the answer-only line is not needed. It does see the
+names and types of the objects in your session (not their values) and can read
+your console history, so it may already have your `distinct()` output: that is
+a disclosure route too ([Block 4](11d-context-disclosure-autonomy.qmd)). For
+step 3 of Exercise 2, type `/normal` so it can run the diagnostics in your live
+R session, approving each call; `/normal` is also how you leave Ask mode.
+
+**A chat window:** paste the same prompts, without the answer-only line, and
+skip step 3 of Exercise 2.
+:::
 
 
 ## Exercise 1: A syntax error
@@ -48,8 +80,8 @@ A syntax error (7 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** `voles` is loaded in your R console, and Claude Code (or a chat
-window) is open.
+**Start state:** `voles` is loaded in your R console, and Claude Code is open
+with a new conversation (`/clear`).
 
 You wrote this in your script to count voles per treatment:
 
@@ -65,10 +97,9 @@ R returns:
 Error in geom_barchart(): could not find function "geom_barchart"
 ```
 
-**1. Ask for a fix.** In Claude Code or a chat window, paste the code and the
-error and ask.
+**1. Ask for a fix.** Paste the code and the error, and ask.
 
-**Prompt (Claude Code):**
+**Prompt (Claude Code or a chat window):**
 
 ```text
 This code gives an error:
@@ -79,6 +110,7 @@ This code gives an error:
 Error in geom_barchart(): could not find function "geom_barchart"
 
 What is wrong, and what is the fix?
+Answer from what I've pasted: don't read files, run code or edit anything.
 ```
 
 **2. Explain it before you accept it.** Write one sentence saying why the
@@ -126,14 +158,14 @@ your files and runs code itself, so you check each command and its output.
 
 | | AI that answers | AI that acts |
 |---|---|---|
-| Examples | A chat window; Posit Assistant's Ask mode (`/ask`) | Claude Code; Posit Assistant in Normal mode |
+| Examples | A chat window; Posit Assistant's Ask mode (`/ask`); Claude Code given the answer-only line, with you refusing any approval | Claude Code allowed to read and run; Posit Assistant in Normal mode |
 | Who gathers the evidence | You: you run `distinct()` and paste the output | It does, and shows you each command |
 | What you check | That its reasoning fits the evidence you pasted | That each command is sensible, and what its output says |
 
 Use AI that answers when you want to learn, or when the data must not be
-touched. Claude Code has no ask mode; the nearest is `/plan` followed by your
-question, which will not edit files but can still run commands, asking first in
-Manual mode. [Block 4](11d-context-disclosure-autonomy.qmd) sets out the full
+touched. Posit Assistant's Ask mode enforces it; with Claude Code, which has no
+ask mode, the answer-only line is a request and your **No** at each approval is
+what holds. [Block 4](11d-context-disclosure-autonomy.qmd) sets out the full
 range.
 :::
 
@@ -146,7 +178,8 @@ A logic error (8 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** `voles` is loaded in your R console, and Claude Code is open.
+**Start state:** `voles` is loaded in your R console, and Claude Code is open
+with a new conversation (`/clear`).
 
 You wrote this in your script to compute mean post-treatment mass for
 high-dose voles:
@@ -204,30 +237,24 @@ My code:
 returns NaN. But voles |> distinct(treatment_arm) returns
 "Control", "Low_dose", "High_dose". I think the filter fails because of
 the capitalisation. Is that the only problem?
+Answer from what I've pasted: don't read files, run code or edit anything.
 ```
 
-**3. Let the agent gather the evidence.** It will read the data file and rerun
-the code itself.
+**3. Now let the agent gather the evidence.** This is the one step in the block
+where it acts. Type `/clear`, then:
 
 **Prompt (Claude Code):**
 
 ```text
-Read data/raw/voles_metabolism.csv and check why filtering treatment_arm
-for "high_dose" returns no rows. Show me each command you run and its output.
+Read data/raw/voles_metabolism.csv and run R code with Rscript to find why
+filtering treatment_arm for "high_dose" returns no rows. Don't edit any files.
+Show each command and its output.
 ```
 
-Read the output yourself before accepting its diagnosis.
-
-:::{.callout-tip collapse="true"}
-## Using Posit Assistant
-
-Posit Assistant can run the same diagnostics in your live R session. The rule
-is the same: ask it to show the commands and their output, and read the output
-yourself.
-
-To try AI that answers instead, type `/ask` first. Ask mode is enforced
-read-only: it cannot write files or run R code. Type `/normal` to leave it.
-:::
+It reads the file without asking, because reading needs no approval in Manual
+mode. Before it runs R it asks: read the `Rscript` command, and choose **Yes**
+if it only reads the data and prints results. Then compare its diagnosis with
+the one you found in step 1.
 
 `r hide("Solution")`
 
@@ -262,7 +289,8 @@ A correct-looking but wrong result (5 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** `voles` is loaded in your R console.
+**Start state:** `voles` is loaded in your R console, and Claude Code is open
+with a new conversation (`/clear`).
 
 You wrote this to get the mean change in body mass by treatment arm:
 
@@ -295,7 +323,7 @@ diagnosis.
 
 **2. Ask for a second opinion, stating the expected direction.**
 
-**Prompt (Claude Code):**
+**Prompt (Claude Code or a chat window):**
 
 ```text
 This should show mass gain increasing with dose, but the values are negative
@@ -304,6 +332,8 @@ and decreasing. What is wrong?
   voles |>
     mutate(mass_change_g = mass_pre_g - mass_post_g) |>
     summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
+
+Answer from what I've pasted: don't read files, run code or edit anything.
 ```
 
 `r hide("Solution")`
@@ -339,6 +369,7 @@ Inspect the data first, ask the AI second.
    after a filter.
 3. **Check names exactly,** including capitals and underscores.
 4. **Then ask,** giving the code, the error and the diagnostic output together.
+   Ask for an answer, not an action, until you have the evidence.
 5. **Explain the fix in one sentence** before you accept it.
 6. **Before trusting a clean run,** state what the result should look like
    (sign, size, order) and compare.

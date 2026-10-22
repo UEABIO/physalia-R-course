@@ -28,8 +28,13 @@ you hand an agent real work. The same controls protect
 | Approval prompt | "Allow this command?" | Prevents, if you read it | Approval fatigue |
 | Deny rule | `Edit(/data/raw/**)` | Prevents | Another route reaches the file |
 | Hook | A script run before each tool call | Prevents | Rephrasing gets past it |
-| Version control | The Git pane | Detects | Only if you look |
+| Version control | The Git pane | Detects | Only from your last commit, and only if you look |
 | Tests and checksums | testthat, `tools::md5sum()` | Detects | Only if they run |
+
+Git detects changes only from your last commit, so commit before an agent
+starts. Your repository's `AGENTS.md` asks the agent to run `git status` before
+it edits anything, and to stop if there is no repository: a request that helps,
+but your commit is the control.
 
 :::::: {.dia .dia-lanes role="figure" aria-label="Where each control acts. Route 1: the agent asks its edit tool to change a file in data/raw, and the deny rule refuses. Route 2: the agent runs R code that writes the file; with no hook registered, only the approval prompt stands in the way, and if the file changes, git status detects it, as does the checksum test for voles_raw.csv. Instructions and skills are requests that the model may or may not follow."}
 ::::: {.dia-flow}
@@ -266,6 +271,56 @@ Manual mode is switched off. Protecting something new takes 30 seconds in
 [Block 4](11d-context-disclosure-autonomy.qmd); and since settings and hooks
 are code, trust only repositories whose configuration you have read.
 
+::::{.callout-note}
+## Set up controls in your own project
+
+Your workshop repository came with its controls. A new project of your own
+starts with none, so set them up before the agent's first task:
+
+1. **Git first.** In the R console, `usethis::use_git()`, and make a first
+   commit.
+2. **Add a starter `settings.json`.** Download the one below, save it as
+   `.claude/settings.json`, and edit the paths to match your project. It starts
+   in Manual mode and protects raw data, test references, the lockfile,
+   credentials and itself. Add project-specific rules with `/permissions`.
+3. **Ask for git checks.** Copy the *Version control* section of your workshop
+   `AGENTS.md` into your project's instruction file.
+4. **Test it.** Ask the agent to edit a protected file and watch the rule
+   refuse; copy `tests/test_controls.R` and change its list of rules to yours.
+   Then commit.
+
+```{r}
+#| echo: false
+downloadthis::download_file(
+  path = here::here("files", "controls", "settings.json"),
+  output_name = "settings",
+  output_extension = ".json",
+  button_label = "Download the starter settings.json",
+  button_type = "success",
+  has_icon = TRUE,
+  icon = "fa fa-save",
+  self_contained = FALSE
+)
+```
+
+:::{.callout-tip collapse="true"}
+## Reference: the starter `settings.json`
+
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: json
+cat(readLines(here::here("files", "controls", "settings.json")), sep = "\n")
+```
+:::
+
+**Let Claude draft rules, never decide them.** You can ask it to propose deny
+rules for a project, but read each one: a rule with a wrong path, such as a
+missing leading `/`, protects nothing and fails silently. Claude Code asks
+before every write to `.claude/`, and the starter file's `Edit(/.claude/**)`
+refuses such writes outright, so you install the rules yourself.
+::::
+
 :::{.callout-note}
 ## Check · Reproduce · Record
 
@@ -277,7 +332,8 @@ are code, trust only repositories whose configuration you have read.
   not cover.
 - **Reproduce:** the rules live in `.claude/settings.json`, committed with the
   project, so everyone who clones it gets the same protection.
-- **Record:** the Git pane catches a change by any route. Add a line to
+- **Record:** the Git pane catches a change by any route, counted from your
+  last commit, so commit before the agent starts. Add a line to
   `docs/ai-log.md` noting which requests were refused.
 :::
 

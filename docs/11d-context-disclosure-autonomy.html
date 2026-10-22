@@ -629,7 +629,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>
 <a href="#part-a-what-can-the-assistant-see" id="toc-part-a-what-can-the-assistant-see" class="nav-link active" data-scroll-target="#part-a-what-can-the-assistant-see">Part A: What can the assistant see?</a>
   <ul class="collapse">
-<li><a href="#exercise-1-context-decides-the-answer" id="toc-exercise-1-context-decides-the-answer" class="nav-link" data-scroll-target="#exercise-1-context-decides-the-answer">Exercise 1: Context decides the answer</a></li>
+<li><a href="#exercise-1-watch-what-it-gathers" id="toc-exercise-1-watch-what-it-gathers" class="nav-link" data-scroll-target="#exercise-1-watch-what-it-gathers">Exercise 1: Watch what it gathers</a></li>
   <li><a href="#disclosure-every-route-out-of-your-machine" id="toc-disclosure-every-route-out-of-your-machine" class="nav-link" data-scroll-target="#disclosure-every-route-out-of-your-machine">Disclosure: every route out of your machine</a></li>
   <li><a href="#context-you-hold-in-your-head" id="toc-context-you-hold-in-your-head" class="nav-link" data-scroll-target="#context-you-hold-in-your-head">Context you hold in your head</a></li>
   </ul>
@@ -672,110 +672,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>By the end you will know how to give an agent the right context, keep confidential data out of it, and hand it routine work safely.</p>
 <p><em>⏱ ~35 minutes</em></p>
 <section id="part-a-what-can-the-assistant-see" class="level2"><h2 class="anchored" data-anchor-id="part-a-what-can-the-assistant-see">Part A: What can the assistant see?</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-</colgroup>
-<thead><tr class="header">
-<th>Surface</th>
-<th>Example</th>
-<th>What it can see</th>
-<th>Can it act?</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>Browser chat</td>
-<td>Any chat website</td>
-<td>What you paste</td>
-<td>No</td>
-</tr>
-<tr class="even">
-<td>Terminal agent</td>
-<td>Claude Code</td>
-<td>Project files, and the output of any command it runs</td>
-<td>Yes, in your files and shell</td>
-</tr>
-<tr class="odd">
-<td>Session-aware IDE assistant</td>
-<td>Posit Assistant</td>
-<td>Your live R session and project files</td>
-<td>Yes, in your session and files</td>
-</tr>
-</tbody>
-</table>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Knowing versus guessing.</strong> An assistant is only reliable about your data when it has real information: something you pasted, a file it read, or code it ran. Column names you never supplied, or a famous dataset you never mentioned (<code>penguins</code>, <code>mtcars</code>), are signs it is guessing. Check any data-specific claim against the real object.</p>
-</div>
-</div>
-<section id="exercise-1-context-decides-the-answer" class="level3"><h3 class="anchored" data-anchor-id="exercise-1-context-decides-the-answer">Exercise 1: Context decides the answer</h3>
+<p>An assistant’s answer about your data is reliable only when it has real information: something you pasted, a file it read, or output from a command it ran. In Block 3 you supplied that information yourself. An agent can fetch it on its own, and everything it uses leaves your machine.</p>
+<section id="exercise-1-watch-what-it-gathers" class="level3"><h3 class="anchored" data-anchor-id="exercise-1-watch-what-it-gathers">Exercise 1: Watch what it gathers</h3>
 <div class="task">
 <div class="task-header">
-<p>The same error, three levels of context (10 minutes)</p>
+<p>Watch what it gathers (8 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>Start state:</strong> your workshop repository open in RStudio with a clean Git pane, and a browser chat open in another window.</p>
-<p><strong>1. Error only.</strong> In a new browser chat, paste only this and ask “What does this error mean?”:</p>
-<p><strong>Prompt (browser chat):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a>Error in `mutate()`:</span>
-<span id="cb1-2"><a href="#cb1-2" aria-label="2"></a>ℹ In argument: `mass_change_g = mass_post - mass_pre_g`.</span>
-<span id="cb1-3"><a href="#cb1-3" aria-label="3"></a>Caused by error:</span>
-<span id="cb1-4"><a href="#cb1-4" aria-label="4"></a>! object 'mass_post' not found</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Expect a general answer: the column does not exist, perhaps a typo, check <code><a href="https://rdrr.io/r/base/names.html">names()</a></code>. It cannot name the right column, because it has never seen one.</p>
-<p><strong>2. Error plus code plus structure.</strong> In another new chat, paste:</p>
-<p><strong>Prompt (browser chat):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>I am running this code:</span>
-<span id="cb2-2"><a href="#cb2-2" aria-label="2"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-label="3"></a>  voles |&gt;</span>
-<span id="cb2-4"><a href="#cb2-4" aria-label="4"></a>    mutate(mass_change_g = mass_post - mass_pre_g)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-label="5"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-label="6"></a>and getting:</span>
-<span id="cb2-7"><a href="#cb2-7" aria-label="7"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-label="8"></a>  Error in `mutate()`:</span>
-<span id="cb2-9"><a href="#cb2-9" aria-label="9"></a>  ℹ In argument: `mass_change_g = mass_post - mass_pre_g`.</span>
-<span id="cb2-10"><a href="#cb2-10" aria-label="10"></a>  Caused by error:</span>
-<span id="cb2-11"><a href="#cb2-11" aria-label="11"></a>  ! object 'mass_post' not found</span>
-<span id="cb2-12"><a href="#cb2-12" aria-label="12"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-label="13"></a>The data structure is:</span>
-<span id="cb2-14"><a href="#cb2-14" aria-label="14"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-label="15"></a>  Rows: 72</span>
-<span id="cb2-16"><a href="#cb2-16" aria-label="16"></a>  Columns: 6</span>
-<span id="cb2-17"><a href="#cb2-17" aria-label="17"></a>  $ subject_id          &lt;chr&gt; "V001", "V002", "V003", ...</span>
-<span id="cb2-18"><a href="#cb2-18" aria-label="18"></a>  $ sex                 &lt;chr&gt; "M", "F", "M", ...</span>
-<span id="cb2-19"><a href="#cb2-19" aria-label="19"></a>  $ treatment_arm       &lt;chr&gt; "Control", "Control", ...</span>
-<span id="cb2-20"><a href="#cb2-20" aria-label="20"></a>  $ mass_pre_g          &lt;dbl&gt; 28.3, 27.9, 30.1, ...</span>
-<span id="cb2-21"><a href="#cb2-21" aria-label="21"></a>  $ mass_post_g         &lt;dbl&gt; 28.5, 28.0, 30.5, ...</span>
-<span id="cb2-22"><a href="#cb2-22" aria-label="22"></a>  $ metabolic_rate_post &lt;dbl&gt; 13.21, 12.84, 13.55, ...</span>
-<span id="cb2-23"><a href="#cb2-23" aria-label="23"></a></span>
-<span id="cb2-24"><a href="#cb2-24" aria-label="24"></a>What is wrong?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>It should name the missing <code>_g</code> suffix.</p>
-<p><strong>3. No paste at all.</strong> In the R console, <code>usethis::edit_file("scripts/scratch_error.R")</code> creates and opens a scratch script. Paste in, and save:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-label="2"></a><span class="fu">library</span>(here)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-label="3"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a>voles <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>))</span>
-<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-label="6"></a>voles <span class="sc">|&gt;</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-label="7"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_post <span class="sc">-</span> mass_pre_g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>In the project’s Terminal tab, start <code>claude</code> and ask:</p>
+<p><strong>Start state:</strong> your workshop repository, with a clean Git pane, and Claude Code open in the Terminal tab with a new conversation (<code>/clear</code>).</p>
+<p><strong>1. Ask without the answer-only line.</strong> This is a Block 3 question, but this time you let Claude Code look for itself:</p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a>Why does the mutate() call in scripts/scratch_error.R fail?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Expect it to read the script and the CSV file (approve any request to run code), then name <code>mass_post_g</code> as the real column. Then ask “How do you know the column names?” and compare its answer with what you know it read.</p>
-<p><strong>You are done when</strong> you can say which answers named the real cause, and why. Then delete the scratch file so Exercise 2 starts clean: <code>file.remove(here::here("scripts", "scratch_error.R"))</code>.</p>
-<p><strong>If it goes wrong:</strong> if Claude Code cannot find the script, check you started <code>claude</code> in the project’s Terminal tab and saved the file in <code>scripts/</code>. If a chat in step 2 still guesses, that is a result too: note it and move on.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a>My code</span>
+<span id="cb1-2"><a href="#cb1-2" aria-label="2"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-label="3"></a>  voles |&gt; mutate(mass_change_g = mass_post - mass_pre_g)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-label="4"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-label="5"></a>fails with "object 'mass_post' not found". voles is read from</span>
+<span id="cb1-6"><a href="#cb1-6" aria-label="6"></a>data/raw/voles_metabolism.csv. What is wrong?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>2. Read the transcript, not just the answer.</strong> Above its reply, Claude Code lists each action it took. When we tested this prompt, it ran a short command such as <code>head -n 3 data/raw/voles_metabolism.csv</code> (or <code>Get-Content</code> on Windows) <strong>without asking</strong>, because Claude Code treats a small set of read-only commands like reading a file. It then named <code>mass_post_g</code> as the real column. If it asks to run anything else, choose <strong>No</strong>: it can answer from the file.</p>
+<p><strong>3. Name the route.</strong> For each action in the transcript, find its route in the diagram below: a file it read is route 2; the output of a command it ran is route 4.</p>
+<p><strong>You are done when</strong> you can name every file or command output that reached the model provider, and the answer names <code>mass_post_g</code>.</p>
+<p><strong>If it goes wrong:</strong> if it read more than the header, or other files, note which: an agent reads what it judges useful, which is why the habits below matter for confidential data.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -784,15 +702,14 @@ Note
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Load the data and run the failing code in your R session, then ask only “Why did my last command fail?” Posit Assistant receives the names and types of the objects in your session, and can run code to inspect them, without your pasting anything.</p>
+<p>Run the failing code in your R session, then ask only “Why did my last command fail?” Posit Assistant already has the names and types of your objects, so it may answer without fetching anything: that is route 3.</p>
 </div>
 </div>
 </div>
 </div>
 </div>
-<p>The answer is only as good as the context, and context reaches the model by more than one route.</p>
 </section><section id="disclosure-every-route-out-of-your-machine" class="level3"><h3 class="anchored" data-anchor-id="disclosure-every-route-out-of-your-machine">Disclosure: every route out of your machine</h3>
 <p>Everything an assistant sees is sent to a model provider, by four routes:</p>
 <div class="dia dia-lanes" role="figure" aria-label="Four routes by which data reach the model provider: 1, what you paste, in any tool; 2, project files the tool reads; 3, session context Posit Assistant adds, the names and types of objects but not their values; 4, the output of commands the agent runs">
@@ -872,14 +789,14 @@ Note
 <li>
 <strong>Know your account.</strong> Commercial accounts (Team, Enterprise, API) are not used for model training; on Pro or Max, set <code>/privacy-settings</code>. Check your institution’s approval, ethics approval and data agreements first.</li>
 <li>
-<strong>Deny reads of sensitive folders</strong> in <code>/permissions</code>, for example <code>Read(/data/confidential/**)</code>. This stops Claude Code’s file-reading tools; it is best effort, because R or shell commands can still read the file.</li>
+<strong>Deny reads of sensitive folders</strong> in <code>/permissions</code>, for example <code>Read(/data/confidential/**)</code>. It is best effort: commands can still read the file.</li>
 <li>
 <strong>Stay in Manual mode</strong>, and refuse any command that would print records.</li>
 <li>
 <strong>Describe, don’t show.</strong> <code><a href="https://rdrr.io/r/base/names.html">names()</a></code> gives column names and <code><a href="https://rdrr.io/r/base/summary.html">summary()</a></code> the shape of the data; <code><a href="https://rdrr.io/r/base/print.html">print()</a></code>, <code>glimpse()</code> and <code><a href="https://rdrr.io/r/utils/str.html">str()</a></code> show actual values.</li>
 </ol>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -888,7 +805,7 @@ Note
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>There is no <code>.claudeignore</code> file, and <code>/sandbox</code> is not available on native Windows. Posit Assistant blocks <code>.Renviron</code> and <code>.env</code> by default, and shares the names and types of objects in your session, not their values; code it runs can still print values.</p>
 </div>
@@ -899,7 +816,7 @@ Note
 </section><section id="context-you-hold-in-your-head" class="level3"><h3 class="anchored" data-anchor-id="context-you-hold-in-your-head">Context you hold in your head</h3>
 <p>A data file supplies column names, but not your question or your design. Your instructor may show this with two prompts; the demonstration is below, and you can try it yourself in <em>Going further</em>.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -908,23 +825,23 @@ Note
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Your instructor asks a new chat:</p>
 <p><strong>Prompt (browser chat):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a>I have a dataset with pre and post measurements. How should I analyse it?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a>I have a dataset with pre and post measurements. How should I analyse it?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>and then, in another new chat:</p>
 <p><strong>Prompt (browser chat):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>I have 72 voles, balanced across three treatment arms (Control, Low_dose,</span>
-<span id="cb6-2"><a href="#cb6-2" aria-label="2"></a>High_dose) and two sexes (M, F). Each animal has body mass measured before</span>
-<span id="cb6-3"><a href="#cb6-3" aria-label="3"></a>and after treatment, and a single post-treatment metabolic-rate reading.</span>
-<span id="cb6-4"><a href="#cb6-4" aria-label="4"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-label="5"></a>My question is whether the high-dose treatment changes mass relative to</span>
-<span id="cb6-6"><a href="#cb6-6" aria-label="6"></a>control, and whether the effect differs between sexes.</span>
-<span id="cb6-7"><a href="#cb6-7" aria-label="7"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-label="8"></a>The dataset is small (n = 12 per cell). I will report effect sizes alongside</span>
-<span id="cb6-9"><a href="#cb6-9" aria-label="9"></a>any inferential test. Given this design, what is a defensible primary</span>
-<span id="cb6-10"><a href="#cb6-10" aria-label="10"></a>analysis, and what are the main threats to its validity?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>I have 72 voles, balanced across three treatment arms (Control, Low_dose,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-label="2"></a>High_dose) and two sexes (M, F). Each animal has body mass measured before</span>
+<span id="cb3-3"><a href="#cb3-3" aria-label="3"></a>and after treatment, and a single post-treatment metabolic-rate reading.</span>
+<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a>My question is whether the high-dose treatment changes mass relative to</span>
+<span id="cb3-6"><a href="#cb3-6" aria-label="6"></a>control, and whether the effect differs between sexes.</span>
+<span id="cb3-7"><a href="#cb3-7" aria-label="7"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-label="8"></a>The dataset is small (n = 12 per cell). I will report effect sizes alongside</span>
+<span id="cb3-9"><a href="#cb3-9" aria-label="9"></a>any inferential test. Given this design, what is a defensible primary</span>
+<span id="cb3-10"><a href="#cb3-10" aria-label="10"></a>analysis, and what are the main threats to its validity?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The first gets a tour of options; the second can get a recommendation, because the design now exists outside your head. Treat it as a proposal to check: the primary analysis is your decision.</p>
 </div>
 </div>
@@ -954,7 +871,7 @@ Note
 <tr class="even">
 <td>1. Ask</td>
 <td>Answers; changes nothing</td>
-<td>— (use a chat window)</td>
+<td>— (no ask mode; Block 3’s answer-only line is a request)</td>
 <td>Ask mode (<code>/ask</code>)</td>
 </tr>
 <tr class="odd">
@@ -1034,32 +951,27 @@ Warning
 </div>
 <div class="task-container">
 <p><strong>Start state:</strong> your workshop repository on <code>main</code>, committed and clean (the Git pane shows no changed files). While Claude Code runs in the Terminal tab, check its work from the R console and the Git pane (<a href="./11a-setup-claude-code.html#checking-work">checking work</a>).</p>
-<p><strong>1. Plan a question (rung 2).</strong> Claude Code has no Ask mode, so start <code>claude</code> in the Terminal tab and put <code>/plan</code> before your question, so nothing changes:</p>
+<p><strong>1. Plan (rung 2).</strong> In Claude Code, type <code>/clear</code>, then:</p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a>/plan In scripts/explore_voles.R, how would I add a column mass_change_g</span>
-<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>equal to mass_post_g minus mass_pre_g?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The Git pane should still show no changed files.</p>
-<p><strong>2. Plan a change (rung 2).</strong> Give a goal that spans several files:</p>
-<p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a>/plan In scripts/explore_voles.R, add a derived mass_change_g column (mass_post_g</span>
-<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a>minus mass_pre_g). Create a new script scripts/explore_mass_change_plot.R</span>
-<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a>that plots mass_change_g by treatment_arm and saves the figure to outputs/</span>
-<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a>with ggsave(). Then check that both scripts run in a fresh R session.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Before approving, check the plan names every file it will touch, leaves raw data alone, saves the figure to <code>outputs/</code> and says how it will check the scripts run. Ask for changes if anything is missing.</p>
-<p><strong>3. Act, with approval (rung 3).</strong> Choose <strong>Yes, manually approve edits</strong>, so it stays in Manual mode. Read each approval prompt, and refuse at least one action: if nothing is out of scope, refuse its first <code>Rscript</code> call. You will run the check yourself in a fresh session in step 4, so you see the evidence rather than its claim.</p>
-<p><strong>4. Review and check.</strong> Click <strong>Diff</strong> in the Git pane for each changed file and read it as you would a colleague’s work. Then Restart R (<em>Session → Restart R</em>) and run:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a>/plan In scripts/explore_voles.R, add a derived mass_change_g column (mass_post_g</span>
+<span id="cb4-2"><a href="#cb4-2" aria-label="2"></a>minus mass_pre_g). Create a new script scripts/explore_mass_change_plot.R</span>
+<span id="cb4-3"><a href="#cb4-3" aria-label="3"></a>that plots mass_change_g by treatment_arm and saves the figure to outputs/</span>
+<span id="cb4-4"><a href="#cb4-4" aria-label="4"></a>with ggsave(). Don't run anything; I'll check the scripts myself.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Before approving, check the plan names both files, leaves <code>data/raw/</code> alone and saves the figure to <code>outputs/</code>. If anything is missing, choose <strong>No, keep planning</strong> and say what to change.</p>
+<p><strong>2. Act, with approval (rung 3).</strong> Choose <strong>Yes, manually approve edits</strong>, so it stays in Manual mode, and read each edit before you approve it. The repository’s <code>AGENTS.md</code> tells it to run new scripts, so it may still ask to run <code>Rscript</code>: choose <strong>No</strong>, because you check the result yourself next.</p>
+<p><strong>3. Check.</strong> Click <strong>Diff</strong> in the Git pane for each changed file and read it as you would a colleague’s work. Then Restart R (<em>Session → Restart R</em>) and run:</p>
 <p><strong>In the R console:</strong></p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_explore.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_explore.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>One test checks <code>mass_change_g</code> really is post minus pre; the other runs the plot script in a fresh R session and checks a figure arrived in <code>outputs/</code>.</p>
-<p><strong>5. Start your AI-use log.</strong> Create <code>docs/ai-log.md</code> (<code>usethis::edit_file("docs/ai-log.md")</code>) and write the first line of your <a class="glossary">AI-use log<span class="def">A record written at the time of each piece of AI-assisted work, in the form: date; tool and model; task; what you kept or changed. It becomes the AI declaration in a README.</span></a> yourself, on one line, in the form from Block 1. Use today’s date, written as YYYY-MM-DD:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a>2026-10-19; Claude Code (model as shown above the Claude Code prompt); added mass_change_g and a plot script; kept both after reading the diff; rejected one out-of-scope edit</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Commit it with the agent’s changes. You will add a line after each block in which an agent works; <code>tests/test_ai_log.R</code> checks that each line has four parts separated by semicolons, and that the dates are real and in order.</p>
+<p><strong>4. Record and commit.</strong> Create <code>docs/ai-log.md</code> (<code>usethis::edit_file("docs/ai-log.md")</code>) and write the first line of your <a class="glossary">AI-use log<span class="def">A record written at the time of each piece of AI-assisted work, in the form: date; tool and model; task; what you kept or changed. It becomes the AI declaration in a README.</span></a> yourself, on one line, in the form from Block 1. Use today’s date, written as YYYY-MM-DD:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>2026-10-19; Claude Code (model as shown above the Claude Code prompt); added mass_change_g and a plot script; kept both after reading the diff</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Commit it together with both scripts. You will add a line after each block in which an agent works; <code>tests/test_ai_log.R</code> checks that each line has four parts separated by semicolons, and that the dates are real and in order.</p>
 <p><strong>You are done when</strong> both tests pass, you have read every line of the diff, and your first AI-use log line is committed.</p>
 <p><strong>If it goes wrong:</strong> select the unwanted change in the Git pane and click <strong>Revert</strong>, then ask again more clearly. If you run out of time, the <code>block5-done</code> checkpoint branch has this block’s files; switch to it from the Git pane’s branch menu at the end of Block 5 if you are still behind.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1068,7 +980,7 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>At which rung did you decide the most? Where would you have missed an unwanted change without the diff?</p>
 <p><strong>Payoff.</strong> What did the agent do, how long did checking it take, and would you automate this again?</p>
@@ -1076,7 +988,7 @@ Warning
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1085,14 +997,14 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Use Ask mode (<code>/ask</code>) for step 1, <code>/plan</code> for step 2, and Normal mode (<code>/normal</code>) for step 3. Step 4 is the same: the Git pane and the R console.</p>
+<p>Use <code>/plan</code> for step 1 and Normal mode (<code>/normal</code>) for step 2. Steps 3 and 4 are the same: the Git pane and the R console.</p>
 </div>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1101,7 +1013,7 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-10" class="callout-10-contents callout-collapse collapse">
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>The same checks from a terminal (after <code>/exit</code>, or in a second Terminal tab): <code>git status</code>, <code>git diff</code>, and <code>Rscript -e "testthat::test_file('tests/test_explore.R')"</code>.</p>
 </div>
@@ -1133,21 +1045,21 @@ Warning
 </div>
 </section></section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>You paste nothing, yet Claude Code names your columns correctly. How could it know them?</strong></p>
-<div id="radio_IKDECSTCRP" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_IKDECSTCRP" value=""><span>It cannot; it must be guessing</span></label><label><input type="radio" autocomplete="off" name="radio_IKDECSTCRP" value="answer"><span>It read a file in your project or ran code that printed the data, and that output entered its context</span></label><label><input type="radio" autocomplete="off" name="radio_IKDECSTCRP" value=""><span>It can see every file on your computer</span></label><label><input type="radio" autocomplete="off" name="radio_IKDECSTCRP" value=""><span>It remembers your data from a previous conversation</span></label>
+<div id="radio_ZECAYSSDIQ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ZECAYSSDIQ" value=""><span>It cannot; it must be guessing</span></label><label><input type="radio" autocomplete="off" name="radio_ZECAYSSDIQ" value="answer"><span>It read a file in your project or ran code that printed the data, and that output entered its context</span></label><label><input type="radio" autocomplete="off" name="radio_ZECAYSSDIQ" value=""><span>It can see every file on your computer</span></label><label><input type="radio" autocomplete="off" name="radio_ZECAYSSDIQ" value=""><span>It remembers your data from a previous conversation</span></label>
 </div>
 <p><strong>In Claude Code’s acceptEdits mode, what does the agent do without asking?</strong></p>
-<div id="radio_QJNYYWTVNA" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_QJNYYWTVNA" value=""><span>Nothing; acceptEdits only changes how diffs are displayed</span></label><label><input type="radio" autocomplete="off" name="radio_QJNYYWTVNA" value=""><span>Only edits to files you have named</span></label><label><input type="radio" autocomplete="off" name="radio_QJNYYWTVNA" value="answer"><span>It edits files and runs common file commands such as cp and mv without asking, but still asks before other shell commands</span></label><label><input type="radio" autocomplete="off" name="radio_QJNYYWTVNA" value=""><span>Everything, including all shell commands</span></label>
+<div id="radio_ABQVZXIVPR" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ABQVZXIVPR" value=""><span>Nothing; acceptEdits only changes how diffs are displayed</span></label><label><input type="radio" autocomplete="off" name="radio_ABQVZXIVPR" value=""><span>Only edits to files you have named</span></label><label><input type="radio" autocomplete="off" name="radio_ABQVZXIVPR" value="answer"><span>It edits files and runs common file commands such as cp and mv without asking, but still asks before other shell commands</span></label><label><input type="radio" autocomplete="off" name="radio_ABQVZXIVPR" value=""><span>Everything, including all shell commands</span></label>
 </div>
 <p><strong>Which check still works whatever rung the agent ran at?</strong></p>
-<div id="radio_PYBYHSSIGB" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_PYBYHSSIGB" value=""><span>The agent's own report that the task succeeded</span></label><label><input type="radio" autocomplete="off" name="radio_PYBYHSSIGB" value=""><span>The approval prompts you saw while it worked</span></label><label><input type="radio" autocomplete="off" name="radio_PYBYHSSIGB" value="answer"><span>Reading the diff in the Git pane (or with git diff), and running the code or its tests yourself</span></label><label><input type="radio" autocomplete="off" name="radio_PYBYHSSIGB" value=""><span>The plan the agent proposed before starting</span></label>
+<div id="radio_ADKUVTHRIU" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ADKUVTHRIU" value=""><span>The agent's own report that the task succeeded</span></label><label><input type="radio" autocomplete="off" name="radio_ADKUVTHRIU" value=""><span>The approval prompts you saw while it worked</span></label><label><input type="radio" autocomplete="off" name="radio_ADKUVTHRIU" value="answer"><span>Reading the diff in the Git pane (or with git diff), and running the code or its tests yourself</span></label><label><input type="radio" autocomplete="off" name="radio_ADKUVTHRIU" value=""><span>The plan the agent proposed before starting</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1156,7 +1068,7 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-12" class="callout-12-contents callout-collapse collapse">
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Plans and prices change; check before the session.</p>
 <ul>
@@ -1173,7 +1085,7 @@ Warning
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1182,14 +1094,14 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-13" class="callout-13-contents callout-collapse collapse">
+<div id="callout-12" class="callout-12-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Project settings and hooks are code that runs on your machine. A cloned repository can carry its own, so trust only repositories whose configuration you have read.</p>
 </div>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-14-contents" aria-controls="callout-14" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1198,7 +1110,7 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-14" class="callout-14-contents callout-collapse collapse">
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>GitHub Copilot offers the same ladder in its own surfaces. Copilot Chat on github.com can also see files in the repository you open it from.</p>
 <table class="caption-top table">
@@ -1238,6 +1150,22 @@ Warning
 </tbody>
 </table>
 <p>Rung 6, the <strong>Copilot cloud agent</strong>, works on the repository on GitHub, in an environment GitHub runs. It takes a task such as an issue, works on its own branch and returns a pull request. Copilot Free includes only limited agent features; check GitHub’s plans page to see whether your plan includes the cloud agent. The cloud agent appears in the <em>Going further</em> section of <a href="./11i-characterisation-tests.html">Block 9</a>, where its pull request meets a review gate.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-14-contents" aria-controls="callout-14" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Stretch: the same error at three levels of context
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-14" class="callout-14-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>In three new browser chats, ask about the Exercise 1 error with more context each time: first the error message alone; then the error plus the code; then the error, the code and the output of <code>glimpse(voles)</code>. Only with the column names in front of it can a chat name <code>mass_post_g</code>. Column names you never supplied, or a famous dataset you never mentioned (<code>penguins</code>, <code>mtcars</code>), are signs it is guessing.</p>
 </div>
 </div>
 </div>
