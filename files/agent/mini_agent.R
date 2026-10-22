@@ -3,13 +3,16 @@
 # Source it from the root of your workshop repository, then talk to `chat`.
 library(ellmer)
 
-# the agent's own deny rule: stay inside the project and out of data/raw/
+# the agent's own deny rule: stay inside the project, out of data/raw/,
+# and away from credentials files
 inside_project <- function(path) {
   root <- fs::path_abs(getwd())
   full <- fs::path_norm(fs::path_abs(path, start = root))
   inside <- full == root || fs::path_has_parent(full, root)
-  if (!inside || fs::path_has_parent(full, fs::path(root, "data", "raw"))) {
-    stop("Refused: ", path, " is outside the project or under data/raw/")
+  if (!inside || fs::path_has_parent(full, fs::path(root, "data", "raw")) ||
+      fs::path_file(full) %in% c(".Renviron", ".env")) {
+    stop("Refused: ", path, " is outside the project, under data/raw/, ",
+         "or a credentials file")
   }
   full
 }

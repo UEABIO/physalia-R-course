@@ -23,10 +23,12 @@ tells you whether to trust it. You own the facts (the
 | Tests and validation rules | Template | Written from the codebook, independently of the cleaning code |
 | Deny rules | Template | Keep the agent's edit tools off the raw data, the codebook, the data note and the tests |
 
+*⏱ ~50 minutes*
+
 The cleaning and the checks both read the codebook but never each other, so a
 misunderstanding in one is caught by the other:
 
-:::::::: {.dia .dia-lanes role="figure" aria-label="The cleaning pipeline and its owners. The raw data are pinned by a checksum and profiled with R. You write the codebook from the profile and the data provider's note. Two independent branches read the codebook: the AI cleans with the skill, writing scripts/01_clean.R, the clean data and the cleaning and exclusion logs; the validation rules were transcribed from the codebook separately. The tests then compare the raw data, the clean data and the logs."}
+:::::::: {.dia .dia-lanes role="figure" aria-label="The cleaning pipeline in order. Facts first: data/raw/voles_raw.csv, pinned by a checksum, is profiled by 00_profile.R into docs/profile.csv; the agent drafts a codebook from the profile; you correct it against the provider's note into docs/codebook.csv. Two branches read the codebook, never each other: the skill writes and runs scripts/01_clean.R, which writes the clean data, cleaning log and exclusion log; the validation rules in validate_voles.R come from the agreed codebook. Then compare: 02_validate.R and 03_audit_cleaning.R, and one test run showing raw data unchanged, every row accounted for, every change logged, the same answer every time."}
 ::::::: {.dia-flow}
 ::: {.dia-label}
 Facts first
@@ -35,13 +37,19 @@ Facts first
 `data/raw/voles_raw.csv`, pinned by a checksum
 :::
 ::: {.dia-arrow}
-profiled in R
+`00_profile.R`
 :::
 ::: {.dia-node .dia-plain}
 `docs/profile.csv`
 :::
 ::: {.dia-arrow}
-plus the provider's note
+drafts from the profile
+:::
+::: {.dia-node .dia-ai}
+Agent's draft codebook
+:::
+::: {.dia-arrow}
+you correct against the provider's note
 :::
 ::: {.dia-node .dia-you}
 `docs/codebook.csv`
@@ -65,7 +73,7 @@ Clean data, cleaning log, exclusion log
 :::::
 ::::: {.dia-flow}
 ::: {.dia-node .dia-check}
-Validation rules in `validate_voles.R`, transcribed from the codebook
+Validation rules in `validate_voles.R`, from the agreed codebook
 :::
 :::::
 ::::::
@@ -73,6 +81,9 @@ Validation rules in `validate_voles.R`, transcribed from the codebook
 ::::::: {.dia-flow}
 ::: {.dia-label}
 Then compare
+:::
+::: {.dia-node .dia-check}
+`02_validate.R` and `03_audit_cleaning.R`
 :::
 ::: {.dia-node .dia-check}
 One test run: raw data unchanged, every row accounted for, every change logged, the same answer every time
@@ -83,15 +94,19 @@ Independence is the point: one misunderstanding cannot pass both branches.
 :::
 ::::::::
 
+The ranges in `validate_voles.R` are the agreed codebook's (shown in Step 2),
+while the audit test reads your own `docs/codebook.csv`, so if your ranges
+differ the validation and the audit can disagree.
+
 The voles data have errors planted in them; your instructor holds the answer
 key, so at the end you measure what your pipeline caught. The steps follow
 [the safe vibe-coding recipe](11d-context-disclosure-autonomy.qmd#safe-recipe)
 from Block 4.
 
-*⏱ ~50 minutes*
+:::{.callout-tip collapse="true"}
+## Background: why not simply ask a chatbot to clean the data?
 
-:::{.callout-note}
-**Why not simply ask a chatbot to clean the data?** In a 2025 study, language
+In a 2025 study, language
 models given polluted tables missed codes such as `-1` (a
 `r glossary("sentinel value")`) and rarely spotted near duplicates (Spreafico
 et al., 2025). Those error classes are planted here.
@@ -106,8 +121,9 @@ Recipe check (3 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** your workshop repository on `main`, Git pane clean (behind on
-Block 5? switch to `block5-done` in the Git pane's branch menu).
+**Start state:** your workshop repository on `main`, Git pane clean (behind on
+Block 5? switch to `block5-done` in the Git pane's branch menu; Block 6 adds no
+files, so `block5-done` is the right checkpoint).
 
 **1. The protections.** Start `claude` and type `/permissions`. Look for these
 `r glossary("deny rule", "deny rules")`: `Edit(/data/raw/**)`,
@@ -121,7 +137,7 @@ the raw file). The tests skip until clean data exist.
 **You are done when** you have seen the five rules and the three files.
 
 **If it goes wrong:** if `/permissions` lists no rules, check you started
-`claude` from the workshop project's Terminal tab; if the files are missing,
+`claude` from the workshop repository's Terminal tab; if the files are missing,
 switch to `block5-done`.
 
 ::::
@@ -250,7 +266,7 @@ Plan, review, then execute (15 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** the codebook committed and the Git pane showing no changed files.
+**Start state:** the codebook committed and the Git pane showing no changed files.
 
 **1. Invoke the skill.**
 
@@ -268,7 +284,7 @@ Plan, review, then execute (15 minutes)
 - duplicates are handled by a stated rule, with each exclusion logged.
 
 **3. Approve, then read each request.** Choose **Yes, manually approve
-edits**. Watch the Git pane: new files should appear only in `scripts/` and
+edits**, an option that appears once the plan is shown. Watch the Git pane: new files should appear only in `scripts/` and
 `data/derived/`. The skill runs the script twice, then the validation and the
 tests, and reports the output.
 
@@ -298,7 +314,7 @@ The agent says its tests pass: that is a claim. One command, in a
 
 :::{.task}
 ::::{.task-header}
-Run the checks (7 minutes)
+Run the checks (6 minutes)
 ::::
 ::::{.task-container}
 
@@ -352,7 +368,7 @@ Short of time? Switch to `block7-done`.
 
 ## Step 5: Grade against the answer key
 
-*Instructor-led, about 8 minutes.* Your instructor releases the answer key.
+*Instructor-led, about 6 minutes.* Your instructor releases the answer key.
 For each planted error, record:
 
 | Planted error | Failed validation on raw? | Handled as intended? | In the log? |
@@ -371,7 +387,8 @@ The columns measure your *rules*, the *cleaning* and the *record*. A planted
 error that passed validation on raw data is a hole in your codebook.
 
 
-## Debrief
+:::{.callout-tip collapse="true"}
+## Instructor: debrief (3 minutes)
 
 1. Which planted errors did the agent's first draft of the codebook miss before
    you corrected it against the note? What does that say about who should own
@@ -381,6 +398,7 @@ error that passed validation on raw data is a hole in your codebook.
 
 **Payoff.** What did the agent do, how long did checking it take, and would you
 automate this again?
+:::
 
 
 :::{.callout-note}
@@ -435,7 +453,8 @@ inferred by the AI from the data?**
 This material is not covered in the live session. Work through it afterwards
 if it is useful to you.
 
-### The validation rules
+::::{.callout-tip collapse="true"}
+## The validation rules
 
 `scripts/functions/validate_voles.R` was transcribed from the codebook by a
 person, not by the agent that writes the cleaning script. It uses the
@@ -468,8 +487,10 @@ source(here::here("scripts", "02_validate.R"))
 through a cleaning script that replaced *every* mass with `NA`. Validation
 alone cannot catch over-cleaning; `tests/test_audit.R` can.
 :::
+::::
 
-### Write the validation rules independently
+:::{.callout-tip collapse="true"}
+## Write the validation rules independently
 
 Instead of using the shipped `validate_voles.R`, you can have the rules
 written by an AI that has never seen the cleaning code, for example a browser
@@ -490,8 +511,10 @@ with character as the default for anything else.
 Compare what it writes with the shipped version. A rule it missed, or a range
 it took from the data rather than the codebook, is the kind of error the
 separate conversation is meant to expose.
+:::
 
-### Read the log yourself
+:::{.callout-tip collapse="true"}
+## Read the log yourself
 
 Tests check consistency; they cannot tell you whether a change was the right
 decision. The shipped audit script shows what kinds of change were made and
@@ -505,8 +528,10 @@ source(here::here("scripts", "03_audit_cleaning.R"))
 
 ```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "03_audit_cleaning.R")}
 ```
+:::
 
-### The fresh-run checks, one by one
+::::{.callout-tip collapse="true"}
+## The fresh-run checks, one by one
 
 The test suite already reruns the cleaning in a fresh R session. To do the
 same checks by hand, commit the outputs, then in the R console:
@@ -531,8 +556,10 @@ pane should show no changes.
 `/exit` or in a second Terminal tab. See
 [checking work](11a-setup-claude-code.qmd#checking-work).
 :::
+::::
 
-### How the template's safeguards were made
+::::{.callout-tip collapse="true"}
+## How the template's safeguards were made
 
 **The checksum.** The template's `tests/fixtures/raw_checksum.txt` was written
 once, from the shipped raw file, like this:
@@ -586,6 +613,7 @@ then copy the folder into `.claude/skills/` with `fs::dir_copy()`.
 #| echo: false
 skill_download_button("clean-with-codebook")
 ```
+::::
 
 
 ## Glossary

@@ -14,7 +14,7 @@ library(webexercises)
 ## Prerequisites
 
 - A GitHub account, an IDE (RStudio or Positron), and the Git, `renv` and `testthat` skills from earlier sessions.
-- **Claude Code**, the workshop's main tool, installed and checked before the day: follow [Setting up Claude Code](11a-setup-claude-code.qmd). It needs a Claude Pro, Max, Teams or Enterprise seat, or a Console account.
+- **Claude Code**, the workshop's main tool, installed and checked before the day: follow [Setting up Claude Code](11a-setup-claude-code.qmd). It needs a Claude Pro, Max, Team or Enterprise seat, or a Console account.
 - **Posit Assistant** works as an alternative; each page says where it differs.
 - **GitHub Copilot** (Copilot Free is enough) for the inline completions in Block 2.
 - Your institution's permission to use these tools, and, near research data, your ethics approval and data agreements. Block 4 covers this.
@@ -62,13 +62,19 @@ Every block ends with a *Going further* section that is not covered live.
 
 ## Materials
 
-You work in your own copy of a workshop template repository ([its layout](11a-setup-claude-code.qmd#your-workshop-repository)), forked before the day. It holds a synthetic voles dataset, scripts, and three things that make the day forgiving:
+You work in your own copy of a workshop template repository ([its layout](11a-setup-claude-code.qmd#your-workshop-repository)), forked before the day.
+
+:::{.callout-tip collapse="true"}
+## Reference: how the day is made forgiving
+
+The repository holds a synthetic voles dataset, scripts, and three things that make the day forgiving:
 
 - **Tests that wait.** Each test in `tests/` skips until its block is done; at 16:00 they run together as one suite.
 - **Checkpoint branches.** `block5-done`, `block7-done` and `block9-done`: if you fall behind, switch to the next one from the Git pane's branch menu and carry on. Nobody needs to finish every exercise.
 - **Built-in protections.** The raw data, the checks and the references are protected before you start.
 
 Block 8 also uses the project folder from <https://osf.io/jgeq9/> that you reviewed on Day 2.
+:::
 
 **Verification is the workshop's only non-negotiable**, and it is what lets you automate with confidence: once you can check an agent's work quickly and independently, you can hand it more of the work. Every exercise ends with that check.
 
@@ -81,7 +87,7 @@ Every block applies three habits, and ends with a box saying what it added:
 - **Reproduce.** The code runs in a `r glossary("fresh R session")` with the package versions in the `r glossary("lockfile")`, and nothing changed that you did not see.
 - **Record.** Leave the evidence a reader needs: a codebook, logs of every data change, numbers computed in code, and a log of your AI use, all drawn together in a README.
 
-::::::: {.dia .dia-flow role="figure" aria-label="Files that accumulate in your workshop repository through the day: Block 4 adds the AI-use log; Block 5 adds your edits to AGENTS.md and a skill; Block 6 tests the shipped settings file; Block 7 adds the codebook and cleaning and exclusion logs; Block 9 adds the reference and tests; Block 10 adds a README that draws on all of them."}
+::::::: {.dia .dia-flow role="figure" aria-label="Files that accumulate in your workshop repository through the day, block by block: Block 4 adds the AI-use log; Block 5 adds your edits to AGENTS.md and a skill; Block 6 tests the shipped settings file in .claude/, which the tests have checked since Block 5; Block 7 adds the codebook and cleaning and exclusion logs; Block 8 adds no file; Block 9 adds the reference and tests; Block 10 adds a README that draws on all of them."}
 ::: {.dia-node .dia-file}
 **Block 4**
 
@@ -99,7 +105,7 @@ Every block applies three habits, and ends with a box saying what it added:
 ::: {.dia-node .dia-file}
 **Block 6**
 
-`settings.json` in `.claude/`, read and tested
+`settings.json` in `.claude/`, tested since Block 5
 :::
 ::: {.dia-arrow}
 :::
@@ -117,13 +123,13 @@ reference and tests
 :::
 ::: {.dia-arrow}
 :::
-::: {.dia-node .dia-check}
+::: {.dia-node .dia-file}
 **Block 10**
 
 `README.md`, drawing on all of them
 :::
 ::: {.dia-caption}
-What your repository holds by 16:00.
+What your repository holds by 16:00, block by block (Block 8 adds no file).
 :::
 :::::::
 
@@ -158,9 +164,15 @@ Keep this open during the day. Everything in the right-hand column is typed at t
 Your workshop repository starts Claude Code in **Manual** mode (`default`): it asks before every edit and command. Claude Code's own default is `auto`, where a second model approves actions for you; [Block 4](11d-context-disclosure-autonomy.qmd) explains the difference. Stay in Manual and read each request before you answer.
 
 
-## Framing and mental models
+## Block 1: framing
+
+This block gives you the two words you will use all day, what a large language model is, and why its context window matters.
+It ends with a short discussion and a quiz.
 
 *⏱ ~15 minutes: presentation, a short discussion and a quiz.*
+
+
+## Framing and mental models
 
 Two words recur all day. An `r glossary("assistant")` is any AI tool that helps you write or understand code. An `r glossary("agent")` is an assistant that acts: it reads your project and, if you let it, edits files and runs commands. Claude Code and Posit Assistant are agents; a chat window that only answers is not. To see how one works inside, the self-study page [Build your own agent in R](11k-build-an-agent.qmd) builds a small one.
 
@@ -187,13 +199,13 @@ Take three minutes, then post a short answer to each question in the Zoom chat:
 
 ## Check your understanding
 
-**Which statement best describes the difference between a local agent such as Claude Code and an asynchronous cloud agent?**
+**Your instruction file asks the agent never to edit `data/raw/`. Why does the course still add permission rules and tests?**
 
 `r longmcq(c(
-  "They are the same tool with different names",
-  answer = "A local agent works on your machine while you watch and can be interrupted at any point; a cloud agent works remotely on its own branch and returns its work as a pull request for review",
-  "A local agent is paid and a cloud agent is free",
-  "A cloud agent runs in your editor and a local agent runs on someone else's servers"
+  "Claude Code ignores AGENTS.md, so the instruction never reaches the model",
+  answer = "An instruction file only adds context the model may or may not follow; rules and tests hold either way",
+  "Permission rules make the model more accurate, so it follows the instruction more closely",
+  "Tests stop the agent reading the raw data, so it never sees the files it might edit"
 ))`
 
 **True or false: a large language model has no memory between calls, so each interaction starts with only the context you supply.** `r torf(TRUE)`
@@ -203,23 +215,31 @@ Take three minutes, then post a short answer to each question in the Zoom chat:
 
 This material is not covered in the live session. Work through it afterwards if it is useful to you.
 
-### Which tool does what
+:::{.callout-tip collapse="true"}
+## Which tool does what
 
 - **Claude Code** runs in the Terminal tab of RStudio or Positron, which starts in your project's root folder: the folder it acts on. Every block's main text uses it, and checks its work from the R console and Git pane.
 - **Posit Assistant** is the in-IDE chat and agent in RStudio and Positron. It can also see your live R session. See [What's new in Posit AI](https://docs.posit.co/posit-ai/whats-new/).
 - **GitHub Copilot** gives inline completions in all three IDEs. Its cloud agent, used only in some *Going further* sections, needs a paid plan; see the [Copilot plans page](https://docs.github.com/en/copilot/get-started/plans).
+:::
 
-### Models
+:::{.callout-tip collapse="true"}
+## Models
 
 Claude Code uses Anthropic's Claude models; Posit Assistant runs on Posit AI or a provider key you configure; GitHub Copilot offers Claude, GPT and Gemini models. You do not need strong opinions about which model is best, only to know that the choice exists and changes the output.
+:::
 
-### Two modes of execution
+:::{.callout-tip collapse="true"}
+## Two modes of execution
 
 The tools you use today are **synchronous and local**: they work on your machine, respond in seconds, and can be interrupted. Their reach differs: the current file for inline completion, the project folder and the output of its own commands for Claude Code, and your live R session too for Posit Assistant. An **asynchronous, remote** agent, such as the Copilot cloud agent, works on its own branch on someone else's servers and returns a pull request minutes later; you meet it in the *Going further* sections of Blocks 4, 6 and 9. The first invites you to watch and interrupt; the second, to write a precise specification and review what comes back. Block 4 turns this into a ladder of autonomy.
+:::
 
-### The thread, in more detail
+:::{.callout-tip collapse="true"}
+## The thread, in more detail
 
 Day 1 introduced `renv`; Day 4 checks that an agent has kept to it. On Day 2 you saw what a reviewable project needs ([TADA! and the README](06-reproducibility.qmd#repro-fix), and [the SORTEE checklist](06-reproducibility.qmd#repro-sortee)); Day 4 shows how AI can help produce that record without inventing any of it. Many journals, funders and institutions now ask authors to declare AI use, and a log written at the time is easier and more accurate than one reconstructed later.
+:::
 
 
 ## Glossary

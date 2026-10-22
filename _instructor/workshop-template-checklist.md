@@ -23,7 +23,7 @@ book and the template cannot drift apart.
 | `scripts/functions/load_voles.R`, `validate_voles.R`, `typed_numbers.R` | Blocks 7, 9, 10 | From `template-files/`. |
 | `reports/example_report.qmd` | Block 10 | Two planted typed results (lines 37–38) and three lines that are questions, not errors (date, design size, "95%"). |
 | `tests/fixtures/raw_checksum.txt` | Block 7 | Generate once from the shipped raw file: `writeLines(unname(tools::md5sum("data/raw/voles_raw.csv")), "tests/fixtures/raw_checksum.txt")`. |
-| `AGENTS.md` | Block 5 | From `template-files/`: the starter learners edit with `/memory`. Claude Code reads it directly (v2.1.277+) because there is no `CLAUDE.md`; do not ship one. |
+| `AGENTS.md` | Block 5 | From `template-files/`: the starter learners edit with `/memory`. Claude Code reads it directly (v2.1.281+) because there is no `CLAUDE.md`; do not ship one. |
 | `tests/make_reference.R` | Block 9 | Not picked up by `test_dir()`, which only runs `test*.R` files. |
 | `tests/test_explore.R`, `test_ai_log.R`, `test_controls.R`, `test_cleaning.R`, `test_audit.R`, `test_reference_guard.R`, `test_translation.R`, `test_readme.R` | Blocks 4–10 | From `template-files/`. Every test skips until its block is done, so the suite passes at any point in the day. |
 | `.agents/skills/` and `.claude/skills/`: `clean-with-codebook` and `characterisation-refactor` | Blocks 7, 9 | From `files/skills/`; the `.claude/` one is a copy, not a link, so it works on Windows. |

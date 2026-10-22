@@ -22,7 +22,7 @@ to start it, and the R console and Git pane for everything else.
    reads, and the output of commands it runs, to Anthropic. Check your
    institution's policy and, near research data, your ethics approval and data
    agreements ([Block 4](11d-context-disclosure-autonomy.qmd)).
-2. **Which account?** A Claude Pro or Max subscription, a Claude for Teams or
+2. **Which account?** A Claude Pro or Max subscription, a Claude Team or
    Enterprise seat, a Claude Console account (billed per request), or access
    your institution has set up through a cloud provider.
 3. **Is your computer supported?** macOS 13 or later, Windows 10 (1809) or
@@ -81,11 +81,14 @@ Terminal tab:
 claude --version
 ```
 
-**You are done when** it prints **2.1.281 or later**, so that Claude Code reads
-your `AGENTS.md` instruction file directly.
+**You are done when** it prints **2.1.281 or later**. This minimum is about
+your instruction file: from this version, Claude Code reads your `AGENTS.md`
+directly.
 
 
-## Before you sign in: prepare your workshop repository
+## Step 4: Prepare your workshop repository
+
+Do this before you sign in, so that Claude Code starts in the right folder.
 
 1. **Fork, clone and open the template** in one step, in the R console:
    `usethis::create_from_github("<template-owner>/<template-repo>", fork = TRUE)`.
@@ -109,45 +112,71 @@ options.
 :::
 
 
-## Your workshop repository
+### Your workshop repository {#your-workshop-repository}
 
-Every block from Block 4 works in this one repository. The template ships most
-of it; files marked *you* are created during the day.
+Every block from Block 4 works in this one repository, which the template ships
+almost complete.
+
+:::{.callout-tip collapse="true"}
+## Reference: the repository layout
+
+Files marked *you* are created during the day. Scripts are numbered in the
+order they run.
 
 ```
 data/
-  raw/voles_metabolism.csv     Blocks 2–5, 9 and 10 (one deliberate NA)
-  raw/voles_raw.csv            Block 7 (errors planted by your instructor)
-  derived/                     written by Block 7's cleaning
+  raw/voles_metabolism.csv      Blocks 2–5, 9 and 10 (one deliberate NA)
+  raw/voles_raw.csv             Block 7 (errors planted by your instructor)
+  derived/                      empty; Block 7's cleaning writes here
 docs/
-  data_note.md                 the data provider's note (Block 7)
-  codebook.csv                 you, Block 7
-  ai-log.md                    you, from Block 4
+  data_note.md                  the data provider's note (Block 7)
+  ai-log.md                     you, from Block 4
+  codebook.csv                  you, Block 7
 scripts/
-  explore_voles.R              Block 4 (exploratory, so unnumbered)
-  00_profile.R … 03_audit_cleaning.R   Block 7: the cleaning pipeline
-  04_load_data.R, 05_analysis.R        Block 9: the analysis
-  functions/                   load_voles.R, validate_voles.R, and
-                               summary_functions.R (Block 9)
+  explore_voles.R               Block 4 (exploratory, so unnumbered)
+  00_profile.R                  Block 7: describes the raw file as entered
+  01_clean.R                    you (with the agent), Block 7
+  02_validate.R                 Block 7: runs the codebook rules
+  03_audit_cleaning.R           Block 7: audits the cleaning
+  04_load_data.R                Block 9: loads the data
+  05_analysis.R                 Block 9: the original, trusted analysis
+  functions/
+    load_voles.R                reads voles_metabolism.csv
+    validate_voles.R            the codebook rules, written by a human
+    typed_numbers.R             Block 10: finds numbers typed into prose
+    summary_functions.R         you, Block 9
+reports/
+  example_report.qmd            Block 10: a report with typed results
+outputs/                        empty; saved figures go here
 tests/
-  make_reference.R, test_cleaning.R
-  fixtures/                    the raw-data checksum (shipped) and the
-                               reference you capture in Block 9
-AGENTS.md                      the instruction file (you edit it in Block 5)
-.agents/skills/, .claude/skills/   skills (copies of the same folders)
-.claude/settings.json          Manual mode and the deny rules (Block 6)
-renv.lock                      the package versions
+  make_reference.R              Block 9: you run it once to capture the reference
+  test_explore.R                Block 4: the agent's new column and plot script
+  test_ai_log.R                 from Block 4: the AI-use log
+  test_controls.R               Blocks 5, 6 and 9: instructions and deny rules
+  test_cleaning.R               Block 7: raw data untouched, clean data valid
+  test_audit.R                  Block 7: the cleaning log is truthful
+  test_reference_guard.R        Block 9: the test reads your reference
+  test_translation.R            Block 10: the translation matches
+  test_readme.R                 Block 10: the README agrees with its sources
+  fixtures/raw_checksum.txt     the raw-data checksum (shipped)
+AGENTS.md                       the instruction file (you edit it in Block 5)
+.agents/skills/                 clean-with-codebook, characterisation-refactor
+.claude/skills/                 copies of the same two skills
+.claude/settings.json           Manual mode and the deny rules (Block 6)
+.gitignore                      keeps .Renviron, .env and Rplots.pdf out of git
+.gitattributes                  stops git changing line endings in data/raw/
+renv.lock                       the package versions
 ```
+:::
 
 `.claude/settings.json` holds the `r glossary("deny rule", "deny rules")` that
 protect the raw data, the codebook, the checks and the references; you read
-and test it in [Block 6](11f-enforced-controls.qmd). Scripts are numbered in
-the order they run.
+and test it in [Block 6](11f-enforced-controls.qmd).
 
 
-## Step 4: Sign in
+## Step 5: Sign in
 
-With your workshop project open, type `claude` in its Terminal tab. On first
+With your workshop repository open, type `claude` in its Terminal tab. On first
 launch a browser window opens: sign in with your account (`/logout` and
 `/login` switch accounts later). If a Terminal tab was open before you switched
 projects, close it and open a new one.
@@ -164,7 +193,7 @@ use it instead of your subscription and bill per request: check under
 :::
 
 
-## Step 5: The essentials
+## Step 6: The essentials
 
 Your workshop repository starts Claude Code in **Manual** mode (`default`), a
 `r glossary("permission mode")` in which it asks before every edit and command.
@@ -208,7 +237,21 @@ The same checks from a terminal (after `/exit`, or in a second Terminal tab):
 :::
 
 
-## Step 6: Check everything works
+## Step 7: Sign in to GitHub Copilot
+
+[Block 2](11b-inline-completions.qmd) uses GitHub Copilot for inline
+completions. Copilot Free is enough.
+
+- **RStudio:** *Tools → Global Options → Copilot*, tick **Enable GitHub
+  Copilot**, and sign in with your GitHub account.
+- **Positron:** choose GitHub Copilot as the completions provider, and sign in
+  with your GitHub account when Positron prompts you, or from its AI assistant
+  settings.
+
+Step 8 checks that grey suggestions appear.
+
+
+## Step 8: Check everything works
 
 :::{.task}
 ::::{.task-header}
@@ -216,7 +259,7 @@ Pre-workshop check (15 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** your workshop project is open, and the Git pane shows no
+**Start state:** your workshop repository is open, and the Git pane shows no
 uncommitted changes.
 
 **1. Manual mode, and a plan.** Type `claude` in the Terminal tab. It should
@@ -226,6 +269,10 @@ say it is in Manual mode (`default`), not `auto`. Then:
 /plan Describe the structure of this repository and what each top-level folder
 contains. Do not change anything.
 ```
+
+Read the plan. When it asks whether to proceed, choose **"No, keep planning"**,
+then press Esc to leave it. Check that the mode shown is Manual again
+(Shift+Tab cycles the modes) before step 2.
 
 **2. R is reachable.**
 
@@ -261,10 +308,12 @@ show `block5-done`, `block7-done` and `block9-done`. Stay on `main`.
 
 **You are done when** the Git pane shows no changes, Claude Code starts in
 Manual mode, `/permissions` lists the deny rules, and the tests run with no
-failures. Copy the output of steps 2–4 into a text file to bring on the day.
+failures. Copy the output of steps 2 and 4 into a text file to bring on the
+day, and note there how many deny rules `/permissions` showed in step 3.
 
-**If it goes wrong:** `Rscript` not found, return to Step 2; empty
-`/permissions` list, start `claude` from the workshop project's Terminal tab;
+**If it goes wrong:** `Rscript` not found, return to Step 2; no ghost text,
+return to Step 7; empty `/permissions` list, start `claude` from the workshop
+repository's Terminal tab;
 a changed file, **Revert** in the Git pane; package problems, run
 `renv::restore()` again and send the error to your instructor before the day.
 
@@ -276,7 +325,8 @@ a changed file, **Revert** in the Git pane; package problems, run
 
 This material is not covered in the live session. Work through it afterwards if it is useful to you.
 
-### Other install routes and shells
+:::{.callout-tip collapse="true"}
+## Other install routes and shells
 
 - **macOS with Homebrew:** `brew install --cask claude-code` (update it by hand;
   the native installer updates itself).
@@ -290,8 +340,10 @@ This material is not covered in the live session. Work through it afterwards if 
   `fs::dir_copy(here::here(".agents", "skills"), here::here(".claude", "skills"), overwrite = TRUE)`.
   On macOS or Linux a `r glossary("symbolic link")` also works
   ([Block 5](11e-instructions-skills.qmd)).
+:::
 
-### Where Claude Code fits among the course's tools
+:::{.callout-tip collapse="true"}
+## Where Claude Code fits among the course's tools
 
 | | Claude Code | Posit Assistant | GitHub Copilot |
 |---|---|---|---|
@@ -299,6 +351,7 @@ This material is not covered in the live session. Work through it afterwards if 
 | What it sees | Project files, and output of commands it runs | Your live R session and project files | Open files; on github.com, the repository |
 | Instruction file | `AGENTS.md` (read directly) | `AGENTS.md` | `AGENTS.md`, `.github/copilot-instructions.md` |
 | Skills folder | `.claude/skills/` | `.agents/skills/` | `.agents/skills/`, `.claude/skills/`, `.github/skills/` |
+:::
 
 
 ## Glossary

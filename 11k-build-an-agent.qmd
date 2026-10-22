@@ -196,8 +196,14 @@ downloadthis::download_file(
 )
 ```
 
+The walkthrough below explains each part of the file.
+
+:::{.callout-tip collapse="true"}
+## Reference: the full mini_agent.R
+
 ```{r, eval = FALSE, file = here::here("files", "agent", "mini_agent.R")}
 ```
+:::
 
 Each part matches something you met during the day:
 
@@ -205,7 +211,8 @@ Each part matches something you met during the day:
   `tool_annotations(read_only_hint = TRUE)` labels them, but a label is only a
   hint and enforces nothing. `write_file()` and `run_r()` change things.
 - **`inside_project()` is the agent's deny rule.** Every file tool calls it,
-  and it refuses paths outside the project or under `data/raw/`. An error in a
+  and it refuses paths outside the project, under `data/raw/`, or to a
+  credentials file (`.Renviron` or `.env`, in any folder). An error in a
   tool does not stop the agent: ellmer sends the error message back to the
   model, which can try something else.
 - **`ask_first()` is Manual mode.** `chat$on_tool_request()` runs it before
@@ -232,7 +239,7 @@ Run your agent (20 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** your workshop repository open in RStudio or Positron, committed and
+**Start state:** your workshop repository open in RStudio or Positron, committed and
 clean in the Git pane. If `scripts/explore_voles.R` already has a
 `mass_change_g` line from Block 4, delete that line and commit first. The
 working directory must be the repository's root, as it is when you open the
@@ -304,9 +311,9 @@ the file in the Git pane. If `chat_anthropic()` reports a missing key, check
 | Your mini agent | Claude Code |
 |---|---|
 | `ask_first()` and `tool_reject()` | Manual mode (`default`) and the other permission modes |
-| `inside_project()` | Deny rules in `.claude/settings.json` |
+| `inside_project()` | Deny rules in `.claude/settings.json`, such as `Read(/.Renviron)` |
 | The system prompt | `AGENTS.md`, read at the start of each session |
-| `run_r()` in a fresh R session with `callr::r()` | Commands in a shell, which you check in a fresh R session |
+| `run_r()` in a fresh R session with `callr::r()` | Commands it runs in the Terminal; you check results in a fresh R session |
 | `get_turns()`, `get_rounds()`, `get_cost()` | The conversation itself, and the model shown above the prompt |
 | Git | Git |
 
@@ -359,20 +366,25 @@ work. It is a way to understand what the big one is doing.
 This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
 
-### Add a `run_tests` tool
+:::{.callout-tip collapse="true"}
+## Add a `run_tests` tool
 
 Replace general-purpose `run_r()` for checking with a tool that can only run
 the project's tests, `function() testthat::test_dir("tests")` run through
 `callr::r()`. A narrow tool needs less approval than a general one: you might
 let it through without asking, and keep asking for `run_r()`.
+:::
 
-### A restricted mode
+:::{.callout-tip collapse="true"}
+## A restricted mode
 
 Change `ask_first()` so it asks before every call, reads included. You then
 see every file the agent wants to read before it is sent to the provider,
 which is the habit Block 4 recommends near confidential data.
+:::
 
-### Packages that do more
+:::{.callout-tip collapse="true"}
+## Packages that do more
 
 - [btw](https://posit-dev.github.io/btw/) gives ellmer agents ready-made tools
   for R: package documentation, your live session's objects and your project's
@@ -380,12 +392,15 @@ which is the habit Block 4 recommends near confidential data.
 - [mcptools](https://posit-dev.github.io/mcptools/) connects R to the Model
   Context Protocol, so R functions can be tools for other assistants, including
   Claude Code.
+:::
 
-### Another provider
+:::{.callout-tip collapse="true"}
+## Another provider
 
 ellmer has a `chat_*()` function for each provider it supports, and the tools
 and loop stay the same. Tool calling can be much less reliable with small local
 models, so start with a hosted model.
+:::
 
 
 ## Glossary
@@ -400,8 +415,8 @@ glossary_table()
 
 - Wickham, H. (2026, 5 June). *What is an agent?* AI for data science
   (Substack). <https://substack.hadley.nz/p/what-is-an-agent>
-- Barbier, J. *50 lines of code to rebuild Claude Code in R*. Talk, 10
-  November.
+- Barbier, J. *50 lines of code to rebuild Claude Code in R*. Talk abstract,
+  10 November (year and venue not stated in the abstract).
 - Wickham, H., Cheng, J., Jacobs, A., Aden-Buie, G. and Schloerke, B. (2026).
   *ellmer: Chat with large language models*. R package version 0.5.0.
   <https://CRAN.R-project.org/package=ellmer>

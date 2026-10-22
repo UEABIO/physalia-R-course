@@ -27,10 +27,15 @@ the diff.
 
 ## The code you will refactor
 
-`scripts/05_analysis.R` summarises metabolic rate by treatment arm and sex:
+`scripts/05_analysis.R` loads the trial data and summarises post-treatment
+metabolic rate (mean, SD and count) by treatment arm and sex.
+
+:::{.callout-tip collapse="true"}
+## Reference: the code you will refactor
 
 ```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "05_analysis.R")}
 ```
+:::
 
 :::{.callout-note collapse="true"}
 ## The data loading it relies on
@@ -49,7 +54,7 @@ One thing to notice and leave alone: the data have one missing
 The whole block in one picture: you hold the reference at both ends, and the
 agent works only in between.
 
-::::::: {.dia .dia-lanes role="figure" aria-label="The characterisation-test loop. Steps 0 and 1: you capture the reference; the skill refactors; you read the diff; the skill writes a test that reads your reference; the whole test suite passes in a fresh R session. Step 2: you decide the behaviour should change; the change makes the characterisation test fail, correctly; a known-answer test checks the new behaviour; you re-capture the reference with a commit message."}
+::::::: {.dia .dia-lanes role="figure" aria-label="The characterisation-test loop. Steps 0 and 1, refactor without changing the output: you capture the reference in tests/fixtures/; the skill refactors only; you read the diff; the skill writes a test that reads your reference; you protect the new test with /permissions; the test suite passes in a fresh R session. Step 2, when the behaviour should change: you decide the output is wrong; the agent changes the function; the characterisation test fails, correctly; the known-answer test passes; you re-capture, with a commit message saying why. The agent never creates or regenerates the reference."}
 :::::: {.dia-flow}
 ::: {.dia-label}
 Steps 0 and 1: refactor without changing the output
@@ -74,6 +79,11 @@ Skill: a test that reads your reference
 :::
 ::: {.dia-arrow}
 :::
+::: {.dia-node .dia-you}
+Protect the new test (`/permissions`)
+:::
+::: {.dia-arrow}
+:::
 ::: {.dia-node .dia-check}
 The test suite passes in a fresh R session
 :::
@@ -87,7 +97,7 @@ Decide the output is wrong
 :::
 ::: {.dia-arrow}
 :::
-::: {.dia-node .dia-plain}
+::: {.dia-node .dia-ai}
 Change the function
 :::
 ::: {.dia-arrow}
@@ -340,10 +350,12 @@ test passes.
 callr::rscript(here::here("tests", "make_reference.R"))
 ```
 
-Commit the reference, the function and the new test file with a message that
-says why, for example "Exclude missing metabolic rates from mean and SD; report
-n_used and n_missing". Run the suite again: everything passes once the new
-reference is committed.
+**5. Commit, then run the suite.** Commit the reference, the function and the
+new test file with a message that says why, for example "Exclude missing
+metabolic rates from mean and SD; report n_used and n_missing". Only then run
+the suite as in Step 1. The order matters: until the new reference is
+committed, `test_reference_guard.R` fails, because git reports uncommitted
+changes under `tests/fixtures/`.
 
 Re-capturing is safe here for three reasons: you decided it, a known-answer
 test checks the new behaviour, and the commit records why.
@@ -414,7 +426,8 @@ could still change the reference?**
 This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
 
-### What the skill does, step by step
+::::{.callout-tip collapse="true"}
+## What the skill does, step by step
 
 The skill turns two prompts into one request. Written out by hand, the two
 prompts are below. Splitting the work matters: a single prompt that writes
@@ -469,8 +482,10 @@ Code):
 #| echo: false
 skill_download_button("characterisation-refactor")
 ```
+::::
 
-### Without an agent: write the function and the test yourself
+:::{.callout-tip collapse="true"}
+## Without an agent: write the function and the test yourself
 
 A tidy refactor naturally reaches for the modern `.by` argument. Write this
 first attempt in `scripts/functions/summary_functions.R`:
@@ -577,23 +592,29 @@ metabolic_summary <- summarise_metabolic_rate(voles)
 ```
 
 `r unhide()`
+:::
 
-### Protecting the new test by editing the settings file
+:::{.callout-tip collapse="true"}
+## Protecting the new test by editing the settings file
 
 `/permissions` is the simple route. The same rule can be added by hand: open
 `.claude/settings.json` in the editor and add
 `"Edit(/tests/test_summary_functions.R)"` to the `deny` list, minding the
 comma after the line before. Claude Code reloads the file without a restart.
 `test_controls.R` checks the result either way.
+:::
 
-### The review gate
+:::{.callout-tip collapse="true"}
+## The review gate
 
 Local controls do not exist for an agent that works remotely. On GitHub, a
 pull request that changes a file under `tests/` can be held until the code
 owner reviews it. How to set up CODEOWNERS and branch protection is in the
 *Going further* section of [Block 6](11f-enforced-controls.qmd).
+:::
 
-### Reuse the skill on a second step
+:::::{.callout-tip collapse="true"}
+## Reuse the skill on a second step
 
 A skill earns its keep the second time you use it.
 
@@ -604,7 +625,7 @@ Reuse the skill (15 minutes)
 ::::{.task-container}
 
 **1. Capture a reference yourself first.** Pick a second step: the plotting
-code you added to `scripts/explore_voles.R` in
+code in `scripts/explore_mass_change_plot.R` from
 [Block 4](11d-context-disclosure-autonomy.qmd), or a step from your own
 project. Save its output to `tests/fixtures/` yourself, as in Step 0.
 
@@ -613,8 +634,9 @@ project. Save its output to `tests/fixtures/` yourself, as in Step 0.
 **Prompt (Claude Code):**
 
 ```text
-/characterisation-refactor Functionalise the step in scripts/explore_voles.R
-that I captured in tests/fixtures/. Start with the plan.
+/characterisation-refactor Functionalise the step in
+scripts/explore_mass_change_plot.R that I captured in tests/fixtures/.
+Start with the plan.
 ```
 
 **3. Compare.** Did the agent still stop between the refactor and the test?
@@ -623,14 +645,16 @@ Run the whole suite, and check the Git pane for anything changed under
 
 ::::
 :::
+:::::
 
-### An asynchronous agent: the Copilot cloud agent
+:::{.callout-tip collapse="true"}
+## An asynchronous agent: the Copilot cloud agent
 
 The same work can be handed to an agent that runs remotely while you do
 something else. It works on a branch in GitHub's infrastructure and returns a
 pull request. Before you start, check that your Copilot plan includes the cloud
-agent, that `copilot-setup-steps.yml` is on your default branch (see the next
-section), and that the repository is protected.
+agent, that `copilot-setup-steps.yml` is on your default branch (see *The
+environment the test runs in* below), and that the repository is protected.
 
 **Protect the reference on GitHub.** Local deny rules do not exist for a remote
 agent. Add a `.github/CODEOWNERS` file naming yourself for the protected paths,
@@ -690,8 +714,10 @@ Assign each issue to Copilot. When a pull request arrives:
 
 If something is wrong, comment on the pull request to ask for a revision, or
 close it. Nothing reaches `main` until you merge.
+:::
 
-### The environment the test runs in
+:::{.callout-tip collapse="true"}
+## The environment the test runs in
 
 A characterisation test is only as stable as the environment it runs in. The
 column types in `load_voles()` handle the finest-grained part. The R version and
@@ -768,14 +794,15 @@ Four requirements, each with a different failure mode:
   ignores the file and works without your packages. That failure is usually
   loud: the tests error on the first missing function.
 - **The file must be on the default branch**, or it is not used.
-- **The runner must be Ubuntu x64 Linux**, the only runner type the cloud agent
-  supports.
+- **The runner must be Ubuntu x64 Linux or Windows 64-bit.** The cloud agent
+  does not support macOS runners; Ubuntu is the usual choice for R.
 - **The lockfile must be restored.** If it restores the wrong versions, the
   failure is quiet: tests run and pass against different package behaviour. The
   frozen reference then certifies sameness against the wrong baseline.
 
 When the agent's test run and the independent `r-checks` run disagree, suspect
 the environment before you suspect the code.
+:::
 
 
 ## Glossary
@@ -784,3 +811,14 @@ the environment before you suspect the code.
 #| echo: false
 glossary_table()
 ```
+
+
+## References
+
+- GitHub documentation: *Configure the development environment* (Copilot
+  cloud agent, `copilot-setup-steps.yml`),
+  <https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment>;
+  *About code owners*,
+  <https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners>.
+- r-lib/actions: *GitHub Actions for the R community*,
+  <https://github.com/r-lib/actions>.

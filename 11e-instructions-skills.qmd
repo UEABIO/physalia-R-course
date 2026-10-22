@@ -33,7 +33,7 @@ conversation. There is no `CLAUDE.md`: Claude Code reads `AGENTS.md` only when
 no `CLAUDE.md` exists, so creating one (for example with `/init`) would hide
 your conventions.
 
-:::::: {.dia .dia-lanes role="figure" aria-label="Which files each tool reads: Claude Code and Posit Assistant both read AGENTS.md directly; skills are kept in .agents/skills and copied to .claude/skills"}
+:::::: {.dia .dia-lanes role="figure" aria-label="Which files each tool reads: Claude Code and Posit Assistant both read AGENTS.md directly; a skill is kept in .agents/skills/your-skill and copied to .claude/skills/your-skill for Claude Code"}
 ::::: {.dia-flow}
 ::: {.dia-label}
 Instruction file: loaded into every conversation
@@ -53,13 +53,13 @@ Claude Code and Posit Assistant
 Skills: loaded when invoked or judged relevant
 :::
 ::: {.dia-node .dia-file}
-`.agents/skills/house-figures/` (the master copy)
+`.agents/skills/<your-skill>/` (the master copy)
 :::
 ::: {.dia-arrow}
 you copy
 :::
 ::: {.dia-node .dia-file}
-`.claude/skills/house-figures/`
+`.claude/skills/<your-skill>/`
 :::
 ::: {.dia-arrow}
 read by
@@ -113,7 +113,7 @@ Edit, check, verify (15 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** your workshop project open, a clean Git pane, and Claude Code
+**Start state:** your workshop repository open, a clean Git pane, and Claude Code
 running in the project's Terminal tab
 ([checking work](11a-setup-claude-code.qmd#checking-work)).
 
@@ -184,11 +184,17 @@ the top, gives a `name` and a `description`:
 - **The body is a procedure:** when to use it, the steps, hard rules and a
   final check. It loads only when used, so it can be longer than `AGENTS.md`.
 
+:::{.callout-tip collapse="true"}
+## Background: skills that run only by name
+
 For a skill that writes files, `disable-model-invocation: true` in the front
 matter makes it run only when you invoke it by name.
+:::
 
 Keep the master copy in `.agents/skills/` and copy it into `.claude/skills/`
-for Claude Code (Posit Assistant reads `.agents/skills/` directly). The
+for Claude Code (Posit Assistant reads `.agents/skills/` directly). The deny
+rules protect `.claude/` from the agent's edit tools but not `.agents/skills/`,
+so check the master copy in the Git pane too. The
 course's own skills already ship in both; type `/skills` to list them. For a
 skill you write, copy it once, and again whenever you change it:
 
@@ -212,7 +218,7 @@ A house figure style (20 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** Claude Code in Manual mode in your project's Terminal tab, with your
+**Start state:** Claude Code in Manual mode in your project's Terminal tab, with your
 `AGENTS.md` committed.
 
 **1. Baseline, before the skill exists.**
@@ -285,23 +291,31 @@ same for `fig_house.R`. Then record, for each rule:
 | 5. n per group shown | | |
 | 6. No unrequested p-values | | |
 
+**5. Record it.** Add a line to `docs/ai-log.md` in the same form as Block 4,
+with today's date, naming the skill you tested and what you kept or changed in
+its output. Commit it with the skill and the two scripts.
+
 **You are done when** the table is filled in from the figures you looked at,
-not from the agent's list of rules it applied.
+not from the agent's list of rules it applied, and your log line is committed.
 
 **If it goes wrong:** if `/skills` does not list it, check that
 `.claude/skills/house-figures/SKILL.md` exists and its front matter starts and
-ends with three dashes. Out of time? Switch to `block5-done`.
+ends with three dashes. Out of time? Commit or discard your changes in the Git
+pane first, so the switch is not blocked, then switch to `block5-done`.
 
 **Payoff.** What did the skill do for you, how long did checking it take, and
 would you use it for the next figure?
 
-**5. Optional, if time allows.** In a new conversation (`/clear`), test the
-trigger: "Give me a quick look at mass_post_g by arm" should *not* load the
-skill; "Polish the figure in scripts/fig_baseline.R for the poster" should. Or
-test rule 6: ask it to "add significance stars between the groups in
-scripts/fig_house.R" and see whether it declines. Either way, what makes the
-output trustworthy is the grading in step 4, which you can repeat on every
-figure.
+:::{.callout-tip collapse="true"}
+## Stretch: test the trigger
+
+In a new conversation (`/clear`), test the trigger: "Give me a quick look at
+mass_post_g by arm" should *not* load the skill; "Polish the figure in
+scripts/fig_baseline.R for the poster" should. Or test rule 6: ask it to "add
+significance stars between the groups in scripts/fig_house.R" and see whether
+it declines. Either way, what makes the output trustworthy is the grading in
+step 4, which you can repeat on every figure.
+:::
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -312,15 +326,6 @@ the skill by name in the same way.
 
 ::::
 :::
-
-
-### Skills you did not write
-
-Claude Code ships built-in skills such as `/code-review` and `/debug`, and
-shared collections are published online, for example Anthropic's
-`anthropics/skills` repository. Read any skill before installing it: it can
-include scripts the assistant runs on your machine. *Going further* gives you
-one to practise on: `pub-figures`, the ggplot chapter's conventions as a skill.
 
 
 :::{.callout-note}
@@ -376,7 +381,19 @@ publication figures. What should you change first?**
 This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
 
-### Linking a skill instead of copying it
+:::{.callout-tip collapse="true"}
+## Skills you did not write
+
+Claude Code ships built-in skills such as `/code-review` and `/debug`, and
+shared collections are published online, for example Anthropic's
+`anthropics/skills` repository. Read any skill before installing it: it can
+include scripts the assistant runs on your machine. *Install a skill bundle and
+compare*, below, gives you one to practise on: `pub-figures`, the ggplot
+chapter's conventions as a skill.
+:::
+
+:::{.callout-tip collapse="true"}
+## Linking a skill instead of copying it
 
 On macOS or Linux you can use a `r glossary("symbolic link")` instead of a
 copy, so there is only one version to keep up to date:
@@ -384,8 +401,10 @@ copy, so there is only one version to keep up to date:
 Claude Code follows the link, but it stores the full path, so recreate it if
 you move the project. On Windows, symbolic links need extra configuration, so
 copy the folder.
+:::
 
-### Instruction and skill files in other tools
+:::{.callout-tip collapse="true"}
+## Instruction and skill files in other tools
 
 | File or folder | Posit Assistant | GitHub Copilot |
 |---|---|---|
@@ -403,8 +422,10 @@ twice, remove one route for Copilot.
 
 Posit Assistant also includes built-in skills such as `quarto-authoring` and
 `r-package-development`.
+:::
 
-### A rule for Quarto files only
+:::::{.callout-tip collapse="true"}
+## A rule for Quarto files only
 
 Some rules are right for one kind of file and wrong elsewhere. A chunk option
 such as `#| echo: false` is meaningful in a `.qmd` file and meaningless in an
@@ -470,8 +491,10 @@ between tools.
 
 Every scoped rule is a second copy of a convention to keep in step, once per
 tool. Use scoped rules sparingly.
+:::::
 
-### Install a skill bundle and compare
+:::::{.callout-tip collapse="true"}
+## Install a skill bundle and compare
 
 `house-figures` is six rules you wrote and can read at a glance. `pub-figures`
 is the opposite case: the conventions from the ggplot chapter (the chart-type
@@ -528,8 +551,8 @@ colorspace, ragg, colorBlindness, emmeans and ggpubr; if your project uses
 renv and they are not in its lockfile, add them yourself before the test,
 rather than letting the assistant install packages.
 
-**4. Same prompt, new skill.** Restart Claude Code so it finds the skill, then,
-without naming the skill, ask the prompt from the house-figures activity:
+**4. Same prompt, new skill.** Type `/skills` to check it is listed (skills
+reload without a restart), then, without naming the skill, ask the prompt from the house-figures activity:
 
 **Prompt (Claude Code):**
 
@@ -601,6 +624,7 @@ show_skill_file("pub-figures", "SKILL.md")
 ```{r, eval = FALSE, file = here::here("files", "skills", "pub-figures", "patchwork-template.R")}
 ```
 :::
+:::::
 
 
 ## Glossary

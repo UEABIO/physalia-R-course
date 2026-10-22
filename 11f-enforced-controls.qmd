@@ -31,7 +31,7 @@ you hand an agent real work. The same controls protect
 | Version control | The Git pane | Detects | Only if you look |
 | Tests and checksums | testthat, `tools::md5sum()` | Detects | Only if they run |
 
-:::::: {.dia .dia-lanes role="figure" aria-label="Where each control acts. Route 1: the agent asks its edit tool to change a file in data/raw, and the deny rule refuses. Route 2: the agent runs R code that writes the file; only the approval prompt stands in the way, and if the file changes, git status and the checksum detect it. Instructions and skills are requests that the model may or may not follow."}
+:::::: {.dia .dia-lanes role="figure" aria-label="Where each control acts. Route 1: the agent asks its edit tool to change a file in data/raw, and the deny rule refuses. Route 2: the agent runs R code that writes the file; with no hook registered, only the approval prompt stands in the way, and if the file changes, git status detects it, as does the checksum test for voles_raw.csv. Instructions and skills are requests that the model may or may not follow."}
 ::::: {.dia-flow}
 ::: {.dia-label}
 Route 1: the agent's edit tool
@@ -63,7 +63,7 @@ File changed
 detected by
 :::
 ::: {.dia-node .dia-check}
-`git status` and the checksum
+`git status` (and, for `voles_raw.csv`, the checksum test)
 :::
 :::::
 ::::: {.dia-flow}
@@ -75,8 +75,9 @@ Requests, on every route
 :::
 :::::
 ::: {.dia-caption}
-Prevent where you can, detect everywhere. And test every control: one you
-have not seen refuse something is one you are assuming.
+With no hook registered, only the approval prompt stands between R code and
+the file. Prevent where you can, detect everywhere. And test every control:
+one you have not seen refuse something is one you are assuming.
 :::
 ::::::
 
@@ -152,7 +153,7 @@ Read, test and add a rule, then find the gap (15 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** your workshop repository open and the Git pane clean. Work on a
+**Start state:** your workshop repository open and the Git pane clean. Work on a
 scratch file, never on real data.
 
 **1. Make a scratch file and read the rules.** In the R console:
@@ -235,11 +236,13 @@ yourself in the console and carry on: the point is seeing git catch it. If
 :::
 
 
-:::{.callout-note}
-## Instructor demonstration (5 minutes)
-
 A `r glossary("hook")` is a command the assistant runs before every
-`r glossary("tool call")`.
+`r glossary("tool call")`. Your instructor may show one; the demonstration is
+below, and the full hook is in *Going further*.
+
+:::{.callout-tip collapse="true"}
+## Instructor: demonstration
+
 Your instructor registers a guard hook, written in R, that blocks any call
 mentioning `data/raw`, and repeats step 4: the hook blocks it before any
 approval prompt. Then the same write using
@@ -316,7 +319,8 @@ past the guard hook?**
 This material is not covered in the live session. Work through it afterwards
 if it is useful to you.
 
-### A guard hook
+:::::{.callout-tip collapse="true"}
+## A guard hook
 
 A `PreToolUse` hook receives the pending tool call as JSON on standard input
 (stdin). If it exits with status 2, the call is denied and its message is
@@ -450,7 +454,7 @@ run_hook('{"tool_name":"Bash","tool_input":{"command":"Rscript scripts/05_analys
 Any result other than 2 for the first call and 0 for the second means the hook
 is broken and is silently allowing everything.
 
-Now repeat the request from step 3 of Exercise 2. The R code mentions
+Now repeat the request from step 4 of Exercise 2. The R code mentions
 `data/raw`, so the guard should deny it before you see an approval prompt.
 
 To see exactly what each tool sends to hooks, temporarily add a `PostToolUse`
@@ -459,8 +463,10 @@ hooks documentation gives an example), and read the log.
 
 ::::
 :::
+:::::
 
-### Break your own guard
+:::::{.callout-tip collapse="true"}
+## Break your own guard
 
 :::{.task}
 ::::{.task-header}
@@ -505,8 +511,10 @@ when the agent tries to edit a protected file?**
   "The agent stops and waits until jsonlite is installed",
   "The edit is blocked only in plan mode"
 ))`
+:::::
 
-### The review gate on GitHub
+:::{.callout-tip collapse="true"}
+## The review gate on GitHub
 
 Local controls do not exist for an agent that works remotely, such as the
 Copilot cloud agent. There, the controls are on the repository itself. Neither
@@ -542,8 +550,10 @@ GitHub does not let you approve your own pull request. In a repository where
 you are the only person, a pull request you open yourself may need an
 administrator override, which is a reason to test this gate with an agent's
 pull request.
+:::
 
-### Feedback hooks: useful, with a warning
+:::{.callout-tip collapse="true"}
+## Feedback hooks: useful, with a warning
 
 Hooks can do more than block. A `PostToolUse` hook can run `lintr` on each R file
 the agent edits and pass the result back to it. A `Stop` hook can run the test
@@ -551,6 +561,7 @@ suite and refuse to let the agent finish while tests fail. The second is
 powerful and dangerous: an agent told it cannot stop until tests pass may try
 to change the tests. Use it only when the deny rules and guard hook protect
 `tests/`.
+:::
 
 
 ## Glossary

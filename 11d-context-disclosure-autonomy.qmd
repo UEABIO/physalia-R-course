@@ -49,6 +49,9 @@ The same error, three levels of context (10 minutes)
 ::::
 ::::{.task-container}
 
+**Start state:** your workshop repository open in RStudio with a clean Git
+pane, and a browser chat open in another window.
+
 **1. Error only.** In a new browser chat, paste only this and ask "What does
 this error mean?":
 
@@ -60,6 +63,9 @@ Error in `mutate()`:
 Caused by error:
 ! object 'mass_post' not found
 ```
+
+Expect a general answer: the column does not exist, perhaps a typo, check
+`names()`. It cannot name the right column, because it has never seen one.
 
 **2. Error plus code plus structure.** In another new chat, paste:
 
@@ -94,9 +100,21 @@ What is wrong?
 
 It should name the missing `_g` suffix.
 
-**3. No paste at all.** Save the failing code as `scripts/scratch_error.R`
-(`usethis::edit_file("scripts/scratch_error.R")` in the R console). In the
-project's Terminal tab, start `claude` and ask:
+**3. No paste at all.** In the R console,
+`usethis::edit_file("scripts/scratch_error.R")` creates and opens a scratch
+script. Paste in, and save:
+
+```r
+library(tidyverse)
+library(here)
+
+voles <- read_csv(here("data", "raw", "voles_metabolism.csv"))
+
+voles |>
+  mutate(mass_change_g = mass_post - mass_pre_g)
+```
+
+In the project's Terminal tab, start `claude` and ask:
 
 **Prompt (Claude Code):**
 
@@ -104,19 +122,25 @@ project's Terminal tab, start `claude` and ask:
 Why does the mutate() call in scripts/scratch_error.R fail?
 ```
 
-Then ask "How do you know the column names?" and compare its answer with what
-you know it read.
+Expect it to read the script and the CSV file (approve any request to run
+code), then name `mass_post_g` as the real column. Then ask "How do you know
+the column names?" and compare its answer with what you know it read.
 
 **You are done when** you can say which answers named the real cause, and why.
 Then delete the scratch file so Exercise 2 starts clean:
 `file.remove(here::here("scripts", "scratch_error.R"))`.
 
+**If it goes wrong:** if Claude Code cannot find the script, check you started
+`claude` in the project's Terminal tab and saved the file in `scripts/`. If a
+chat in step 2 still guesses, that is a result too: note it and move on.
+
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
 Load the data and run the failing code in your R session, then ask only "Why
-did my last command fail?" Posit Assistant can read your console history and
-the data frame without your pasting anything.
+did my last command fail?" Posit Assistant receives the names and types of the
+objects in your session, and can run code to inspect them, without your
+pasting anything.
 :::
 
 ::::
@@ -130,7 +154,7 @@ more than one route.
 
 Everything an assistant sees is sent to a model provider, by four routes:
 
-:::::: {.dia .dia-lanes role="figure" aria-label="Four routes by which data leave your machine for the model provider, and which tools use each route"}
+:::::: {.dia .dia-lanes role="figure" aria-label="Four routes by which data reach the model provider: 1, what you paste, in any tool; 2, project files the tool reads; 3, session context Posit Assistant adds, the names and types of objects but not their values; 4, the output of commands the agent runs"}
 ::::: {.dia-flow}
 ::: {.dia-label}
 Route 1: what you paste
@@ -150,8 +174,8 @@ Model provider
 Route 2: files it reads
 :::
 ::: {.dia-node .dia-file}
-Copilot: the open file. Claude Code and Posit Assistant: the whole project
-folder
+Copilot: open files. Claude Code and Posit Assistant: any project file they
+choose to read
 :::
 ::: {.dia-arrow}
 read
@@ -164,8 +188,9 @@ Model provider
 ::: {.dia-label}
 Route 3: session context the IDE injects
 :::
-::: {.dia-node .dia-file}
-Your live R session: data frames, loaded packages, console history
+::: {.dia-node .dia-plain}
+Your live R session: R version, and the names and types of your objects (not
+their values)
 :::
 ::: {.dia-arrow}
 Posit Assistant only
@@ -179,7 +204,7 @@ Model provider
 Route 4: output of commands it runs
 :::
 ::: {.dia-node .dia-ai}
-The agent runs `print(voles)` or `head data.csv`
+The agent runs `Rscript` or `head data.csv`, and reads what it prints
 :::
 ::: {.dia-arrow}
 Claude Code, Posit Assistant
@@ -189,12 +214,14 @@ Model provider
 :::
 :::::
 ::: {.dia-caption}
-Everything on the left of an arrow reaches the model provider. A data file in
-the project, or a tibble loaded in your session, may already be disclosed.
+Everything before an arrow reaches the model provider. A data file in the
+project may already be disclosed; for a tibble loaded in your session, its
+names and types are, and its values as soon as code the agent runs prints
+them.
 :::
 ::::::
 
-:::{.callout-important}
+::::{.callout-important}
 ## Working with confidential data: five habits
 
 1. **Work on a copy.** Put a synthetic or anonymised copy in the project, and
@@ -210,19 +237,27 @@ the project, or a tibble loaded in your session, may already be disclosed.
 5. **Describe, don't show.** `names()` gives column names and `summary()` the
    shape of the data; `print()`, `glimpse()` and `str()` show actual values.
 
+:::{.callout-tip collapse="true"}
+## Background: tool-specific notes
+
 There is no `.claudeignore` file, and `/sandbox` is not available on native
 Windows. Posit Assistant blocks `.Renviron` and `.env` by default, and shares
-object names and types from your session, not values.
+the names and types of objects in your session, not their values; code it runs
+can still print values.
 :::
+::::
 
 
 ### Context you hold in your head
 
-:::{.callout-note}
-## Instructor demonstration (3 minutes)
-
 A data file supplies column names, but not your question or your design. Your
-instructor asks a new chat:
+instructor may show this with two prompts; the demonstration is below, and
+you can try it yourself in *Going further*.
+
+:::{.callout-tip collapse="true"}
+## Instructor: demonstration
+
+Your instructor asks a new chat:
 
 **Prompt (browser chat):**
 
@@ -271,16 +306,12 @@ in code.
 | 4. Act, partly unsupervised | Some actions without asking | `acceptEdits`; `auto` (a classifier approves actions; Claude Code's own default since v2.1.283) | Auto mode (`/auto`) |
 | 5. Act, unsupervised | No prompts | `bypassPermissions` | YOLO mode (`/yolo`) |
 
-**Your starting mode.** Claude Code's own default is now `auto`, where a
-second model approves actions for you; the documentation says plainly that it
-does not guarantee safety. Your workshop repository starts it in **Manual**
-instead, so you see every action while you learn, and you should keep Manual
-for confidential data. `Shift+Tab` cycles the modes; the
-[quick reference](11-AI-programming-integrated.qmd#cc-quick-reference) lists
-the rest. Claude Code has no ask mode: `/plan` with a question will not edit
-your files, but it can still run commands, so read any it proposes. Use rungs
-0 to 3 in this course, never rung 5. Rung 6, acting remotely and returning a
-pull request, is in *Going further*.
+**Your starting mode.** Your workshop repository starts Claude Code in
+**Manual**, although its own default is `auto` since v2.1.283; keep Manual for
+confidential data. Claude Code has no ask mode, and `/plan` can still run
+commands, so read any it proposes. Use rungs 0 to 3 only; the
+[quick reference](11-AI-programming-integrated.qmd#cc-quick-reference) has the
+rest.
 
 **Rung 3 is where routine work is safe**, for example adding a derived column
 and a plot script. Three things make it safe: you start from a commit, so any
@@ -324,13 +355,14 @@ Ask, plan, act (15 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** your workshop repository on `main`, committed and clean (the Git
-pane shows no changed files). While Claude Code runs in the Terminal tab, check
-its work from the R console and the Git pane
+**Start state:** your workshop repository on `main`, committed and clean (the
+Git pane shows no changed files). While Claude Code runs in the Terminal tab,
+check its work from the R console and the Git pane
 ([checking work](11a-setup-claude-code.qmd#checking-work)).
 
-**1. Ask.** Start `claude` in the Terminal tab and put `/plan` before your
-question, so nothing changes:
+**1. Plan a question (rung 2).** Claude Code has no Ask mode, so start
+`claude` in the Terminal tab and put `/plan` before your question, so nothing
+changes:
 
 **Prompt (Claude Code):**
 
@@ -341,7 +373,7 @@ equal to mass_post_g minus mass_pre_g?
 
 The Git pane should still show no changed files.
 
-**2. Plan.** Give a goal that spans several files:
+**2. Plan a change (rung 2).** Give a goal that spans several files:
 
 **Prompt (Claude Code):**
 
@@ -356,10 +388,11 @@ Before approving, check the plan names every file it will touch, leaves raw
 data alone, saves the figure to `outputs/` and says how it will check the
 scripts run. Ask for changes if anything is missing.
 
-**3. Act, with approval.** Choose **Yes, manually approve edits**, so it stays
-in Manual mode. Read each approval prompt, and refuse at least one action: if
-nothing is out of scope, refuse its first `Rscript` call, because you will run
-the check yourself.
+**3. Act, with approval (rung 3).** Choose **Yes, manually approve edits**, so
+it stays in Manual mode. Read each approval prompt, and refuse at least one
+action: if nothing is out of scope, refuse its first `Rscript` call. You will
+run the check yourself in a fresh session in step 4, so you see the evidence
+rather than its claim.
 
 **4. Review and check.** Click **Diff** in the Git pane for each changed file
 and read it as you would a colleague's work. Then Restart R
@@ -375,29 +408,36 @@ testthat::test_file(here::here("tests", "test_explore.R"))
 One test checks `mass_change_g` really is post minus pre; the other runs the
 plot script in a fresh R session and checks a figure arrived in `outputs/`.
 
-**You are done when** both tests pass and you have read every line of the
-diff.
-
-**If it goes wrong:** select the unwanted change in the Git pane and click
-**Revert**, then ask again more clearly. If you run out of time, switch to the
-`block5-done` branch from the Git pane's branch menu at the end of Block 5.
-
-**5. Compare.** At which rung did you decide the most? Where would you have
-missed an unwanted change without the diff?
-
-**Payoff.** What did the agent do, how long did checking it take, and would you
-automate this again?
-
-**6. Start your AI-use log.** Create `docs/ai-log.md`
+**5. Start your AI-use log.** Create `docs/ai-log.md`
 (`usethis::edit_file("docs/ai-log.md")`) and write the first line of your
-`r glossary("AI-use log")` yourself, on one line, in the form from Block 1:
+`r glossary("AI-use log")` yourself, on one line, in the form from Block 1.
+Use today's date, written as YYYY-MM-DD:
 
 ```text
 2026-10-19; Claude Code (model as shown above the Claude Code prompt); added mass_change_g and a plot script; kept both after reading the diff; rejected one out-of-scope edit
 ```
 
 Commit it with the agent's changes. You will add a line after each block in
-which an agent works; `tests/test_ai_log.R` checks the form.
+which an agent works; `tests/test_ai_log.R` checks that each line has four
+parts separated by semicolons, and that the dates are real and in order.
+
+**You are done when** both tests pass, you have read every line of the diff,
+and your first AI-use log line is committed.
+
+**If it goes wrong:** select the unwanted change in the Git pane and click
+**Revert**, then ask again more clearly. If you run out of time, the
+`block5-done` checkpoint branch has this block's files; switch to it from the
+Git pane's branch menu at the end of Block 5 if you are still behind.
+
+:::{.callout-tip collapse="true"}
+## Stretch: reflect on the rungs
+
+At which rung did you decide the most? Where would you have missed an unwanted
+change without the diff?
+
+**Payoff.** What did the agent do, how long did checking it take, and would you
+automate this again?
+:::
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
@@ -468,7 +508,8 @@ know them?**
 This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
 
-### Access and cost
+:::{.callout-tip collapse="true"}
+## Access and cost
 
 Plans and prices change; check before the session.
 
@@ -480,14 +521,18 @@ Plans and prices change; check before the session.
 - **GitHub Copilot** bills in AI credits; check GitHub's plans page for what
   your plan includes.
 - **Your institution** may have approved some of these tools and not others.
+:::
 
-### Trusting a repository's configuration
+:::{.callout-tip collapse="true"}
+## Trusting a repository's configuration
 
 Project settings and hooks are code that runs on your machine. A cloned
 repository can carry its own, so trust only repositories whose configuration
 you have read.
+:::
 
-### GitHub Copilot and the remote rung
+:::{.callout-tip collapse="true"}
+## GitHub Copilot and the remote rung
 
 GitHub Copilot offers the same ladder in its own surfaces. Copilot Chat on
 github.com can also see files in the repository you open it from.
@@ -509,13 +554,16 @@ features; check GitHub's plans page to see whether your plan includes the cloud
 agent. The cloud agent appears in the *Going further* section of
 [Block 9](11i-characterisation-tests.qmd), where its pull request meets a review
 gate.
+:::
 
-### Exercise: context you hold in your head
+:::{.callout-tip collapse="true"}
+## Exercise: context you hold in your head
 
 To try the demonstration above yourself, ask a new browser chat the first
 prompt, then another new chat the second, and compare the answers. A data file
 can supply column names and types, but not your scientific question or your
 design intent.
+:::
 
 
 ## Glossary
