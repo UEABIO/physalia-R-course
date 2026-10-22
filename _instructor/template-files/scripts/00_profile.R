@@ -36,8 +36,10 @@ repeated_ids_df <- raw_df |>
   count(subject_id) |>
   filter(n > 1)
 
-# print in full, and save the profile so it can be opened, pasted or diffed ----
+# print in full, and save each table so it can be opened, pasted or diffed ----
 print(profile_df, n = Inf, width = Inf)
 print(labels_df, n = Inf, width = Inf)
 print(repeated_ids_df, width = Inf)
 write_csv(profile_df, here("docs", "profile.csv"))
+write_csv(labels_df, here("docs", "profile_labels.csv"))
+write_csv(repeated_ids_df, here("docs", "profile_ids.csv"))

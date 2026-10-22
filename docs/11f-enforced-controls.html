@@ -117,7 +117,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     if (localStorage.getItem("advancing-r-cvd") === "on") document.documentElement.setAttribute("data-cvd", "on");
   } catch (e) {}
 })();
-</script><script src="site_libs/kePrint-0.0.1/kePrint.js"></script><link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+</script><script src="site_libs/font-awesome-6.7.2/js/script.js"></script><script src="site_libs/kePrint-0.0.1/kePrint.js"></script><link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.13.0/css/all.css">
 <link rel="stylesheet" href="include/booktem.css">
 <link rel="stylesheet" href="include/webex.css">
@@ -697,7 +697,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Version control</td>
 <td>The Git pane</td>
 <td>Detects</td>
-<td>Only if you look</td>
+<td>Only from your last commit, and only if you look</td>
 </tr>
 <tr class="even">
 <td>Tests and checksums</td>
@@ -708,6 +708,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
+<p>Git detects changes only from your last commit, so commit before an agent starts. Your repository’s <code>AGENTS.md</code> asks the agent to run <code>git status</code> before it edits anything, and to stop if there is no repository: a request that helps, but your commit is the control.</p>
 <div class="dia dia-lanes" role="figure" aria-label="Where each control acts. Route 1: the agent asks its edit tool to change a file in data/raw, and the deny rule refuses. Route 2: the agent runs R code that writes the file; with no hook registered, only the approval prompt stands in the way, and if the file changes, git status detects it, as does the checksum test for voles_raw.csv. Instructions and skills are requests that the model may or may not follow.">
 <div class="dia-flow">
 <div class="dia-label">
@@ -810,7 +811,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section><section id="exercise-2-deny-rules" class="level2"><h2 class="anchored" data-anchor-id="exercise-2-deny-rules">Exercise 2: Deny rules</h2>
-<p>Your workshop repository ships <code>.claude/settings.json</code>. It starts the project in <strong>Manual</strong> mode (<code>default</code>: asks before every edit and command) and holds 18 <a class="glossary">deny rules<span class="def">A permission rule in the deny list of .claude/settings.json that stops Claude Code’s built-in tools from editing or reading the matching files. It checks shell output redirects such as &gt; file, but not R code or most other commands that change the same files.</span></a> protecting the raw data, the data provider’s note, the codebook, the checks, the references, the lockfile and the settings themselves. You never need to edit it: <code>/permissions</code> shows the rules and adds new ones.</p>
+<p>Your workshop repository ships <code>.claude/settings.json</code>. It starts the project in <strong>Manual</strong> mode (<code>default</code>: asks before every edit and command) and holds 17 <a class="glossary">deny rules<span class="def">A permission rule in the deny list of .claude/settings.json that stops Claude Code’s built-in tools from editing or reading the matching files. It checks shell output redirects such as &gt; file, but not R code or most other commands that change the same files.</span></a> protecting the raw data, the data provider’s note, the codebook, the checks, the references, the lockfile and the settings themselves. You never need to edit it: <code>/permissions</code> shows the rules and adds new ones.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -839,17 +840,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-12"><a href="#cb1-12" aria-label="12"></a>      <span class="st">"Edit(/tests/fixtures/**)"</span><span class="ot">,</span></span>
 <span id="cb1-13"><a href="#cb1-13" aria-label="13"></a>      <span class="st">"Edit(/tests/make_reference.R)"</span><span class="ot">,</span></span>
 <span id="cb1-14"><a href="#cb1-14" aria-label="14"></a>      <span class="st">"Edit(/tests/test_cleaning.R)"</span><span class="ot">,</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-label="15"></a>      <span class="st">"Edit(/tests/test_audit.R)"</span><span class="ot">,</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-label="16"></a>      <span class="st">"Edit(/renv.lock)"</span><span class="ot">,</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-label="17"></a>      <span class="st">"Edit(/.github/**)"</span><span class="ot">,</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-label="18"></a>      <span class="st">"Edit(/.claude/**)"</span><span class="ot">,</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-label="19"></a>      <span class="st">"Edit(/.posit/**)"</span><span class="ot">,</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-label="20"></a>      <span class="st">"Edit(/hooks/**)"</span><span class="ot">,</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-label="21"></a>      <span class="st">"Read(/.Renviron)"</span><span class="ot">,</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-label="22"></a>      <span class="st">"Read(/.env)"</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-label="23"></a>    <span class="ot">]</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-label="24"></a>  <span class="fu">}</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-label="25"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-15"><a href="#cb1-15" aria-label="15"></a>      <span class="st">"Edit(/renv.lock)"</span><span class="ot">,</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-label="16"></a>      <span class="st">"Edit(/.github/**)"</span><span class="ot">,</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-label="17"></a>      <span class="st">"Edit(/.claude/**)"</span><span class="ot">,</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-label="18"></a>      <span class="st">"Edit(/.posit/**)"</span><span class="ot">,</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-label="19"></a>      <span class="st">"Edit(/hooks/**)"</span><span class="ot">,</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-label="20"></a>      <span class="st">"Read(/.Renviron)"</span><span class="ot">,</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-label="21"></a>      <span class="st">"Read(/.env)"</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-label="22"></a>    <span class="ot">]</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-label="23"></a>  <span class="fu">}</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-label="24"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <p>A leading <code>/</code> anchors a pattern to the project root. <code>Edit</code> rules cover Claude Code’s file-editing tools and shell output redirects (<code>&gt; file</code>), not R code it runs, and the documentation does not say they cover <code>rm</code>, <code>mv</code> or <code>cp</code>. The rules protect named files rather than whole folders, so the agent can still write its scripts and tests in Blocks 7 and 9. <code>Edit(/renv.lock)</code> keeps <code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> a real check.</p>
@@ -882,7 +882,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a><span class="fu">writeLines</span>(<span class="st">"a"</span>, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"scratch.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Commit it in the Git pane. Start <code>claude</code> in the Terminal tab and type <code>/permissions</code>: the 18 deny rules are listed.</p>
+<p>Commit it in the Git pane. Start <code>claude</code> in the Terminal tab and type <code>/permissions</code>: the 17 deny rules are listed.</p>
 <p><strong>2. See a rule refuse.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>Add a second line, "test", to data/raw/scratch.csv.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -966,6 +966,92 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Set up controls in your own project
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Your workshop repository came with its controls. A new project of your own starts with none, so set them up before the agent’s first task:</p>
+<ol type="1">
+<li>
+<strong>Git first.</strong> In the R console, <code><a href="https://usethis.r-lib.org/reference/use_git.html">usethis::use_git()</a></code>, and make a first commit.</li>
+<li>
+<strong>Add a starter <code>settings.json</code>.</strong> Download the one below, save it as <code>.claude/settings.json</code>, and edit the paths to match your project. It starts in Manual mode and protects raw data, test references, the lockfile, credentials and itself. Add project-specific rules with <code>/permissions</code>.</li>
+<li>
+<strong>Ask for git checks.</strong> Copy the <em>Version control</em> section of your workshop <code>AGENTS.md</code> into your project’s instruction file.</li>
+<li>
+<strong>Test it.</strong> Ask the agent to edit a protected file and watch the rule refuse; copy <code>tests/test_controls.R</code> and change its list of rules to yours. Then commit.</li>
+</ol>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<button class="btn btn-success" onclick="
+    async function downloadFile(event) {
+      event.preventDefault();
+      try {
+        const response = await fetch('data:application/json;base64,ewogICJwZXJtaXNzaW9ucyI6IHsKICAgICJkZWZhdWx0TW9kZSI6ICJkZWZhdWx0IiwKICAgICJkZW55IjogWwogICAgICAiRWRpdCgvZGF0YS9yYXcvKiopIiwKICAgICAgIkVkaXQoL3Rlc3RzL2ZpeHR1cmVzLyoqKSIsCiAgICAgICJFZGl0KC9yZW52LmxvY2spIiwKICAgICAgIkVkaXQoLy5jbGF1ZGUvKiopIiwKICAgICAgIlJlYWQoLy5SZW52aXJvbikiLAogICAgICAiUmVhZCgvLmVudikiCiAgICBdCiAgfQp9Cg==');
+        if (!response.ok) throw new Error('Network response failed');
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'settings.json';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.dispatchEvent(new MouseEvent('click'));
+        document.body.removeChild(a);
+        setTimeout(() => {
+          window.URL.revokeObjectURL(blobUrl);
+        }, 100);
+        return false;
+      } catch (error) {
+        console.error('Download failed:', error);
+        alert('Download failed. Please try again.');
+      }
+    }
+    downloadFile(event);
+  " output_extension=".json"><i class="fa fa-save"></i> Download the starter settings.json</button>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Reference: the starter <code>settings.json</code>
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell" data-layout-align="center">
+<div class="cell-output cell-output-stdout">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a><span class="fu">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>  <span class="dt">"permissions"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-label="3"></a>    <span class="dt">"defaultMode"</span><span class="fu">:</span> <span class="st">"default"</span><span class="fu">,</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-label="4"></a>    <span class="dt">"deny"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a>      <span class="st">"Edit(/data/raw/**)"</span><span class="ot">,</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a>      <span class="st">"Edit(/tests/fixtures/**)"</span><span class="ot">,</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a>      <span class="st">"Edit(/renv.lock)"</span><span class="ot">,</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-label="8"></a>      <span class="st">"Edit(/.claude/**)"</span><span class="ot">,</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-label="9"></a>      <span class="st">"Read(/.Renviron)"</span><span class="ot">,</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-label="10"></a>      <span class="st">"Read(/.env)"</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-label="11"></a>    <span class="ot">]</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-label="12"></a>  <span class="fu">}</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-label="13"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p><strong>Let Claude draft rules, never decide them.</strong> You can ask it to propose deny rules for a project, but read each one: a rule with a wrong path, such as a missing leading <code>/</code>, protects nothing and fails silently. Claude Code asks before every write to <code>.claude/</code>, and the starter file’s <code>Edit(/.claude/**)</code> refuses such writes outright, so you install the rules yourself.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
 <span class="screen-reader-only">Note</span>Check · Reproduce · Record
 </div>
 </div>
@@ -978,27 +1064,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>
 <strong>Reproduce:</strong> the rules live in <code>.claude/settings.json</code>, committed with the project, so everyone who clones it gets the same protection.</li>
 <li>
-<strong>Record:</strong> the Git pane catches a change by any route. Add a line to <code>docs/ai-log.md</code> noting which requests were refused.</li>
+<strong>Record:</strong> the Git pane catches a change by any route, counted from your last commit, so commit before the agent starts. Add a line to <code>docs/ai-log.md</code> noting which requests were refused.</li>
 </ul>
 </div>
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>Which control detects a change to raw data made by any route?</strong></p>
-<div id="radio_XQLARPHJCO" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_XQLARPHJCO" value=""><span>A Claude Code Edit deny rule</span></label><label><input type="radio" autocomplete="off" name="radio_XQLARPHJCO" value=""><span>A guard hook that searches for the path</span></label><label><input type="radio" autocomplete="off" name="radio_XQLARPHJCO" value="answer"><span>A checksum test or git status, because they inspect the file itself rather than the action that changed it</span></label><label><input type="radio" autocomplete="off" name="radio_XQLARPHJCO" value=""><span>An instruction in AGENTS.md</span></label>
+<div id="radio_UVYWBVXMUO" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_UVYWBVXMUO" value=""><span>A Claude Code Edit deny rule</span></label><label><input type="radio" autocomplete="off" name="radio_UVYWBVXMUO" value=""><span>A guard hook that searches for the path</span></label><label><input type="radio" autocomplete="off" name="radio_UVYWBVXMUO" value="answer"><span>A checksum test or git status, because they inspect the file itself rather than the action that changed it</span></label><label><input type="radio" autocomplete="off" name="radio_UVYWBVXMUO" value=""><span>An instruction in AGENTS.md</span></label>
 </div>
 <p><strong>In Exercise 2, why could the R code change <code>data/raw/scratch.csv</code> when the deny rule refused the direct edit?</strong></p>
-<div id="radio_RFTTXTBUSD" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_RFTTXTBUSD" value=""><span>The deny rule was written with the wrong path</span></label><label><input type="radio" autocomplete="off" name="radio_RFTTXTBUSD" value="answer"><span>Edit rules apply to Claude Code's file-editing tools (and shell redirects), not to R code it runs</span></label><label><input type="radio" autocomplete="off" name="radio_RFTTXTBUSD" value=""><span>R code always runs with administrator rights</span></label><label><input type="radio" autocomplete="off" name="radio_RFTTXTBUSD" value=""><span>Deny rules only apply in plan mode</span></label>
+<div id="radio_GTQJCVFVYN" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_GTQJCVFVYN" value=""><span>The deny rule was written with the wrong path</span></label><label><input type="radio" autocomplete="off" name="radio_GTQJCVFVYN" value="answer"><span>Edit rules apply to Claude Code's file-editing tools (and shell redirects), not to R code it runs</span></label><label><input type="radio" autocomplete="off" name="radio_GTQJCVFVYN" value=""><span>R code always runs with administrator rights</span></label><label><input type="radio" autocomplete="off" name="radio_GTQJCVFVYN" value=""><span>Deny rules only apply in plan mode</span></label>
 </div>
 <p><strong>In the demonstration, why did <code>here::here("data", "raw", "scratch.csv")</code> get past the guard hook?</strong></p>
-<div id="radio_ZYWCOFJLWG" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_ZYWCOFJLWG" value=""><span>Hooks do not run for R code</span></label><label><input type="radio" autocomplete="off" name="radio_ZYWCOFJLWG" value="answer"><span>The guard matches the text 'data/raw', and the call never contains that text</span></label><label><input type="radio" autocomplete="off" name="radio_ZYWCOFJLWG" value=""><span>here::here() runs with administrator rights</span></label><label><input type="radio" autocomplete="off" name="radio_ZYWCOFJLWG" value=""><span>The hook was registered for the wrong event</span></label>
+<div id="radio_TQQTNIFVLC" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_TQQTNIFVLC" value=""><span>Hooks do not run for R code</span></label><label><input type="radio" autocomplete="off" name="radio_TQQTNIFVLC" value="answer"><span>The guard matches the text 'data/raw', and the call never contains that text</span></label><label><input type="radio" autocomplete="off" name="radio_TQQTNIFVLC" value=""><span>here::here() runs with administrator rights</span></label><label><input type="radio" autocomplete="off" name="radio_TQQTNIFVLC" value=""><span>The hook was registered for the wrong event</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1007,77 +1093,77 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>A <code>PreToolUse</code> hook receives the pending tool call as JSON on standard input (stdin). If it exits with status 2, the call is denied and its message is passed to the model. Claude Code and Posit Assistant use the same shape for this, so one script can serve both.</p>
 <p>The guard below is written in R. It denies any edit, shell command or R code that mentions a protected path.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a><span class="co">#!/usr/bin/env Rscript</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a><span class="co"># hooks/guard_protected_paths.R ----</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-label="3"></a><span class="co"># PreToolUse guard for Claude Code and Posit Assistant.</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-label="4"></a><span class="co"># Reads the pending tool call from stdin and exits 2 (deny) if the call</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a><span class="co"># mentions a protected path. A tripwire, not a wall: see "Break your own</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a><span class="co"># guard".</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-label="8"></a>protected <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb7-9"><a href="#cb7-9" aria-label="9"></a>  <span class="st">"data/raw"</span>,</span>
-<span id="cb7-10"><a href="#cb7-10" aria-label="10"></a>  <span class="st">"tests/fixtures"</span>,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-label="11"></a>  <span class="st">"make_reference.R"</span>,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-label="12"></a>  <span class="st">".github/workflows"</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-label="13"></a>)</span>
-<span id="cb7-14"><a href="#cb7-14" aria-label="14"></a></span>
-<span id="cb7-15"><a href="#cb7-15" aria-label="15"></a>payload <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">fromJSON</span>(</span>
-<span id="cb7-16"><a href="#cb7-16" aria-label="16"></a>  <span class="fu">paste</span>(<span class="fu">readLines</span>(<span class="fu">file</span>(<span class="st">"stdin"</span>), <span class="at">warn =</span> <span class="cn">FALSE</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>),</span>
-<span id="cb7-17"><a href="#cb7-17" aria-label="17"></a>  <span class="at">simplifyVector =</span> <span class="cn">FALSE</span></span>
-<span id="cb7-18"><a href="#cb7-18" aria-label="18"></a>)</span>
-<span id="cb7-19"><a href="#cb7-19" aria-label="19"></a></span>
-<span id="cb7-20"><a href="#cb7-20" aria-label="20"></a><span class="co"># search the whole tool input as text, so the same rule covers file edits,</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-label="21"></a><span class="co"># shell commands and R code whatever the tool calls its fields</span></span>
-<span id="cb7-22"><a href="#cb7-22" aria-label="22"></a>call_text <span class="ot">&lt;-</span> <span class="fu">as.character</span>(jsonlite<span class="sc">::</span><span class="fu">toJSON</span>(payload<span class="sc">$</span>tool_input, <span class="at">auto_unbox =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb7-23"><a href="#cb7-23" aria-label="23"></a>hits <span class="ot">&lt;-</span> protected[<span class="fu">vapply</span>(protected, \(p) <span class="fu">grepl</span>(p, call_text, <span class="at">fixed =</span> <span class="cn">TRUE</span>), <span class="fu">logical</span>(<span class="dv">1</span>))]</span>
-<span id="cb7-24"><a href="#cb7-24" aria-label="24"></a></span>
-<span id="cb7-25"><a href="#cb7-25" aria-label="25"></a><span class="cf">if</span> (<span class="fu">length</span>(hits) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb7-26"><a href="#cb7-26" aria-label="26"></a>  <span class="fu">message</span>(</span>
-<span id="cb7-27"><a href="#cb7-27" aria-label="27"></a>    <span class="st">"Blocked by project guard: this "</span>, payload<span class="sc">$</span>tool_name,</span>
-<span id="cb7-28"><a href="#cb7-28" aria-label="28"></a>    <span class="st">" call refers to a protected path ("</span>, <span class="fu">paste</span>(hits, <span class="at">collapse =</span> <span class="st">", "</span>), <span class="st">"). "</span>,</span>
-<span id="cb7-29"><a href="#cb7-29" aria-label="29"></a>    <span class="st">"Do not modify protected files; ask the user to do it."</span></span>
-<span id="cb7-30"><a href="#cb7-30" aria-label="30"></a>  )</span>
-<span id="cb7-31"><a href="#cb7-31" aria-label="31"></a>  <span class="fu">quit</span>(<span class="at">save =</span> <span class="st">"no"</span>, <span class="at">status =</span> <span class="dv">2</span>)</span>
-<span id="cb7-32"><a href="#cb7-32" aria-label="32"></a>}</span>
-<span id="cb7-33"><a href="#cb7-33" aria-label="33"></a></span>
-<span id="cb7-34"><a href="#cb7-34" aria-label="34"></a><span class="fu">quit</span>(<span class="at">save =</span> <span class="st">"no"</span>, <span class="at">status =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a><span class="co">#!/usr/bin/env Rscript</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a><span class="co"># hooks/guard_protected_paths.R ----</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a><span class="co"># PreToolUse guard for Claude Code and Posit Assistant.</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a><span class="co"># Reads the pending tool call from stdin and exits 2 (deny) if the call</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-label="5"></a><span class="co"># mentions a protected path. A tripwire, not a wall: see "Break your own</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-label="6"></a><span class="co"># guard".</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-label="7"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-label="8"></a>protected <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb8-9"><a href="#cb8-9" aria-label="9"></a>  <span class="st">"data/raw"</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-label="10"></a>  <span class="st">"tests/fixtures"</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" aria-label="11"></a>  <span class="st">"make_reference.R"</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-label="12"></a>  <span class="st">".github/workflows"</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-label="13"></a>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-label="14"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-label="15"></a>payload <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">fromJSON</span>(</span>
+<span id="cb8-16"><a href="#cb8-16" aria-label="16"></a>  <span class="fu">paste</span>(<span class="fu">readLines</span>(<span class="fu">file</span>(<span class="st">"stdin"</span>), <span class="at">warn =</span> <span class="cn">FALSE</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>),</span>
+<span id="cb8-17"><a href="#cb8-17" aria-label="17"></a>  <span class="at">simplifyVector =</span> <span class="cn">FALSE</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-label="18"></a>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-label="19"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-label="20"></a><span class="co"># search the whole tool input as text, so the same rule covers file edits,</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-label="21"></a><span class="co"># shell commands and R code whatever the tool calls its fields</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-label="22"></a>call_text <span class="ot">&lt;-</span> <span class="fu">as.character</span>(jsonlite<span class="sc">::</span><span class="fu">toJSON</span>(payload<span class="sc">$</span>tool_input, <span class="at">auto_unbox =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb8-23"><a href="#cb8-23" aria-label="23"></a>hits <span class="ot">&lt;-</span> protected[<span class="fu">vapply</span>(protected, \(p) <span class="fu">grepl</span>(p, call_text, <span class="at">fixed =</span> <span class="cn">TRUE</span>), <span class="fu">logical</span>(<span class="dv">1</span>))]</span>
+<span id="cb8-24"><a href="#cb8-24" aria-label="24"></a></span>
+<span id="cb8-25"><a href="#cb8-25" aria-label="25"></a><span class="cf">if</span> (<span class="fu">length</span>(hits) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb8-26"><a href="#cb8-26" aria-label="26"></a>  <span class="fu">message</span>(</span>
+<span id="cb8-27"><a href="#cb8-27" aria-label="27"></a>    <span class="st">"Blocked by project guard: this "</span>, payload<span class="sc">$</span>tool_name,</span>
+<span id="cb8-28"><a href="#cb8-28" aria-label="28"></a>    <span class="st">" call refers to a protected path ("</span>, <span class="fu">paste</span>(hits, <span class="at">collapse =</span> <span class="st">", "</span>), <span class="st">"). "</span>,</span>
+<span id="cb8-29"><a href="#cb8-29" aria-label="29"></a>    <span class="st">"Do not modify protected files; ask the user to do it."</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-label="30"></a>  )</span>
+<span id="cb8-31"><a href="#cb8-31" aria-label="31"></a>  <span class="fu">quit</span>(<span class="at">save =</span> <span class="st">"no"</span>, <span class="at">status =</span> <span class="dv">2</span>)</span>
+<span id="cb8-32"><a href="#cb8-32" aria-label="32"></a>}</span>
+<span id="cb8-33"><a href="#cb8-33" aria-label="33"></a></span>
+<span id="cb8-34"><a href="#cb8-34" aria-label="34"></a><span class="fu">quit</span>(<span class="at">save =</span> <span class="st">"no"</span>, <span class="at">status =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The script runs with <code>Rscript --vanilla</code>, so it does not start renv, and <code>jsonlite</code> must be installed in your user library.</p>
 <p><strong>Register it with Claude Code</strong> by adding a <code>hooks</code> key to <code>.claude/settings.json</code>, alongside the existing <code>permissions</code> key. The deny rules protect <code>.claude/</code>, so make this edit yourself, not through the agent.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a><span class="fu">{</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a>  <span class="dt">"hooks"</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a>    <span class="dt">"PreToolUse"</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a>      <span class="fu">{</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-label="5"></a>        <span class="dt">"matcher"</span><span class="fu">:</span> <span class="st">"Edit|Write|Bash"</span><span class="fu">,</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-label="6"></a>        <span class="dt">"hooks"</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-label="7"></a>          <span class="fu">{</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-label="8"></a>            <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"command"</span><span class="fu">,</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-label="9"></a>            <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript --vanilla </span><span class="ch">\"</span><span class="st">$CLAUDE_PROJECT_DIR</span><span class="ch">\"</span><span class="st">/hooks/guard_protected_paths.R"</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-label="10"></a>          <span class="fu">}</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-label="11"></a>        <span class="ot">]</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-label="12"></a>      <span class="fu">}</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-label="13"></a>    <span class="ot">]</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-label="14"></a>  <span class="fu">}</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-label="15"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The <code>matcher</code> lists the tool names the hook runs for.</p>
-<p><strong>Register it with Posit Assistant</strong> in <code>.posit/assistant/settings.json</code>. The tool names differ: <code>edit</code>, <code>bash</code>, and <code>executeR</code> for R code run in your session.</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a><span class="fu">{</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>  <span class="dt">"hooks"</span><span class="fu">:</span> <span class="fu">{</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-label="3"></a>    <span class="dt">"PreToolUse"</span><span class="fu">:</span> <span class="ot">[</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-label="4"></a>      <span class="fu">{</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a>        <span class="dt">"matcher"</span><span class="fu">:</span> <span class="st">"edit|bash|executeR"</span><span class="fu">,</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a>        <span class="dt">"matcher"</span><span class="fu">:</span> <span class="st">"Edit|Write|Bash"</span><span class="fu">,</span></span>
 <span id="cb9-6"><a href="#cb9-6" aria-label="6"></a>        <span class="dt">"hooks"</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a>          <span class="fu">{</span> <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"command"</span><span class="fu">,</span> <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript --vanilla hooks/guard_protected_paths.R"</span> <span class="fu">}</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a>        <span class="ot">]</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-label="9"></a>      <span class="fu">}</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-label="10"></a>    <span class="ot">]</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-label="11"></a>  <span class="fu">}</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-label="12"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a>          <span class="fu">{</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a>            <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"command"</span><span class="fu">,</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-label="9"></a>            <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript --vanilla </span><span class="ch">\"</span><span class="st">$CLAUDE_PROJECT_DIR</span><span class="ch">\"</span><span class="st">/hooks/guard_protected_paths.R"</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-label="10"></a>          <span class="fu">}</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-label="11"></a>        <span class="ot">]</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-label="12"></a>      <span class="fu">}</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-label="13"></a>    <span class="ot">]</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-label="14"></a>  <span class="fu">}</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-label="15"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The <code>matcher</code> lists the tool names the hook runs for.</p>
+<p><strong>Register it with Posit Assistant</strong> in <code>.posit/assistant/settings.json</code>. The tool names differ: <code>edit</code>, <code>bash</code>, and <code>executeR</code> for R code run in your session.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource json number-lines code-with-copy"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a><span class="fu">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a>  <span class="dt">"hooks"</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a>    <span class="dt">"PreToolUse"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-label="4"></a>      <span class="fu">{</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-label="5"></a>        <span class="dt">"matcher"</span><span class="fu">:</span> <span class="st">"edit|bash|executeR"</span><span class="fu">,</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-label="6"></a>        <span class="dt">"hooks"</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-label="7"></a>          <span class="fu">{</span> <span class="dt">"type"</span><span class="fu">:</span> <span class="st">"command"</span><span class="fu">,</span> <span class="dt">"command"</span><span class="fu">:</span> <span class="st">"Rscript --vanilla hooks/guard_protected_paths.R"</span> <span class="fu">}</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-label="8"></a>        <span class="ot">]</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-label="9"></a>      <span class="fu">}</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-label="10"></a>    <span class="ot">]</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-label="11"></a>  <span class="fu">}</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-label="12"></a><span class="fu">}</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Posit Assistant runs project hooks only in a workspace you have trusted.</p>
 <div class="task">
 <div class="task-header">
@@ -1087,23 +1173,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Hooks fail open. If the script crashes, for example because <code>jsonlite</code> is not installed, both tools continue as if the hook had allowed the call. So test the script directly, without the agent. The R below runs the hook exactly as Claude Code does, a fresh <code>Rscript --vanilla</code> process given the tool call on standard input, and works the same on Windows, macOS and Linux.</p>
 <p><strong>In the R console:</strong></p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a>rscript <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">R.home</span>(<span class="st">"bin"</span>), <span class="st">"Rscript"</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a>hook <span class="ot">&lt;-</span> <span class="fu">shQuote</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"hooks"</span>, <span class="st">"guard_protected_paths.R"</span>))</span>
-<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-label="4"></a>run_hook <span class="ot">&lt;-</span> <span class="cf">function</span>(json) {</span>
-<span id="cb10-5"><a href="#cb10-5" aria-label="5"></a>  <span class="fu">system2</span>(rscript, <span class="fu">c</span>(<span class="st">"--vanilla"</span>, hook), <span class="at">input =</span> json,</span>
-<span id="cb10-6"><a href="#cb10-6" aria-label="6"></a>          <span class="at">stdout =</span> <span class="cn">FALSE</span>, <span class="at">stderr =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb10-7"><a href="#cb10-7" aria-label="7"></a>}</span>
-<span id="cb10-8"><a href="#cb10-8" aria-label="8"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-label="9"></a><span class="co"># can the hook's own R session load jsonlite? 0 means yes</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-label="10"></a><span class="fu">system2</span>(rscript, <span class="fu">c</span>(<span class="st">"--vanilla"</span>, <span class="st">"-e"</span>, <span class="fu">shQuote</span>(<span class="st">"library(jsonlite)"</span>)),</span>
-<span id="cb10-11"><a href="#cb10-11" aria-label="11"></a>        <span class="at">stdout =</span> <span class="cn">FALSE</span>, <span class="at">stderr =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-label="12"></a></span>
-<span id="cb10-13"><a href="#cb10-13" aria-label="13"></a><span class="co"># a call naming a protected path: expect 2</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-label="14"></a><span class="fu">run_hook</span>(<span class="st">'{"tool_name":"Bash","tool_input":{"command":"Rscript tests/make_reference.R"}}'</span>)</span>
-<span id="cb10-15"><a href="#cb10-15" aria-label="15"></a></span>
-<span id="cb10-16"><a href="#cb10-16" aria-label="16"></a><span class="co"># a harmless call: expect 0</span></span>
-<span id="cb10-17"><a href="#cb10-17" aria-label="17"></a><span class="fu">run_hook</span>(<span class="st">'{"tool_name":"Bash","tool_input":{"command":"Rscript scripts/05_analysis.R"}}'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>rscript <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">R.home</span>(<span class="st">"bin"</span>), <span class="st">"Rscript"</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>hook <span class="ot">&lt;-</span> <span class="fu">shQuote</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"hooks"</span>, <span class="st">"guard_protected_paths.R"</span>))</span>
+<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-label="4"></a>run_hook <span class="ot">&lt;-</span> <span class="cf">function</span>(json) {</span>
+<span id="cb11-5"><a href="#cb11-5" aria-label="5"></a>  <span class="fu">system2</span>(rscript, <span class="fu">c</span>(<span class="st">"--vanilla"</span>, hook), <span class="at">input =</span> json,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-label="6"></a>          <span class="at">stdout =</span> <span class="cn">FALSE</span>, <span class="at">stderr =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-label="7"></a>}</span>
+<span id="cb11-8"><a href="#cb11-8" aria-label="8"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-label="9"></a><span class="co"># can the hook's own R session load jsonlite? 0 means yes</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-label="10"></a><span class="fu">system2</span>(rscript, <span class="fu">c</span>(<span class="st">"--vanilla"</span>, <span class="st">"-e"</span>, <span class="fu">shQuote</span>(<span class="st">"library(jsonlite)"</span>)),</span>
+<span id="cb11-11"><a href="#cb11-11" aria-label="11"></a>        <span class="at">stdout =</span> <span class="cn">FALSE</span>, <span class="at">stderr =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-label="12"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-label="13"></a><span class="co"># a call naming a protected path: expect 2</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-label="14"></a><span class="fu">run_hook</span>(<span class="st">'{"tool_name":"Bash","tool_input":{"command":"Rscript tests/make_reference.R"}}'</span>)</span>
+<span id="cb11-15"><a href="#cb11-15" aria-label="15"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-label="16"></a><span class="co"># a harmless call: expect 0</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-label="17"></a><span class="fu">run_hook</span>(<span class="st">'{"tool_name":"Bash","tool_input":{"command":"Rscript scripts/05_analysis.R"}}'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Any result other than 2 for the first call and 0 for the second means the hook is broken and is silently allowing everything.</p>
 <p>Now repeat the request from step 4 of Exercise 2. The R code mentions <code>data/raw</code>, so the guard should deny it before you see an approval prompt.</p>
@@ -1114,7 +1200,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1123,7 +1209,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="task">
 <div class="task-header">
@@ -1132,24 +1218,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="task-container">
 <p>The live block removed the scratch file at the end. Recreate it first, in the R console, and commit it from the Git pane:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a><span class="fu">writeLines</span>(<span class="st">"a"</span>, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"scratch.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a><span class="fu">writeLines</span>(<span class="st">"a"</span>, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"scratch.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>Run this R code:</span>
-<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>writeLines(c("a", "test"), here::here("data", "raw", "scratch.csv"))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a>Run this R code:</span>
+<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a>writeLines(c("a", "test"), here::here("data", "raw", "scratch.csv"))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The guard searches for the text <code>data/raw</code>. This call never contains it, because <code><a href="https://here.r-lib.org/reference/here.html">here::here()</a></code> assembles the path from separate pieces, so the guard allows the call. A Windows path written with backslashes would also slip past.</p>
 <p>This is the general limit of hooks that match text: they catch the obvious form of a dangerous action, not every way of expressing it. Claude Code’s documentation makes the same point about command patterns. A guard hook is a tripwire that stops accidents and makes intent visible; it is not a wall. The Git pane still shows the change. Revert the file there before moving on.</p>
 </div>
 </div>
 <p><strong>Your guard hook depends on jsonlite, which is not installed. What happens when the agent tries to edit a protected file?</strong></p>
-<div id="radio_WVJQQDCCDU" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_WVJQQDCCDU" value=""><span>The edit is blocked, because the hook could not approve it</span></label><label><input type="radio" autocomplete="off" name="radio_WVJQQDCCDU" value="answer"><span>The edit goes ahead: hooks fail open, so a crashing hook is treated as allowing the call</span></label><label><input type="radio" autocomplete="off" name="radio_WVJQQDCCDU" value=""><span>The agent stops and waits until jsonlite is installed</span></label><label><input type="radio" autocomplete="off" name="radio_WVJQQDCCDU" value=""><span>The edit is blocked only in plan mode</span></label>
+<div id="radio_WGUYONXEXZ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_WGUYONXEXZ" value=""><span>The edit is blocked, because the hook could not approve it</span></label><label><input type="radio" autocomplete="off" name="radio_WGUYONXEXZ" value="answer"><span>The edit goes ahead: hooks fail open, so a crashing hook is treated as allowing the call</span></label><label><input type="radio" autocomplete="off" name="radio_WGUYONXEXZ" value=""><span>The agent stops and waits until jsonlite is installed</span></label><label><input type="radio" autocomplete="off" name="radio_WGUYONXEXZ" value=""><span>The edit is blocked only in plan mode</span></label>
 </div>
 </div>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1158,7 +1244,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div id="callout-10" class="callout-10-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Local controls do not exist for an agent that works remotely, such as the Copilot cloud agent. There, the controls are on the repository itself. Neither file below is in the workshop template; you create them.</p>
 <p><strong>1. CODEOWNERS.</strong> Create <code>.github/CODEOWNERS</code> on your default branch:</p>
@@ -1176,7 +1262,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1185,7 +1271,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Hooks can do more than block. A <code>PostToolUse</code> hook can run <code>lintr</code> on each R file the agent edits and pass the result back to it. A <code>Stop</code> hook can run the test suite and refuse to let the agent finish while tests fail. The second is powerful and dangerous: an agent told it cannot stop until tests pass may try to change the tests. Use it only when the deny rules and guard hook protect <code>tests/</code>.</p>
 </div>

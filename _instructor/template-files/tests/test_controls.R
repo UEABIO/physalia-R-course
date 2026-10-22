@@ -1,6 +1,6 @@
 # tests/test_controls.R ----
-# Blocks 5, 6 and 9: the instruction file is in place, the project still
-# starts in Manual mode, and no deny rule has been removed. An agent cannot
+# Blocks 5, 6 and 9: the instruction file is in place, the project is under
+# git, it still starts in Manual mode, and no deny rule has been removed. An agent cannot
 # edit .claude/ with its edit tools, but R code it runs could; this test
 # catches that by any route.
 library(testthat)
@@ -17,7 +17,6 @@ shipped_deny_rules <- c(
   "Edit(/tests/fixtures/**)",
   "Edit(/tests/make_reference.R)",
   "Edit(/tests/test_cleaning.R)",
-  "Edit(/tests/test_audit.R)",
   "Edit(/renv.lock)",
   "Edit(/.github/**)",
   "Edit(/.claude/**)",
@@ -48,11 +47,16 @@ test_that("the project starts in Manual mode", {
               label = "permissions.defaultMode is \"default\" (Manual)")
 })
 
-test_that("AGENTS.md is in place and carries the canary line", {
+test_that("AGENTS.md is in place, with its canary and version-control rule", {
   agents <- here::here("AGENTS.md")
   expect_true(file.exists(agents))
-  expect_true(any(grepl("agents-md: active", readLines(agents, warn = FALSE),
-                        fixed = TRUE)))
+  lines <- readLines(agents, warn = FALSE)
+  expect_true(any(grepl("agents-md: active", lines, fixed = TRUE)))
+  expect_true(any(grepl("git status", lines, fixed = TRUE)),
+              label = "AGENTS.md asks the agent to run git status before editing")
+  # a rule about git is only a request; git itself must be there
+  repo <- tryCatch(gert::git_find(here::here()), error = function(e) NULL)
+  expect_false(is.null(repo), label = "the project is a git repository")
 })
 
 test_that("a CLAUDE.md, if there is one, imports AGENTS.md", {

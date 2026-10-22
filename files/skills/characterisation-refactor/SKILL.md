@@ -10,20 +10,30 @@ disable-model-invocation: true
 
 # Refactor under a characterisation test
 
-## The reference stays with the human
-The frozen reference in tests/fixtures/ is captured by the user, once, before
-any refactoring. A reference produced by the code under test proves nothing.
-- Never create, regenerate or modify anything under tests/fixtures/.
-- Never run tests/make_reference.R or any script that writes a fixture.
-- If no reference exists, stop and ask the user to capture one.
+## The reference comes from the original code, and the user commits it
+The frozen reference in tests/fixtures/ is written by the user's own capture
+script (tests/make_reference.R) from the original, unchanged code, and the
+user commits it before anything else changes. A reference made after the code
+has changed proves nothing.
+- Run tests/make_reference.R at most once, in step 2 below, and only if no
+  reference exists yet and git status shows no uncommitted changes under
+  scripts/. Never run it at any other time, and never edit the capture script.
+- Never edit, regenerate or delete anything under tests/fixtures/.
+- If a reference already exists, use it as it is.
 
 ## Procedure
-1. Present a plan: the code to move, the function name and file, and the
-   test file. Wait for the user to confirm.
-2. Refactor only. Write the function in scripts/functions/ with a roxygen2
+1. Present a plan: whether a reference must be captured, the code to move,
+   the function name and file, and the test file. Wait for the user to
+   confirm.
+2. Capture only, if no reference exists. Run git status; if anything under
+   scripts/ has uncommitted changes, stop and ask. Otherwise run
+   Rscript tests/make_reference.R, report the file it wrote, and stop: ask
+   the user to commit it before you change any code. Do not commit it
+   yourself.
+3. Refactor only. Write the function in scripts/functions/ with a roxygen2
    block and an argument check, and make the original script call it. Do not
    write or edit tests in this step. Stop and let the user review the diff.
-3. Test only. Write tests/test_<functions file>.R (for
+4. Test only. Write tests/test_<functions file>.R (for
    scripts/functions/summary_functions.R, that is
    tests/test_summary_functions.R). Start it with library(testthat) and
    testthat::local_edition(3), source the function files with
@@ -32,7 +42,7 @@ any refactoring. A reference produced by the code under test proves nothing.
    hard-code expected values, and never reimplement the computation inside
    the test. Include an expect_error() test showing that the argument check
    rejects data with a required column missing.
-4. Run every test in a fresh R session,
+5. Run every test in a fresh R session,
    Rscript -e "testthat::test_dir('tests')", and report the output verbatim,
    including skips.
 

@@ -26,128 +26,65 @@ confidential data out of it, and hand it routine work safely.
 
 ## Part A: What can the assistant see?
 
-| Surface | Example | What it can see | Can it act? |
-|---|---|---|---|
-| Browser chat | Any chat website | What you paste | No |
-| Terminal agent | Claude Code | Project files, and the output of any command it runs | Yes, in your files and shell |
-| Session-aware IDE assistant | Posit Assistant | Your live R session and project files | Yes, in your session and files |
-
-:::{.callout-note}
-**Knowing versus guessing.** An assistant is only reliable about your data
-when it has real information: something you pasted, a file it read, or code it
-ran. Column names you never supplied, or a famous dataset you never mentioned
-(`penguins`, `mtcars`), are signs it is guessing. Check any data-specific claim
-against the real object.
-:::
+An assistant's answer about your data is reliable only when it has real
+information: something you pasted, a file it read, or output from a command it
+ran. In Block 3 you supplied that information yourself. An agent can fetch it
+on its own, and everything it uses leaves your machine.
 
 
-### Exercise 1: Context decides the answer
+### Exercise 1: Watch what it gathers
 
 :::{.task}
 ::::{.task-header}
-The same error, three levels of context (10 minutes)
+Watch what it gathers (8 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** your workshop repository open in RStudio with a clean Git
-pane, and a browser chat open in another window.
+**Start state:** your workshop repository, with a clean Git pane, and Claude
+Code open in the Terminal tab with a new conversation (`/clear`).
 
-**1. Error only.** In a new browser chat, paste only this and ask "What does
-this error mean?":
-
-**Prompt (browser chat):**
-
-```text
-Error in `mutate()`:
-ℹ In argument: `mass_change_g = mass_post - mass_pre_g`.
-Caused by error:
-! object 'mass_post' not found
-```
-
-Expect a general answer: the column does not exist, perhaps a typo, check
-`names()`. It cannot name the right column, because it has never seen one.
-
-**2. Error plus code plus structure.** In another new chat, paste:
-
-**Prompt (browser chat):**
-
-```text
-I am running this code:
-
-  voles |>
-    mutate(mass_change_g = mass_post - mass_pre_g)
-
-and getting:
-
-  Error in `mutate()`:
-  ℹ In argument: `mass_change_g = mass_post - mass_pre_g`.
-  Caused by error:
-  ! object 'mass_post' not found
-
-The data structure is:
-
-  Rows: 72
-  Columns: 6
-  $ subject_id          <chr> "V001", "V002", "V003", ...
-  $ sex                 <chr> "M", "F", "M", ...
-  $ treatment_arm       <chr> "Control", "Control", ...
-  $ mass_pre_g          <dbl> 28.3, 27.9, 30.1, ...
-  $ mass_post_g         <dbl> 28.5, 28.0, 30.5, ...
-  $ metabolic_rate_post <dbl> 13.21, 12.84, 13.55, ...
-
-What is wrong?
-```
-
-It should name the missing `_g` suffix.
-
-**3. No paste at all.** In the R console,
-`usethis::edit_file("scripts/scratch_error.R")` creates and opens a scratch
-script. Paste in, and save:
-
-```r
-library(tidyverse)
-library(here)
-
-voles <- read_csv(here("data", "raw", "voles_metabolism.csv"))
-
-voles |>
-  mutate(mass_change_g = mass_post - mass_pre_g)
-```
-
-In the project's Terminal tab, start `claude` and ask:
+**1. Ask without the answer-only line.** This is a Block 3 question, but this
+time you let Claude Code look for itself:
 
 **Prompt (Claude Code):**
 
 ```text
-Why does the mutate() call in scripts/scratch_error.R fail?
+My code
+
+  voles |> mutate(mass_change_g = mass_post - mass_pre_g)
+
+fails with "object 'mass_post' not found". voles is read from
+data/raw/voles_metabolism.csv. What is wrong?
 ```
 
-Expect it to read the script and the CSV file (approve any request to run
-code), then name `mass_post_g` as the real column. Then ask "How do you know
-the column names?" and compare its answer with what you know it read.
+**2. Read the transcript, not just the answer.** Above its reply, Claude Code
+lists each action it took. When we tested this prompt, it ran a short command
+such as `head -n 3 data/raw/voles_metabolism.csv` (or `Get-Content` on Windows)
+**without asking**, because Claude Code treats a small set of read-only
+commands like reading a file. It then named `mass_post_g` as the real column. If
+it asks to run anything else, choose **No**: it can answer from the file.
 
-**You are done when** you can say which answers named the real cause, and why.
-Then delete the scratch file so Exercise 2 starts clean:
-`file.remove(here::here("scripts", "scratch_error.R"))`.
+**3. Name the route.** For each action in the transcript, find its route in the
+diagram below: a file it read is route 2; the output of a command it ran is
+route 4.
 
-**If it goes wrong:** if Claude Code cannot find the script, check you started
-`claude` in the project's Terminal tab and saved the file in `scripts/`. If a
-chat in step 2 still guesses, that is a result too: note it and move on.
+**You are done when** you can name every file or command output that reached
+the model provider, and the answer names `mass_post_g`.
+
+**If it goes wrong:** if it read more than the header, or other files, note
+which: an agent reads what it judges useful, which is why the habits below
+matter for confidential data.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
-Load the data and run the failing code in your R session, then ask only "Why
-did my last command fail?" Posit Assistant receives the names and types of the
-objects in your session, and can run code to inspect them, without your
-pasting anything.
+Run the failing code in your R session, then ask only "Why did my last command
+fail?" Posit Assistant already has the names and types of your objects, so it
+may answer without fetching anything: that is route 3.
 :::
 
 ::::
 :::
-
-The answer is only as good as the context, and context reaches the model by
-more than one route.
 
 
 ### Disclosure: every route out of your machine
@@ -231,8 +168,8 @@ them.
    used for model training; on Pro or Max, set `/privacy-settings`. Check your
    institution's approval, ethics approval and data agreements first.
 3. **Deny reads of sensitive folders** in `/permissions`, for example
-   `Read(/data/confidential/**)`. This stops Claude Code's file-reading tools;
-   it is best effort, because R or shell commands can still read the file.
+   `Read(/data/confidential/**)`. It is best effort: commands can still read
+   the file.
 4. **Stay in Manual mode**, and refuse any command that would print records.
 5. **Describe, don't show.** `names()` gives column names and `summary()` the
    shape of the data; `print()`, `glimpse()` and `str()` show actual values.
@@ -300,7 +237,7 @@ in code.
 | Rung | What happens | Claude Code | Posit Assistant |
 |---|---|---|---|
 | 0. Suggest | Completes the line you are typing | — | Next Edit Suggestions |
-| 1. Ask | Answers; changes nothing | — (use a chat window) | Ask mode (`/ask`) |
+| 1. Ask | Answers; changes nothing | — (no ask mode; Block 3's answer-only line is a request) | Ask mode (`/ask`) |
 | 2. Plan | Proposes steps; changes nothing until you approve | `/plan` | `/plan` |
 | 3. Act, with approval | Edits files and runs commands, asking first | Manual (`default`): the workshop's starting mode | Normal mode |
 | 4. Act, partly unsupervised | Some actions without asking | `acceptEdits`; `auto` (a classifier approves actions; Claude Code's own default since v2.1.283) | Auto mode (`/auto`) |
@@ -360,20 +297,7 @@ Git pane shows no changed files). While Claude Code runs in the Terminal tab,
 check its work from the R console and the Git pane
 ([checking work](11a-setup-claude-code.qmd#checking-work)).
 
-**1. Plan a question (rung 2).** Claude Code has no Ask mode, so start
-`claude` in the Terminal tab and put `/plan` before your question, so nothing
-changes:
-
-**Prompt (Claude Code):**
-
-```text
-/plan In scripts/explore_voles.R, how would I add a column mass_change_g
-equal to mass_post_g minus mass_pre_g?
-```
-
-The Git pane should still show no changed files.
-
-**2. Plan a change (rung 2).** Give a goal that spans several files:
+**1. Plan (rung 2).** In Claude Code, type `/clear`, then:
 
 **Prompt (Claude Code):**
 
@@ -381,22 +305,21 @@ The Git pane should still show no changed files.
 /plan In scripts/explore_voles.R, add a derived mass_change_g column (mass_post_g
 minus mass_pre_g). Create a new script scripts/explore_mass_change_plot.R
 that plots mass_change_g by treatment_arm and saves the figure to outputs/
-with ggsave(). Then check that both scripts run in a fresh R session.
+with ggsave(). Don't run anything; I'll check the scripts myself.
 ```
 
-Before approving, check the plan names every file it will touch, leaves raw
-data alone, saves the figure to `outputs/` and says how it will check the
-scripts run. Ask for changes if anything is missing.
+Before approving, check the plan names both files, leaves `data/raw/` alone
+and saves the figure to `outputs/`. If anything is missing, choose **No, keep
+planning** and say what to change.
 
-**3. Act, with approval (rung 3).** Choose **Yes, manually approve edits**, so
-it stays in Manual mode. Read each approval prompt, and refuse at least one
-action: if nothing is out of scope, refuse its first `Rscript` call. You will
-run the check yourself in a fresh session in step 4, so you see the evidence
-rather than its claim.
+**2. Act, with approval (rung 3).** Choose **Yes, manually approve edits**, so
+it stays in Manual mode, and read each edit before you approve it. The
+repository's `AGENTS.md` tells it to run new scripts, so it may still ask to
+run `Rscript`: choose **No**, because you check the result yourself next.
 
-**4. Review and check.** Click **Diff** in the Git pane for each changed file
-and read it as you would a colleague's work. Then Restart R
-(*Session → Restart R*) and run:
+**3. Check.** Click **Diff** in the Git pane for each changed file and read it
+as you would a colleague's work. Then Restart R (*Session → Restart R*) and
+run:
 
 **In the R console:**
 
@@ -408,16 +331,16 @@ testthat::test_file(here::here("tests", "test_explore.R"))
 One test checks `mass_change_g` really is post minus pre; the other runs the
 plot script in a fresh R session and checks a figure arrived in `outputs/`.
 
-**5. Start your AI-use log.** Create `docs/ai-log.md`
+**4. Record and commit.** Create `docs/ai-log.md`
 (`usethis::edit_file("docs/ai-log.md")`) and write the first line of your
 `r glossary("AI-use log")` yourself, on one line, in the form from Block 1.
 Use today's date, written as YYYY-MM-DD:
 
 ```text
-2026-10-19; Claude Code (model as shown above the Claude Code prompt); added mass_change_g and a plot script; kept both after reading the diff; rejected one out-of-scope edit
+2026-10-19; Claude Code (model as shown above the Claude Code prompt); added mass_change_g and a plot script; kept both after reading the diff
 ```
 
-Commit it with the agent's changes. You will add a line after each block in
+Commit it together with both scripts. You will add a line after each block in
 which an agent works; `tests/test_ai_log.R` checks that each line has four
 parts separated by semicolons, and that the dates are real and in order.
 
@@ -442,8 +365,8 @@ automate this again?
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
-Use Ask mode (`/ask`) for step 1, `/plan` for step 2, and Normal mode
-(`/normal`) for step 3. Step 4 is the same: the Git pane and the R console.
+Use `/plan` for step 1 and Normal mode (`/normal`) for step 2. Steps 3 and 4
+are the same: the Git pane and the R console.
 :::
 
 :::{.callout-note collapse="true"}
@@ -554,6 +477,17 @@ features; check GitHub's plans page to see whether your plan includes the cloud
 agent. The cloud agent appears in the *Going further* section of
 [Block 9](11i-characterisation-tests.qmd), where its pull request meets a review
 gate.
+:::
+
+:::{.callout-tip collapse="true"}
+## Stretch: the same error at three levels of context
+
+In three new browser chats, ask about the Exercise 1 error with more context
+each time: first the error message alone; then the error plus the code; then
+the error, the code and the output of `glimpse(voles)`. Only with the column
+names in front of it can a chat name `mass_post_g`. Column names you never
+supplied, or a famous dataset you never mentioned (`penguins`, `mtcars`), are
+signs it is guessing.
 :::
 
 :::{.callout-tip collapse="true"}
