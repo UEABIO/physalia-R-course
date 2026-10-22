@@ -17,7 +17,6 @@ shipped_deny_rules <- c(
   "Edit(/tests/fixtures/**)",
   "Edit(/tests/make_reference.R)",
   "Edit(/tests/test_cleaning.R)",
-  "Edit(/tests/test_audit.R)",
   "Edit(/renv.lock)",
   "Edit(/.github/**)",
   "Edit(/.claude/**)",

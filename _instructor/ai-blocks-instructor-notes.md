@@ -119,11 +119,12 @@ values to `NA`: two sentinels, the `-1` code, and the two masses queried as out
 of range. These are in addition to the genuine missing value already in the
 source data.
 
-`docs/data_note.md` should state: IDs are V followed by three digits; sex is M
-or F; the three treatment arms; masses in grams, with adults in this colony
-between 15 and 60 g and 9999 entered when an animal could not be weighed;
-metabolic rate `-1` when the respirometry run failed, with valid readings
-between 5 and 30.
+`docs/data_note.md` ships from `template-files/docs/data_note.md`, the source
+of truth. It states: IDs are V followed by three digits; sex is M or F; the
+three treatment arms; masses in grams, with adults in this colony between 15
+and 60 g and 9999 entered when an animal could not be weighed; metabolic rate
+`-1` when the respirometry run failed, with valid readings between 5 and 30
+and no unit given.
 
 ## 11i-characterisation-tests.qmd: Instructor notes
 
