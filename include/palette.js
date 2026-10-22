@@ -209,6 +209,13 @@
     root.classList.add("has-site-tools");
   }
 
+  // The logo links to the Physalia course page: open it in a new tab
+  document.querySelectorAll("#quarto-header a.navbar-brand-logo").forEach(function (a) {
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.title = "Physalia course page (opens in a new tab)";
+  });
+
   // Course logo: hide it rather than show a broken image if it is missing
   document.querySelectorAll("#quarto-header img.navbar-logo").forEach(function (img) {
     function drop() { img.remove(); }
