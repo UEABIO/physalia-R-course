@@ -36,6 +36,16 @@ test_that("every raw row is either in the clean data or in the exclusion log", {
   expect_false(any(is.na(excluded_df$reason) | excluded_df$reason == ""))
 })
 
+test_that("cleaning is reproducible: a fresh run writes identical files", {
+  skip_if_not(file.exists(clean_path), "Block 7 not done yet: no clean data")
+  derived <- here::here("data", "derived",
+                        c("voles_clean.csv", "cleaning_log.csv", "exclusion_log.csv"))
+  before <- unname(tools::md5sum(derived))
+  callr::rscript(here::here("scripts", "01_clean.R"), wd = here::here(),
+                 show = FALSE)
+  expect_identical(unname(tools::md5sum(derived)), before)
+})
+
 test_that("clean data pass every codebook rule", {
   skip_if_not(file.exists(clean_path), "Block 7 not done yet: no clean data")
   clean_df <- readr::read_csv(clean_path, col_types = voles_col_types())

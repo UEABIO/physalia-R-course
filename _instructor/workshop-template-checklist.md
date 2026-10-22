@@ -22,18 +22,20 @@ book and the template cannot drift apart.
 | `scripts/04_load_data.R`, `05_analysis.R` | Block 9 | From `template-files/`. |
 | `scripts/functions/load_voles.R`, `validate_voles.R`, `typed_numbers.R` | Blocks 7, 9, 10 | From `template-files/`. |
 | `reports/example_report.qmd` | Block 10 | Two planted typed results (lines 37–38) and three lines that are questions, not errors (date, design size, "95%"). |
+| `tests/fixtures/raw_checksum.txt` | Block 7 | Generate once from the shipped raw file: `writeLines(unname(tools::md5sum("data/raw/voles_raw.csv")), "tests/fixtures/raw_checksum.txt")`. |
+| `AGENTS.md` | Block 5 | From `template-files/`: the starter learners edit with `/memory`. Claude Code reads it directly (v2.1.277+) because there is no `CLAUDE.md`; do not ship one. |
 | `tests/make_reference.R` | Block 9 | Not picked up by `test_dir()`, which only runs `test*.R` files. |
-| `tests/test_explore.R`, `test_ai_log.R`, `test_controls.R`, `test_cleaning.R`, `test_audit.R`, `test_translation.R`, `test_readme.R` | Blocks 4–10 | From `template-files/`. Every test skips until its block is done, so the suite passes at any point in the day. |
-| `.agents/skills/clean-with-codebook/` and `.claude/skills/clean-with-codebook/` | Block 7 | From `files/skills/clean-with-codebook/`; the `.claude/` one is a copy, not a link, so it works on Windows. |
-| `.claude/settings.json` | Blocks 6, 7, 9 | From `template-files/` (16 deny rules, including `Edit(/renv.lock)`). |
+| `tests/test_explore.R`, `test_ai_log.R`, `test_controls.R`, `test_cleaning.R`, `test_audit.R`, `test_reference_guard.R`, `test_translation.R`, `test_readme.R` | Blocks 4–10 | From `template-files/`. Every test skips until its block is done, so the suite passes at any point in the day. |
+| `.agents/skills/` and `.claude/skills/`: `clean-with-codebook` and `characterisation-refactor` | Blocks 7, 9 | From `files/skills/`; the `.claude/` one is a copy, not a link, so it works on Windows. |
+| `.claude/settings.json` | Blocks 6, 7, 9 | From `template-files/` (starts in Manual mode via `permissions.defaultMode`; 18 deny rules, including `Edit(/renv.lock)`, `Edit(/tests/test_audit.R)` and `Read(/docs/data_note.md)`). |
 | `.gitignore` | All | From `template-files/` (includes `Rplots.pdf`, `.Renviron`, `.env`). |
 | `.gitattributes` | Block 7 | Contains `data/raw/** -text`. |
 | `renv.lock` | All | See below. |
 
 Learners create during the day: `docs/ai-log.md` (Block 4),
-`scripts/explore_mass_change_plot.R` (Block 4), `AGENTS.md`, `CLAUDE.md` and
+`scripts/explore_mass_change_plot.R` (Block 4), their edits to `AGENTS.md` and
 `.agents/skills/house-figures/` (Block 5), `docs/codebook.csv`,
-`docs/profile.csv`, `tests/fixtures/raw_checksum.txt`, `scripts/01_clean.R`
+`docs/profile.csv`, `scripts/01_clean.R`
 and `data/derived/*.csv` (Block 7), `scripts/functions/summary_functions.R`,
 `tests/test_summary_functions.R` and `tests/fixtures/metabolic_summary.rds`
 (Block 9), `scripts/functions/summaries.R` and `README.md` (Block 10).
@@ -58,9 +60,9 @@ carry on. Build each branch on top of the previous one.
 
 | Branch | Adds |
 |---|---|
-| `block5-done` | `docs/ai-log.md` (two lines), `mass_change_g` in `explore_voles.R`, `scripts/explore_mass_change_plot.R` (saves to `outputs/` with `ggsave()`), the starter `AGENTS.md` from Block 5, `CLAUDE.md`, `.agents/skills/house-figures/` and its `.claude/` copy |
-| `block7-done` | `docs/codebook.csv` (the converged codebook from Block 7, with `<unit>` kept for metabolic rate), `tests/fixtures/raw_checksum.txt`, `template-files/checkpoints/block7-done/scripts/01_clean.R`, and the three `data/derived/` files it writes |
-| `block9-done` | `scripts/functions/summary_functions.R` (the missing-values version from Block 9), `scripts/05_analysis.R` calling it, `tests/test_summary_functions.R` with the characterisation and known-answer tests, `tests/fixtures/metabolic_summary.rds` re-captured, and `Edit(/tests/test_summary_functions.R)` added to the deny list |
+| `block5-done` | `docs/ai-log.md` (two lines), `mass_change_g` in `explore_voles.R`, `scripts/explore_mass_change_plot.R` (saves to `outputs/` with `ggsave()`), two edits to `AGENTS.md`, and `.agents/skills/house-figures/` with its `.claude/` copy. No `CLAUDE.md` |
+| `block7-done` | `docs/codebook.csv` (the converged codebook from Block 7, with `<unit>` kept for metabolic rate), `template-files/checkpoints/block7-done/scripts/01_clean.R`, and the three `data/derived/` files it writes |
+| `block9-done` | `scripts/functions/summary_functions.R` (the missing-values version from Block 9), `scripts/05_analysis.R` calling it, `tests/test_summary_functions.R` (the characterisation test) and `tests/test_known_answers.R` (the known-answer test), `tests/fixtures/metabolic_summary.rds` re-captured, and `Edit(/tests/test_summary_functions.R)` in `.claude/settings.local.json` (where `/permissions` saves it) |
 
 The fallback `01_clean.R` reads `docs/codebook.csv` at run time. Against the
 planted data it excludes the two duplicate rows (raw rows 31 and 52), sets
@@ -72,11 +74,15 @@ expects.
 - [ ] Build the template and the three branches from this checklist.
 - [ ] On each branch, from the R console:
       `callr::r(\(d) testthat::test_dir(d), list(here::here("tests")))`.
-      Expect no failures: on `main` everything but the deny-list test skips;
-      on `block9-done` only the Block 10 tests skip.
+      Expect no failures: on `main` four tests pass (deny rules, Manual mode,
+      the `AGENTS.md` canary, the raw-data checksum) and the rest skip; on
+      `block9-done` only the Block 10 tests and the `CLAUDE.md` test skip.
 - [ ] Fork the template on a participant-type account and run Blocks 4–10
       with Claude Code.
-- [ ] In Claude Code, `/permissions` lists all 16 rules.
+- [ ] `claude --version` is 2.1.281 or later (`AGENTS.md` read directly and
+      listed by `/memory`).
+- [ ] In Claude Code, `/permissions` lists all 18 rules, and a new session
+      starts in Manual mode (not auto).
 - [ ] The agent is refused when it tries to edit `data/raw/voles_raw.csv`,
       and allowed to write `scripts/01_clean.R`.
 - [ ] `renv::restore()` succeeds on a clean machine.

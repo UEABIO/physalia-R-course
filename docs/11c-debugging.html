@@ -621,7 +621,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
 <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup">Setup</a></li>
   <li><a href="#exercise-1-a-syntax-error" id="toc-exercise-1-a-syntax-error" class="nav-link" data-scroll-target="#exercise-1-a-syntax-error">Exercise 1: A syntax error</a></li>
-  <li><a href="#exercise-2-a-logic-error" id="toc-exercise-2-a-logic-error" class="nav-link" data-scroll-target="#exercise-2-a-logic-error">Exercise 2: A logic error</a></li>
+  <li>
+<a href="#exercise-2-a-logic-error" id="toc-exercise-2-a-logic-error" class="nav-link" data-scroll-target="#exercise-2-a-logic-error">Exercise 2: A logic error</a>
+  <ul class="collapse">
+<li><a href="#asking-or-acting" id="toc-asking-or-acting" class="nav-link" data-scroll-target="#asking-or-acting">Asking or acting</a></li>
+  </ul>
+</li>
   <li><a href="#exercise-3-a-correct-looking-but-wrong-result" id="toc-exercise-3-a-correct-looking-but-wrong-result" class="nav-link" data-scroll-target="#exercise-3-a-correct-looking-but-wrong-result">Exercise 3: A correct-looking but wrong result</a></li>
   <li><a href="#the-debugging-checklist" id="toc-the-debugging-checklist" class="nav-link" data-scroll-target="#the-debugging-checklist">The debugging checklist</a></li>
   <li><a href="#check-your-understanding" id="toc-check-your-understanding" class="nav-link" data-scroll-target="#check-your-understanding">Check your understanding</a></li>
@@ -650,8 +655,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><p>AI is most useful for debugging code you wrote yourself. You know what you intended, so you can judge its diagnosis against your intention rather than against an unknown ground truth. It can spot syntax mistakes you missed, suggest fixes for errors, and explain unfamiliar messages.</p>
-<p>This block uses three error types, ordered by what the debugger needs to know. The first is a typo that needs no data. The second needs the actual values in the data. The third runs cleanly, returns a plausible answer and is wrong; only knowledge of the expected result reveals it. The differences show where AI can stand in for looking up documentation, where it cannot stand in for inspecting the data, and where it cannot stand in for knowing the biology.</p>
+</header><p>AI is a fast debugging partner for code you wrote yourself, because you know what you meant and can judge its answer against that. This block works through three kinds of bug, each needing a little more from you: a typo (the AI can fix it alone), a logic error (it needs to see the data), and a result that runs but is wrong (only your knowledge of the study catches it).</p>
 <p><em>⏱ ~20 minutes</em></p>
 <section id="setup" class="level2"><h2 class="anchored" data-anchor-id="setup">Setup</h2>
 <p>Load the voles data.</p>
@@ -661,8 +665,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-2"><a href="#cb1-2" aria-label="2"></a><span class="fu">library</span>(here)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-label="3"></a>voles <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Use Claude Code, started in your workshop project’s Terminal tab. If you have no <a class="glossary">agent<span class="def">An assistant that can read across a project’s files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</span></a>, a chat window works for every exercise; inline completion works for Exercise 1.</p>
-<p>Claude Code cannot see the objects in your R console, such as <code>voles</code> or <code>high_dose</code>. It can read the files in your repository and run code itself, so it sees your data only by reading the file or running a command. Each <code>Rscript</code> command it runs is a fresh R process, too: nothing carries over between its commands, which is why it reads the data file again each time. Check its work in the R console, as <a href="./11a-setup-claude-code.html#checking-work">checking work</a> describes. <a href="./11d-context-disclosure-autonomy.html">Block 4</a> looks at what each tool can see.</p>
+<p>Use Claude Code, started in your workshop project’s Terminal tab. If you have no <a class="glossary">agent<span class="def">An assistant that can read across a project’s files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</span></a>, a chat window works for every exercise.</p>
+<p>Claude Code cannot see the objects in your R console, such as <code>voles</code>: it sees your data only by reading the file or running code, and each <code>Rscript</code> command it runs starts a fresh R process. Check its work in the R console (<a href="./11a-setup-claude-code.html#checking-work">checking work</a>).</p>
 </section><section id="exercise-1-a-syntax-error" class="level2"><h2 class="anchored" data-anchor-id="exercise-1-a-syntax-error">Exercise 1: A syntax error</h2>
 <p>You wrote this in your script to count voles per treatment:</p>
 <div class="cell" data-layout-align="center">
@@ -682,38 +686,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-6"><a href="#cb4-6" aria-label="6"></a>Error in geom_barchart(): could not find function "geom_barchart"</span>
 <span id="cb4-7"><a href="#cb4-7" aria-label="7"></a></span>
 <span id="cb4-8"><a href="#cb4-8" aria-label="8"></a>What is wrong, and what is the fix?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>With inline completion, paste both into your script as a block comment, add <code># Fix this code:</code>, and let the <a class="glossary">assistant<span class="def">Any AI tool that helps you write or understand code, from inline completion to a chat window. In this course “assistant” is the general word; “agent” is used when the tool acts on your files.</span></a> suggest a continuation.</p>
-<p><strong>In the R script</strong> (for inline completion):</p>
-<div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a><span class="co"># This code gives an error:</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-label="2"></a><span class="co"># ggplot(voles, aes(x = treatment_arm)) +</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-label="3"></a><span class="co">#   geom_barchart()</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-label="4"></a><span class="co">#</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-label="5"></a><span class="co"># Error: could not find function "geom_barchart"</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-label="6"></a><span class="co">#</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-label="7"></a><span class="co"># Fix this code:</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>2. Explain it before you accept it.</strong> Write one sentence saying why the original failed. If you can write it, you understood the fix; that sentence is your check.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<p>Before accepting any suggestion, write one sentence explaining why the original failed. That sentence is your verification step: if you can write it, you understood the fix; if you cannot, the AI has solved the problem and you have learned nothing.</p>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>With inline completion instead
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Paste the code and the error into your script as a comment, add <code># Fix this code:</code> on the next line, and let the <a class="glossary">assistant<span class="def">Any AI tool that helps you write or understand code, from inline completion to a chat window. In this course “assistant” is the general word; “agent” is used when the tool acts on your files.</span></a> suggest a continuation.</p>
+</div>
+</div>
+</div>
 <div class="webex-solution">
 <button>
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> treatment_arm)) <span class="sc">+</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-label="2"></a>  <span class="fu">geom_bar</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> treatment_arm)) <span class="sc">+</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-label="2"></a>  <span class="fu">geom_bar</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The function is <code>geom_bar()</code>, not <code>geom_barchart()</code>. ggplot2’s geoms use short names with no <code>_chart</code> suffix. “Could not find function” is R’s standard message when a function does not exist in any loaded package, and it is the easiest class of error to recognise.</p>
+<p>The function is <code>geom_bar()</code>; ggplot2’s geoms have no <code>_chart</code> suffix. “Could not find function” means no loaded package has a function of that name.</p>
 </div>
 <p><strong>You are done when</strong> the corrected plot draws a bar for each treatment arm, and you have written your one-sentence explanation.</p>
 <p><strong>If it goes wrong:</strong> if the fix produces a different error, paste that error back in the same conversation; the assistant now has two clues.</p>
 </section><section id="exercise-2-a-logic-error" class="level2"><h2 class="anchored" data-anchor-id="exercise-2-a-logic-error">Exercise 2: A logic error</h2>
 <p>You wrote this in your script to compute mean post-treatment mass for high-dose voles:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a>high_dose <span class="ot">&lt;-</span> voles <span class="sc">|&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>  <span class="fu">filter</span>(treatment_arm <span class="sc">==</span> <span class="st">"high_dose"</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-label="3"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-label="4"></a>high_dose <span class="sc">|&gt;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a>  <span class="fu">summarise</span>(<span class="at">mean_mass =</span> <span class="fu">mean</span>(mass_post_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>high_dose <span class="ot">&lt;-</span> voles <span class="sc">|&gt;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-label="2"></a>  <span class="fu">filter</span>(treatment_arm <span class="sc">==</span> <span class="st">"high_dose"</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-label="3"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-label="4"></a>high_dose <span class="sc">|&gt;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-label="5"></a>  <span class="fu">summarise</span>(<span class="at">mean_mass =</span> <span class="fu">mean</span>(mass_post_g))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The code runs without error. R returns:</p>
 <pre><code># A tibble: 1 × 1
@@ -721,37 +730,74 @@ Solution
       &lt;dbl&gt;
 1       NaN</code></pre>
 <p><strong>Start state:</strong> <code>voles</code> is loaded in your R console.</p>
-<p>There is no error message to paste. The code does exactly what you asked; the bug is in what you asked for. No assistant can diagnose this reliably without knowing what your data contain, and the next step gives it exactly that: three calls that put the evidence in front of you and, once pasted, in front of the assistant.</p>
-<p><strong>1. Inspect the data before asking for help.</strong> Three calls take seconds.</p>
+<p>There is no error to paste: the bug is in what you asked for. The fix is to put the evidence in front of you first, and then in front of the assistant.</p>
+<p><strong>1. Inspect the data before asking for help.</strong></p>
 <p><strong>In the R console:</strong></p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a>voles <span class="sc">|&gt;</span> <span class="fu">distinct</span>(treatment_arm)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>voles <span class="sc">|&gt;</span> <span class="fu">count</span>(treatment_arm)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a><span class="fu">nrow</span>(high_dose)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a>voles <span class="sc">|&gt;</span> <span class="fu">distinct</span>(treatment_arm)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a>voles <span class="sc">|&gt;</span> <span class="fu">count</span>(treatment_arm)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a><span class="fu">nrow</span>(high_dose)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The first two show that the values are <code>Control</code>, <code>Low_dose</code> and <code>High_dose</code> (capital first letter, underscore between words). The third returns zero. You have diagnosed the bug without an AI.</p>
-<p><strong>2. Ask with the evidence in hand.</strong> Paste the code and the diagnostic output together and ask for confirmation.</p>
+<p>The values are <code>Control</code>, <code>Low_dose</code> and <code>High_dose</code>, and <code><a href="https://rdrr.io/r/base/nrow.html">nrow()</a></code> is zero: you have found the bug yourself in seconds.</p>
+<p><strong>2. Ask with the evidence in hand.</strong> Paste the code and the diagnostic output together.</p>
 <p><strong>Prompt (Claude Code or a chat window):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a>I am trying to compute mean post-treatment mass for high-dose voles.</span>
-<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a>My code:</span>
-<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-label="4"></a>  high_dose &lt;- voles |&gt;</span>
-<span id="cb10-5"><a href="#cb10-5" aria-label="5"></a>    filter(treatment_arm == "high_dose")</span>
-<span id="cb10-6"><a href="#cb10-6" aria-label="6"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-label="7"></a>  high_dose |&gt;</span>
-<span id="cb10-8"><a href="#cb10-8" aria-label="8"></a>    summarise(mean_mass = mean(mass_post_g))</span>
-<span id="cb10-9"><a href="#cb10-9" aria-label="9"></a></span>
-<span id="cb10-10"><a href="#cb10-10" aria-label="10"></a>returns NaN. But voles |&gt; distinct(treatment_arm) returns</span>
-<span id="cb10-11"><a href="#cb10-11" aria-label="11"></a>"Control", "Low_dose", "High_dose". I think the filter fails because of</span>
-<span id="cb10-12"><a href="#cb10-12" aria-label="12"></a>the capitalisation. Is that the only problem?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The exercise is to ask with the diagnostic context already in place, not to ask the AI to diagnose blind. AI is quick at typo-spotting and syntax recall; <code>distinct()</code> is quicker at telling you what is in your data.</p>
-<p><strong>With Claude Code</strong>, you can ask it to run the diagnostics itself. Because it cannot see <code>high_dose</code> in your console, it will read the data file and rerun the code.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a>I am trying to compute mean post-treatment mass for high-dose voles.</span>
+<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>My code:</span>
+<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a>  high_dose &lt;- voles |&gt;</span>
+<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a>    filter(treatment_arm == "high_dose")</span>
+<span id="cb9-6"><a href="#cb9-6" aria-label="6"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a>  high_dose |&gt;</span>
+<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a>    summarise(mean_mass = mean(mass_post_g))</span>
+<span id="cb9-9"><a href="#cb9-9" aria-label="9"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-label="10"></a>returns NaN. But voles |&gt; distinct(treatment_arm) returns</span>
+<span id="cb9-11"><a href="#cb9-11" aria-label="11"></a>"Control", "Low_dose", "High_dose". I think the filter fails because of</span>
+<span id="cb9-12"><a href="#cb9-12" aria-label="12"></a>the capitalisation. Is that the only problem?</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="asking-or-acting" class="level3"><h3 class="anchored" data-anchor-id="asking-or-acting">Asking or acting</h3>
+<p>So far you have used AI that <strong>answers</strong>. The next step uses AI that <strong>acts</strong>: the difference between a chat assistant and an <a class="glossary">agent<span class="def">An assistant that can read across a project’s files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</span></a>.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead><tr class="header">
+<th></th>
+<th>AI that answers</th>
+<th>AI that acts</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Examples</td>
+<td>A chat window; Posit Assistant’s Ask mode (<code>/ask</code>)</td>
+<td>Claude Code; Posit Assistant in Normal mode</td>
+</tr>
+<tr class="even">
+<td>What it can do</td>
+<td>Read what you give it, and reply</td>
+<td>Read your files, run R code, edit files</td>
+</tr>
+<tr class="odd">
+<td>Who gathers the evidence</td>
+<td>You: you run <code>distinct()</code> and paste the output</td>
+<td>It does, and shows you each command</td>
+</tr>
+<tr class="even">
+<td>What you check</td>
+<td>That its reasoning fits the evidence you pasted</td>
+<td>That each command is sensible, and what its output says</td>
+</tr>
+</tbody>
+</table>
+<p>Use AI that answers when you want to learn, or when the data must not be touched. Use AI that acts when the evidence is in files it can read.</p>
+<p>Claude Code has no ask mode. The nearest is <code>/plan</code> followed by your question: it will not edit your files, but it can still run commands, which in this workshop’s Manual mode it asks before running.</p>
+<p><strong>3. Let the agent gather the evidence.</strong> It will read the data file and rerun the code itself.</p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>Read data/raw/voles_metabolism.csv and check why filtering treatment_arm</span>
-<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>for "high_dose" returns no rows. Show me each command you run and its output.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a>Read data/raw/voles_metabolism.csv and check why filtering treatment_arm</span>
+<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a>for "high_dose" returns no rows. Show me each command you run and its output.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Read the output yourself before accepting its diagnosis.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -760,9 +806,10 @@ Solution
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Posit Assistant can run the same diagnostics in your live R session. The rule is the same: ask it to show the commands and their output, and read the output yourself.</p>
+<p>To try AI that answers instead, type <code>/ask</code> first. Ask mode is enforced read-only: it cannot write files or run R code. Type <code>/normal</code> to leave it.</p>
 </div>
 </div>
 </div>
@@ -771,23 +818,23 @@ Solution
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>high_dose <span class="ot">&lt;-</span> voles <span class="sc">|&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>  <span class="fu">filter</span>(treatment_arm <span class="sc">==</span> <span class="st">"High_dose"</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a>high_dose <span class="sc">|&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a>  <span class="fu">summarise</span>(<span class="at">mean_mass =</span> <span class="fu">mean</span>(mass_post_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>high_dose <span class="ot">&lt;-</span> voles <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>  <span class="fu">filter</span>(treatment_arm <span class="sc">==</span> <span class="st">"High_dose"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-label="4"></a>high_dose <span class="sc">|&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-label="5"></a>  <span class="fu">summarise</span>(<span class="at">mean_mass =</span> <span class="fu">mean</span>(mass_post_g, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The value now matches the data exactly. <code>na.rm = TRUE</code> is a precaution: this dataset has no missing values in <code>mass_post_g</code>, but real biological data usually do.</p>
+<p>The filter now matches the data. <code>na.rm = TRUE</code> is a precaution for real data, which usually have missing values.</p>
 </div>
 <p><strong>You are done when</strong> <code>nrow(high_dose)</code> is 24 and the mean is a number, not <code>NaN</code>.</p>
 <p><strong>If it goes wrong:</strong> if <code><a href="https://rdrr.io/r/base/nrow.html">nrow()</a></code> is still zero, run <code>voles |&gt; distinct(treatment_arm)</code> again and copy the value exactly as printed.</p>
-</section><section id="exercise-3-a-correct-looking-but-wrong-result" class="level2"><h2 class="anchored" data-anchor-id="exercise-3-a-correct-looking-but-wrong-result">Exercise 3: A correct-looking but wrong result</h2>
+</section></section><section id="exercise-3-a-correct-looking-but-wrong-result" class="level2"><h2 class="anchored" data-anchor-id="exercise-3-a-correct-looking-but-wrong-result">Exercise 3: A correct-looking but wrong result</h2>
 <p><strong>Start state:</strong> <code>voles</code> is loaded in your R console.</p>
 <p>You wrote this to get the mean change in body mass by treatment arm:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_pre_g <span class="sc">-</span> mass_post_g) <span class="sc">|&gt;</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_pre_g <span class="sc">-</span> mass_post_g) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>It runs. There is no error and no <code>NaN</code>. R returns something like:</p>
 <pre><code># A tibble: 3 × 2
@@ -796,58 +843,44 @@ Solution
 1 Control             -0.21
 2 Low_dose            -1.49
 3 High_dose           -3.19</code></pre>
-<p>Every value is a small number of grams, plausible for a vole, so nothing looks wrong. But the result is the reverse of the truth. The treatment was designed to increase body mass, and the dataset was built so that mass rises with dose. The table says that mass falls, and falls most at the highest dose.</p>
-<p>The data contain nothing that explains it: apart from one deliberate missing value in <code>metabolic_rate_post</code>, which this calculation does not use, <code>glimpse()</code>, <code>distinct()</code> and <code>count()</code> report nothing unusual. The fault is in the arithmetic: <code>mass_pre_g - mass_post_g</code> measures loss, when you wanted gain.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><strong>Can an AI catch this?</strong> Only if it knows what the answer should be. Given the code and output alone, an assistant can describe what the code does, but nothing in the code or the output says that mass should rise. If you state the expected direction, it is far more likely to name the error. The knowledge that makes the error visible is yours.</p>
-</div>
-</div>
-<p><strong>1. Before you trust any result that runs cleanly, write down what a correct result should look like.</strong> Here: positive values, increasing from Control to High_dose. Then compare. The mismatch between “positive and increasing” and “negative and decreasing” is the diagnosis.</p>
-<p><strong>2. You may ask an AI for a second opinion, with the expected direction included.</strong> A prompt that states the expectation will usually get the sign error named; one with only the code and output usually will not.</p>
+<p>The numbers look plausible, but the treatment was designed to increase mass, and this table says mass falls. Nothing in the data or the code reveals the error: only your knowledge of the study does. An AI can catch it too, but only if you tell it what the answer should be.</p>
+<p><strong>1. Write down what a correct result should look like, then compare.</strong> Here: positive values, rising from Control to High_dose. The mismatch is the diagnosis.</p>
+<p><strong>2. Ask for a second opinion, stating the expected direction.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a>This should show mass gain increasing with dose, but the values are negative</span>
-<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>and decreasing. What is wrong?</span>
-<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a></span>
-<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a>  voles |&gt;</span>
-<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a>    mutate(mass_change_g = mass_pre_g - mass_post_g) |&gt;</span>
-<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a>    summarise(mean_change = mean(mass_change_g), .by = treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a>This should show mass gain increasing with dose, but the values are negative</span>
+<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a>and decreasing. What is wrong?</span>
+<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a>  voles |&gt;</span>
+<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a>    mutate(mass_change_g = mass_pre_g - mass_post_g) |&gt;</span>
+<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a>    summarise(mean_change = mean(mass_change_g), .by = treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="webex-solution">
 <button>
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_post_g <span class="sc">-</span> mass_pre_g) <span class="sc">|&gt;</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a>voles <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a>  <span class="fu">mutate</span>(<span class="at">mass_change_g =</span> mass_post_g <span class="sc">-</span> mass_pre_g) <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a>  <span class="fu">summarise</span>(<span class="at">mean_change =</span> <span class="fu">mean</span>(mass_change_g), <span class="at">.by =</span> treatment_arm)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>mass_change_g</code> is post minus pre. With the subtraction the right way round, the means are positive and increase with dose, matching the study design. The original ran without complaint because subtraction works in either direction; the only signal that it was wrong was knowing what the answer should be.</p>
+<p><code>mass_change_g</code> is post minus pre: gain, not loss. The original ran without complaint because subtraction works in either direction.</p>
 </div>
 <p><strong>You are done when</strong> your corrected means are positive and increase from Control to High_dose, as you predicted in step 1.</p>
 <p><strong>If it goes wrong:</strong> if the values are still negative, check which mass you subtract from which: post minus pre is gain.</p>
 </section><section id="the-debugging-checklist" class="level2"><h2 class="anchored" data-anchor-id="the-debugging-checklist">The debugging checklist</h2>
-<p>When code fails, order matters: inspect the data first, ask the AI second.</p>
+<p>Inspect the data first, ask the AI second.</p>
 <ol type="1">
 <li>
-<strong>Read the error message in full.</strong> The function name and the phrase (“could not find function”, “object not found”, “non-numeric argument”) usually locate the bug.</li>
+<strong>Read the error in full:</strong> the function name and the phrase usually locate the bug.</li>
 <li>
-<strong>Inspect the relevant data.</strong> <code>glimpse()</code>, <code>distinct()</code> on categorical columns, <code><a href="https://rdrr.io/r/base/summary.html">summary()</a></code> on numeric columns, and <code><a href="https://rdrr.io/r/base/nrow.html">nrow()</a></code> after a filter catch most logic errors in seconds.</li>
+<strong>Inspect the data:</strong> <code>glimpse()</code>, <code>distinct()</code>, <code><a href="https://rdrr.io/r/base/summary.html">summary()</a></code>, and <code><a href="https://rdrr.io/r/base/nrow.html">nrow()</a></code> after a filter.</li>
 <li>
-<strong>Check names exactly,</strong> including capitalisation and underscores. Most “object not found” errors are typos.</li>
+<strong>Check names exactly,</strong> including capitals and underscores.</li>
 <li>
-<strong>If steps 1 to 3 do not locate the bug,</strong> give the assistant the code, the error message and the diagnostic output together. The combination is much more useful than the error alone.</li>
+<strong>Then ask,</strong> giving the code, the error and the diagnostic output together.</li>
 <li>
-<strong>After the AI suggests a fix,</strong> write one sentence explaining why the original failed. If you cannot, you have not understood the fix.</li>
+<strong>Explain the fix in one sentence</strong> before you accept it.</li>
 <li>
-<strong>Before trusting a result that runs without error,</strong> state what it should look like (sign, rough magnitude, expected ordering) and compare. This check depends on your knowledge of the study, which no assistant has unless you supply it.</li>
+<strong>Before trusting a clean run,</strong> state what the result should look like (sign, size, order) and compare.</li>
 </ol>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -873,21 +906,21 @@ Solution
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>A filter returns zero rows and the summary is <code>NaN</code>, with no error. What should you do before asking an AI?</strong></p>
-<div id="radio_MQCDSEOCXX" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_MQCDSEOCXX" value=""><span>Paste the NaN output into a chat window and ask what is wrong</span></label><label><input type="radio" autocomplete="off" name="radio_MQCDSEOCXX" value="answer"><span>Inspect the data, for example with distinct() on the filtered column, so you can give the assistant the evidence</span></label><label><input type="radio" autocomplete="off" name="radio_MQCDSEOCXX" value=""><span>Reinstall dplyr</span></label><label><input type="radio" autocomplete="off" name="radio_MQCDSEOCXX" value=""><span>Add na.rm = TRUE and run it again</span></label>
+<div id="radio_HFEERLXYVF" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_HFEERLXYVF" value=""><span>Paste the NaN output into a chat window and ask what is wrong</span></label><label><input type="radio" autocomplete="off" name="radio_HFEERLXYVF" value="answer"><span>Inspect the data, for example with distinct() on the filtered column, so you can give the assistant the evidence</span></label><label><input type="radio" autocomplete="off" name="radio_HFEERLXYVF" value=""><span>Reinstall dplyr</span></label><label><input type="radio" autocomplete="off" name="radio_HFEERLXYVF" value=""><span>Add na.rm = TRUE and run it again</span></label>
 </div>
 <p><strong>Code runs without error and returns plausible numbers. What is the most reliable first check?</strong></p>
-<div id="radio_LKFJGFAEMI" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_LKFJGFAEMI" value=""><span>Ask an AI whether the code is correct</span></label><label><input type="radio" autocomplete="off" name="radio_LKFJGFAEMI" value=""><span>Run the code again to confirm the output is stable</span></label><label><input type="radio" autocomplete="off" name="radio_LKFJGFAEMI" value="answer"><span>Write down what the result should look like from the study design, then compare</span></label><label><input type="radio" autocomplete="off" name="radio_LKFJGFAEMI" value=""><span>Check that there are no warnings</span></label>
+<div id="radio_YPHWYSTJRB" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_YPHWYSTJRB" value=""><span>Ask an AI whether the code is correct</span></label><label><input type="radio" autocomplete="off" name="radio_YPHWYSTJRB" value=""><span>Run the code again to confirm the output is stable</span></label><label><input type="radio" autocomplete="off" name="radio_YPHWYSTJRB" value="answer"><span>Write down what the result should look like from the study design, then compare</span></label><label><input type="radio" autocomplete="off" name="radio_YPHWYSTJRB" value=""><span>Check that there are no warnings</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
 <section id="an-aesthetic-mapping-error" class="level3"><h3 class="anchored" data-anchor-id="an-aesthetic-mapping-error">An aesthetic-mapping error</h3>
 <p>This error needs ggplot2’s grammar rather than the data. You wanted a scatter plot of post-treatment metabolic rate against post-treatment mass, coloured by treatment arm:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> treatment_arm) <span class="sc">+</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="at">color =</span> treatment_arm) <span class="sc">+</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>R returns an error saying that object <code>treatment_arm</code> was not found. The exact wording varies between ggplot2 versions.</p>
 <p><strong>1. Ask for a fix.</strong> Before accepting it, write one sentence on why ggplot2 could not find <code>treatment_arm</code>.</p>
@@ -896,15 +929,15 @@ Solution
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> treatment_arm)) <span class="sc">+</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a><span class="fu">ggplot</span>(voles, <span class="fu">aes</span>(<span class="at">x =</span> mass_post_g, <span class="at">y =</span> metabolic_rate_post)) <span class="sc">+</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">colour =</span> treatment_arm)) <span class="sc">+</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-label="3"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Metabolic rate by mass"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>treatment_arm</code> is a column in the data, so the mapping must go inside <code>aes()</code>. An argument outside <code>aes()</code>, such as <code>color =</code>, expects a fixed value like <code>"red"</code> or <code>"#0072B2"</code>. ggplot2 looked for an object called <code>treatment_arm</code> in your environment, found none, and stopped. <code>colour</code> and <code>color</code> are interchangeable in ggplot2.</p>
 </div>
 <p><strong>When ggplot2 reports that a column such as <code>treatment_arm</code> was not found, the most common cause is:</strong></p>
-<div id="radio_LJUOGHKHGD" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_LJUOGHKHGD" value=""><span>The data argument was supplied incorrectly</span></label><label><input type="radio" autocomplete="off" name="radio_LJUOGHKHGD" value="answer"><span>A column name was used outside aes(), where ggplot2 expected a fixed value</span></label><label><input type="radio" autocomplete="off" name="radio_LJUOGHKHGD" value=""><span>The ggplot2 package is not loaded</span></label><label><input type="radio" autocomplete="off" name="radio_LJUOGHKHGD" value=""><span>The variable contains missing values</span></label>
+<div id="radio_NMIKAGNSQQ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_NMIKAGNSQQ" value=""><span>The data argument was supplied incorrectly</span></label><label><input type="radio" autocomplete="off" name="radio_NMIKAGNSQQ" value="answer"><span>A column name was used outside aes(), where ggplot2 expected a fixed value</span></label><label><input type="radio" autocomplete="off" name="radio_NMIKAGNSQQ" value=""><span>The ggplot2 package is not loaded</span></label><label><input type="radio" autocomplete="off" name="radio_NMIKAGNSQQ" value=""><span>The variable contains missing values</span></label>
 </div>
 </section></section><section id="glossary" class="level2"><h2 class="anchored" data-anchor-id="glossary">Glossary</h2>
 <div class="cell" data-layout-align="center">

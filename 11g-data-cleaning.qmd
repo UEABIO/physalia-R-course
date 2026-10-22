@@ -10,33 +10,23 @@ library(here)
 library(webexercises)
 ```
 
-Cleaning is where an AI assistant looks most useful and where its mistakes are
-hardest to see. A cleaning script can run without error, return the right
-columns and produce plausible values while having treated a missing-value code
-as a measurement, kept the same animal twice, or dropped a row nobody noticed.
-None of these raises an error.
+Cleaning mistakes are silent: a missing-value code treated as a measurement,
+the same animal kept twice, a row quietly dropped. In this block an agent
+writes and runs the whole cleaning script from one command, and one test run
+tells you whether to trust it. You own the facts (the
+`r glossary("codebook")`); everything else ships with the template:
 
-By the end of this block you will have checks that catch each of these
-automatically, every time the cleaning runs: a test that fails if any value
-changed without a log entry, one that fails if a row disappears, one that
-fails if more values became missing than the codebook explains, and one that
-fails if the raw data change at all. That is what makes it safe to let an
-agent write the cleaning script.
-
-This block treats cleaning as four artefacts, each with a different owner:
-
-| Artefact | Owner | Why |
+| Part | Owner | Why |
 |---|---|---|
-| Codebook (`docs/codebook.csv`) | You | Missing-value codes, units, valid ranges and label mappings are facts about how the data were collected. They cannot be inferred reliably from the values. |
-| Cleaning skill | Reusable | *How* you clean: never touch raw data, log every change, never drop a row silently. The same for every dataset. |
-| Validation and audit scripts | You, or a separate AI conversation | Written from the codebook, independently of the cleaning code, so one misunderstanding cannot pass both. |
-| Enforcement | Configuration | Rules that hold whether or not the agent follows its instructions. |
+| Codebook (`docs/codebook.csv`) | You | Codes, units, ranges and labels are facts about how the data were collected, not something to infer from the values |
+| Cleaning skill | Template | *How* to clean: never touch raw data, log every change, never drop a row silently |
+| Tests and validation rules | Template | Written from the codebook, independently of the cleaning code |
+| Deny rules | Template | Keep the agent's edit tools off the raw data, the codebook, the data note and the tests |
 
-The `r glossary("codebook")` is the hub. The cleaning and the checks both read
-it, but neither reads the other, so a misunderstanding in one is caught by the
-other:
+The cleaning and the checks both read the codebook but never each other, so a
+misunderstanding in one is caught by the other:
 
-:::::::: {.dia .dia-lanes role="figure" aria-label="The cleaning pipeline and its owners. The raw data are pinned by a checksum and profiled with R. You write the codebook from the profile and the data provider's note. Two independent branches read the codebook: the AI cleans with the skill, writing scripts/01_clean.R, the clean data and the cleaning and exclusion logs; the validation rules are transcribed from the codebook separately. The tests and the audit then compare the raw data, the clean data and the logs."}
+:::::::: {.dia .dia-lanes role="figure" aria-label="The cleaning pipeline and its owners. The raw data are pinned by a checksum and profiled with R. You write the codebook from the profile and the data provider's note. Two independent branches read the codebook: the AI cleans with the skill, writing scripts/01_clean.R, the clean data and the cleaning and exclusion logs; the validation rules were transcribed from the codebook separately. The tests then compare the raw data, the clean data and the logs."}
 ::::::: {.dia-flow}
 ::: {.dia-label}
 Facts first
@@ -48,7 +38,7 @@ Facts first
 profiled in R
 :::
 ::: {.dia-node .dia-plain}
-`00_profile.R` output
+`docs/profile.csv`
 :::
 ::: {.dia-arrow}
 plus the provider's note
@@ -85,7 +75,7 @@ Validation rules in `validate_voles.R`, transcribed from the codebook
 Then compare
 :::
 ::: {.dia-node .dia-check}
-Tests and audit: raw data unchanged, every row accounted for, every change logged
+One test run: raw data unchanged, every row accounted for, every change logged, the same answer every time
 :::
 :::::::
 ::: {.dia-caption}
@@ -93,180 +83,89 @@ Independence is the point: one misunderstanding cannot pass both branches.
 :::
 ::::::::
 
-You will work on a version of the voles data with errors planted in it. Your
-instructor holds the answer key, so at the end you can measure what your
-pipeline caught and what it missed.
+The voles data have errors planted in them; your instructor holds the answer
+key, so at the end you measure what your pipeline caught. The steps follow
+[the safe vibe-coding recipe](11d-context-disclosure-autonomy.qmd#safe-recipe)
+from Block 4.
 
-*⏱ ~54 minutes*
+*⏱ ~50 minutes*
 
 :::{.callout-note}
-**Why not simply ask the AI to clean the data?** In a 2025 study, language
-models given deliberately polluted tables found missing values in standard
-formats but struggled with codes such as `-1` (a
-`r glossary("sentinel value")`), rarely detected non-exact duplicates, and did
-worse as errors increased (Spreafico et al., 2025). The models were older than
-those you will use and did not write or run code, so treat this as a map of
-where to look. Those error classes are planted in this block's data.
+**Why not simply ask a chatbot to clean the data?** In a 2025 study, language
+models given polluted tables missed codes such as `-1` (a
+`r glossary("sentinel value")`) and rarely spotted near duplicates (Spreafico
+et al., 2025). Those error classes are planted here.
 :::
 
 
-## The repository layout
+## Step 0: Check the safeguards are in place
 
-This is the part of [your workshop repository](11a-setup-claude-code.qmd) that
-Block 7 uses:
+:::{.task}
+::::{.task-header}
+Recipe check (3 minutes)
+::::
+::::{.task-container}
 
-```
-.agents/skills/clean-with-codebook/SKILL.md   the skill
-.claude/
-├── settings.json                  the deny rules, from Block 6
-└── skills/clean-with-codebook/    a copy of the skill folder above
-.gitattributes                     stops line-ending changes to raw data
-data/
-├── raw/voles_raw.csv              never edited by anyone
-└── derived/                       cleaning outputs and logs
-docs/
-├── data_note.md                   the data provider's note
-├── profile.csv                    written by 00_profile.R in Step 1
-└── codebook.csv                   you write this in Step 2
-scripts/
-├── 00_profile.R                   provided
-├── 01_clean.R                     written by the agent in Step 4
-├── 02_validate.R                  provided: raw should fail, clean pass
-├── 03_audit_cleaning.R            provided
-└── functions/validate_voles.R     provided
-tests/
-├── fixtures/raw_checksum.txt      you create this in Step 0
-├── test_cleaning.R                provided
-└── test_audit.R                   provided
-```
+**Start:** your workshop repository on `main`, Git pane clean (behind on
+Block 5? switch to `block5-done` in the Git pane's branch menu).
 
-If your workshop repository does not already contain
-`.agents/skills/clean-with-codebook/`, download the skill and unzip it into
-`.agents/skills/`. In the R console, `unzip(file.choose(), exdir =
-here::here(".agents", "skills"))` lets you pick the downloaded zip:
+**1. The protections.** Start `claude` and type `/permissions`. Look for these
+`r glossary("deny rule", "deny rules")`: `Edit(/data/raw/**)`,
+`Read(/docs/data_note.md)`, `Edit(/docs/codebook.csv)`,
+`Edit(/tests/test_cleaning.R)` and `Edit(/tests/test_audit.R)`.
 
-```{r}
-#| echo: false
-skill_download_button("clean-with-codebook")
-```
+**2. The checks.** In the Files pane, `tests/` holds `test_cleaning.R`,
+`test_audit.R` and `fixtures/raw_checksum.txt` (a `r glossary("checksum")` of
+the raw file). The tests skip until clean data exist.
 
-Claude Code reads skills from `.claude/skills/`, so copy the folder there as
-well. In the R console:
+**You are done when** you have seen the five rules and the three files.
 
-```{r}
-#| eval: false
-fs::dir_copy(
-  here::here(".agents", "skills", "clean-with-codebook"),
-  here::here(".claude", "skills", "clean-with-codebook"),
-  overwrite = TRUE
-)
-```
+**If it goes wrong:** if `/permissions` lists no rules, check you started
+`claude` from the workshop project's Terminal tab; if the files are missing,
+switch to `block5-done`.
 
-(On macOS or Linux you can use a symbolic link instead, as in
-[Block 5](11e-instructions-skills.qmd).)
-
-:::{.callout-tip collapse="true"}
-## Using Posit Assistant
-
-Posit Assistant reads `.agents/skills/` directly, so no copy is needed.
+::::
 :::
 
 
-## Step 0: Lock the raw data
+## Step 1: Profile the raw data
 
-Everything later depends on the raw file being exactly what the data provider
-sent. The deny rules from [Block 6](11f-enforced-controls.qmd) already protect
-it; here you add a `r glossary("checksum")` and confirm the rules work.
+Profiling is counting, so R does it, not the model.
 
-**Start:** your workshop repository open, committed and clean, on the `main`
-branch. (If you are behind and need Block 5's files, switch to `block5-done`
-from the Git pane's branch menu first.)
-
-**1. Record a checksum and commit it.** Run this once, yourself.
-
-**In the R console:**
-
-```{r}
-#| eval: false
-raw_path <- here::here("data", "raw", "voles_raw.csv")
-checksum_path <- here::here("tests", "fixtures", "raw_checksum.txt")
-fs::dir_create(here::here("tests", "fixtures"))
-writeLines(unname(tools::md5sum(raw_path)), checksum_path)
-```
-
-Then commit `tests/fixtures/raw_checksum.txt` from the Git pane.
-
-**2. Confirm the deny rules are active.** In Claude Code, run `/permissions`.
-The rules from `.claude/settings.json` should be listed, including the
-`r glossary("deny rule")` `Edit(/data/raw/**)`.
-
-**3. Test the control, do not assume it.** Ask:
-
-**Prompt (Claude Code):**
-
-```text
-Add a comment line to the top of data/raw/voles_raw.csv.
-```
-
-It should be refused. Then confirm the file is unchanged.
-
-**In the R console:**
-
-```{r}
-#| eval: false
-raw_path <- here::here("data", "raw", "voles_raw.csv")
-checksum_path <- here::here("tests", "fixtures", "raw_checksum.txt")
-identical(unname(tools::md5sum(raw_path)), readLines(checksum_path))
-```
-
-R returns `TRUE`. (The test file in Step 5 checks this too; its other tests
-skip until the cleaned data exist.)
-
-**You are done when** the checksum is committed, the edit was refused and R
-returned `TRUE`.
-
-**If it goes wrong:** if R returns `FALSE`, the raw file changed: open the Git
-pane, **Revert** `data/raw/voles_raw.csv`, and run the check again. If the
-agent offers another way to make the edit after the refusal (a shell command,
-say), decline it.
-
-The deny rule prevents one route; the checksum detects a change made by any
-route. *Going further* lists the full settings file and what each control
-covers.
-
-
-## Step 1: Profile the raw data (R, not AI)
-
-Profiling is counting, and counting is something you should compute rather
-than ask a model to estimate. Run the provided script yourself.
+:::{.task}
+::::{.task-header}
+Profile (5 minutes)
+::::
+::::{.task-container}
 
 **In the R console:**
 
 ```{r}
 #| eval: false
 source(here::here("scripts", "00_profile.R"))
+View(readr::read_csv(here::here("docs", "profile.csv"), show_col_types = FALSE))
 ```
 
-`r hide("The provided scripts/00_profile.R")`
+Every column is read as text, so `9999` and `-1` appear exactly as entered.
+Look for numbers far outside the rest and labels that differ only in spelling
+or case.
 
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "00_profile.R")}
-```
+**You are done when** `docs/profile.csv` exists and you have noted anything
+that looks odd.
 
-`r unhide()`
+**If it goes wrong:** restart R (*Session → Restart R*) and run the line
+again.
 
-It prints the profile in full and also saves it as `docs/profile.csv`, which
-you can open with
-`View(readr::read_csv(here::here("docs", "profile.csv"), show_col_types = FALSE))`
-(in Positron, the Data Explorer) and paste from in Step 2. Keep it: it is the
-factual input to the codebook.
+::::
+:::
 
 
-## Step 2: Draft the codebook, then audit it
+## Step 2: Draft the codebook with the agent, then audit it
 
-The codebook is the data dictionary you wrote for the README on Day 2
-([Fixing it with structure, cleaning and a README](06-reproducibility.qmd#repro-fix)),
-with machine-readable rules added: valid ranges, missing-value codes and label
-mappings that both the cleaning skill and the validation rules can read.
+The codebook is Day 2's data dictionary
+([README chapter](06-reproducibility.qmd#repro-fix)) with machine-readable
+rules. The agent drafts it from the data alone, because it cannot read the
+data provider's note: just like an analyst who never asked for the note.
 
 :::{.task}
 ::::{.task-header}
@@ -274,41 +173,36 @@ Draft and audit the codebook (12 minutes)
 ::::
 ::::{.task-container}
 
-**1. Let an AI draft it from the profile alone.** Use a browser chat window,
-not Claude Code: started in your workshop repository, Claude Code could open
-`docs/data_note.md` itself, and the point of this step is to see what the AI
-infers without it. Paste only the profile output.
+**1. Ask for a draft.**
 
-**Prompt (browser chat):**
+**Prompt (Claude Code):**
 
 ```text
-Here is a profile of a raw data file. Draft a codebook as CSV with the
-columns: column, type, rule, min, max, missing_codes, unit, source.
-In the source column, state for every entry whether it comes from the
-profile or is your assumption.
-
-[paste the contents of docs/profile.csv]
+/plan Draft docs/codebook.csv with the columns column, type, rule, min, max,
+missing_codes, unit, source, from docs/profile.csv only. In the source
+column, say for every entry whether it comes from the profile or is your
+assumption. Show the CSV in your reply; do not write any file.
 ```
 
-Save the draft as `docs/codebook.csv` yourself, in the RStudio or Positron
-editor (*File → New File → Text File*). Avoid Excel: it can change the quoted
-`rule` fields and the encoding without telling you. The deny rules stop the
-agent from writing that file: the codebook is yours.
+Read rules are best effort: if it proposes a command that would open the note,
+refuse it.
 
-**2. Audit the draft.** Before you open `docs/data_note.md`, answer:
+**2. Save it yourself.** `usethis::edit_file("docs/codebook.csv")` in the R
+console, paste, save. The agent is denied this file: the codebook is yours.
+(Avoid Excel, which can silently change quoted fields.)
+
+**3. Audit the draft.** Before you open `docs/data_note.md`, answer:
 
 - Did the draft list `9999` as a missing-value code, or treat it as a large
   measurement?
 - Did it notice that `-1` is a code?
 - Where did its `min` and `max` come from? A range read off the data includes
-  the errors in the data, so it cannot be used to detect them. Valid ranges
-  must come from the biology or the protocol.
+  its errors, so valid ranges must come from the biology or the protocol.
 
-**3. Correct it against the data provider's note.** Open `docs/data_note.md`
-and edit the codebook yourself. Every line should be traceable to the note or
-to a decision you can defend. Where the note does not give a unit (it does not
-for metabolic rate), write `<unit>` rather than a guess: Block 10's README
-check relies on unknowns staying visible. Commit it.
+**4. Correct it against the note.** Open `docs/data_note.md` and make every
+line trace to the note or to a decision you can defend. Where the note gives
+no unit (metabolic rate), write `<unit>`, not a guess: Block 10 relies on it.
+Commit in the Git pane.
 
 **You are done when** `docs/codebook.csv` is committed, with every rule
 traceable to the note or to your own decision.
@@ -334,67 +228,13 @@ metabolic_rate_post,double,,5,30,-1,<unit>,data note (range from equipment)
 `r unhide()`
 
 
-## Step 3: Run the validation rules
+## Step 3: Clean with one command
 
-Validation rules are transcribed from the codebook, not from the cleaning
-script. If the same AI conversation writes both, a single misunderstanding (for
-example, that `-1` is a valid reading) passes both.
-
-The template provides `scripts/functions/validate_voles.R`, written from the
-codebook by a person. It uses the pointblank package: each line is one rule,
-and `interrogate()` reports how many rows break it. (pointblank calls the
-object that holds the rules an "agent"; it has nothing to do with AI agents.)
-You do not need to write pointblank code today.
-
-`r hide("The provided scripts/functions/validate_voles.R")`
-
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "validate_voles.R")}
-```
-
-`r unhide()`
-
-**Run the rules on the raw data. They should fail.** If raw data pass every
-rule, either the data are already clean or the rules are too weak, and you
-should suspect the second. Run the provided script.
-
-**In the R console:**
-
-```{r}
-#| eval: false
-source(here::here("scripts", "02_validate.R"))
-```
-
-It prints one line per data set, for example `Raw data (expected to FAIL): 7
-of 10 rules fail`, and opens the full report in the Viewer, where you can see
-which rules fail and how many rows each flags. It also lists any value that
-could not be read as a number: such a value would become `NA` and slip past
-the range rules, so the list should be empty. Once the cleaning has run, the
-same script also validates the clean data, which should pass.
-
-`r hide("The provided scripts/02_validate.R")`
-
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "02_validate.R")}
-```
-
-`r unhide()`
-
-Every failure is a problem that the cleaning must resolve or log.
-
-:::{.callout-warning}
-`na_pass = TRUE` lets genuine missing values through. It would also let
-through a cleaning script that replaced *every* mass with `NA`. Validation
-alone cannot catch over-cleaning; `tests/test_audit.R` in Step 5 can.
-:::
-
-
-## Step 4: Clean with the skill, plan first
-
-The skill holds the procedure; the codebook holds the facts. It sets
-`disable-model-invocation: true`, so it runs only when you invoke it by name.
-That is appropriate for a workflow that writes files.
+The skill holds the procedure; your codebook holds the facts. It ships with
+the template and runs only when you invoke it by name.
 
 :::{.callout-note collapse="true"}
-## `.agents/skills/clean-with-codebook/SKILL.md`
+## What the skill tells the agent (`clean-with-codebook/SKILL.md`)
 
 ```{r}
 #| echo: false
@@ -410,181 +250,110 @@ Plan, review, then execute (15 minutes)
 ::::
 ::::{.task-container}
 
-**Start:** the codebook committed, the Git pane showing no changed files, and
-`.claude/skills/clean-with-codebook/SKILL.md` present.
+**Start:** the codebook committed and the Git pane showing no changed files.
 
-**1. Start in plan mode and invoke the skill.** In the Terminal tab, start
-Claude Code in `plan` mode (`claude --permission-mode plan`, or `Shift+Tab`
-until the mode shows `plan`), then:
+**1. Invoke the skill.**
 
 **Prompt (Claude Code):**
 
 ```text
-/clean-with-codebook
-Clean data/raw/voles_raw.csv using docs/codebook.csv. Start with the plan.
+/clean-with-codebook Clean data/raw/voles_raw.csv using docs/codebook.csv.
 ```
 
-:::{.callout-tip collapse="true"}
-## Using Posit Assistant
-
-Switch to plan mode with `/plan`, then invoke the skill with the same prompt.
-:::
-
-**2. Review the plan before approving it.** Check that:
+**2. Review its plan before approving.** Check that:
 
 - every rule cites a codebook row;
 - out-of-range values are set to `NA` and queried, not "corrected";
 - no file outside `scripts/01_clean.R` and `data/derived/` will be written;
 - duplicates are handled by a stated rule, with each exclusion logged.
 
-**3. Approve, and keep approving each step.** When Claude Code asks how to
-proceed, choose **Yes, manually approve edits**, so it still asks before each
-change (see the [quick reference](11-AI-programming-integrated.qmd#cc-quick-reference)).
-Read each request, and note every time it stopped to ask you something. A
-well-behaved agent should stop at least once. While it works, keep the Terminal
-tab for Claude Code and watch the Git pane: new files should appear only in
-`scripts/` and `data/derived/` (see
-[checking work](11a-setup-claude-code.qmd#checking-work)).
+**3. Approve, then read each request.** Choose **Yes, manually approve
+edits**. Watch the Git pane: new files should appear only in `scripts/` and
+`data/derived/`. The skill runs the script twice, then the validation and the
+tests, and reports the output.
+
+:::{.callout-tip collapse="true"}
+## Using Posit Assistant
+
+Invoke the skill with the same prompt in Normal mode, so it asks before each
+change; use `/plan` first if you want the plan without any edits.
+:::
 
 **You are done when** `data/derived/` contains `voles_clean.csv`,
 `cleaning_log.csv` and `exclusion_log.csv`, and the agent has reported the
-output of `02_validate.R` and of the tests verbatim, as the skill requires.
+validation and test output.
 
-**If it goes wrong:** if the agent stalls, loops or writes outside
-`scripts/` and `data/derived/`, stop it with `Ctrl+C`, **Revert** its changes
-in the Git pane, and switch to the `block7-done` branch from the Git pane's
-branch menu. It contains a working `01_clean.R` and its three outputs, so you
-can carry on with Step 5.
+**If it goes wrong:** if it stalls, loops or writes elsewhere, press `Ctrl+C`,
+**Revert** in the Git pane, and switch to `block7-done` (a working
+`01_clean.R` and its outputs).
 
 ::::
 :::
 
 
-## Step 5: Check the result
+## Step 4: One check, in a fresh R session
 
-**Start:** the three files in `data/derived/` exist, whether the agent wrote
-them or you switched to `block7-done`.
+The agent says its tests pass: that is a claim. One command, in a
+`r glossary("fresh R session")`, turns it into evidence.
 
-Five checks, each catching something the others cannot. Checks 1 to 3 are the
-core; if the room is behind, your instructor runs 4 and 5.
+:::{.task}
+::::{.task-header}
+Run the checks (7 minutes)
+::::
+::::{.task-container}
 
-**1. The tests (the core check).** Two provided test files check everything
-that can be checked mechanically. Restart R (*Session → Restart R*), then:
+**1. Run every test.** Restart R (*Session → Restart R*), then:
 
 **In the R console:**
 
 ```{r}
 #| eval: false
-testthat::test_file(here::here("tests", "test_cleaning.R"))
-testthat::test_file(here::here("tests", "test_audit.R"))
+callr::r(\(d) testthat::test_dir(d), list(here::here("tests")))
 ```
 
-`tests/test_cleaning.R` checks that the raw data are unchanged (the checksum
-from Step 0), that every raw row is either in the clean data or in the
-exclusion log with a reason, and that the clean data pass every codebook rule.
+What a pass proves:
 
-`tests/test_audit.R` checks the agent's record of its own work, reading the
-raw data as text, exactly as entered:
+| Tests | A pass proves |
+|---|---|
+| raw data are unchanged | The raw file still matches its checksum: nothing changed it, by any route |
+| every raw row is in the clean data or the exclusion log | No row was dropped silently |
+| the four log tests (old values, new values, every changed cell, agreed rule names) | Every change is recorded, truthfully |
+| each excluded `subject_id` is the one in the raw file | Exclusions refer to real rows |
+| no more values set to NA than the codebook explains; clean data pass every codebook rule | Nothing was over-cleaned, and the result obeys your codebook |
+| cleaning is reproducible | A fresh run writes byte-identical files |
 
-- every old value in the cleaning log matches the raw file, so the log tells
-  the truth;
-- every new value in the log is the value in the clean file;
-- every cell that changed appears in the log, so nothing was altered without
-  a record (the most dangerous outcome in this block);
-- every rule named in the log is one of the agreed four (`missing_code`,
-  `label_recode`, `id_format`, `out_of_range_query`);
-- every excluded row's `subject_id` is the one in the raw file;
-- no more values became `NA` than the codebook's missing-value codes and
-  ranges explain, which catches over-cleaning that validation alone misses.
+**2. Read the change.** In the Git pane, **Diff** `scripts/01_clean.R` for
+anything the plan did not mention, then commit the script and its outputs.
 
-**You are done when** both files pass with no failures.
+**You are done when** every cleaning test passes (other blocks' tests may skip)
+and the work is committed.
 
 **If it goes wrong:** a failing test names the problem. Ask the agent to fix
-`01_clean.R`, not the test: the tests and checks are deny-protected, and a
-check changed to pass proves nothing. If time is short, switch to
-`block7-done` and run the tests there.
+`01_clean.R`, quoting the test; never the test itself (it is deny-protected).
+Short of time? Switch to `block7-done`.
 
-`r hide("The provided tests/test_cleaning.R")`
+::::
+:::
+
+`r hide("The shipped tests/test_cleaning.R")`
 
 ```{r, eval = FALSE, file = here::here("_instructor", "template-files", "tests", "test_cleaning.R")}
 ```
 
 `r unhide()`
 
-`r hide("The provided tests/test_audit.R")`
+`r hide("The shipped tests/test_audit.R")`
 
 ```{r, eval = FALSE, file = here::here("_instructor", "template-files", "tests", "test_audit.R")}
 ```
 
 `r unhide()`
 
-**2. Validation on clean data passes.** Run `02_validate.R` again:
 
-**In the R console:**
+## Step 5: Grade against the answer key
 
-```{r}
-#| eval: false
-source(here::here("scripts", "02_validate.R"))
-```
-
-It should now print `Clean data (expected to PASS): all rules pass` below the
-raw-data line.
-
-**3. Read the log yourself.** Tests check consistency; they cannot tell you
-whether a change was the right decision. The provided audit script shows what
-kinds of change were made and samples ten logged changes for you to check by
-eye against the raw file.
-
-**In the R console:**
-
-```{r}
-#| eval: false
-source(here::here("scripts", "03_audit_cleaning.R"))
-```
-
-`r hide("The provided scripts/03_audit_cleaning.R")`
-
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "03_audit_cleaning.R")}
-```
-
-`r unhide()`
-
-For the ten sampled changes, open the raw file (`View()`, or Positron's Data
-Explorer) and confirm each one.
-
-**4. Reproduce it without the agent.** Your `AGENTS.md` and the skill asked for
-a script that runs in a `r glossary("fresh R session")` with the packages in
-the `r glossary("lockfile")`, `renv.lock`. Check, rather than trust. Commit the
-outputs from the Git pane, then:
-
-**In the R console:**
-
-```{r}
-#| eval: false
-renv::status()
-callr::rscript(here::here("scripts", "01_clean.R"))
-```
-
-`renv::status()` should report that the project is in a consistent state. If
-the agent used a package that is not in `renv.lock`, it says so; decide
-whether you want the package, then update the lockfile yourself with
-`renv::snapshot()` as on [Day 1](01-projects.qmd) (the agent is denied that
-file). `callr::rscript()` runs the script in a fresh R session, and the same
-script on the same raw data must write the same outputs, so the Git pane
-should show no changes. If a derived file changed, the cleaning is not
-deterministic: find out why before going on.
-
-:::{.callout-note collapse="true"}
-## At the command line
-
-The same checks from a terminal (after `/exit`, or in a second Terminal tab):
-`Rscript -e "testthat::test_dir('tests')"`, `Rscript -e "renv::status()"`,
-`Rscript scripts/01_clean.R` and `git status --short data/derived`. See
-[checking work](11a-setup-claude-code.qmd#checking-work).
-:::
-
-**5. Grade the pipeline against the planted errors.** Your instructor will now
-release the answer key. For each planted error, record:
+*Instructor-led, about 8 minutes.* Your instructor releases the answer key.
+For each planted error, record:
 
 | Planted error | Failed validation on raw? | Handled as intended? | In the log? |
 |---|---|---|---|
@@ -598,21 +367,17 @@ release the answer key. For each planted error, record:
 | Exact duplicate row | | | |
 | Near duplicate with a malformed ID | | | |
 
-The first column measures your *rules*; the second measures the *cleaning*;
-the third measures the *record*. A planted error that passed validation on raw
-data is a hole in your codebook, whatever the cleaning did.
+The columns measure your *rules*, the *cleaning* and the *record*. A planted
+error that passed validation on raw data is a hole in your codebook.
 
 
 ## Debrief
 
-1. Which planted errors did the AI's first draft of the codebook miss before you
-   gave it the data provider's note? What does that say about who should own the
-   codebook?
+1. Which planted errors did the agent's first draft of the codebook miss before
+   you corrected it against the note? What does that say about who should own
+   the codebook?
 2. What did the agent do with the mass recorded in kilograms and the value ten
-   times too large? If it "corrected" them, on whose authority? If the provider
-   confirms a kilogram entry, the correction becomes a codebook rule you add,
-   not something the script infers.
-3. Which of your checks would have caught a script that set every mass to `NA`?
+   times too large? If it "corrected" them, on whose authority?
 
 **Payoff.** What did the agent do, how long did checking it take, and would you
 automate this again?
@@ -621,20 +386,16 @@ automate this again?
 :::{.callout-note}
 ## Check · Reproduce · Record
 
-- **You can now:** hand an agent the cleaning of a raw data file against a
-  codebook you own, **trusted because** two test files prove the raw data are
-  untouched, every row is accounted for, every change is logged truthfully,
-  and nothing became missing that the codebook does not explain.
-- **Check:** validation rules transcribed from the codebook, not from the
-  cleaning code; tests; the log read by you against the raw file; the answer
-  key.
-- **Reproduce:** `renv::status()` and a fresh `callr::rscript()` run that
-  writes identical outputs. Once the clean output is right, you can freeze it as a
-  reference, as you will in [Block 9](11i-characterisation-tests.qmd), so a
-  later refactor of `01_clean.R` must reproduce it exactly.
-- **Record:** the codebook, the cleaning and exclusion logs, and a line in
-  `docs/ai-log.md`: the skill, how many planted errors were handled as
-  intended, and anything you overrode.
+- **You can now:** hand an agent the cleaning of a raw file against a codebook
+  you own, with one command, **trusted because** one test run proves the raw
+  data are untouched, every row is accounted for, every change is logged
+  truthfully, and a second run gives the same files.
+- **Check:** tests written from the codebook, not the cleaning code; the Git
+  pane diff; the answer key.
+- **Reproduce:** the reproducibility test reruns the cleaning in a fresh R
+  session; [Block 9](11i-characterisation-tests.qmd) shows how to freeze a
+  result as a reference.
+- **Record:** the codebook, both logs, and a line in `docs/ai-log.md`.
 :::
 
 
@@ -650,14 +411,13 @@ inferred by the AI from the data?**
   "Because the AI would take too long to profile the data"
 ))`
 
-**Your validation rules all pass on the raw data before any cleaning. What is
-the most likely explanation in this exercise?**
+**The agent reports "all tests pass". What should you do next?**
 
 `r longmcq(c(
-  "The cleaning script has already run",
-  "pointblank cannot read raw data",
-  answer = "The rules have gaps, because the raw data are known to contain errors",
-  "The data are clean and no cleaning is needed"
+  "Nothing; the agent ran the tests",
+  answer = "Run the tests yourself in a fresh R session and read the diff; the agent's report is a claim",
+  "Ask the agent to run them again",
+  "Delete the tests, since they have done their job"
 ))`
 
 **How does the checksum test differ from the deny rule?**
@@ -675,47 +435,43 @@ the most likely explanation in this exercise?**
 This material is not covered in the live session. Work through it afterwards
 if it is useful to you.
 
-### The Step 0 controls in full
+### The validation rules
 
-**Line endings.** The template's `.gitattributes` contains this line, so git
-does not convert line endings, which would change the checksum on Windows:
+`scripts/functions/validate_voles.R` was transcribed from the codebook by a
+person, not by the agent that writes the cleaning script. It uses the
+pointblank package: each line is one rule, and `interrogate()` reports how
+many rows break it. (pointblank calls the object that holds the rules an
+"agent"; it has nothing to do with AI agents.)
 
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "validate_voles.R")}
 ```
-data/raw/** -text
-```
 
-**Deny rules.** This is the `.claude/settings.json` in your workshop
-repository, the same file you read in [Block 6](11f-enforced-controls.qmd):
+`scripts/02_validate.R` runs the rules on the raw data, which should fail (for
+example `Raw data (expected to FAIL): 7 of 10 rules fail`), and, once the
+cleaning has run, on the clean data, which should pass. It also lists any value
+that could not be read as a number: such a value would become `NA` and slip
+past the range rules. In an interactive session it opens the full report in
+the Viewer.
+
+**In the R console:**
 
 ```{r}
-#| echo: false
-#| comment: ""
-#| class-output: json
-cat(readLines(here::here("_instructor", "template-files", ".claude", "settings.json")), sep = "\n")
+#| eval: false
+source(here::here("scripts", "02_validate.R"))
 ```
 
-A leading `/` anchors each pattern to the project root. The rules protect
-specific files rather than whole folders, so the agent can still write
-`scripts/01_clean.R` and `data/derived/`. Posit Assistant has no documented
-path rules for file edits; use the guard hook from the *Going further* section
-of [Block 6](11f-enforced-controls.qmd) instead.
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "02_validate.R")}
+```
 
 :::{.callout-warning}
-**What each control covers.** The deny rule blocks the agent's file-editing
-tools, and shell output redirects such as `> file`. It does not cover R code
-the agent runs: an R script that writes to `data/raw/` is a different route.
-The checksum test catches a change made by *any* route, but only after the
-fact. On the Copilot cloud agent, where you have no local permission file, the
-checksum test running in CI plus branch protection is your control. Use both
-where you can: one prevents, the other detects.
+`na_pass = TRUE` lets genuine missing values through. It would also let
+through a cleaning script that replaced *every* mass with `NA`. Validation
+alone cannot catch over-cleaning; `tests/test_audit.R` can.
 :::
-
-**Data governance.** A deny rule on editing does not stop data reaching the
-model provider; see [Block 4](11d-context-disclosure-autonomy.qmd).
 
 ### Write the validation rules independently
 
-Instead of using the provided `validate_voles.R`, you can have the rules
+Instead of using the shipped `validate_voles.R`, you can have the rules
 written by an AI that has never seen the cleaning code, for example a browser
 chat window given only the codebook:
 
@@ -731,9 +487,105 @@ with character as the default for anything else.
 [paste docs/codebook.csv]
 ```
 
-Compare what it writes with the provided version in Step 3. A rule it missed,
-or a range it took from the data rather than the codebook, is the kind of
-error the separate conversation is meant to expose.
+Compare what it writes with the shipped version. A rule it missed, or a range
+it took from the data rather than the codebook, is the kind of error the
+separate conversation is meant to expose.
+
+### Read the log yourself
+
+Tests check consistency; they cannot tell you whether a change was the right
+decision. The shipped audit script shows what kinds of change were made and
+samples ten logged changes for you to check by eye against the raw file
+(`View()`, or Positron's Data Explorer).
+
+```{r}
+#| eval: false
+source(here::here("scripts", "03_audit_cleaning.R"))
+```
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "03_audit_cleaning.R")}
+```
+
+### The fresh-run checks, one by one
+
+The test suite already reruns the cleaning in a fresh R session. To do the
+same checks by hand, commit the outputs, then in the R console:
+
+```{r}
+#| eval: false
+renv::status()
+callr::rscript(here::here("scripts", "01_clean.R"))
+```
+
+`renv::status()` should report a consistent state; if the agent used a package
+that is not in the `r glossary("lockfile")`, decide whether you want it and
+record it yourself with `renv::snapshot()`, as on [Day 1](01-projects.qmd)
+(the agent is denied `renv.lock`). After the `callr::rscript()` run the Git
+pane should show no changes.
+
+:::{.callout-note collapse="true"}
+## At the command line
+
+`Rscript -e "testthat::test_dir('tests')"`, `Rscript -e "renv::status()"`,
+`Rscript scripts/01_clean.R` and `git status --short data/derived`, run after
+`/exit` or in a second Terminal tab. See
+[checking work](11a-setup-claude-code.qmd#checking-work).
+:::
+
+### How the template's safeguards were made
+
+**The checksum.** The template's `tests/fixtures/raw_checksum.txt` was written
+once, from the shipped raw file, like this:
+
+```{r}
+#| eval: false
+fs::dir_create(here::here("tests", "fixtures"))
+writeLines(
+  unname(tools::md5sum(here::here("data", "raw", "voles_raw.csv"))),
+  here::here("tests", "fixtures", "raw_checksum.txt")
+)
+```
+
+Do the same for your own raw data, then commit it. The template's
+`.gitattributes` contains `data/raw/** -text`, so git does not convert line
+endings, which would change the checksum on Windows.
+
+**The deny rules.** This is the `.claude/settings.json` in your workshop
+repository, the same file you read in [Block 6](11f-enforced-controls.qmd):
+
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: json
+cat(readLines(here::here("_instructor", "template-files", ".claude", "settings.json")), sep = "\n")
+```
+
+A leading `/` anchors each pattern to the project root. The rules protect
+specific files rather than whole folders, so the agent can still write
+`scripts/01_clean.R` and `data/derived/`. To protect files of your own, add
+rules with `/permissions`. Posit Assistant has no documented path rules for
+file edits; use the guard hook from the *Going further* section of
+[Block 6](11f-enforced-controls.qmd) instead.
+
+:::{.callout-warning}
+**What each control covers.** The deny rule blocks the agent's file-editing
+tools, and shell output redirects such as `> file`. It does not cover R code
+the agent runs: an R script that writes to `data/raw/` is a different route.
+The checksum test catches a change made by *any* route, but only after the
+fact. Use both: one prevents, the other detects. A deny rule on reading does
+not stop data reaching the model provider by other routes; see
+[Block 4](11d-context-disclosure-autonomy.qmd).
+:::
+
+**The skill.** The skill ships in `.agents/skills/` and `.claude/skills/`. To
+use it in another project, download it and unzip it into that project's
+`.agents/skills/` (`unzip(file.choose(), exdir = here::here(".agents", "skills"))`),
+then copy the folder into `.claude/skills/` with `fs::dir_copy()`.
+
+```{r}
+#| echo: false
+skill_download_button("clean-with-codebook")
+```
 
 
 ## Glossary

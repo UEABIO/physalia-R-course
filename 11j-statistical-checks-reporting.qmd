@@ -9,10 +9,9 @@ library(here)
 library(webexercises)
 ```
 
-Earlier blocks checked that code runs, that data are clean, and that a refactor
-leaves results unchanged. This block adds two checks on the analysis and its
-report, then closes the day by assembling the record your repository now
-holds into a README. Each part uses the same division of labour:
+The day ends with two checks on the analysis and its report, then a README
+assembled from everything your repository now holds. Each part splits the work
+the same way:
 
 | You own | The AI writes | The independent check |
 |---|---|---|
@@ -20,13 +19,9 @@ holds into a README. Each part uses the same division of labour:
 | The numbers in your report | Text around inline code | Is any number typed rather than computed? |
 | The codebook, lockfile, scripts and AI-use log | A README drafted from them | Can every statement be traced to one of those files? |
 
-Two further checks on the statistics, robustness to alternative analyses and
-simulation with parameter recovery, are in *Going further* at the end of the
-page.
-
-As in every block, you check the agent's work from the R console and the Git
-pane, not the Terminal tab Claude Code is using (see
-[checking work](11a-setup-claude-code.qmd#checking-work)).
+You check the agent's work from the R console and the Git pane, as in
+[checking work](11a-setup-claude-code.qmd#checking-work). Two more statistical
+checks (robustness and simulation) are in *Going further*.
 
 *⏱ ~30 minutes*
 
@@ -35,15 +30,11 @@ pane, not the Terminal tab Claude Code is using (see
 
 *⏱ ~15 minutes*
 
-Translating code (base R to tidyverse, or SPSS, Stata or SAS to R) is a task AI
-does quickly. The characterisation-test idea from
-[Block 9](11i-characterisation-tests.qmd) applies directly: an
-`r glossary("equivalence check")` runs both versions and compares the outputs.
-
-This time the translation goes into a file, as a function, and the template
-already ships the test that checks it: `tests/test_translation.R` keeps the
-original base R code as the reference and compares the two. The agent writes
-the code; the test, which it did not write, decides whether it is equivalent.
+AI translates code quickly: base R to tidyverse, or SPSS, Stata or SAS to R.
+An `r glossary("equivalence check")` runs both versions and compares the
+outputs, as in [Block 9](11i-characterisation-tests.qmd). The agent writes the
+translation; the shipped `tests/test_translation.R`, which it did not write,
+decides whether it is equivalent.
 
 :::{.task}
 ::::{.task-header}
@@ -52,7 +43,7 @@ Translate and compare (15 minutes)
 ::::{.task-container}
 
 **Start:** your workshop repository, committed and clean, with Claude Code in
-`default` mode in the Terminal tab.
+Manual mode (`default`) in the Terminal tab, which the repository sets.
 
 **1. Run the original.** In the R console:
 
@@ -89,8 +80,7 @@ any other file.
 Approve the edit when asked, after reading it.
 
 **3. Compare.** Normalise only *presentation* (type and row order), never
-values. `waldo::compare()` prints any difference that remains in a readable
-form. In the R console:
+values; `waldo::compare()` shows what still differs. In the R console:
 
 ```{r}
 #| eval: false
@@ -108,38 +98,34 @@ normalise <- function(data) {
 waldo::compare(normalise(tidy_summary), normalise(legacy_summary))
 ```
 
-**4. Find the difference.** If `waldo::compare()` reports a difference after
-normalising, you have found a real difference in behaviour. A column with a
-different name is presentation: ask for it to be renamed. A different value is
-behaviour: find out why before reading on. If it reports no difference, read
-how the translation handled the missing value anyway.
+**4. Find the difference.** A different column name is presentation: ask for a
+rename. A different value is behaviour: find out why before reading on. No
+difference? Check how the translation handled the missing value anyway.
 
 `r hide("The difference")`
 
-`aggregate()` with a formula drops rows with a missing value in any variable in
-the formula, silently. The one animal with no `metabolic_rate_post` is excluded
-from both the mean and the count. A direct translation using
-`summarise(mean(metabolic_rate_post), n())` returns `NA` for that cell's mean
-and counts the animal in `n`. Neither version is "the translation"; they make
-different decisions about missing data. Decide which you want, write it
-explicitly (`na.rm = TRUE` and a count of non-missing values), and record the
-decision. This is the same problem as the "unchanged is not correct" step of
-[Block 9](11i-characterisation-tests.qmd), reached from a different direction.
+`aggregate()` with a formula silently drops rows with a missing value, so the
+animal with no `metabolic_rate_post` is left out of both the mean and the
+count. A direct translation with `summarise(mean(metabolic_rate_post), n())`
+returns `NA` for that cell and counts the animal in `n`. Neither is "the
+translation": they make different decisions about missing data. Decide which
+you want, write it explicitly (`na.rm = TRUE` and a count of non-missing
+values), and record the decision. It is Block 9's "unchanged is not correct",
+from a different direction.
 
 `r unhide()`
 
-**5. Run the shipped test.** Restart R (*Session → Restart R*) so nothing from
-your experiments is left, then in the R console:
+**5. Run the shipped test.** Restart R (*Session → Restart R*), then in the R
+console:
 
 ```{r}
 #| eval: false
 testthat::test_file(here::here("tests", "test_translation.R"))
 ```
 
-The test keeps the original code as its reference. If you decided the
-translation should handle the missing value differently from the original,
-the test fails, correctly: change the reference in the test and say why in
-your commit message. That is a recorded decision, not a fix.
+The test uses the original code as its reference. If you chose different
+missing-value handling, it fails, correctly: change the test's reference and
+say why in your commit message.
 
 **6. Log it and commit.** Add a line to `docs/ai-log.md`, for example:
 
@@ -160,11 +146,9 @@ time, write `summarise_rate_tidy()` yourself from the hidden explanation above.
 ::::
 :::
 
-When translating from other software, you usually cannot run the original
-inside R. Export its results to a file, compare against those, and expect
-differences in defaults: how missing values are handled, how quantiles are
-defined, and how results are rounded. Each difference needs a decision, not a
-tolerance setting.
+From other software, export the original's results to a file and compare
+against those. Expect differences in defaults (missing values, quantiles,
+rounding); each needs a decision, not a looser tolerance.
 
 
 
@@ -172,10 +156,9 @@ tolerance setting.
 
 *⏱ ~7 minutes*
 
-A number typed into a report is a number that can be mistyped, or left
-unchanged when the data change. When an assistant drafts the text, it may also
-"helpfully" restate numbers it saw earlier in the conversation. Every number in
-the prose should come from inline code. In a code chunk of your report:
+A typed number can be mistyped, or go stale when the data change, and an
+assistant drafting text may restate numbers it saw earlier. So every number in
+the prose comes from inline code. In a code chunk of your report:
 
 ```{r}
 #| eval: false
@@ -204,10 +187,8 @@ after treatment (95% CI `r knitr::inline_expr("round(primary$lower, 2)")` to
 `r knitr::inline_expr("round(primary$upper, 2)")` g).
 ```
 
-Your `AGENTS.md` says never to type numerical results into text. That is a
-request, and the model usually follows it. What makes it hold is a check: the
-template ships `find_typed_numbers()`, which lists the prose lines of a `.qmd`
-file that still contain numbers outside inline code, for you to review.
+Your `AGENTS.md` asks for this; the shipped `find_typed_numbers()` checks it,
+by listing prose lines that still contain numbers outside inline code.
 
 :::{.callout-note collapse="true"}
 ## `scripts/functions/typed_numbers.R`
@@ -240,11 +221,10 @@ text.
 
 `r hide("Which are which")`
 
-Lines 37 and 38 are typed results: the 1.53 g difference with its interval,
-and the mean of 29.4 g. Both would go stale the moment the data changed, and
-both should be inline code. The other three are questions with a reasonable
-"no" answer: the date in the YAML header (line 3), the design size of 12 per
-group (line 28), and "95%" in "95% CI" (line 34).
+Lines 37 and 38 are typed results (the 1.53 g difference with its interval,
+and the mean of 29.4 g): both should be inline code. The other three can stay:
+the date in the YAML header (line 3), the design size of 12 per group
+(line 28), and "95%" in "95% CI" (line 34).
 
 `r unhide()`
 
@@ -265,13 +245,11 @@ Day 3. Every hit is a question, not an error.
 
 *⏱ ~8 minutes*
 
-Over the day your repository has collected most of what a reader needs: a
-`r glossary("codebook")` (Block 7), cleaning and exclusion logs, scripts with a
-run order, a `r glossary("lockfile")`, tests with a reference you captured
-(Block 9), and an `r glossary("AI-use log")`. A README pulls that record
-together. One rule applies throughout: the AI may assemble and phrase facts
-you can trace to a file, and must not invent any. Anything it cannot find in
-those files becomes a visible placeholder for you to fill.
+Your repository now holds most of what a reader needs: a
+`r glossary("codebook")`, cleaning logs, numbered scripts, a
+`r glossary("lockfile")`, tests and an `r glossary("AI-use log")`. A README
+pulls them together. The rule: the AI may only phrase facts you can trace to a
+file; anything else becomes a visible placeholder for you to fill.
 
 ::::::: {.dia .dia-flow role="figure" aria-label="The README is drafted by the AI only from four kinds of file in your repository: the codebook and data note, the numbered scripts, renv.lock and the AI-use log. You then trace every statement back to a file."}
 :::::: {.dia-branches}
@@ -324,7 +302,7 @@ callr::r(\(d) testthat::test_dir(d), list(here::here("tests")))
 failures (the README test still skips). This is the evidence the README's
 "How to verify" section will point to.
 
-**2. Draft.** In Claude Code, in `default` mode:
+**2. Draft.** In Claude Code, in Manual mode (`default`):
 
 **Prompt (Claude Code):**
 
@@ -346,11 +324,10 @@ this form:
 Edit README.md only. Show me your plan first.
 ```
 
-**3. Let the test audit it.** The template ships `tests/test_readme.R`, which
-checks the README against the files it was drafted from: the R version and
-`renv::restore()`, every package version against `renv.lock`, every numbered
-script, no leftover `{{` tokens, and no invented unit for
-`metabolic_rate_post` (the codebook leaves it as `<unit>`). In the R console:
+**3. Let the test audit it.** The shipped `tests/test_readme.R` checks the
+README against its sources: the R and package versions against `renv.lock`,
+every numbered script, no leftover `{{` tokens, and no invented unit for
+`metabolic_rate_post`. In the R console:
 
 ```{r}
 #| eval: false
@@ -382,12 +359,9 @@ ask Claude Code to fix only the statements the test names, and run it again.
 ::::
 :::
 
-A fuller version of this task is in the *Going further* section of
-[Block 8](11h-code-review.qmd). There, you run two helper scripts yourself to
-describe every data file and read the lockfile, and a skill assembles the
-README from their output under the same no-invention rule. Check your
-institution's and target journal's current policy for what must be declared
-about AI use, and where.
+A fuller version, with a README skill, is in *Going further* in
+[Block 8](11h-code-review.qmd). Check your institution's and target journal's
+policy on declaring AI use.
 
 
 :::{.callout-note}

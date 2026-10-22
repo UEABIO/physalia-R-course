@@ -650,7 +650,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><p>Earlier blocks checked that code runs, that data are clean, and that a refactor leaves results unchanged. This block adds two checks on the analysis and its report, then closes the day by assembling the record your repository now holds into a README. Each part uses the same division of labour:</p>
+</header><p>The day ends with two checks on the analysis and its report, then a README assembled from everything your repository now holds. Each part splits the work the same way:</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 33%">
@@ -680,19 +680,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>Two further checks on the statistics, robustness to alternative analyses and simulation with parameter recovery, are in <em>Going further</em> at the end of the page.</p>
-<p>As in every block, you check the agent’s work from the R console and the Git pane, not the Terminal tab Claude Code is using (see <a href="./11a-setup-claude-code.html#checking-work">checking work</a>).</p>
+<p>You check the agent’s work from the R console and the Git pane, as in <a href="./11a-setup-claude-code.html#checking-work">checking work</a>. Two more statistical checks (robustness and simulation) are in <em>Going further</em>.</p>
 <p><em>⏱ ~30 minutes</em></p>
 <section id="part-a-translation-with-an-equivalence-check" class="level2"><h2 class="anchored" data-anchor-id="part-a-translation-with-an-equivalence-check">Part A: Translation with an equivalence check</h2>
 <p><em>⏱ ~15 minutes</em></p>
-<p>Translating code (base R to tidyverse, or SPSS, Stata or SAS to R) is a task AI does quickly. The characterisation-test idea from <a href="./11i-characterisation-tests.html">Block 9</a> applies directly: an <a class="glossary">equivalence check<span class="def">A comparison showing that two versions of code, such as an original and an AI translation, give the same output once only presentation (types, row order) is normalised.</span></a> runs both versions and compares the outputs.</p>
-<p>This time the translation goes into a file, as a function, and the template already ships the test that checks it: <code>tests/test_translation.R</code> keeps the original base R code as the reference and compares the two. The agent writes the code; the test, which it did not write, decides whether it is equivalent.</p>
+<p>AI translates code quickly: base R to tidyverse, or SPSS, Stata or SAS to R. An <a class="glossary">equivalence check<span class="def">A comparison showing that two versions of code, such as an original and an AI translation, give the same output once only presentation (types, row order) is normalised.</span></a> runs both versions and compares the outputs, as in <a href="./11i-characterisation-tests.html">Block 9</a>. The agent writes the translation; the shipped <code>tests/test_translation.R</code>, which it did not write, decides whether it is equivalent.</p>
 <div class="task">
 <div class="task-header">
 <p>Translate and compare (15 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>Start:</strong> your workshop repository, committed and clean, with Claude Code in <code>default</code> mode in the Terminal tab.</p>
+<p><strong>Start:</strong> your workshop repository, committed and clean, with Claude Code in Manual mode (<code>default</code>) in the Terminal tab, which the repository sets.</p>
 <p><strong>1. Run the original.</strong> In the R console:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a><span class="fu">library</span>(tidyverse)</span>
@@ -718,7 +716,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-6"><a href="#cb2-6" aria-label="6"></a></span>
 <span id="cb2-7"><a href="#cb2-7" aria-label="7"></a>[paste the base R code from step 1]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Approve the edit when asked, after reading it.</p>
-<p><strong>3. Compare.</strong> Normalise only <em>presentation</em> (type and row order), never values. <code><a href="https://waldo.r-lib.org/reference/compare.html">waldo::compare()</a></code> prints any difference that remains in a readable form. In the R console:</p>
+<p><strong>3. Compare.</strong> Normalise only <em>presentation</em> (type and row order), never values; <code><a href="https://waldo.r-lib.org/reference/compare.html">waldo::compare()</a></code> shows what still differs. In the R console:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
 <span id="cb3-2"><a href="#cb3-2" aria-label="2"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summaries.R"</span>))</span>
@@ -733,18 +731,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-11"><a href="#cb3-11" aria-label="11"></a></span>
 <span id="cb3-12"><a href="#cb3-12" aria-label="12"></a>waldo<span class="sc">::</span><span class="fu">compare</span>(<span class="fu">normalise</span>(tidy_summary), <span class="fu">normalise</span>(legacy_summary))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>4. Find the difference.</strong> If <code><a href="https://waldo.r-lib.org/reference/compare.html">waldo::compare()</a></code> reports a difference after normalising, you have found a real difference in behaviour. A column with a different name is presentation: ask for it to be renamed. A different value is behaviour: find out why before reading on. If it reports no difference, read how the translation handled the missing value anyway.</p>
+<p><strong>4. Find the difference.</strong> A different column name is presentation: ask for a rename. A different value is behaviour: find out why before reading on. No difference? Check how the translation handled the missing value anyway.</p>
 <div class="webex-solution">
 <button>
 The difference
 </button>
-<p><code><a href="https://rdrr.io/r/stats/aggregate.html">aggregate()</a></code> with a formula drops rows with a missing value in any variable in the formula, silently. The one animal with no <code>metabolic_rate_post</code> is excluded from both the mean and the count. A direct translation using <code>summarise(mean(metabolic_rate_post), n())</code> returns <code>NA</code> for that cell’s mean and counts the animal in <code>n</code>. Neither version is “the translation”; they make different decisions about missing data. Decide which you want, write it explicitly (<code>na.rm = TRUE</code> and a count of non-missing values), and record the decision. This is the same problem as the “unchanged is not correct” step of <a href="./11i-characterisation-tests.html">Block 9</a>, reached from a different direction.</p>
+<p><code><a href="https://rdrr.io/r/stats/aggregate.html">aggregate()</a></code> with a formula silently drops rows with a missing value, so the animal with no <code>metabolic_rate_post</code> is left out of both the mean and the count. A direct translation with <code>summarise(mean(metabolic_rate_post), n())</code> returns <code>NA</code> for that cell and counts the animal in <code>n</code>. Neither is “the translation”: they make different decisions about missing data. Decide which you want, write it explicitly (<code>na.rm = TRUE</code> and a count of non-missing values), and record the decision. It is Block 9’s “unchanged is not correct”, from a different direction.</p>
 </div>
-<p><strong>5. Run the shipped test.</strong> Restart R (<em>Session → Restart R</em>) so nothing from your experiments is left, then in the R console:</p>
+<p><strong>5. Run the shipped test.</strong> Restart R (<em>Session → Restart R</em>), then in the R console:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_translation.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The test keeps the original code as its reference. If you decided the translation should handle the missing value differently from the original, the test fails, correctly: change the reference in the test and say why in your commit message. That is a recorded decision, not a fix.</p>
+<p>The test uses the original code as its reference. If you chose different missing-value handling, it fails, correctly: change the test’s reference and say why in your commit message.</p>
 <p><strong>6. Log it and commit.</strong> Add a line to <code>docs/ai-log.md</code>, for example:</p>
 <pre><code>2026-10-19; Claude Code (model as shown above the Claude Code prompt); translated summary script to tidyverse; kept the translation, matched the original's missing-value handling after the equivalence check</code></pre>
 <p>Then commit <code>summaries.R</code> and the log from the Git pane, with a message that records the missing-value decision.</p>
@@ -752,10 +750,10 @@ The difference
 <p><strong>If it goes wrong:</strong> if the agent edited anything other than <code>summaries.R</code>, select the file in the Git pane and choose <strong>Revert</strong>. If you run short of time, write <code>summarise_rate_tidy()</code> yourself from the hidden explanation above.</p>
 </div>
 </div>
-<p>When translating from other software, you usually cannot run the original inside R. Export its results to a file, compare against those, and expect differences in defaults: how missing values are handled, how quantiles are defined, and how results are rounded. Each difference needs a decision, not a tolerance setting.</p>
+<p>From other software, export the original’s results to a file and compare against those. Expect differences in defaults (missing values, quantiles, rounding); each needs a decision, not a looser tolerance.</p>
 </section><section id="part-b-reporting-without-typed-numbers" class="level2"><h2 class="anchored" data-anchor-id="part-b-reporting-without-typed-numbers">Part B: Reporting without typed numbers</h2>
 <p><em>⏱ ~7 minutes</em></p>
-<p>A number typed into a report is a number that can be mistyped, or left unchanged when the data change. When an assistant drafts the text, it may also “helpfully” restate numbers it saw earlier in the conversation. Every number in the prose should come from inline code. In a code chunk of your report:</p>
+<p>A typed number can be mistyped, or go stale when the data change, and an assistant drafting text may restate numbers it saw earlier. So every number in the prose comes from inline code. In a code chunk of your report:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a><span class="co"># fit the pre-registered primary analysis</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
@@ -777,7 +775,7 @@ The difference
 <pre><code>High-dose voles were `r round(primary$estimate, 2)` g heavier than controls
 after treatment (95% CI `r round(primary$lower, 2)` to
 `r round(primary$upper, 2)` g).</code></pre>
-<p>Your <code>AGENTS.md</code> says never to type numerical results into text. That is a request, and the model usually follows it. What makes it hold is a check: the template ships <code>find_typed_numbers()</code>, which lists the prose lines of a <code>.qmd</code> file that still contain numbers outside inline code, for you to review.</p>
+<p>Your <code>AGENTS.md</code> asks for this; the shipped <code>find_typed_numbers()</code> checks it, by listing prose lines that still contain numbers outside inline code.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -827,7 +825,7 @@ after treatment (95% CI `r round(primary$lower, 2)` to
 <button>
 Which are which
 </button>
-<p>Lines 37 and 38 are typed results: the 1.53 g difference with its interval, and the mean of 29.4 g. Both would go stale the moment the data changed, and both should be inline code. The other three are questions with a reasonable “no” answer: the date in the YAML header (line 3), the design size of 12 per group (line 28), and “95%” in “95% CI” (line 34).</p>
+<p>Lines 37 and 38 are typed results (the 1.53 g difference with its interval, and the mean of 29.4 g): both should be inline code. The other three can stay: the date in the YAML header (line 3), the design size of 12 per group (line 28), and “95%” in “95% CI” (line 34).</p>
 </div>
 <p><strong>You are done when</strong> you can say which two lines are typed results and why the other three can stay.</p>
 <p><strong>If it goes wrong:</strong> if <code>find_typed_numbers()</code> is not found, check that the <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> line ran without an error.</p>
@@ -836,7 +834,7 @@ Which are which
 <p>The same scan works on any <code>.qmd</code> you write, including your Quarto report from Day 3. Every hit is a question, not an error.</p>
 </section><section id="part-c-the-repository-you-leave-with" class="level2"><h2 class="anchored" data-anchor-id="part-c-the-repository-you-leave-with">Part C: The repository you leave with</h2>
 <p><em>⏱ ~8 minutes</em></p>
-<p>Over the day your repository has collected most of what a reader needs: a <a class="glossary">codebook<span class="def">A table describing each variable: its type, valid range, missing-value codes, unit and label mappings. It is the data dictionary from Day 2 with machine-readable rules, and you own it, not the AI.</span></a> (Block 7), cleaning and exclusion logs, scripts with a run order, a <a class="glossary">lockfile<span class="def">The renv.lock file that records the R version and the exact package versions a project uses, so renv::restore() can rebuild the same environment.</span></a>, tests with a reference you captured (Block 9), and an <a class="glossary">AI-use log<span class="def">A record written at the time of each piece of AI-assisted work, in the form: date; tool and model; task; what you kept or changed. It becomes the AI declaration in a README.</span></a>. A README pulls that record together. One rule applies throughout: the AI may assemble and phrase facts you can trace to a file, and must not invent any. Anything it cannot find in those files becomes a visible placeholder for you to fill.</p>
+<p>Your repository now holds most of what a reader needs: a <a class="glossary">codebook<span class="def">A table describing each variable: its type, valid range, missing-value codes, unit and label mappings. It is the data dictionary from Day 2 with machine-readable rules, and you own it, not the AI.</span></a>, cleaning logs, numbered scripts, a <a class="glossary">lockfile<span class="def">The renv.lock file that records the R version and the exact package versions a project uses, so renv::restore() can rebuild the same environment.</span></a>, tests and an <a class="glossary">AI-use log<span class="def">A record written at the time of each piece of AI-assisted work, in the form: date; tool and model; task; what you kept or changed. It becomes the AI declaration in a README.</span></a>. A README pulls them together. The rule: the AI may only phrase facts you can trace to a file; anything else becomes a visible placeholder for you to fill.</p>
 <div class="dia dia-flow" role="figure" aria-label="The README is drafted by the AI only from four kinds of file in your repository: the codebook and data note, the numbered scripts, renv.lock and the AI-use log. You then trace every statement back to a file.">
 <div class="dia-branches">
 <div class="dia-node dia-file">
@@ -877,7 +875,7 @@ Which are which
 <span id="cb10-2"><a href="#cb10-2" aria-label="2"></a>callr<span class="sc">::</span><span class="fu">r</span>(\(d) testthat<span class="sc">::</span><span class="fu">test_dir</span>(d), <span class="fu">list</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code><a href="https://rstudio.github.io/renv/reference/status.html">renv::status()</a></code> should report no problems, and the tests should run with no failures (the README test still skips). This is the evidence the README’s “How to verify” section will point to.</p>
-<p><strong>2. Draft.</strong> In Claude Code, in <code>default</code> mode:</p>
+<p><strong>2. Draft.</strong> In Claude Code, in Manual mode (<code>default</code>):</p>
 <p><strong>Prompt (Claude Code):</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>Create or update README.md for this repository. Use ONLY these sources, and</span>
 <span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>name the source of each section:</span>
@@ -894,7 +892,7 @@ Which are which
 <span id="cb11-13"><a href="#cb11-13" aria-label="13"></a>this form:</span>
 <span id="cb11-14"><a href="#cb11-14" aria-label="14"></a>  **TODO: supply [field]: not provided**</span>
 <span id="cb11-15"><a href="#cb11-15" aria-label="15"></a>Edit README.md only. Show me your plan first.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>3. Let the test audit it.</strong> The template ships <code>tests/test_readme.R</code>, which checks the README against the files it was drafted from: the R version and <code><a href="https://rstudio.github.io/renv/reference/restore.html">renv::restore()</a></code>, every package version against <code>renv.lock</code>, every numbered script, no leftover <code>{{</code> tokens, and no invented unit for <code>metabolic_rate_post</code> (the codebook leaves it as <code>&lt;unit&gt;</code>). In the R console:</p>
+<p><strong>3. Let the test audit it.</strong> The shipped <code>tests/test_readme.R</code> checks the README against its sources: the R and package versions against <code>renv.lock</code>, every numbered script, no leftover <code>{{</code> tokens, and no invented unit for <code>metabolic_rate_post</code>. In the R console:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_file</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"test_readme.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -906,7 +904,7 @@ Which are which
 <p><strong>If it goes wrong:</strong> if the agent changed any file other than <code>README.md</code>, select it in the Git pane and choose <strong>Revert</strong>. If the README test fails, ask Claude Code to fix only the statements the test names, and run it again.</p>
 </div>
 </div>
-<p>A fuller version of this task is in the <em>Going further</em> section of <a href="./11h-code-review.html">Block 8</a>. There, you run two helper scripts yourself to describe every data file and read the lockfile, and a skill assembles the README from their output under the same no-invention rule. Check your institution’s and target journal’s current policy for what must be declared about AI use, and where.</p>
+<p>A fuller version, with a README skill, is in <em>Going further</em> in <a href="./11h-code-review.html">Block 8</a>. Check your institution’s and target journal’s policy on declaring AI use.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -931,12 +929,12 @@ Which are which
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>A translated script and the original disagree only after you convert factors to characters and sort the rows. What should you do next?</strong></p>
-<div id="radio_ZSUXJFXHZJ" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value=""><span>Increase the tolerance until the test passes</span></label><label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value=""><span>Accept the translation, since the AI wrote it</span></label><label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value="answer"><span>Find the behavioural difference (for example, missing-value handling), decide which behaviour is correct, and record the decision</span></label><label><input type="radio" autocomplete="off" name="radio_ZSUXJFXHZJ" value=""><span>Revert to the original script</span></label>
+<div id="radio_ZMEZMWRFMS" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ZMEZMWRFMS" value=""><span>Increase the tolerance until the test passes</span></label><label><input type="radio" autocomplete="off" name="radio_ZMEZMWRFMS" value=""><span>Accept the translation, since the AI wrote it</span></label><label><input type="radio" autocomplete="off" name="radio_ZMEZMWRFMS" value="answer"><span>Find the behavioural difference (for example, missing-value handling), decide which behaviour is correct, and record the decision</span></label><label><input type="radio" autocomplete="off" name="radio_ZMEZMWRFMS" value=""><span>Revert to the original script</span></label>
 </div>
 <p><strong>The README draft gives the unit of <code>metabolic_rate_post</code>, but your codebook leaves it blank. What should you do?</strong></p>
-<div id="radio_ESUDKTCUEE" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value=""><span>Keep it; the AI probably knows the usual unit for metabolic rate</span></label><label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value=""><span>Delete the column from the README</span></label><label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value="answer"><span>Replace it with a placeholder and get the unit from the data provider: the AI invented it, and the codebook is the source of truth</span></label><label><input type="radio" autocomplete="off" name="radio_ESUDKTCUEE" value=""><span>Add the unit to the codebook to match the README</span></label>
+<div id="radio_OFAFAJJANP" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_OFAFAJJANP" value=""><span>Keep it; the AI probably knows the usual unit for metabolic rate</span></label><label><input type="radio" autocomplete="off" name="radio_OFAFAJJANP" value=""><span>Delete the column from the README</span></label><label><input type="radio" autocomplete="off" name="radio_OFAFAJJANP" value="answer"><span>Replace it with a placeholder and get the unit from the data provider: the AI invented it, and the codebook is the source of truth</span></label><label><input type="radio" autocomplete="off" name="radio_OFAFAJJANP" value=""><span>Add the unit to the codebook to match the README</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
@@ -1008,8 +1006,8 @@ Warning
 </div>
 <section id="check-your-understanding-robustness" class="level4"><h4 class="anchored" data-anchor-id="check-your-understanding-robustness">Check your understanding: robustness</h4>
 <p><strong>Why should the arm-by-sex interaction model not appear in the same robustness table as the primary ANCOVA?</strong></p>
-<div id="radio_GBEVLZLNOW" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value=""><span>Interaction models cannot be fitted with lm()</span></label><label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value="answer"><span>Its High_dose coefficient estimates the effect in the reference sex only, a different quantity from the primary estimand</span></label><label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value=""><span>It always gives a larger estimate</span></label><label><input type="radio" autocomplete="off" name="radio_GBEVLZLNOW" value=""><span>Robustness tables may contain only two models</span></label>
+<div id="radio_FFDSDECTEI" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_FFDSDECTEI" value=""><span>Interaction models cannot be fitted with lm()</span></label><label><input type="radio" autocomplete="off" name="radio_FFDSDECTEI" value="answer"><span>Its High_dose coefficient estimates the effect in the reference sex only, a different quantity from the primary estimand</span></label><label><input type="radio" autocomplete="off" name="radio_FFDSDECTEI" value=""><span>It always gives a larger estimate</span></label><label><input type="radio" autocomplete="off" name="radio_FFDSDECTEI" value=""><span>Robustness tables may contain only two models</span></label>
 </div>
 </section></section><section id="simulation-and-parameter-recovery" class="level3"><h3 class="anchored" data-anchor-id="simulation-and-parameter-recovery">Simulation and parameter recovery</h3>
 <p>If you simulate data from a mechanism whose parameters you chose, a correct analysis should recover those parameters on average, and its 95% confidence intervals should contain the true values about 95% of the time. This tests the analysis code against a known answer, which real data never provide.</p>
@@ -1141,8 +1139,8 @@ Warning
 </div>
 <section id="check-your-understanding-simulation" class="level4"><h4 class="anchored" data-anchor-id="check-your-understanding-simulation">Check your understanding: simulation</h4>
 <p><strong>A simulation recovers the true effect with negligible bias and 95% coverage. What has it shown?</strong></p>
-<div id="radio_JVWZCYUMUA" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value=""><span>That the real data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value="answer"><span>That the analysis code estimates the intended quantity correctly when the data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value=""><span>That the study has adequate power</span></label><label><input type="radio" autocomplete="off" name="radio_JVWZCYUMUA" value=""><span>That the model's assumptions hold for the real data</span></label>
+<div id="radio_OGDMMUGMQT" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_OGDMMUGMQT" value=""><span>That the real data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_OGDMMUGMQT" value="answer"><span>That the analysis code estimates the intended quantity correctly when the data follow the simulated mechanism</span></label><label><input type="radio" autocomplete="off" name="radio_OGDMMUGMQT" value=""><span>That the study has adequate power</span></label><label><input type="radio" autocomplete="off" name="radio_OGDMMUGMQT" value=""><span>That the model's assumptions hold for the real data</span></label>
 </div>
 </section></section></section><section id="glossary" class="level2"><h2 class="anchored" data-anchor-id="glossary">Glossary</h2>
 <div class="cell" data-layout-align="center">

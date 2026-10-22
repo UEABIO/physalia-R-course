@@ -9,15 +9,14 @@ library(here)
 library(webexercises)
 ```
 
-Inline completion is the most familiar AI coding feature, and the simplest kind
-of `r glossary("assistant")`: grey "ghost text" appears as you type,
-suggesting a continuation. You accept with Tab, reject with
-Esc, or ignore it by carrying on typing. This block teaches what context inline
-completion uses, and the practical consequence: what you write immediately
-before the cursor matters more than anything else.
 
-Claude Code does not offer inline completion, so this is the one block where
-GitHub Copilot is the main tool.
+Inline completion is the simplest kind of `r glossary("assistant")`: grey
+"ghost text" appears as you type, and you accept it with Tab, reject it with
+Esc, or carry on typing. By the end of this block you will know how to get
+useful suggestions every time: write a specific comment just before the cursor.
+
+Claude Code has no inline completion, so this is the one block where GitHub
+Copilot is the main tool.
 
 *⏱ ~25 minutes*
 
@@ -25,58 +24,55 @@ GitHub Copilot is the main tool.
 ## Setup
 
 You signed in to GitHub Copilot in the pre-work
-([Setting up Claude Code](11a-setup-claude-code.qmd), Step 6). Use **one**
-completion provider at a time during this block, so you know which tool
-produced each suggestion.
-
-Check it still works: open a blank R script and type
-`# Calculate the mean of 1 to 100`. Within a second or two you should see
-ghost text such as `mean(1:100)`. If nothing appears, press Enter to move to the
-next line and wait.
+([Setting up Claude Code](11a-setup-claude-code.qmd), Step 6). Check it still
+works: in a blank R script, type `# Calculate the mean of 1 to 100`. Within a
+few seconds you should see ghost text such as `mean(1:100)`; if not, press
+Enter and wait.
 
 **If no ghost text appears,** follow the instructor's screen for this block and
-fix the set-up at the break, rather than losing the block to it. The set-up
-routes, if you skipped the pre-work:
+fix the set-up at the break.
+
+:::{.callout-note collapse="true"}
+## Set-up routes, plans and data
 
 - **RStudio:** enable GitHub Copilot in RStudio's options and sign in to
   GitHub.
-- **Positron:** see Positron's completions documentation for how to choose
-  GitHub Copilot as the provider.
-- **VS Code:** Copilot's AI features are built in. Select **Use AI Features**
-  from the Copilot icon in the Status Bar and sign in with GitHub.
+- **Positron:** choose GitHub Copilot as the completions provider (see
+  Positron's completions documentation).
+- **VS Code:** select **Use AI Features** from the Copilot icon in the Status
+  Bar and sign in with GitHub.
 
 Copilot Free allows a limited number of completions per month (2,000 at the
-time of writing); paid Copilot plans do not meter completions. Completions send
-the code around your cursor to the provider, so the disclosure points in
-[Block 4](11d-context-disclosure-autonomy.qmd) apply here too.
+time of writing); paid plans do not meter them. Completions send the code
+around your cursor to the provider, so the disclosure points in
+[Block 4](11d-context-disclosure-autonomy.qmd) apply here too. Use one
+completion provider at a time, so you know which tool made each suggestion.
+:::
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
-In RStudio and Positron you can use Posit AI Next Edit Suggestions instead of
-Copilot. In RStudio, turn it on from the Posit Assistant toolbar button; it
-requires a Posit AI account. In Positron, choose it as the completions
-provider. Posit AI does not meter completions.
+In RStudio and Positron you can use Posit AI Next Edit Suggestions instead:
+in RStudio, turn it on from the Posit Assistant toolbar button (it needs a
+Posit AI account); in Positron, choose it as the completions provider. Posit AI
+does not meter completions.
 :::
 
 
 ## The context principle
 
 A suggestion can only use what is in the model's
-`r glossary("context window")` when it is made. GitHub Copilot fills that
-window mainly from the current file: the code above and below the cursor, and
-especially the comment immediately before it. In Positron and VS
-Code it may also draw on other open tabs. It does not see your R session.
-
-The practical consequence: the comment immediately before your cursor, and the
-code above it, have the largest effect on what you get.
+`r glossary("context window")` when it is made. Copilot fills that window mainly
+from the current file, and above all from the comment just before the cursor.
+In Positron and VS Code it may also use other open tabs. It does not see your R
+session.
 
 :::{.callout-tip collapse="true"}
 ## Using Posit Assistant
 
 Posit AI Next Edit Suggestions also sees your live R session: the columns of
-loaded data frames, functions you have defined and packages you have loaded.
-A session-aware provider therefore adds one more lever: what you have loaded.
+loaded data frames, the functions you have defined and the packages you have
+loaded. What you have loaded becomes one more lever.
 :::
 
 
@@ -88,34 +84,32 @@ The context demonstration (10 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** your workshop project is open, and inline completion produced
-ghost text in the set-up check.
+**Start state:** your workshop project is open, and the set-up check produced
+ghost text.
 
-You will use `voles_metabolism.csv`, a small synthetic dataset chosen because
-its column names are unlikely to appear in any model's training data. The
-columns are `subject_id`, `sex`, `treatment_arm`, `mass_pre_g`, `mass_post_g`
-and `metabolic_rate_post`. The data record a hypothetical metabolism trial in
-72 voles, with three treatment arms and two sexes.
+The data are `voles_metabolism.csv`: a synthetic trial in 72 voles, with
+columns `subject_id`, `sex`, `treatment_arm`, `mass_pre_g`, `mass_post_g` and
+`metabolic_rate_post`. The names were chosen so that no model has seen them
+before.
 
-**1. No context.** Restart R, so that you are in a
-`r glossary("fresh R session")` with nothing loaded. Open a blank R script.
+**1. No context.** Restart R, so you are in a
+`r glossary("fresh R session")`, and open a blank R script. Type only this
+comment, and wait.
 
-**In the R script:** type only this comment, and wait.
-
+**In the R script:**
 
 ```{r}
 #| eval: false
 # calculate the mean change in mass by treatment
 ```
 
-Record the suggestion. With no `library()` call, no data and no column names
-visible, the model has to guess. Expect something syntactically plausible but
-wrong for this dataset.
+Note the suggestion. With no data and no column names in view, the model has
+to guess.
 
-**2. Context in the file.** Start a new blank script.
+**2. Context in the file.** In a new blank script, type this, then the same
+comment on a new line.
 
 **In the R script:**
-
 
 ```{r}
 #| eval: false
@@ -127,21 +121,11 @@ library(tidyverse)
 
 voles <- read_csv(here::here("data", "raw", "voles_metabolism.csv"))
 glimpse(voles)
-```
 
-Then add the same comment as before on a new line.
-
-**In the R script:**
-
-
-```{r}
-#| eval: false
 # calculate the mean change in mass by treatment
 ```
 
-Record the suggestion. A typical good result:
-
-`r hide("Solution")`
+`r hide("A typical good result")`
 
 ```{r, eval = FALSE}
 voles |>
@@ -152,21 +136,19 @@ voles |>
   )
 ```
 
+The exact form varies between people and sessions.
+
 `r unhide()`
 
-The exact form varies between people and sessions; that variation is itself
-part of the lesson.
+Compare the two suggestions. Did the second use real column names? Did it
+compute post minus pre?
 
-How different were the two outputs? Did the second use column names that exist
-in the data? Did the model compute the change in the right direction (post
-minus pre)?
+**You are done when** you can say what the second suggestion had that the
+first did not.
 
-**You are done when** you have recorded both suggestions and can say what the
-second one had that the first did not.
-
-**If it goes wrong:** if a suggestion never appears, type the comment again on a
-new line; if your script stops running, *Session → Restart R* and run it from
-the top.
+**If it goes wrong:** if no suggestion appears, type the comment again on a new
+line; if the script stops running, *Session → Restart R* and run it from the
+top.
 
 ::::
 :::
@@ -175,9 +157,9 @@ the top.
 ## Using Posit Assistant
 
 **3. Context in the session.** With Posit AI Next Edit Suggestions, run the
-lines from step 2 so that `voles` exists in your session. Then open a **new,
-blank** script, type only the comment from step 1, and wait. If the suggestion
-now uses the real column names, it came from your session, not from the file.
+lines from step 2 so that `voles` exists, then type only the comment from step
+1 in a new blank script. If the suggestion now uses the real column names, it
+came from your session, not from the file.
 :::
 
 
@@ -189,26 +171,21 @@ Build a small analysis (10 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** the script from step 2 of the context demonstration, with
-`voles` loaded.
+**Start state:** the script from step 2, with `voles` loaded.
 
-In that script, drive inline completion through two analysis steps.
-Write the comment for each step first, then accept, reject or modify the
-suggestion.
+For each step, write the comment first, then accept, modify or reject the
+suggestion, and note which you did. The note is what makes you notice an
+unchecked acceptance.
 
-**1. Summary table.** Produce a summary table of the mean and standard deviation of
-`mass_change_g` by `treatment_arm` and `sex`, with the number of observations
-per cell. (Create `mass_change_g` first if your script does not have it.)
+**1. Summary table.** The mean and standard deviation of `mass_change_g` by
+`treatment_arm` and `sex`, with the number of observations per cell. (Create
+`mass_change_g` first if your script does not have it.)
 
-**2. Plot.** Produce one plot relating `mass_change_g` to `metabolic_rate_post`,
-coloured by `treatment_arm`.
-
-For each step, record the comment you wrote, the suggested code, and one line
-saying whether you accepted, modified or rejected it. The point of the record is
-to make you notice when you accepted something without inspecting it.
+**2. Plot.** `mass_change_g` against `metabolic_rate_post`, coloured by
+`treatment_arm`.
 
 **You are done when** a fresh R session (*Session → Restart R*, then run the
-script from the top) produces the summary table and one plot without error.
+script from the top) produces the table and the plot without error.
 
 **If it goes wrong:** delete the last suggestion you accepted, and write a more
 specific comment naming the data frame and its columns.
@@ -250,7 +227,7 @@ ggplot(voles, aes(metabolic_rate_post, mass_change_g, colour = treatment_arm)) +
 ```
 
 The plot drops the one animal with no metabolic rate and says so in a warning:
-read the warning rather than ignore it.
+read it rather than ignore it.
 
 `r unhide()`
 
@@ -264,11 +241,9 @@ read the warning rather than ignore it.
 - **You can now:** steer inline completion with a specific comment and the
   right code above the cursor, **trusted because** you decided on every
   suggestion and the script runs from a fresh R session.
-- **Check:** accept, modify or reject every suggestion deliberately; your
-  record of each decision is what makes you notice an unexamined acceptance.
-- **Reproduce:** a suggestion that names your columns correctly came from
-  context in the file or session, so the same comment in a blank script will
-  not reproduce it.
+- **Check:** accept, modify or reject every suggestion deliberately.
+- **Reproduce:** good suggestions come from context in the file or session, so
+  keep that context in the script, where it reruns.
 - **Record:** nothing to log yet; your `r glossary("AI-use log")` starts in
   [Block 4](11d-context-disclosure-autonomy.qmd), once an
   `r glossary("agent")` starts doing work.
