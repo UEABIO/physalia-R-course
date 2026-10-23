@@ -33,7 +33,7 @@ them.
 
 ## Before executing
 Present a short numbered plan: the folder to be scanned, that only README.md
-will be written, and the five stages below. Wait for the user to confirm.
+will be written, and the six stages below. Wait for the user to confirm.
 
 ## Stage 1: Project information
 Collect title, abstract, DOIs (paper; archived code and data), licences,

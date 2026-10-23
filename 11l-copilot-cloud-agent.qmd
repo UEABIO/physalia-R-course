@@ -9,27 +9,33 @@ library(here)
 library(webexercises)
 ```
 
-All day you worked with an agent on your own machine that you could watch and
-interrupt. Here you hand a task to an agent that works on GitHub's servers
-while you do something else, and returns a pull request. You check it the way
+All day you worked with an agent on your own machine, which you could watch
+and interrupt. Here you hand a task to an agent that works on GitHub's servers
+while you do something else. It returns a pull request. You check it the way
 the day taught you: a reference you captured, a test it did not write, and
 your own review.
 
 *Self-study: about 45 minutes, after the workshop day.* **Start state:** your
 workshop repository, committed, pushed to your fork on GitHub, with
-`scripts/explore_mass_change_plot.R` from Block 3 (on `checkpoint-skills` if
-you did not finish it). You need a Copilot plan that includes the cloud agent
-(see below).
+`scripts/explore_mass_change_plot.R` from Block 3 on `main`. If you did not
+finish it, copy it from `checkpoint-skills` in the Terminal
+(`git checkout checkpoint-skills -- scripts/explore_mass_change_plot.R`).
+Then commit and push: the cloud agent works from `main` on GitHub. You need a
+Copilot plan that includes the cloud agent (see below).
 
 :::{#copilot-files .callout-note collapse="true"}
 ## This page's files, and how it fits
 
-This is the remote rung of [Block 3's autonomy ladder](11d-context-disclosure-autonomy.qmd):
-the agent works on GitHub, on its own branch, and never touches your machine.
-Your deny rules and Manual mode do not exist there. The controls move onto the
-repository: who must review a change (CODEOWNERS), what must pass before it
-merges (branch protection and a CI check), and the environment the agent runs
-in.
+This is the remote `r glossary("rung")` of
+[Block 3's autonomy ladder](11d-context-disclosure-autonomy.qmd): the agent
+works on GitHub, on its own branch, and never touches your machine. Your deny
+rules and Manual mode do not exist there. The controls move onto the
+repository:
+
+- who must review a change (`r glossary("CODEOWNERS")`);
+- what must pass before it merges (`r glossary("branch protection")` and a
+  `r glossary("continuous integration")` (CI) check);
+- the environment the agent runs in.
 
 | File | Where | Made by | Task |
 |---|---|---|---|
@@ -71,7 +77,8 @@ your review and a passing check, so that an agent you cannot watch still
 cannot merge anything you have not seen.
 
 **1. Name yourself code owner of the protected paths.** Create
-`.github/CODEOWNERS` on your default branch, replacing the username:
+`.github/CODEOWNERS` on your default branch with these lines, using your own
+username:
 
 ```
 /data/raw/            @your-github-username
@@ -92,22 +99,27 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  r-checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
         with:
-          r-version: "4.5.2"   # match the R version in renv.lock
+          r-version: renv   # the R version recorded in renv.lock
           use-public-rspm: true
       - uses: r-lib/actions/setup-renv@v2
       - name: Run tests
         run: Rscript -e 'testthat::test_dir("tests", stop_on_failure = TRUE)'
 ```
 
-**3. Protect `main`.** In your fork's settings, add a branch rule for `main`
-that requires a pull request before merging, requires review from code owners,
-and requires the `r-checks` status check to pass. Commit and push steps 1–2.
+**3. Push, then protect `main`.** Commit and push steps 1–2. A fork starts
+with its workflows turned off. Open the **Actions** tab and enable them. Wait
+for the `r-checks` run to finish: GitHub offers a status check only after it
+has run. Then open your fork's *Settings → Branches* and add a branch
+protection rule for `main`. Set it to require a pull request before merging,
+and to require the `r-checks` status check to pass. Leave *Do not allow bypassing the above
+settings* unticked: as the owner, you push the set-up commits in Tasks 2 and 3
+straight to `main`.
 
 **You are done when** the `r-checks` run on `main` is green in the Actions
 tab, and the branch rule lists both requirements.
@@ -124,11 +136,15 @@ tab, and the branch rule lists both requirements.
 - **`r-checks`** runs on GitHub, independent of your machine and of the
   agent's environment. It is not tamper-proof: a pull request could change the
   workflow or the reference it checks against. CODEOWNERS and branch
-  protection make a green run meaningful, because every change to those paths
-  needs your review first.
-- **Approving your own pull request.** GitHub does not let you approve a pull
-  request you opened yourself, so test the gate with the agent's pull request,
-  which you did not open.
+  protection make a green run meaningful. Every change to those paths is
+  flagged for your review, and reaches `main` only when you merge it.
+- **Approving the agent's pull request.** GitHub does not count an approval
+  from the person who asked Copilot for the pull request. Where approvals are
+  required, someone else must approve. In your own fork there is no one else,
+  so this rule does not require approvals. Instead, CODEOWNERS requests your
+  review, `r-checks` must pass, and nothing reaches `main` until you merge it. In a
+  shared repository, also require a code owner's approval, so that a colleague
+  reviews what the agent wrote for you.
 :::
 
 
@@ -173,7 +189,7 @@ jobs:
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: "4.5.2"   # match the R version in renv.lock
+          r-version: renv   # the R version recorded in renv.lock
           use-public-rspm: true
       - name: Restore packages from renv.lock
         uses: r-lib/actions/setup-renv@v2
@@ -198,11 +214,11 @@ on 23 October 2026.
   tests error on the first missing function.
 - **The file must be on the default branch**, or it is not used.
 - **The runner must be Ubuntu x64 Linux or Windows 64-bit.** The cloud agent
-  does not support macOS runners; Ubuntu is the usual choice for R. A
+  does not support macOS runners. Ubuntu is the usual choice for R. A
   `timeout-minutes` setting may be at most 59.
 - **The lockfile must be restored.** If the wrong versions are installed, the
-  failure is quiet: tests pass against different package behaviour, and your
-  reference certifies sameness against the wrong baseline.
+  failure is quiet. Tests pass against different package behaviour, and your
+  reference confirms sameness against the wrong baseline.
 
 When the agent's test run and `r-checks` disagree, suspect the environment
 before the code.
@@ -220,8 +236,9 @@ Capture the reference (5 minutes)
 **Goal:** freeze what the plot looks like now, from the original code, so that
 the agent's refactor can be checked against something it did not produce.
 
-**1. Write the capture script.** In the R console,
-`usethis::edit_file("tests/make_plot_reference.R")`, then:
+**1. Write the capture script.** In the R console, run
+`usethis::edit_file("tests/make_plot_reference.R")`. Then copy this into the
+file and save it:
 
 ```{r}
 #| eval: false
@@ -240,15 +257,18 @@ position, group and colour it plots. It is what "the plot is unchanged" means
 in a test.
 
 **2. Run it in a fresh session, then commit and push.** Restart R
-(*Session → Restart R*), run `source(here::here("tests", "make_plot_reference.R"))`,
-and commit the script and `tests/fixtures/mass_change_plot.rds` with the
-message "Capture plot reference before refactoring". Push.
+(*Session → Restart R*). Run
+`source(here::here("tests", "make_plot_reference.R"))`. Commit the script and
+`tests/fixtures/mass_change_plot.rds` with the message "Capture plot reference
+before refactoring". Then push.
 
 **You are done when** the reference is on `main` on GitHub.
 
 **If it goes wrong:** if the plot jitters its points, `layer_data()` changes
-from run to run: add `set.seed(2026)` before the plot in
-`explore_mass_change_plot.R`, commit that first, then capture.
+every time the plot is drawn, and `set.seed()` before the plot does not stop
+it. Fix the jitter inside the plot instead, for example with
+`geom_jitter(position = position_jitter(width = 0.2, seed = 2026))`. Commit
+that first, then capture the reference.
 
 ::::
 :::
@@ -265,15 +285,17 @@ Issue 1: refactor only (15 minutes)
 **Goal:** have the cloud agent move the plot into a function and review its
 pull request, so that you check its work before anything reaches `main`.
 
-**1. Open an issue and assign it to Copilot.** On your fork, *Issues* → *New
-issue*, then set the assignee to **Copilot**:
+**1. Open an issue and assign it to Copilot.** On your fork, choose *Issues* →
+*New issue*. Use the text below, then set the assignee to **Copilot**:
 
 ```text
 Title: Move the mass-change plot into a function
 
 Move the plot in scripts/explore_mass_change_plot.R into a documented
 function plot_mass_change(data) in scripts/functions/plot_functions.R. It
-takes the tibble returned by load_voles() and returns the ggplot object.
+takes the tibble returned by load_voles(), which has no mass_change_g
+column, so the function computes mass_post_g - mass_pre_g itself. It returns
+the ggplot object.
 Make explore_mass_change_plot.R call it and still save the figure.
 
 Acceptance criteria:
@@ -281,7 +303,7 @@ Acceptance criteria:
 - The plot must be unchanged: same layers, same data, same order.
 ```
 
-The agent works on its own branch; you can follow its session log from the
+The agent works on its own branch. You can follow its session log from the
 pull request it opens, and stop or steer it there.
 
 **2. Review the pull request when it arrives.**
@@ -289,14 +311,18 @@ pull request it opens, and stop or steer it there.
 1. **Files changed:** only `scripts/functions/plot_functions.R` and
    `scripts/explore_mass_change_plot.R`. Anything else, especially under
    `tests/` or `.github/`, should not merge.
-2. **Checks:** `r-checks` has passed.
-3. **Your own run:** fetch the branch, restart R, run the script and the
-   suite. The agent's "it works" is a claim; your run is the check.
+2. **Checks:** workflows do not run on the agent's pull requests until
+   someone approves them. If the pull request shows **Approve and run
+   workflows**, click it. Then `r-checks` must pass.
+3. **Your own run:** in the Git pane, click **Pull**. Choose the agent's
+   `copilot/…` branch from the branch menu. Restart R, then run the script and
+   the test suite. When the agent says "it works", that is a claim; your run
+   is the check.
 
 **3. Merge, or ask for a revision** by commenting on the pull request.
 
 **4. Record it.** Add a line to `docs/ai-log.md` (date; GitHub Copilot cloud
-agent and model; task; what you kept or changed), and commit.
+agent and model; task; what you kept or changed), then commit.
 
 **You are done when** the refactor is merged, with `r-checks` green and only
 the two expected files changed.
@@ -325,7 +351,9 @@ Title: Add a characterisation test for plot_mass_change()
 Add tests/test_plot_functions.R. It must call local_edition(3), source
 scripts/functions/load_voles.R and scripts/functions/plot_functions.R, and
 compare ggplot2::layer_data(plot_mass_change(load_voles())) with
-readRDS("tests/fixtures/mass_change_plot.rds") using expect_equal().
+readRDS(here::here("tests", "fixtures", "mass_change_plot.rds")) using
+expect_equal(). Build every path with here::here(): the tests run with tests/
+as the working directory.
 
 Acceptance criteria:
 - Do not create, modify or regenerate anything under tests/fixtures/, and do
@@ -333,10 +361,14 @@ Acceptance criteria:
 - Run the tests and report the result in the pull request description.
 ```
 
-**2. Review it.** CODEOWNERS asks for your review because it touches
-`tests/`. Check, as in Block 8, that the test reads your `.rds`, calls the
-function, and does not type numbers in; that nothing under `tests/fixtures/`
-changed; and that `r-checks` passed. Then run the suite yourself.
+**2. Review it.** CODEOWNERS asks for your review because the pull request
+touches `tests/`. As in Block 8, check that:
+
+- the test reads your `.rds`, calls the function, and does not type numbers in;
+- nothing under `tests/fixtures/` changed;
+- `r-checks` passed.
+
+Then run the test suite yourself.
 
 **3. Merge, and record it** in `docs/ai-log.md`.
 
@@ -387,7 +419,7 @@ changed; and that `r-checks` passed. Then run the suite yourself.
 `r longmcq(c(
   "The deny rules in .claude/settings.json",
   "Manual mode",
-  answer = "CODEOWNERS and branch protection: a change under tests/ cannot merge without your review",
+  answer = "Branch protection and CODEOWNERS: its change reaches main only through a pull request that flags tests/ for your review and that you merge",
   "AGENTS.md"
 ))`
 
@@ -397,14 +429,14 @@ changed; and that `r-checks` passed. Then run the suite yourself.
 :::{.callout-tip collapse="true"}
 ## Copilot code review on a pull request
 
-You can also request Copilot as a *reviewer* on any pull request: its comments
+You can also request Copilot as a *reviewer* on any pull request. Its comments
 appear on the changed lines, like a colleague's. It reads the repository's
 instruction files (`.github/copilot-instructions.md`, or `AGENTS.md` as in
-[Block 4](11e-instructions-skills.qmd)). To have it apply the standard from
-Block 9's review prompt (the four Rs, the intended analysis, no praise, NEEDS
-HUMAN CHECK), add those rules to `.github/copilot-instructions.md` first. Grade
-what it finds the way you graded the review in
-[Block 9](11h-code-review.qmd).
+[Block 4](11e-instructions-skills.qmd)). Block 9's review prompt sets a
+standard: the four Rs, the intended analysis, no praise, NEEDS HUMAN CHECK. To
+have Copilot apply it, first add those rules to
+`.github/copilot-instructions.md`. Grade what it finds the way you graded the
+review in [Block 9](11h-code-review.qmd).
 :::
 
 

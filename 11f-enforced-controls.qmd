@@ -10,9 +10,9 @@ library(webexercises)
 ```
 
 Your `r glossary("instruction file")` and skills are requests: nothing
-guarantees the model follows them. Here you watch the controls that do hold
-refuse something and find the route each one misses, so you know what your
-repository prevents and what it only detects.
+guarantees that the model follows them. In this block you watch the controls
+that do hold refuse something. You also find the route each one misses, so you
+know what your repository prevents and what it only detects.
 
 *⏱ ~25 minutes · Start on `main` (or `checkpoint-skills`), Git pane clean,
 Claude Code running in Manual mode.*
@@ -20,11 +20,12 @@ Claude Code running in Manual mode.*
 :::{#block5-files .callout-note collapse="true"}
 ## This block's files, and how it fits
 
-Same repository, no data: you practise on `data/raw/scratch.csv`, then delete
-it. The block adds only a rule and a log line, so no checkpoint follows. These
-controls protect [Blocks 7](11g-data-cleaning.qmd) and
-[8](11i-characterisation-tests.qmd); [Block 6](11k-build-an-agent.qmd) has you
-build them in R. The starter `settings.json` at the end is for your projects.
+This block uses the same repository but no data: you practise on
+`data/raw/scratch.csv`, then delete it. The block adds only a rule and a log
+line, so no checkpoint follows. These controls protect
+[Blocks 7](11g-data-cleaning.qmd) and [8](11i-characterisation-tests.qmd).
+[Block 6](11k-build-an-agent.qmd) shows the same controls inside an agent
+written in R. The starter `settings.json` at the end is for your projects.
 
 | File | Where it comes from | Exercise 2 step |
 |---|---|---|
@@ -40,7 +41,7 @@ build them in R. The starter `settings.json` at the end is for your projects.
 
 :::{.task}
 ::::{.task-header}
-Threat-model your repository (3 minutes)
+Decide what needs protecting (3 minutes)
 ::::
 ::::{.task-container}
 
@@ -48,7 +49,7 @@ Threat-model your repository (3 minutes)
 went wrong, so that you know which check you are relying on before an agent
 works near it.
 
-Your instructor posts the table; answer in the Zoom chat, row by row: if this
+Your instructor posts the table. Answer in the Zoom chat, row by row: if this
 went wrong, how would you notice?
 
 | Asset | What could go wrong | How you would notice |
@@ -68,7 +69,7 @@ Git pane would show it" or "a test would fail".
 ::::
 :::
 
-Git detects changes only from your last commit, so commit before an agent
+Git detects only the changes since your last commit, so commit before an agent
 starts. Some controls prevent and some only detect; Exercise 2 shows which.
 
 :::{.callout-note collapse="true"}
@@ -80,12 +81,12 @@ starts. Some controls prevent and some only detect; Exercise 2 shows which.
 | Approval prompt | "Allow this command?" | Prevents, if you read it | Approval fatigue |
 | Deny rule | `Edit(/data/raw/**)` | Prevents | Another route reaches the file |
 | Hook | A script Claude Code runs before each tool call | Prevents | Rephrasing gets past it |
-| Version control | The Git pane | Detects | Only from your last commit, and only if you look |
+| Version control | The Git pane | Detects | Only changes since your last commit, and only if you look |
 | Tests and checksums | testthat, `tools::md5sum()` | Detects | Only if they run |
 
 Your repository's `AGENTS.md` asks the agent to run `git status` before it
-edits anything, and to stop if there is no repository: a request that helps,
-but your commit is the control.
+edits anything, and to stop if there is no repository. That request helps, but
+your commit is the control.
 :::
 
 
@@ -104,7 +105,7 @@ prevents and what only git detects.
 **Start state:** Git pane clean, Claude Code in Manual mode. Work on a scratch
 file, never on real data.
 
-**1. Make a scratch file and read the rules.** In the R console:
+**1. Make a scratch file and read the rules.** Run this in the R console:
 
 ```{r}
 #| eval: false
@@ -112,7 +113,7 @@ writeLines("a", here::here("data", "raw", "scratch.csv"))
 ```
 
 Commit it in the Git pane, so git can show any later change to it. In Claude
-Code, type `/permissions`: the 17 deny rules your repository ships are listed.
+Code, type `/permissions` to list the 17 deny rules that your repository ships.
 
 **2. See a rule refuse.**
 
@@ -123,9 +124,9 @@ Add a second line, "test", to data/raw/scratch.csv.
 ```
 
 "Denied by a permission rule" means the rule held, whatever the model
-intended. If the model declines by itself, citing `AGENTS.md`, that was a
-request that happened to work: reply "This is a scratch file; please make the
-edit with your edit tool" to see the rule refuse.
+intended. The model may instead decline by itself, citing `AGENTS.md`. That was
+a request that happened to work. To see the rule refuse, reply "This is a
+scratch file; please make the edit with your edit tool".
 
 **Answer each request with plain Yes or No.** Never choose an option that says
 *don't ask again*: it saves a rule that skips the question from then on. If
@@ -135,7 +136,9 @@ Claude Code asks to write the file another way, answer No: step 4 tries that.
 `Read(/data/confidential/**)`, one of the confidential-data habits from
 [Block 3](11d-context-disclosure-autonomy.qmd). When asked where to save it,
 choose the project's shared settings file, `.claude/settings.json`, not the
-local one (see *How it works*). It applies at once.
+local one (see *How it works*). It applies at once. You do not test this rule
+here, because there is no `data/confidential/` folder. In your own project,
+test it the way you test `Edit(/data/raw/**)` in this exercise.
 
 **4. Find the gap.**
 
@@ -152,16 +155,16 @@ want to see what catches the change. **Approve it.** The Git pane now shows the
 file as modified, and **Diff** shows the new line: git caught what no rule
 prevented.
 
-**5. Tidy up.** Revert the file in the Git pane, then delete it, so no scratch
-file is left among the raw data:
+**5. Tidy up.** Revert the file in the Git pane. Then delete it, so that no
+scratch file is left among the raw data:
 
 ```{r}
 #| eval: false
 file.remove(here::here("data", "raw", "scratch.csv"))
 ```
 
-**6. Record, test and commit.** Add a line to `docs/ai-log.md`, in the same
-form as before, noting which requests were refused and what git caught. Then
+**6. Record, test and commit.** Add a line to `docs/ai-log.md` in the same
+form as before. Note which requests were refused and what git caught. Then
 restart R (*Session → Restart R*) and run:
 
 ```{r}
@@ -170,8 +173,8 @@ testthat::test_dir(here::here("tests"))
 ```
 
 `test_controls.R` checks that Manual mode and every shipped rule are still in
-place and that no command is approved in advance; `test_ai_log.R` checks your
-new line. Commit the deletion of `scratch.csv`, your rule in
+place. It also checks that no command is approved in advance. `test_ai_log.R`
+checks your new line. Commit the deletion of `scratch.csv`, your rule in
 `.claude/settings.json` and the log line together.
 
 **You are done when** you have seen a rule refuse, added one of your own, seen
@@ -187,10 +190,10 @@ that allow rule in `/permissions`.
 :::{.callout-note collapse="true"}
 ## At the command line
 
-`git add`/`git commit` for step 1, `git diff data/raw` for step 4,
-`git restore` then `git rm data/raw/scratch.csv` for step 5, and
-`Rscript -e "testthat::test_dir('tests')"` then `git add`/`git commit` for
-step 6. See [checking work](11a-setup-claude-code.qmd#checking-work).
+Step 1: `git add`/`git commit`. Step 4: `git diff data/raw`. Step 5:
+`git restore`, then `git rm data/raw/scratch.csv`. Step 6:
+`Rscript -e "testthat::test_dir('tests')"`, then `git add`/`git commit`. See
+[checking work](11a-setup-claude-code.qmd#checking-work).
 :::
 
 ::::
@@ -199,7 +202,7 @@ step 6. See [checking work](11a-setup-claude-code.qmd#checking-work).
 :::::::{.callout-note collapse="true"}
 ## Where each control acts
 
-:::::: {.dia .dia-lanes role="figure" aria-label="Where each control acts. Route 1: the agent asks its edit tool to change a file in data/raw, and the deny rule refuses. Route 2: the agent runs R code that writes the file; with no hook registered, only the approval prompt stands in the way, and if the file changes, git status detects it, as does the checksum test for voles_raw.csv. Instructions and skills are requests that the model may or may not follow."}
+:::::: {.dia .dia-lanes role="figure" aria-label="Where each control acts. Route 1: the agent asks its edit tool to change a file in data/raw, and the deny rule refuses. Route 2: the agent runs R code that writes the file. With no hook registered, only the approval prompt stands in the way. If the file changes, git status detects it, and from Block 7 so does the checksum test on the raw data. Instructions and skills are requests that the model may or may not follow."}
 ::::: {.dia-flow}
 ::: {.dia-label}
 Route 1: the agent's edit tool
@@ -231,7 +234,7 @@ File changed
 detected by
 :::
 ::: {.dia-node .dia-check}
-`git status` (and, for `voles_raw.csv`, the checksum test)
+`git status` (and, from Block 7, a checksum test on the raw data)
 :::
 :::::
 ::::: {.dia-flow}
@@ -254,11 +257,11 @@ one you have not seen refuse something is one you are assuming.
 ## How it works: where the rules live
 
 Your repository's `.claude/settings.json` starts the project in **Manual**
-mode (`"defaultMode": "default"`: asks before every edit and command) and
-holds 17 deny rules protecting the raw data, the data provider's note, the
-codebook, the checks, the references, the lockfile and the settings
-themselves. You never need to edit it: `/permissions` shows the rules and adds
-new ones.
+mode (`"defaultMode": "default"`: it asks before every edit and command). It
+also holds 17 deny rules. They protect the raw data, the data provider's note,
+the codebook, the checks, the references, the `r glossary("lockfile")` and the
+settings themselves. You never need to edit the file: `/permissions` shows the
+rules and adds new ones.
 
 ```{r}
 #| echo: false
@@ -268,25 +271,25 @@ cat(readLines(here::here("_instructor", "template-files", ".claude", "settings.j
 ```
 
 A leading `/` anchors a pattern to the project root. `Edit` rules cover Claude
-Code's file-editing tools and shell output redirects (`> file`), not R code it
-runs, and the documentation does not say they cover `rm`, `mv` or `cp`. The
-rules protect named files rather than whole folders, so the agent can still
+Code's file-editing tools and shell output redirects (`> file`). They do not
+cover R code that it runs. The documentation does not say that they cover `rm`,
+`mv` or `cp`. The rules protect named files rather than whole folders, so the agent can still
 write its scripts and tests in Blocks 7 and 8. `Edit(/renv.lock)` keeps
 `renv::status()` a real check.
 
 **Why the shared settings file.** `/permissions` can save a rule to
 `.claude/settings.json`, which is committed with the project, or to the local
 `.claude/settings.local.json`, which git ignores. Only a rule in the shared
-file reaches a commit, and so everyone who clones the repository. Answering
-*don't ask again* saves an allow rule, usually in the local file, which is why
-`test_controls.R` checks that no command is approved in advance.
+file reaches a commit, and so reaches everyone who clones the repository.
+Answering *don't ask again* saves an allow rule, usually in the local file.
+That is why `test_controls.R` checks that no command is approved in advance.
 :::
 
 :::{.callout-tip collapse="true"}
 ## Using another tool
 
 The exercises use Claude Code. **Posit Assistant** sets permissions per tool
-in `.posit/assistant/settings.json` (for example `"bash": {"rm *": "deny"}`);
+in `.posit/assistant/settings.json` (for example `"bash": {"rm *": "deny"}`).
 `deny` rules hold in every mode, including auto and YOLO. It has no documented
 path rules for file edits, so rely on the Git pane in step 4 of Exercise 2. It
 blocks reading `.env` and `.Renviron` by default.
@@ -295,17 +298,18 @@ blocks reading `.env` and `.Renviron` by default.
 :::{.callout-tip collapse="true"}
 ## Instructor: demonstration of a guard hook
 
-A `r glossary("hook")` is a command that Claude Code itself (the harness, not
-the model) runs before every `r glossary("tool call")`, so it does not depend
-on the model following a request. Your instructor saves the guard hook from
-*Going further* as `hooks/guard_protected_paths.R` (the template does not ship
-`hooks/`), registers it, and repeats step 4: the hook, written in R, blocks any
-call mentioning `data/raw`, so it blocks this one before any approval prompt.
-Then the same write using `here::here("data", "raw", "scratch.csv")`: the text
-`data/raw` never appears, so the hook lets it through. A text-matching hook is
-a tripwire, not a wall; the Git pane still shows the change. The GitHub review
-gate (`r glossary("CODEOWNERS")`, `r glossary("branch protection")`) is set up
-in the self-study page on
+A `r glossary("hook")` is a command that Claude Code itself (the
+`r glossary("harness")`, not the model) runs before every
+`r glossary("tool call")`. So it does not depend on the model following a
+request. Your instructor saves the guard hook from *Going further* as
+`hooks/guard_protected_paths.R` (the template does not ship `hooks/`). They
+register it and repeat step 4. The hook, written in R, blocks any call that
+mentions `data/raw`, so it blocks this one before any approval prompt. Then
+they try the same write using `here::here("data", "raw", "scratch.csv")`. The
+text `data/raw` never appears, so the hook lets it through. A text-matching
+hook is a tripwire, not a wall; the Git pane still shows the change. The GitHub
+review gate (`r glossary("CODEOWNERS")`, `r glossary("branch protection")`) is
+set up in the self-study page on
 [GitHub Copilot's cloud agent](11l-copilot-cloud-agent.qmd).
 :::
 
@@ -315,17 +319,18 @@ in the self-study page on
 Your workshop repository came with its controls. A new project of your own
 starts with none, so set them up before the agent's first task:
 
-1. **Git first.** In the R console, `usethis::use_git()`, and make a first
+1. **Git first.** In the R console, run `usethis::use_git()`. Then make a first
    commit.
-2. **Add a starter `settings.json`.** Download the one below, save it as
-   `.claude/settings.json`, and edit the paths to match your project. It starts
+2. **Add a starter `settings.json`.** Download the one below and save it as
+   `.claude/settings.json`. Edit the paths to match your project. It starts
    in Manual mode and protects raw data, test references, the lockfile,
    credentials and itself. Add project-specific rules with `/permissions`.
 3. **Ask for git checks.** Copy the *Version control* section of your workshop
    `AGENTS.md` into your project's instruction file.
-4. **Test it.** Ask the agent to edit a protected file and watch the rule
-   refuse; copy `tests/test_controls.R` and change its list of rules to yours.
-   Then commit.
+4. **Test it.** Ask the agent to edit a protected file, and watch the rule
+   refuse. Copy `tests/test_controls.R` and change its list of rules to yours.
+   Delete the tests for the `AGENTS.md` canary and `test_summary_functions.R`,
+   unless your project has them. Then commit.
 
 ```{r}
 #| echo: false
@@ -353,15 +358,15 @@ cat(readLines(here::here("files", "controls", "settings.json")), sep = "\n")
 :::
 
 **Let Claude draft rules, never decide them.** You can ask it to propose deny
-rules for a project, but read each one: a rule with a wrong path, such as a
+rules for a project, but read each one. A rule with a wrong path, such as a
 missing leading `/`, protects nothing and fails silently. Claude Code asks
-before every write to `.claude/`, and the starter file's `Edit(/.claude/**)`
+before every write to `.claude/`. The starter file's `Edit(/.claude/**)`
 refuses such writes outright, so you install the rules yourself.
 
 Protecting something new takes 30 seconds in `/permissions`. For confidential
-data, add the five habits in [Block 3](11d-context-disclosure-autonomy.qmd);
-and since settings and hooks are code, trust only repositories whose
-configuration you have read.
+data, add the five habits in [Block 3](11d-context-disclosure-autonomy.qmd).
+Settings and hooks are code, so trust only repositories whose configuration
+you have read.
 ::::
 
 :::{.callout-note}
@@ -402,16 +407,6 @@ deny rule refused the direct edit?**
   "Deny rules only apply in plan mode"
 ))`
 
-**In the demonstration, why did `here::here("data", "raw", "scratch.csv")` get
-past the guard hook?**
-
-`r longmcq(c(
-  "Hooks do not run for R code",
-  answer = "The guard matches the text 'data/raw', and the call never contains that text",
-  "here::here() runs with administrator rights",
-  "The hook was registered for the wrong event"
-))`
-
 
 ## Going further (not covered live)
 
@@ -422,9 +417,9 @@ if it is useful to you.
 ## A guard hook
 
 Claude Code itself, the harness rather than the model, runs a `PreToolUse`
-hook before each tool call and passes it the pending call as JSON on standard
-input (stdin). If the hook exits with status 2, the call is denied and its
-message is passed to the model. Claude Code and Posit Assistant use the same
+hook before each tool call. It passes the hook the pending call as JSON on
+standard input (stdin). If the hook exits with status 2, the call is denied
+and its message is passed to the model. Claude Code and Posit Assistant use the same
 shape for this, so one script can serve both.
 
 The guard below is written in R. It denies any edit, shell command or R code
@@ -471,8 +466,8 @@ quit(save = "no", status = 0)
 The template does not ship `hooks/`: save the script yourself as
 `hooks/guard_protected_paths.R`, for example with
 `usethis::edit_file("hooks/guard_protected_paths.R")`. It runs with
-`Rscript --vanilla`, so it does not start renv, and `jsonlite` must be
-installed in your user library.
+`Rscript --vanilla`, so it does not start renv. `jsonlite` must be installed in
+your user library.
 
 **Register it with Claude Code** by adding a `hooks` key to
 `.claude/settings.json`, alongside the existing `permissions` key. The deny
@@ -525,14 +520,14 @@ Test the hook before you trust it
 ::::
 ::::{.task-container}
 
-**Goal:** check the guard denies a protected path and allows a harmless call,
-so that you know it works before you rely on it.
+**Goal:** check that the guard denies a protected path and allows a harmless
+call, so that you know it works before you rely on it.
 
 Hooks fail open. If the script crashes, for example because `jsonlite` is not
 installed, both tools continue as if the hook had allowed the call. So test the
 script directly, without the agent. The R below runs the hook exactly as Claude
-Code does, a fresh `Rscript --vanilla` process given the tool call on standard
-input, and works the same on Windows, macOS and Linux.
+Code does: as a fresh `Rscript --vanilla` process, given the tool call on
+standard input. It works the same on Windows, macOS and Linux.
 
 **In the R console:**
 
@@ -542,13 +537,14 @@ rscript <- file.path(R.home("bin"), "Rscript")
 hook <- shQuote(here::here("hooks", "guard_protected_paths.R"))
 
 run_hook <- function(json) {
-  system2(rscript, c("--vanilla", hook), input = json,
-          stdout = FALSE, stderr = FALSE)
+  status <- system2(rscript, c("--vanilla", hook), input = json,
+                    stdout = FALSE, stderr = FALSE)
+  status
 }
 
 # can the hook's own R session load jsonlite? 0 means yes
-system2(rscript, c("--vanilla", "-e", shQuote("library(jsonlite)")),
-        stdout = FALSE, stderr = FALSE)
+print(system2(rscript, c("--vanilla", "-e", shQuote("library(jsonlite)")),
+              stdout = FALSE, stderr = FALSE))
 
 # a call naming a protected path: expect 2
 run_hook('{"tool_name":"Bash","tool_input":{"command":"Rscript tests/make_reference.R"}}')
@@ -563,9 +559,9 @@ is broken and is silently allowing everything.
 Now repeat the request from step 4 of Exercise 2. The R code mentions
 `data/raw`, so the guard should deny it before you see an approval prompt.
 
-To see exactly what each tool sends to hooks, temporarily add a `PostToolUse`
-hook with no matcher that appends its input to a log file (Posit Assistant's
-hooks documentation gives an example), and read the log.
+To see exactly what each tool sends to hooks, add a temporary `PostToolUse`
+hook with no matcher. Make it append its input to a log file, then read the
+log. Posit Assistant's hooks documentation gives an example.
 
 **You are done when** the protected call returns 2, the harmless call returns
 0, and the request from step 4 of Exercise 2 is denied before you see an
@@ -587,8 +583,8 @@ Red-team the tripwire
 **Goal:** get a write past the guard hook, so that you see where a
 text-matching guard stops.
 
-The live block removed the scratch file at the end. Recreate it first, in the
-R console, and commit it from the Git pane:
+The live block removed the scratch file at the end. Recreate it first in the
+R console, then commit it from the Git pane:
 
 ```{r}
 #| eval: false
@@ -619,6 +615,16 @@ pane has shown the change, and you have deleted `scratch.csv` again.
 ::::
 :::
 
+**Why did `here::here("data", "raw", "scratch.csv")` get past the guard
+hook?**
+
+`r longmcq(c(
+  "Hooks do not run for R code",
+  answer = "The guard matches the text 'data/raw', and the call never contains that text",
+  "here::here() runs with administrator rights",
+  "The hook was registered for the wrong event"
+))`
+
 **Your guard hook depends on jsonlite, which is not installed. What happens
 when the agent tries to edit a protected file?**
 
@@ -635,7 +641,9 @@ when the agent tries to edit a protected file?**
 
 Local controls do not exist for an agent that works remotely. There, the
 controls are on the repository itself: CODEOWNERS, branch protection and a CI
-check. The self-study page [Self-study: Hand a task to GitHub Copilot's cloud agent](11l-copilot-cloud-agent.qmd) sets them up.
+check. The self-study page
+[Self-study: Hand a task to GitHub Copilot's cloud agent](11l-copilot-cloud-agent.qmd)
+sets them up.
 :::
 
 :::{.callout-tip collapse="true"}
@@ -644,9 +652,9 @@ check. The self-study page [Self-study: Hand a task to GitHub Copilot's cloud ag
 Hooks can do more than block. A `PostToolUse` hook can run `lintr` on each R file
 the agent edits and pass the result back to it. A `Stop` hook can run the test
 suite and refuse to let the agent finish while tests fail. The second is
-powerful and dangerous: an agent told it cannot stop until tests pass may try
-to change the tests. Use it only when the deny rules and guard hook protect
-`tests/`.
+powerful and dangerous: an agent that is told it cannot stop until tests pass
+may try to change the tests. Use it only when the deny rules and guard hook
+protect `tests/`.
 :::
 
 

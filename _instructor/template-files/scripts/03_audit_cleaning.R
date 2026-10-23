@@ -11,8 +11,8 @@ cleaning_log_df <- read_csv(
 )
 
 # 1. What kinds of change were made ----
-cleaning_log_df |> count(column, rule, sort = TRUE)
+cleaning_log_df |> count(column, rule, sort = TRUE) |> print()
 
-# 2. Ten logged changes to check by hand against the raw file ----
+# 2. Up to ten logged changes to check by hand against the raw file ----
 set.seed(2026)
 cleaning_log_df |> slice_sample(n = 10) |> print(width = Inf)

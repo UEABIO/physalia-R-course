@@ -18,11 +18,11 @@ one the data reveal, and one that only your knowledge of the study catches.
 :::{#block2-files .callout-note collapse="true"}
 ## This block's files, and how it fits
 
-The first live block in your workshop repository
+This is the first live block in your workshop repository
 ([setup](11a-setup-claude-code.qmd#your-workshop-repository)). The code you fix
-is practice, so it goes in the git-ignored `scratch/` folder; there is no
-checkpoint branch, because nothing later depends on it. A misspelt function
-name, a bug the AI can fix alone, is in *Going further*.
+is practice, so it goes in the git-ignored `scratch/` folder. There is no
+checkpoint branch, because nothing later depends on it. *Going further* has a
+bug the AI can fix alone: a misspelt function name.
 
 | File | Where it comes from | Used in |
 |---|---|---|
@@ -50,20 +50,20 @@ mode, with a new conversation (`/clear`).
 
 **Posit Assistant:** type `/ask` first. Ask mode is read-only: it cannot edit
 files or run R code, so the answer-only line is not needed. It does see the
-names and types of the objects in your session (not their values) and can read
-your console history, so it may already have your `distinct()` output: that is
-a disclosure route too ([Block 3](11d-context-disclosure-autonomy.qmd)). For
-step 4, type `/normal` so it can run the diagnostics in your live R session,
-approving each call; `/normal` is also how you leave Ask mode.
+names and types of the objects in your session (not their values). It can also
+read your console history, so it may already have your `distinct()` output.
+That is a disclosure route too ([Block 3](11d-context-disclosure-autonomy.qmd)).
+For step 4, type `/normal` so it can run the diagnostics in your live R
+session, and approve each call. `/normal` is also how you leave Ask mode.
 
 **A chat window:** paste the same prompts, without the answer-only line, and
 skip step 4.
 :::
 
-**1. Set up.** In the R console, `usethis::edit_file("scratch/debugging.R")`
-creates this block's practice script and opens it. Paste this in and run it;
-the last two commands are code you wrote to compute mean post-treatment mass
-for high-dose voles:
+**1. Set up.** In the R console, run `usethis::edit_file("scratch/debugging.R")`.
+It creates this block's practice script and opens it. Paste this in and run
+it. The last two commands are code you wrote to compute mean post-treatment
+mass for high-dose voles:
 
 ```{r}
 #| eval: false
@@ -78,8 +78,8 @@ high_dose |>
   summarise(mean_mass = mean(mass_post_g))
 ```
 
-It runs without error but returns `NaN`: the bug is in what you asked for, so
-put the evidence in front of you first, then in front of the
+It runs without error but returns `NaN`. The bug is in what you asked for. Put
+the evidence in front of you first, then in front of the
 `r glossary("assistant")`.
 
 **2. Inspect the data before asking for help.** In the R console:
@@ -126,19 +126,19 @@ code: [Block 4](11e-instructions-skills.qmd) explains it.
 
 Claude Code is an `r glossary("agent")`: given a question, it may search your
 project, read files and offer to run code. The answer-only line is only a
-request: Claude Code has no ask mode, and plan mode is not used here because it
-still reads your files while it plans. Manual mode is the control: it must ask
-before it runs a command or edits a file, and your answer decides.
+request. Claude Code has no ask mode. Plan mode is not used here, because it
+still reads your files while it plans. Manual mode is the control: Claude Code
+must ask before it runs a command or edits a file, and your answer decides.
 
-Claude Code cannot see the objects in your R console, such as `voles`: it sees
-your data only by reading files or running code, and each `Rscript` command it
+Claude Code cannot see the objects in your R console, such as `voles`. It sees
+your data only by reading files or running code. Each `Rscript` command it
 runs starts a fresh R process. Check its work in the R console
 ([checking work](11a-setup-claude-code.qmd#checking-work)).
 :::
 
 **4. Now let the agent gather the evidence.** This is the one step in the block
-where it acts. Type `/clear`, so that it starts without the evidence you
-pasted, then:
+where it acts. Type `/clear` so that it starts without the evidence you
+pasted, then send this prompt:
 
 **Prompt (Claude Code):**
 
@@ -153,6 +153,8 @@ it runs R. Approve a run only if you can say what it does and why you want it
 now; refusing is always safe. Here you can, so choose **Yes** if the `Rscript`
 command only reads the data and prints results. Then compare its diagnosis with
 yours from step 2.
+
+**5. Fix it.** Correct the filter in `scratch/debugging.R` and run it again.
 
 **Keep this conversation open:** in Block 3 you read its transcript to see what
 reached the model provider.
@@ -232,6 +234,9 @@ and decreasing. What is wrong?
 Answer from what I've pasted: don't read files, run code or edit anything.
 ```
 
+**3. Fix it.** Correct the subtraction in `scratch/debugging.R` and run it
+again.
+
 `r hide("Solution")`
 
 ```{r, eval = FALSE}
@@ -254,6 +259,11 @@ subtract from which: post minus pre is gain.
 ::::
 :::
 
+
+**When AI helps most.** AI helps most when you give it the evidence (the error,
+the data values) and say what the result should be. It cannot know your study
+design unless you tell it: that is why Exercise 2's prompt states the expected
+direction.
 
 :::{.callout-note collapse="true"}
 ## The debugging checklist
@@ -309,6 +319,9 @@ reliable first check?**
   "Check that there are no warnings"
 ))`
 
+**True or false: an AI given only your code will notice that the sign of a
+result contradicts your study design.** `r torf(FALSE)`
+
 
 ## Going further (not covered live)
 
@@ -336,10 +349,10 @@ ggplot(voles, aes(x = treatment_arm)) +
 R returns:
 
 ```
-Error in geom_barchart(): could not find function "geom_barchart"
+Error in geom_barchart() : could not find function "geom_barchart"
 ```
 
-**1. Ask for a fix.** Paste the code and the error, and ask.
+**1. Ask for a fix.** Paste the code and the error, then ask.
 
 **Prompt (Claude Code):**
 
@@ -349,7 +362,7 @@ This code gives an error:
   ggplot(voles, aes(x = treatment_arm)) +
     geom_barchart()
 
-Error in geom_barchart(): could not find function "geom_barchart"
+Error in geom_barchart() : could not find function "geom_barchart"
 
 What is wrong, and what is the fix?
 Answer from what I've pasted: don't read files, run code or edit anything.
@@ -367,7 +380,7 @@ ggplot(voles, aes(x = treatment_arm)) +
 ```
 
 The function is `geom_bar()`; ggplot2's geoms have no `_chart` suffix. This is
-not a syntax error: R parses the code without complaint, and fails only when it
+not a syntax error. R parses the code without complaint. It fails only when it
 looks for a function called `geom_barchart()` and finds none. "Could not find
 function" means no loaded package has a function of that name.
 
@@ -410,7 +423,7 @@ ggplot(voles, aes(x = mass_post_g, y = metabolic_rate_post)) +
 
 `treatment_arm` is a column in the data, so the mapping must go inside `aes()`.
 An argument outside `aes()`, such as `color =`, expects a fixed value like
-`"red"` or `"#0072B2"`. ggplot2 looked for an object called `treatment_arm` in
+`"red"` or `"#0072B2"`. R looked for an object called `treatment_arm` in
 your environment, found none, and stopped. `colour` and `color` are
 interchangeable in ggplot2.
 

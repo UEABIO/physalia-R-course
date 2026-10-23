@@ -19,6 +19,14 @@ Moved out of the published chapters. Quarto ignores this folder because its name
   - `/permissions` offers a choice of settings file, but the docs do not give the option labels, so the book names the file (`.claude/settings.json`) rather than a label.
   - Claude Code adds `.claude/settings.local.json` to your global git excludes on first write, so a branch cannot carry it.
   - A `.claude/skills/` directory created after a session starts needs `/reload-skills`; the template ships the directory, so new skills inside it are picked up.
+- **Whole-day check, 23 October 2026**: the 12 AI pages were reviewed against each other and the template; Claude Code and GitHub claims were fact-checked by AI agents against code.claude.com and docs.github.com. Findings worth knowing:
+  - The `default` mode is named **Manual** in the CLI; the status bar shows `⏸ manual mode on`. `/plan` takes a description on the same line, and plan mode can run read-only commands.
+  - The plan-approval option that switches approvals off reads *Yes, and use auto mode*, or *Yes, auto-accept edits* when auto mode is unavailable. The docs list both version thresholds for the `auto` start mode (v2.1.283, and v2.1.228/v2.1.233 by platform), so the book still gives no version.
+  - `/status`, not `/config`, shows which credential is billed. An `ANTHROPIC_API_KEY` in the environment outranks a subscription login once approved.
+  - A PreToolUse matcher `Edit|Write|Bash` does not cover `NotebookEdit`; irrelevant for this R template.
+  - **Copilot cloud agent:** the person who asked Copilot for a pull request cannot give it a counting approval. So `11l` no longer requires approvals in a learner's own fork: the rule requires a pull request and the `r-checks` check (the job is named `r-checks` so the check appears under that name). Workflows on the agent's pull requests need **Approve and run workflows** by default. A fork's workflows start disabled (GitHub's banner; the docs state it only for scheduled workflows). A status check can be required only after it has run.
+  - Plans including the cloud agent: Student, Pro, Pro+, Max, Business, Enterprise; not Free. Copilot code review reads `AGENTS.md`. `r-lib/actions/setup-r` accepts `r-version: renv`.
+  - References checked against arXiv, Crossref, the Bilkent repository, the R Consortium site and Substack: Spreafico et al. (2025), Cihan et al. (2025), Cihan (2025), Wickham (2026) and Barbier (2026, a talk scheduled for 10 November 2026 at R+AI 2026).
 - **11k-build-an-agent.qmd (Block 6)**: 22 October 2026, against the installed ellmer 0.5.0 (help pages and NEWS): `chat_anthropic(credentials =)`, `Chat$on_tool_request()`, `tool_reject()`, `tool_annotations()`, and `Chat$get_rounds()`, which groups each user prompt with all the turns that follow it, so the book counts requests (assistant turns) instead.
 
 ## Block 6 (11k-build-an-agent.qmd): instructor notes

@@ -727,7 +727,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p><strong>Before you start.</strong> ellmer, the package that talks to Claude and runs the loop, is pinned in your repository’s <code>renv.lock</code>, so <code><a href="https://rstudio.github.io/renv/reference/restore.html">renv::restore()</a></code> installed it; never run <code><a href="https://rdrr.io/r/utils/install.packages.html">install.packages()</a></code> inside the project. Your key comes from an Anthropic Console account, separate from a Claude subscription, and lives in your user-level <code>.Renviron</code>, outside every repository. Every request costs a little; Task 2 shows you how much the agent used.</p>
-<p>The page follows the order of Hadley Wickham’s explainer <a href="https://substack.hadley.nz/p/what-is-an-agent"><em>What is an agent?</em></a>: a conversation, then a tool, then the loop. Joseph Barbier’s talk <em>50 lines of code to rebuild Claude Code in R</em> builds the same kind of agent; the version here is our own.</p>
+<p>The page follows the order of Hadley Wickham’s explainer <a href="https://substack.hadley.nz/p/what-is-an-agent"><em>What is an agent?</em></a>: a conversation, then a tool, then the loop. Joseph Barbier’s talk <em>50 lines of code to rebuild Claude Code in R</em> (R+AI 2026, 10 November) builds the same kind of agent; the version here is our own.</p>
 </div>
 </div>
 </div>
@@ -762,13 +762,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-9"><a href="#cb2-9" aria-label="9"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"How many days until 25 December?"</span>)</span>
 <span id="cb2-10"><a href="#cb2-10" aria-label="10"></a>chat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The model sees only the tool’s name and description. Its first reply is a request, “call <code>today</code>”; ellmer runs <code>today()</code> <strong>on your computer</strong> and sends the result back; then the model answers. That is two <a class="glossary">requests<span class="def">One call to the model, with the whole conversation so far, and its reply. A single question can take several requests when the model asks for tools before it answers.</span></a> for one question.</p>
+<p>The model sees only the tool’s name, description and arguments (here, none). Its first reply is a request, “call <code>today</code>”; ellmer runs <code>today()</code> <strong>on your computer</strong> and sends the result back; then the model answers. That is two <a class="glossary">requests<span class="def">One call to the model, with the whole conversation so far, and its reply. A single question can take several requests when the model asks for tools before it answers.</span></a> for one question.</p>
 <p><strong>You are done when</strong> you can point, in the printed <code>chat</code>, to the tool request and to the tool result, and say which of them ran on your computer.</p>
 <p><strong>If it goes wrong:</strong> if the first <code>chat$chat()</code> reports a missing or invalid key, check <code>Sys.getenv("AGENT_ANTHROPIC_KEY") != ""</code>, and restart R after editing <code>.Renviron</code>.</p>
 </div>
 </div>
 </section><section id="the-loop" class="level2"><h2 class="anchored" data-anchor-id="the-loop">The loop</h2>
-<p>An <a class="glossary">agent<span class="def">An assistant that can read across a project’s files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</span></a> repeats that exchange: the harness sends the conversation, runs any tool the model asks for, adds the result, and sends it all again, until a reply asks for no tool. Every control in this course acts on one of three facts:</p>
+<p>An <a class="glossary">agent<span class="def">An assistant that can read across a project’s files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</span></a> repeats that exchange: the <a class="glossary">harness<span class="def">The software around a model that keeps the conversation, sends it to the model, runs the tools the model asks for and sends back their results. Claude Code is a harness; so is a chat object made with ellmer.</span></a> sends the conversation, runs any tool the model asks for, adds the result, and sends it all again, until a reply asks for no tool. Every control in this course acts on one of three facts:</p>
 <ul>
 <li>
 <strong>The model only asks.</strong> The harness runs each tool on your computer, so that is where Manual mode asks you, a deny rule refuses, and a hook inspects.</li>
@@ -979,7 +979,7 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 <span id="cb7-6"><a href="#cb7-6" aria-label="6"></a>  <span class="st">"and fix the function until it passes."</span></span>
 <span id="cb7-7"><a href="#cb7-7" aria-label="7"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>3. Decide each request.</strong> Reads run without asking. For a <code>write_file</code> request, read the code it prints and choose <strong>Yes</strong> only for a write to <code>scripts/functions/summaries.R</code>. <strong>Refuse the first <code>run_test</code> on purpose:</strong> the agent stops and explains. Then let it continue:</p>
+<p><strong>3. Decide each request.</strong> Reads run without asking. For a <code>write_file</code> request, read the code it prints and choose <strong>Yes</strong> only for a write to <code>scripts/functions/summaries.R</code>. <strong>Refuse the first <code>run_test</code> on purpose:</strong> the agent usually stops and explains; if it asks again at once, answer No again. Then let it continue:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"Go ahead and run the test."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -1005,7 +1005,9 @@ Did your agent notice the missing value?
 <li>
 <strong>The agent loops or goes off course:</strong> answer <strong>No</strong>, then steer it with <code>chat$chat("…")</code>, or <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again to start a new conversation.</li>
 <li>
-<strong>A refused path you expected to work:</strong> check <code><a href="https://rdrr.io/r/base/getwd.html">getwd()</a></code> is the repository’s root.</li>
+<strong>A refused write:</strong> the agent can write only under <code>scripts/</code>; read the path it asked for.</li>
+<li>
+<strong><code>run_test</code> cannot find <code>tests/test_translation.R</code>:</strong> check <code><a href="https://rdrr.io/r/base/getwd.html">getwd()</a></code> is the repository’s root.</li>
 <li>
 <strong>An unwanted change:</strong> <strong>Revert</strong> it in the Git pane.</li>
 </ul>
@@ -1098,15 +1100,15 @@ Did your agent notice the missing value?
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>In an agent built with ellmer, who runs a tool’s R function?</strong></p>
-<div id="radio_PRGYZHFGOK" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_PRGYZHFGOK" value=""><span>The model, on Anthropic's servers</span></label><label><input type="radio" autocomplete="off" name="radio_PRGYZHFGOK" value="answer"><span>The harness (ellmer), on your computer, after the model asks for it</span></label><label><input type="radio" autocomplete="off" name="radio_PRGYZHFGOK" value=""><span>Nobody: the model predicts what the function would return</span></label><label><input type="radio" autocomplete="off" name="radio_PRGYZHFGOK" value=""><span>RStudio, in a separate window</span></label>
+<div id="radio_RATMJTSAVO" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_RATMJTSAVO" value=""><span>The model, on Anthropic's servers</span></label><label><input type="radio" autocomplete="off" name="radio_RATMJTSAVO" value="answer"><span>The harness (ellmer), on your computer, after the model asks for it</span></label><label><input type="radio" autocomplete="off" name="radio_RATMJTSAVO" value=""><span>Nobody: the model predicts what the function would return</span></label><label><input type="radio" autocomplete="off" name="radio_RATMJTSAVO" value=""><span>RStudio, in a separate window</span></label>
 </div>
 <p><strong>True or false: when an agent’s tool reads a file, the file’s contents are sent to the model provider.</strong> <select class="webex-select"><option value="blank"></option>
 <option value="answer">TRUE</option>
 <option value="NA">FALSE</option></select></p>
 <p><strong>Your agent can write only under <code>scripts/</code>, and has no general run-R tool. What would adding one put at risk?</strong></p>
-<div id="radio_NMSRTKZOOO" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_NMSRTKZOOO" value=""><span>Nothing: the write rule still covers every file</span></label><label><input type="radio" autocomplete="off" name="radio_NMSRTKZOOO" value="answer"><span>Every file: R code the model writes can change anything, data/raw/ included, whatever the write rule says</span></label><label><input type="radio" autocomplete="off" name="radio_NMSRTKZOOO" value=""><span>Only the files under scripts/</span></label><label><input type="radio" autocomplete="off" name="radio_NMSRTKZOOO" value=""><span>Only the API key, because R code cannot write files</span></label>
+<div id="radio_DHARPXAVTX" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_DHARPXAVTX" value=""><span>Nothing: the write rule still covers every file</span></label><label><input type="radio" autocomplete="off" name="radio_DHARPXAVTX" value="answer"><span>Every file: R code the model writes can change anything, data/raw/ included, whatever the write rule says</span></label><label><input type="radio" autocomplete="off" name="radio_DHARPXAVTX" value=""><span>Only the files under scripts/</span></label><label><input type="radio" autocomplete="off" name="radio_DHARPXAVTX" value=""><span>Only the API key, because R code cannot write files</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
@@ -1122,7 +1124,7 @@ Did your agent notice the missing value?
 </div>
 <div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Give the agent this tool, register it alongside the others, and add <code>"run_r"</code> to the names <code>ask_first()</code> asks about:</p>
+<p>Add this tool to <code>agent/mini_agent.R</code>: paste it after <code>run_test</code>, add <code>run_r</code> to the <code>register_tools()</code> list and <code>"run_r"</code> to the names <code>ask_first()</code> asks about, then <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again for a new conversation. (Redefining <code>ask_first()</code> in the console has no effect: the chat keeps the copy it was given.)</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>run_r <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
 <span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>  <span class="cf">function</span>(code) {</span>
@@ -1135,8 +1137,7 @@ Did your agent notice the missing value?
 <span id="cb11-9"><a href="#cb11-9" aria-label="9"></a>  <span class="at">name =</span> <span class="st">"run_r"</span>,</span>
 <span id="cb11-10"><a href="#cb11-10" aria-label="10"></a>  <span class="at">description =</span> <span class="st">"Run R code in a fresh R session; return its printed output."</span>,</span>
 <span id="cb11-11"><a href="#cb11-11" aria-label="11"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">code =</span> <span class="fu">type_string</span>(<span class="st">"The R code to run."</span>))</span>
-<span id="cb11-12"><a href="#cb11-12" aria-label="12"></a>)</span>
-<span id="cb11-13"><a href="#cb11-13" aria-label="13"></a>chat<span class="sc">$</span><span class="fu">register_tool</span>(run_r)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb11-12"><a href="#cb11-12" aria-label="12"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Now the model can run any code: <code><a href="https://rdrr.io/r/base/writeLines.html">writeLines()</a></code> into <code>data/raw/</code>, or <code><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv()</a></code> for your key. <code>allowed()</code> no longer protects anything, and only your approval stands in the way, exactly as in Block 5. A narrow tool such as <code>run_test()</code> needs less trust than a general one.</p>
 </div>
@@ -1154,7 +1155,7 @@ Did your agent notice the missing value?
 </div>
 <div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Change <code>ask_first()</code> so it asks before every call, reads included. You then see every file the agent wants to read before it is sent to the provider, which is the habit Block 3 recommends near confidential data.</p>
+<p>Change <code>ask_first()</code> in <code>agent/mini_agent.R</code> so it asks before every call, reads included, then <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again. You then see every file the agent wants to read before it is sent to the provider, which is the habit Block 3 recommends near confidential data.</p>
 </div>
 </div>
 </div>
@@ -1209,10 +1210,14 @@ Did your agent notice the missing value?
 <td style="text-align: left;">An assistant that can read across a project's files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">harness</td>
+<td style="text-align: left;">The software around a model that keeps the conversation, sends it to the model, runs the tools the model asks for and sends back their results. Claude Code is a harness; so is a chat object made with ellmer.</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">request</td>
 <td style="text-align: left;">One call to the model, with the whole conversation so far, and its reply. A single question can take several requests when the model asks for tools before it answers.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">turn</td>
 <td style="text-align: left;">One message in a conversation with a model: either yours (the user turn) or the model's reply (the assistant turn). Tool results go back to the model inside a user turn.</td>
 </tr>
@@ -1224,7 +1229,8 @@ Did your agent notice the missing value?
 <ul>
 <li>Wickham, H. (2026, 5 June). <em>What is an agent?</em> AI for data science (Substack). <a href="https://substack.hadley.nz/p/what-is-an-agent" class="uri">https://substack.hadley.nz/p/what-is-an-agent</a>
 </li>
-<li>Barbier, J. <em>50 lines of code to rebuild Claude Code in R</em>. Talk abstract, 10 November (year and venue not stated in the abstract).</li>
+<li>Barbier, J. (2026, 10 November). <em>50 lines of code to rebuild Claude Code in R</em> [Conference talk]. R+AI 2026, R Consortium. <a href="https://rconsortium.github.io/RplusAI_website/Abstracts.html" class="uri">https://rconsortium.github.io/RplusAI_website/Abstracts.html</a>; code: <a href="https://github.com/JosephBARBIERDARNAL/r-claude-code" class="uri">https://github.com/JosephBARBIERDARNAL/r-claude-code</a>
+</li>
 <li>Wickham, H., Cheng, J., Jacobs, A., Aden-Buie, G. and Schloerke, B. (2026). <em>ellmer: Chat with large language models</em>. R package version 0.5.0. <a href="https://CRAN.R-project.org/package=ellmer" class="uri">https://CRAN.R-project.org/package=ellmer</a>
 </li>
 </ul>

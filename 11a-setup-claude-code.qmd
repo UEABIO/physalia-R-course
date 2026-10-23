@@ -34,11 +34,11 @@ to start it, and the R console and Git pane for everything else.
 - **RStudio:** the **Terminal** tab next to the Console.
 - **Positron:** *Terminal → New Terminal*.
 
-With a project open, the Terminal tab starts in the project's root folder,
-which is where Claude Code needs to run. You never need to `cd`.
+With a project open, the Terminal tab starts in the project's root folder.
+Claude Code needs to run there. You never need to `cd`.
 
 **Which shell is it?** A prompt starting `PS` is **PowerShell** (Windows); one
-ending `$` is **Git Bash** (Windows) or bash/zsh (macOS, Linux).
+ending `$` or `%` is **Git Bash** (Windows), or bash or zsh (macOS, Linux).
 
 
 ## Step 2: Check git and R are reachable
@@ -54,7 +54,7 @@ Both should print a version number.
 
 - **`git` not found:** install git (on Windows, **Git for Windows**).
 - **`Rscript` not found (common on Windows):** run `R.home("bin")` in the R
-  console and add that folder to your `PATH` (Windows: Start menu → "Edit
+  console, then add that folder to your `PATH` (Windows: Start menu → "Edit
   environment variables for your account" → **Path**). Then **quit and reopen
   RStudio or Positron**: its terminals keep the `PATH` they started with.
 
@@ -93,7 +93,7 @@ Do this before you sign in, so that Claude Code starts in the right folder.
 1. **Fork, clone and open the template** in one step, in the R console:
    `usethis::create_from_github("<template-owner>/<template-repo>", fork = TRUE)`.
    Your instructor gives you the exact name.
-2. **Restore the packages:** `renv::restore()` in the R console, once. It
+2. **Restore the packages:** run `renv::restore()` in the R console, once. It
    installs the versions in the template's `r glossary("lockfile")` and can take
    several minutes.
 3. **Start clean.** If the Git pane (RStudio) or Source Control view
@@ -115,8 +115,8 @@ options.
 
 ### Your workshop repository {#your-workshop-repository}
 
-Blocks 2 to 8 work in this one repository, which the template ships almost
-complete; so does the self-study page on the Copilot cloud agent, after the day. Block 9, the code
+Blocks 2 to 8, and the self-study page on the Copilot cloud agent, work in this
+one repository. The template ships it almost complete. Block 9, the code
 review, works in a separate folder, `~/ai-review`, so that the reviewer sees
 only the script under review.
 
@@ -132,14 +132,14 @@ only the script under review.
 | 9 | `ANALYSIS.R`, in `~/ai-review` | — | carry on | an AI-log line |
 
 Each block opens with a *Where this fits* note and a table of the files it
-uses: which ship with the template, which you made in an earlier block, and
-which you make there.
+uses. The table shows which files ship with the template, which you made in an
+earlier block, and which you make there.
 
 :::{.callout-tip collapse="true"}
 ## Reference: the repository layout
 
-Files marked *you* are created during the day, by you or by the agent at your request. Scripts are numbered in the
-order they run.
+You, or the agent at your request, create the files marked *you* during the
+day. Scripts are numbered in the order they run.
 
 ```
 data/
@@ -193,7 +193,7 @@ renv.lock                       the package versions
 :::
 
 `.claude/settings.json` holds the 17 `r glossary("deny rule", "deny rules")` that
-protect the raw data, the codebook, the checks and the references; you read
+protect the raw data, the codebook, the checks and the references. You read
 and test it in [Block 5](11f-enforced-controls.qmd).
 
 
@@ -208,22 +208,24 @@ projects, close it and open a new one.
 ## Using an API key
 
 If you use a Console API key, set it as `ANTHROPIC_API_KEY`, for example in
-`.Renviron`, and never commit that file. The template denies Claude Code
+`.Renviron`, and never commit that file. The template stops Claude Code
 reading a `.Renviron` in the project folder, but not the one in your home
 folder. If `ANTHROPIC_API_KEY` is already set for another tool, Claude Code may
-use it instead of your subscription and bill per request: check under
-`/config`.
+use it instead of your subscription and bill per request. `/status` shows
+which credential is in use.
 :::
 
 
 ## Step 6: The essentials
 
 Your workshop repository starts Claude Code in **Manual** mode (`default`), a
-`r glossary("permission mode")` in which it asks before every edit and command.
+`r glossary("permission mode")`. In this mode it asks before every edit and
+before most commands (read-only ones, such as `head`, run without asking).
 Claude Code's own default is `auto`, where a second model approves actions for
-you; the project setting overrides it. Read each request, and answer with
-plain **Yes** or **No**: never choose an option that says *don't ask again*,
-which saves a rule that skips the question from then on. Shift+Tab changes the mode, `/plan` asks for a plan first, and the
+you; the project setting overrides it. Read each request before you answer.
+**Answer each request with plain Yes or No.** Never choose an option that says
+*don't ask again*: it saves a rule that skips the question from then on.
+Shift+Tab changes the mode, `/plan` asks for a plan first, and the
 [Claude Code quick reference](11-AI-programming-integrated.qmd#cc-quick-reference)
 lists the rest.
 
@@ -243,8 +245,8 @@ somewhere else.
 
 | To check... | In the R console or Git pane |
 |---|---|
-| What changed | The Git pane: **Diff** shows the changes line by line; **Revert** undoes one you did not want. |
-| That a script runs in a fresh R session | *Session → Restart R*, then `source(here::here("scripts", "name.R"))` |
+| What changed | The Git pane: **Diff** shows the changes line by line; **Revert** (Positron: **Discard Changes**) undoes one you did not want. |
+| That a script runs in a fresh R session | *Session → Restart R* (Positron: the restart button in the Console), then `source(here::here("scripts", "name.R"))` |
 | That the tests pass in a fresh R session | *Session → Restart R*, then `testthat::test_dir(here::here("tests"))` |
 | That the packages match the lockfile | `renv::status()` |
 
@@ -267,12 +269,12 @@ In [Block 6](11k-build-an-agent.qmd) you build your own agent in R with the
 ellmer package. It calls Claude through the Anthropic API, which is billed per
 request and is separate from a Claude Pro or Max subscription.
 
-1. **Get a key.** Create an account at <https://console.anthropic.com>, add a
+1. **Get a key.** Create an account at <https://console.anthropic.com>. Add a
    little prepaid credit (check the current prices on Anthropic's pricing page;
-   the block needs only a few dozen requests), and create an API key.
+   the block needs only a few dozen requests). Then create an API key.
 2. **Save it outside every project.** In the R console, run
-   `usethis::edit_r_environ()`, which opens your user-level `.Renviron`, and
-   add one line:
+   `usethis::edit_r_environ()`. It opens your user-level `.Renviron`. Add one
+   line:
 
    ```
    AGENT_ANTHROPIC_KEY=your-key-here
@@ -280,7 +282,9 @@ request and is separate from a Claude Pro or Max subscription.
 
    Save the file and restart R. The name is deliberate: Claude Code looks for
    `ANTHROPIC_API_KEY`, and would offer to bill that key instead of your
-   subscription. Never paste a key into a script.
+   subscription. Never paste a key into a script. Claude Code asks before it
+   reads a file outside your project; if it asks to read `.Renviron`, answer
+   **No**.
 3. **Test it.** In the R console:
 
    ```{r}
@@ -294,7 +298,7 @@ request and is separate from a Claude Pro or Max subscription.
 **You are done when** the model replies. If it reports a missing or invalid
 key, check the line in `.Renviron` and restart R.
 
-:::{.callout-tip collapse="true"}
+:::{#copilot-setup .callout-tip collapse="true"}
 ## Optional: GitHub Copilot, for the self-study page on inline completions
 
 The self-study page on [inline completions](11b-inline-completions.qmd) uses
@@ -358,17 +362,18 @@ renv::status()
 testthat::test_dir(here::here("tests"))
 ```
 
-`renv::status()` should report no problems, and the test summary should show
-`FAIL 0` and `PASS 8`: the eight passing checks cover the protections, Manual
+`renv::status()` should report no problems. The test summary should show
+`FAIL 0` and `PASS 8`. The eight passing checks cover the protections, Manual
 mode, no command approved in advance, `AGENTS.md`, git and the raw-data
-checksum. The other tests skip, waiting
-for the block that creates their files.
+checksum. The other tests skip: they wait for the block that creates their
+files.
 
 **5. The agent's model answers.** You did this in Step 7; if you skipped it, do
 it now, because Block 6 needs it.
 
 **6. The checkpoint branches are there.** The Git pane's branch menu should
-show `checkpoint-skills`, `checkpoint-cleaning` and `checkpoint-refactor`. Stay on `main`.
+list `checkpoint-skills`, `checkpoint-cleaning` and `checkpoint-refactor`,
+among the remote branches (as `origin/checkpoint-skills` and so on). Stay on `main`.
 
 **7. The code-review folder.** []{#ai-review}Block 9 reviews the Day 2 script
 in a folder of its own. In the R console:
@@ -380,9 +385,9 @@ download.file("https://osf.io/download/3x6hb/",
               file.path(review_dir, "ANALYSIS.R"), mode = "wb")
 ```
 
-It prints where it made the folder; check `ANALYSIS.R` is there. If the
-download fails, download `ANALYSIS.R` from the
-[OSF project](https://osf.io/jgeq9/) in your browser into that folder.
+It prints where it made the folder. Check that `ANALYSIS.R` is there. If the
+download fails, use your browser to download `ANALYSIS.R` from the
+[OSF project](https://osf.io/jgeq9/) into that folder.
 
 **You are done when** the Git pane shows no changes, Claude Code starts in
 Manual mode, `/permissions` lists 17 deny rules, the tests run with no

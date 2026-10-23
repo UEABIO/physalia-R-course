@@ -39,7 +39,7 @@ cleaning_inputs <- function() {
 
 test_that("raw data are unchanged", {
   checksum_path <- here::here("tests", "fixtures", "raw_checksum.txt")
-  skip_if_not(file.exists(checksum_path), "Block 7 Step 0 not done yet")
+  skip_if_not(file.exists(checksum_path), "no checksum file: tests/fixtures/raw_checksum.txt is missing")
   recorded <- readLines(checksum_path)
   current <- unname(tools::md5sum(here::here("data", "raw", "voles_raw.csv")))
   expect_identical(current, recorded)

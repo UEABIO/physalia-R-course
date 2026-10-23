@@ -9,9 +9,10 @@ library(here)
 library(webexercises)
 ```
 
-You build the two parts of an agent yourself, a conversation and a tool, then
-run a complete agent on a real task and approve every step it takes. After
-this, every control from Blocks 3 to 5 is something you can see in code.
+In this block you build the two parts of an agent yourself: a conversation and
+a tool. Then you run a complete agent on a real task and approve every step it
+takes. After this, every control from Blocks 3 to 5 is something you can see
+in code.
 
 *⏱ ~35 minutes · Start on `main`, Git pane clean, with your API key saved as
 `AGENT_ANTHROPIC_KEY` ([setup](11a-setup-claude-code.qmd#api-key)). Claude
@@ -21,10 +22,10 @@ Code is not used in this block.*
 ## This block's files, and how it fits
 
 You stay in your workshop repository, on `main`, straight after lunch. Claude
-Code is set aside: you use an agent you can read line by line, and give it the
-translation that the shipped `tests/test_translation.R` checks. Nothing later
-in the day uses its output, so if time is short your instructor may run Task 2
-on screen while you decide each approval in the chat.
+Code is set aside: you use an agent that you can read line by line. You give it
+the translation task that the shipped `tests/test_translation.R` checks.
+Nothing later in the day uses its output. So if time is short, your instructor
+may run Task 2 on screen while you decide each approval in the chat.
 
 | File | Where it comes from | Its job here |
 |---|---|---|
@@ -35,18 +36,19 @@ on screen while you decide each approval in the chat.
 | `scripts/functions/summaries.R` | Written by your agent, with your approval, in Task 2 | The translation |
 | A line in `docs/ai-log.md` | You, in Task 2 | The record |
 
-**Before you start.** ellmer, the package that talks to Claude and runs the
-loop, is pinned in your repository's `renv.lock`, so `renv::restore()`
-installed it; never run `install.packages()` inside the project. Your key
-comes from an Anthropic Console account, separate from a Claude subscription,
-and lives in your user-level `.Renviron`, outside every repository. Every
-request costs a little; Task 2 shows you how much the agent used.
+**Before you start.** ellmer is the package that talks to Claude and runs the
+loop. It is pinned in your repository's `renv.lock`, so `renv::restore()`
+installed it. Never run `install.packages()` inside the project. Your key
+comes from an Anthropic Console account, which is separate from a Claude
+subscription. The key lives in your user-level `.Renviron`, outside every
+repository. Every request costs a little; Task 2 shows you how much the agent
+used.
 
 The page follows the order of Hadley Wickham's explainer
 [*What is an agent?*](https://substack.hadley.nz/p/what-is-an-agent): a
 conversation, then a tool, then the loop. Joseph Barbier's talk *50 lines of
-code to rebuild Claude Code in R* builds the same kind of agent; the version
-here is our own.
+code to rebuild Claude Code in R* (R+AI 2026, 10 November) builds the same
+kind of agent; the version here is our own.
 :::
 
 
@@ -61,7 +63,7 @@ Talk to a model, then give it a tool (8 minutes)
 **Goal:** see what one request to a model is, and what a tool request is, so
 that nothing your agent does in Task 2 is a surprise.
 
-**1. Have a conversation.** In the R console:
+**1. Have a conversation.** Run this in the R console:
 
 ```{r}
 #| eval: false
@@ -77,8 +79,8 @@ chat
 Printing `chat` shows the conversation as `r glossary("turn", "turns")`. The
 second question works only because ellmer sends the **whole conversation so
 far** with each request: the model keeps nothing between requests. That is the
-[context window](11-AI-programming-integrated.qmd) from Block 1, and why a long
-conversation costs more per question.
+[context window](11-AI-programming-integrated.qmd) from Block 1. It is also why
+a long conversation costs more per question.
 
 **2. Give it a tool.** A tool is an R function the model may ask you to run:
 
@@ -96,17 +98,17 @@ chat$chat("How many days until 25 December?")
 chat
 ```
 
-The model sees only the tool's name and description. Its first reply is a
-request, "call `today`"; ellmer runs `today()` **on your computer** and sends
-the result back; then the model answers. That is two
+The model sees only the tool's name, description and arguments (here, none).
+Its first reply is a request: "call `today`". ellmer runs `today()` **on your
+computer** and sends the result back. Then the model answers. That is two
 `r glossary("request", "requests")` for one question.
 
 **You are done when** you can point, in the printed `chat`, to the tool
 request and to the tool result, and say which of them ran on your computer.
 
 **If it goes wrong:** if the first `chat$chat()` reports a missing or invalid
-key, check `Sys.getenv("AGENT_ANTHROPIC_KEY") != ""`, and restart R after
-editing `.Renviron`.
+key, check `Sys.getenv("AGENT_ANTHROPIC_KEY") != ""`. Restart R after you edit
+`.Renviron`.
 
 ::::
 :::
@@ -114,23 +116,24 @@ editing `.Renviron`.
 
 ## The loop
 
-An `r glossary("agent")` repeats that exchange: the harness sends the
-conversation, runs any tool the model asks for, adds the result, and sends it
-all again, until a reply asks for no tool. Every control in this course acts on
-one of three facts:
+An `r glossary("agent")` repeats that exchange until a reply asks for no tool.
+Each time, the `r glossary("harness")` sends the conversation, runs any tool
+the model asks for, adds the result, and sends it all again. Every control in
+this course acts on one of three facts:
 
 - **The model only asks.** The harness runs each tool on your computer, so
   that is where Manual mode asks you, a deny rule refuses, and a hook inspects.
 - **Results go back to the model.** A tool that reads a data file sends that
-  data to the provider: [Block 3's disclosure route](11d-context-disclosure-autonomy.qmd).
-- **The model decides when to stop.** It can loop longer than you expect,
-  which is why a real harness has limits and a stop key.
+  data to the provider:
+  [Block 3's disclosure route](11d-context-disclosure-autonomy.qmd).
+- **The model decides when to stop.** It can loop longer than you expect.
+  That is why a real harness has limits and a stop key.
 
 :::{.callout-tip collapse="true"}
 ## How it works: the loop with no model at all
 
 This code runs without an API key. It replaces the model with a pretend one
-that follows a script; each pass of `repeat` is one request.
+that follows a script. Each pass of `repeat` is one request.
 
 ```{r}
 # the tools, as plain R functions
@@ -180,23 +183,24 @@ goes back inside a user turn; ellmer does that for you.
 
 ## Your agent: `agent/mini_agent.R`
 
-Your repository ships a complete agent built from the same parts, about 80
-lines. Your instructor walks through it; each part matches something from this
+Your repository ships a complete agent of about 80 lines, built from the same
+parts. Your instructor walks through it. Each part matches something from this
 morning:
 
 - **Three tools.** `read_file()` looks around; `write_file()` changes a file;
   `run_test()` runs one test, `tests/test_translation.R`, in a fresh R session.
-- **`allowed()` is its deny rule.** It may read inside the project, but not
-  credentials files, and write **only under `scripts/`**, so it cannot edit its
-  checks in `tests/` or its own rules in `agent/`.
-- **`ask_first()` is Manual mode.** Reads go straight through; every write and
-  every test run is shown to you first, and refused unless you choose **Yes**.
-- **The system prompt is its instruction file.** It is not given your
-  `AGENTS.md` (it could still open the file, like any other), and like
-  `AGENTS.md` its prompt is only a request.
+- **`allowed()` is its deny rule.** The agent may read inside the project, but
+  not credentials files. It may write **only under `scripts/`**, so it cannot
+  edit its checks in `tests/` or its own rules in `agent/`.
+- **`ask_first()` is Manual mode.** Reads go straight through. Every write and
+  every test run is shown to you first, and is refused unless you choose
+  **Yes**.
+- **The system prompt is its instruction file.** The agent is not given your
+  `AGENTS.md`, though it could still open the file, like any other. Like
+  `AGENTS.md`, its prompt is only a request.
 
 Your agent can run one test and nothing else. A general run-R tool would let
-the model run any code, which is the gap Block 5 found: R code can write
+the model run any code. That is the gap Block 5 found: R code can write
 anywhere, whatever the deny rules say.
 
 :::{.callout-tip collapse="true"}
@@ -205,11 +209,11 @@ anywhere, whatever the deny rules say.
 ```{r, eval = FALSE, file = here::here("_instructor", "template-files", "agent", "mini_agent.R")}
 ```
 
-An error in a tool does not stop the agent: ellmer sends the error message
-back to the model, which can try something else, so a refused write comes back
-as "Refused: …". `run_test()` uses a fresh R session (`callr::r()`), so it
-cannot change the objects in yours, and only the last 40 lines of its output
-go back to the model.
+An error in a tool does not stop the agent. ellmer sends the error message back
+to the model, which can try something else. So a refused write comes back as
+"Refused: …". `run_test()` uses a fresh R session (`callr::r()`), so it cannot
+change the objects in yours. Only the last 40 lines of its output go back to
+the model.
 :::
 
 
@@ -250,9 +254,10 @@ chat$chat(paste(
 ```
 
 **3. Decide each request.** Reads run without asking. For a `write_file`
-request, read the code it prints and choose **Yes** only for a write to
+request, read the code it prints. Choose **Yes** only for a write to
 `scripts/functions/summaries.R`. **Refuse the first `run_test` on purpose:**
-the agent stops and explains. Then let it continue:
+the agent usually stops and explains. If it asks again at once, answer No
+again. Then let it continue:
 
 ```{r}
 #| eval: false
@@ -267,9 +272,9 @@ chat               # every turn: your prompt, its tool requests, the results
 chat$get_tokens()  # the tokens it sent and received
 ```
 
-**5. Check its work yourself.** The agent's "the test passes" is a claim. Read
-the diff of `scripts/functions/summaries.R` in the Git pane, then restart R
-(*Session → Restart R*) and run:
+**5. Check its work yourself.** When the agent says "the test passes", that is
+a claim. Read the diff of `scripts/functions/summaries.R` in the Git pane. Then
+restart R (*Session → Restart R*) and run:
 
 ```{r}
 #| eval: false
@@ -278,8 +283,8 @@ testthat::test_dir(here::here("tests"))
 
 **6. Record and commit.** Add a line to `docs/ai-log.md` with today's date,
 for example
-`2026-10-22; mini agent (ellmer, claude-sonnet-5-5); translated the rate summary to tidyverse; kept after reading the diff and running the tests`,
-then commit `summaries.R` and the log.
+`2026-10-22; mini agent (ellmer, claude-sonnet-5-5); translated the rate summary to tidyverse; kept after reading the diff and running the tests`.
+Then commit `summaries.R` and the log.
 
 `r hide("Did your agent notice the missing value?")`
 
@@ -287,7 +292,7 @@ then commit `summaries.R` and the log.
 `metabolic_rate_post` is missing, so the original's mean and count leave it
 out. A literal tidyverse translation keeps it: an `NA` mean and a count one
 too high. The test compares against the original, so the agent had to match
-that behaviour, and if it read the test it probably did so without comment.
+that behaviour. If it read the test, it probably did so without comment.
 The test checks "the same as the original", not "correct": Block 8 returns to
 that difference.
 
@@ -302,8 +307,10 @@ how many tokens, and both are committed.
 
 - **The agent loops or goes off course:** answer **No**, then steer it with
   `chat$chat("…")`, or `source()` the file again to start a new conversation.
-- **A refused path you expected to work:** check `getwd()` is the
-  repository's root.
+- **A refused write:** the agent can write only under `scripts/`; read the
+  path it asked for.
+- **`run_test` cannot find `tests/test_translation.R`:** check that `getwd()`
+  is the repository's root.
 - **An unwanted change:** **Revert** it in the Git pane.
 
 :::{.callout-tip collapse="true"}
@@ -311,7 +318,7 @@ how many tokens, and both are committed.
 
 `chat$get_cost()` turns the tokens into money when ellmer knows the model's
 price. If it shows `NA`, run `ellmer::models_update_prices()` once to refresh
-ellmer's price list, or multiply the tokens from `chat$get_tokens()` by the
+ellmer's price list. Or multiply the tokens from `chat$get_tokens()` by the
 prices on Anthropic's pricing page. `claude-opus-5-5`, set at the top of
 `mini_agent.R`, is a larger model at a higher price per token.
 :::
@@ -332,9 +339,8 @@ prices on Anthropic's pricing page. `claude-opus-5-5`, set at the top of
 | Git | Git |
 
 Claude Code adds plan mode, hooks, skills, compaction of long conversations,
-many more tools and far more checks around each one. Building the small
-version is a way to understand the big one, not a reason to use it for real
-work. In Block 7 you hand Claude Code a much bigger job under the same
+many more tools and far more checks around each one. You build the small
+version to understand the big one, not to use it for real work. In Block 7 you hand Claude Code a much bigger job under the same
 controls.
 
 
@@ -385,8 +391,12 @@ it is useful to you.
 :::{.callout-tip collapse="true"}
 ## Add a general `run_r()` tool, and see the gap reopen
 
-Give the agent this tool, register it alongside the others, and add
-`"run_r"` to the names `ask_first()` asks about:
+Add this tool to `agent/mini_agent.R`. Paste it after `run_test`. Add `run_r`
+to the `register_tools()` list, and add `"run_r"` to the names that
+`ask_first()` asks about. Then `source()` the file again for a new
+conversation. (Redefining
+`ask_first()` in the console has no effect: the chat keeps the copy it was
+given.)
 
 ```{r}
 #| eval: false
@@ -402,21 +412,21 @@ run_r <- tool(
   description = "Run R code in a fresh R session; return its printed output.",
   arguments = list(code = type_string("The R code to run."))
 )
-chat$register_tool(run_r)
 ```
 
 Now the model can run any code: `writeLines()` into `data/raw/`, or
-`Sys.getenv()` for your key. `allowed()` no longer protects anything, and only
-your approval stands in the way, exactly as in Block 5. A narrow tool such as
+`Sys.getenv()` for your key. `allowed()` no longer protects anything. Only your
+approval stands in the way, exactly as in Block 5. A narrow tool such as
 `run_test()` needs less trust than a general one.
 :::
 
 :::{.callout-tip collapse="true"}
 ## A restricted mode
 
-Change `ask_first()` so it asks before every call, reads included. You then
-see every file the agent wants to read before it is sent to the provider,
-which is the habit Block 3 recommends near confidential data.
+Change `ask_first()` in `agent/mini_agent.R` so that it asks before every
+call, reads included. Then `source()` the file again. You now see every file
+the agent wants to read before it is sent to the provider. Block 3 recommends
+this habit near confidential data.
 :::
 
 :::{.callout-tip collapse="true"}
@@ -433,8 +443,8 @@ which is the habit Block 3 recommends near confidential data.
 :::{.callout-tip collapse="true"}
 ## Another provider
 
-ellmer has a `chat_*()` function for each provider it supports, and the tools
-and loop stay the same. Tool calling can be much less reliable with small local
+ellmer has a `chat_*()` function for each provider it supports. The tools and
+the loop stay the same. Tool calling can be much less reliable with small local
 models, so start with a hosted model.
 :::
 
@@ -451,8 +461,10 @@ glossary_table()
 
 - Wickham, H. (2026, 5 June). *What is an agent?* AI for data science
   (Substack). <https://substack.hadley.nz/p/what-is-an-agent>
-- Barbier, J. *50 lines of code to rebuild Claude Code in R*. Talk abstract,
-  10 November (year and venue not stated in the abstract).
+- Barbier, J. (2026, 10 November). *50 lines of code to rebuild Claude Code in
+  R* [Conference talk]. R+AI 2026, R Consortium.
+  <https://rconsortium.github.io/RplusAI_website/Abstracts.html>; code:
+  <https://github.com/JosephBARBIERDARNAL/r-claude-code>
 - Wickham, H., Cheng, J., Jacobs, A., Aden-Buie, G. and Schloerke, B. (2026).
   *ellmer: Chat with large language models*. R package version 0.5.0.
   <https://CRAN.R-project.org/package=ellmer>
