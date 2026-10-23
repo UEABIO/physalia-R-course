@@ -666,8 +666,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><p>All day you worked with an agent on your own machine that you could watch and interrupt. Here you hand a task to an agent that works on GitHub’s servers while you do something else, and returns a pull request. You check it the way the day taught you: a reference you captured, a test it did not write, and your own review.</p>
-<p><em>Self-study: about 45 minutes, after the workshop day.</em> <strong>Start state:</strong> your workshop repository, committed, pushed to your fork on GitHub, with <code>scripts/explore_mass_change_plot.R</code> from Block 3 on <code>main</code>. If you did not finish it, copy it from <code>checkpoint-skills</code> in the Terminal (<code>git checkout checkpoint-skills -- scripts/explore_mass_change_plot.R</code>), then commit and push: the cloud agent works from <code>main</code> on GitHub. You need a Copilot plan that includes the cloud agent (see below).</p>
+</header><p>All day you worked with an agent on your own machine, which you could watch and interrupt. Here you hand a task to an agent that works on GitHub’s servers while you do something else. It returns a pull request. You check it the way the day taught you: a reference you captured, a test it did not write, and your own review.</p>
+<p><em>Self-study: about 45 minutes, after the workshop day.</em> <strong>Start state:</strong> your workshop repository, committed, pushed to your fork on GitHub, with <code>scripts/explore_mass_change_plot.R</code> from Block 3 on <code>main</code>. If you did not finish it, copy it from <code>checkpoint-skills</code> in the Terminal (<code>git checkout checkpoint-skills -- scripts/explore_mass_change_plot.R</code>). Then commit and push: the cloud agent works from <code>main</code> on GitHub. You need a Copilot plan that includes the cloud agent (see below).</p>
 <div id="copilot-files" class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -680,7 +680,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>This is the remote rung of <a href="./11d-context-disclosure-autonomy.html">Block 3’s autonomy ladder</a>: the agent works on GitHub, on its own branch, and never touches your machine. Your deny rules and Manual mode do not exist there. The controls move onto the repository: who must review a change (CODEOWNERS), what must pass before it merges (branch protection and a <a class="glossary">continuous integration<span class="def">Automated checks, such as tests, that run on a server each time changes are pushed or a pull request is opened. In this course, GitHub Actions.</span></a> (CI) check), and the environment the agent runs in.</p>
+<p>This is the remote <a class="glossary">rung<span class="def">One level of the autonomy ladder in Block 3, from suggesting a line (rung 0) to acting with no prompts (rung 5). Each step up removes a moment when you would have seen an action before it happened.</span></a> of <a href="./11d-context-disclosure-autonomy.html">Block 3’s autonomy ladder</a>: the agent works on GitHub, on its own branch, and never touches your machine. Your deny rules and Manual mode do not exist there. The controls move onto the repository:</p>
+<ul>
+<li>who must review a change (<a class="glossary">CODEOWNERS<span class="def">A GitHub file listing who must review changes to which paths. With branch protection, a pull request that touches those paths cannot merge without their review.</span></a>);</li>
+<li>what must pass before it merges (<a class="glossary">branch protection<span class="def">GitHub repository settings that stop changes reaching a branch such as main unless conditions are met, for example a passing check and an approved review.</span></a> and a <a class="glossary">continuous integration<span class="def">Automated checks, such as tests, that run on a server each time changes are pushed or a pull request is opened. In this course, GitHub Actions.</span></a> (CI) check);</li>
+<li>the environment the agent runs in.</li>
+</ul>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -770,7 +775,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="task-container">
 <p><strong>Goal:</strong> make every change to your tests, references and settings wait for your review and a passing check, so that an agent you cannot watch still cannot merge anything you have not seen.</p>
-<p><strong>1. Name yourself code owner of the protected paths.</strong> Create <code>.github/CODEOWNERS</code> on your default branch, replacing the username:</p>
+<p><strong>1. Name yourself code owner of the protected paths.</strong> Create <code>.github/CODEOWNERS</code> on your default branch with these lines, using your own username:</p>
 <pre><code>/data/raw/            @your-github-username
 /tests/               @your-github-username
 /.github/             @your-github-username
@@ -795,7 +800,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-16"><a href="#cb2-16" aria-label="16"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-renv@v2</span></span>
 <span id="cb2-17"><a href="#cb2-17" aria-label="17"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Run tests</span></span>
 <span id="cb2-18"><a href="#cb2-18" aria-label="18"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> Rscript -e 'testthat::test_dir("tests", stop_on_failure = TRUE)'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>3. Push, then protect <code>main</code>.</strong> Commit and push steps 1–2. A fork starts with its workflows turned off: open the <strong>Actions</strong> tab, enable them, and wait for the <code>r-checks</code> run to finish (GitHub offers a status check only after it has run). Then, in your fork’s <em>Settings → Branches</em>, add a branch protection rule for <code>main</code> that requires a pull request before merging and requires the <code>r-checks</code> status check to pass. Leave <em>Do not allow bypassing the above settings</em> unticked: as the owner, you push the set-up commits in Tasks 2 and 3 straight to <code>main</code>.</p>
+<p><strong>3. Push, then protect <code>main</code>.</strong> Commit and push steps 1–2. A fork starts with its workflows turned off. Open the <strong>Actions</strong> tab and enable them. Wait for the <code>r-checks</code> run to finish: GitHub offers a status check only after it has run. Then open your fork’s <em>Settings → Branches</em> and add a branch protection rule for <code>main</code>. Set it to require a pull request before merging, and to require the <code>r-checks</code> status check to pass. Leave <em>Do not allow bypassing the above settings</em> unticked: as the owner, you push the set-up commits in Tasks 2 and 3 straight to <code>main</code>.</p>
 <p><strong>You are done when</strong> the <code>r-checks</code> run on <code>main</code> is green in the Actions tab, and the branch rule lists both requirements.</p>
 </div>
 </div>
@@ -815,9 +820,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>
 <strong>CODEOWNERS</strong> asks you to review any pull request that changes a path you own. It works in public repositories on free plans; for private repositories it needs a paid plan.</li>
 <li>
-<strong><code>r-checks</code></strong> runs on GitHub, independent of your machine and of the agent’s environment. It is not tamper-proof: a pull request could change the workflow or the reference it checks against. CODEOWNERS and branch protection make a green run meaningful, because every change to those paths is flagged for your review, and reaches <code>main</code> only when you merge it.</li>
+<strong><code>r-checks</code></strong> runs on GitHub, independent of your machine and of the agent’s environment. It is not tamper-proof: a pull request could change the workflow or the reference it checks against. CODEOWNERS and branch protection make a green run meaningful. Every change to those paths is flagged for your review, and reaches <code>main</code> only when you merge it.</li>
 <li>
-<strong>Approving the agent’s pull request.</strong> GitHub does not count an approval from the person who asked Copilot for the pull request; where approvals are required, someone else must approve. In your own fork there is no one else, so this rule does not require approvals: CODEOWNERS requests your review, <code>r-checks</code> must pass, and nothing reaches <code>main</code> until you merge it. In a shared repository, also require a code owner’s approval, so that a colleague reviews what the agent wrote for you.</li>
+<strong>Approving the agent’s pull request.</strong> GitHub does not count an approval from the person who asked Copilot for the pull request. Where approvals are required, someone else must approve. In your own fork there is no one else, so this rule does not require approvals. Instead, CODEOWNERS requests your review, <code>r-checks</code> must pass, and nothing reaches <code>main</code> until you merge it. In a shared repository, also require a code owner’s approval, so that a colleague reviews what the agent wrote for you.</li>
 </ul>
 </div>
 </div>
@@ -882,9 +887,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>
 <strong>The file must be on the default branch</strong>, or it is not used.</li>
 <li>
-<strong>The runner must be Ubuntu x64 Linux or Windows 64-bit.</strong> The cloud agent does not support macOS runners; Ubuntu is the usual choice for R. A <code>timeout-minutes</code> setting may be at most 59.</li>
+<strong>The runner must be Ubuntu x64 Linux or Windows 64-bit.</strong> The cloud agent does not support macOS runners. Ubuntu is the usual choice for R. A <code>timeout-minutes</code> setting may be at most 59.</li>
 <li>
-<strong>The lockfile must be restored.</strong> If the wrong versions are installed, the failure is quiet: tests pass against different package behaviour, and your reference certifies sameness against the wrong baseline.</li>
+<strong>The lockfile must be restored.</strong> If the wrong versions are installed, the failure is quiet. Tests pass against different package behaviour, and your reference confirms sameness against the wrong baseline.</li>
 </ul>
 <p>When the agent’s test run and <code>r-checks</code> disagree, suspect the environment before the code.</p>
 </div>
@@ -897,7 +902,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="task-container">
 <p><strong>Goal:</strong> freeze what the plot looks like now, from the original code, so that the agent’s refactor can be checked against something it did not produce.</p>
-<p><strong>1. Write the capture script.</strong> In the R console, <code>usethis::edit_file("tests/make_plot_reference.R")</code>, then:</p>
+<p><strong>1. Write the capture script.</strong> In the R console, run <code>usethis::edit_file("tests/make_plot_reference.R")</code>. Then copy this into the file and save it:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a><span class="co"># tests/make_plot_reference.R ----</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-label="2"></a><span class="co"># Run ONCE, by you, BEFORE any refactoring.</span></span>
@@ -909,9 +914,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-8"><a href="#cb4-8" aria-label="8"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>layer_data()</code> is the data ggplot2 draws for the plot’s first layer: every position, group and colour it plots. It is what “the plot is unchanged” means in a test.</p>
-<p><strong>2. Run it in a fresh session, then commit and push.</strong> Restart R (<em>Session → Restart R</em>), run <code>source(here::here("tests", "make_plot_reference.R"))</code>, and commit the script and <code>tests/fixtures/mass_change_plot.rds</code> with the message “Capture plot reference before refactoring”. Push.</p>
+<p><strong>2. Run it in a fresh session, then commit and push.</strong> Restart R (<em>Session → Restart R</em>). Run <code>source(here::here("tests", "make_plot_reference.R"))</code>. Commit the script and <code>tests/fixtures/mass_change_plot.rds</code> with the message “Capture plot reference before refactoring”. Then push.</p>
 <p><strong>You are done when</strong> the reference is on <code>main</code> on GitHub.</p>
-<p><strong>If it goes wrong:</strong> if the plot jitters its points, <code>layer_data()</code> changes every time the plot is drawn, and <code><a href="https://rdrr.io/r/base/Random.html">set.seed()</a></code> before the plot does not stop it. Fix the jitter inside the plot instead, for example <code>geom_jitter(position = position_jitter(width = 0.2, seed = 2026))</code>, commit that first, then capture.</p>
+<p><strong>If it goes wrong:</strong> if the plot jitters its points, <code>layer_data()</code> changes every time the plot is drawn, and <code><a href="https://rdrr.io/r/base/Random.html">set.seed()</a></code> before the plot does not stop it. Fix the jitter inside the plot instead, for example with <code>geom_jitter(position = position_jitter(width = 0.2, seed = 2026))</code>. Commit that first, then capture the reference.</p>
 </div>
 </div>
 </section><section id="task-4-hand-over-the-refactor" class="level2"><h2 class="anchored" data-anchor-id="task-4-hand-over-the-refactor">Task 4: hand over the refactor</h2>
@@ -921,7 +926,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="task-container">
 <p><strong>Goal:</strong> have the cloud agent move the plot into a function and review its pull request, so that you check its work before anything reaches <code>main</code>.</p>
-<p><strong>1. Open an issue and assign it to Copilot.</strong> On your fork, <em>Issues</em> → <em>New issue</em>, then set the assignee to <strong>Copilot</strong>:</p>
+<p><strong>1. Open an issue and assign it to Copilot.</strong> On your fork, choose <em>Issues</em> → <em>New issue</em>. Use the text below, then set the assignee to <strong>Copilot</strong>:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a>Title: Move the mass-change plot into a function</span>
 <span id="cb5-2"><a href="#cb5-2" aria-label="2"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-label="3"></a>Move the plot in scripts/explore_mass_change_plot.R into a documented</span>
@@ -934,18 +939,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-10"><a href="#cb5-10" aria-label="10"></a>Acceptance criteria:</span>
 <span id="cb5-11"><a href="#cb5-11" aria-label="11"></a>- Do not add or change anything under tests/, data/ or .github/.</span>
 <span id="cb5-12"><a href="#cb5-12" aria-label="12"></a>- The plot must be unchanged: same layers, same data, same order.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The agent works on its own branch; you can follow its session log from the pull request it opens, and stop or steer it there.</p>
+<p>The agent works on its own branch. You can follow its session log from the pull request it opens, and stop or steer it there.</p>
 <p><strong>2. Review the pull request when it arrives.</strong></p>
 <ol type="1">
 <li>
 <strong>Files changed:</strong> only <code>scripts/functions/plot_functions.R</code> and <code>scripts/explore_mass_change_plot.R</code>. Anything else, especially under <code>tests/</code> or <code>.github/</code>, should not merge.</li>
 <li>
-<strong>Checks:</strong> workflows do not run on the agent’s pull requests until someone approves them, so click <strong>Approve and run workflows</strong> if the pull request shows it. Then <code>r-checks</code> must pass.</li>
+<strong>Checks:</strong> workflows do not run on the agent’s pull requests until someone approves them. If the pull request shows <strong>Approve and run workflows</strong>, click it. Then <code>r-checks</code> must pass.</li>
 <li>
-<strong>Your own run:</strong> in the Git pane, click <strong>Pull</strong>, then choose the agent’s <code>copilot/…</code> branch from the branch menu; restart R, and run the script and the suite. The agent’s “it works” is a claim; your run is the check.</li>
+<strong>Your own run:</strong> in the Git pane, click <strong>Pull</strong>. Choose the agent’s <code>copilot/…</code> branch from the branch menu. Restart R, then run the script and the test suite. When the agent says “it works”, that is a claim; your run is the check.</li>
 </ol>
 <p><strong>3. Merge, or ask for a revision</strong> by commenting on the pull request.</p>
-<p><strong>4. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; GitHub Copilot cloud agent and model; task; what you kept or changed), and commit.</p>
+<p><strong>4. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; GitHub Copilot cloud agent and model; task; what you kept or changed), then commit.</p>
 <p><strong>You are done when</strong> the refactor is merged, with <code>r-checks</code> green and only the two expected files changed.</p>
 </div>
 </div>
@@ -970,7 +975,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb6-11"><a href="#cb6-11" aria-label="11"></a>- Do not create, modify or regenerate anything under tests/fixtures/, and do</span>
 <span id="cb6-12"><a href="#cb6-12" aria-label="12"></a>  not run tests/make_plot_reference.R.</span>
 <span id="cb6-13"><a href="#cb6-13" aria-label="13"></a>- Run the tests and report the result in the pull request description.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>2. Review it.</strong> CODEOWNERS asks for your review because it touches <code>tests/</code>. Check, as in Block 8, that the test reads your <code>.rds</code>, calls the function, and does not type numbers in; that nothing under <code>tests/fixtures/</code> changed; and that <code>r-checks</code> passed. Then run the suite yourself.</p>
+<p><strong>2. Review it.</strong> CODEOWNERS asks for your review because the pull request touches <code>tests/</code>. As in Block 8, check that:</p>
+<ul>
+<li>the test reads your <code>.rds</code>, calls the function, and does not type numbers in;</li>
+<li>nothing under <code>tests/fixtures/</code> changed;</li>
+<li>
+<code>r-checks</code> passed.</li>
+</ul>
+<p>Then run the test suite yourself.</p>
 <p><strong>3. Merge, and record it</strong> in <code>docs/ai-log.md</code>.</p>
 <p><strong>You are done when</strong> the test is merged, <code>r-checks</code> is green, and <code>tests/fixtures/</code> is unchanged since your commit in Task 3.</p>
 </div>
@@ -999,16 +1011,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>Where do the cloud agent’s changes land?</strong></p>
-<div id="radio_HCCNRXIWVQ" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_HCCNRXIWVQ" value=""><span>In your local working directory, as it works</span></label><label><input type="radio" autocomplete="off" name="radio_HCCNRXIWVQ" value="answer"><span>On its own branch on GitHub, proposed as a pull request that you review before anything reaches main</span></label><label><input type="radio" autocomplete="off" name="radio_HCCNRXIWVQ" value=""><span>Directly on main, with an email to you afterwards</span></label><label><input type="radio" autocomplete="off" name="radio_HCCNRXIWVQ" value=""><span>Nowhere until you run it in your IDE</span></label>
+<div id="radio_QSBYIVJWJL" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_QSBYIVJWJL" value=""><span>In your local working directory, as it works</span></label><label><input type="radio" autocomplete="off" name="radio_QSBYIVJWJL" value="answer"><span>On its own branch on GitHub, proposed as a pull request that you review before anything reaches main</span></label><label><input type="radio" autocomplete="off" name="radio_QSBYIVJWJL" value=""><span>Directly on main, with an email to you afterwards</span></label><label><input type="radio" autocomplete="off" name="radio_QSBYIVJWJL" value=""><span>Nowhere until you run it in your IDE</span></label>
 </div>
 <p><strong>Why hand over the refactor and the test as two issues, not one?</strong></p>
-<div id="radio_SBCEYYPYLJ" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_SBCEYYPYLJ" value=""><span>The cloud agent can only change one file per issue</span></label><label><input type="radio" autocomplete="off" name="radio_SBCEYYPYLJ" value="answer"><span>So that one misunderstanding cannot shape both the code and the check that is meant to catch it</span></label><label><input type="radio" autocomplete="off" name="radio_SBCEYYPYLJ" value=""><span>Because tests run faster in a separate pull request</span></label><label><input type="radio" autocomplete="off" name="radio_SBCEYYPYLJ" value=""><span>Two issues cost less than one</span></label>
+<div id="radio_KSWOWHYNKS" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_KSWOWHYNKS" value=""><span>The cloud agent can only change one file per issue</span></label><label><input type="radio" autocomplete="off" name="radio_KSWOWHYNKS" value="answer"><span>So that one misunderstanding cannot shape both the code and the check that is meant to catch it</span></label><label><input type="radio" autocomplete="off" name="radio_KSWOWHYNKS" value=""><span>Because tests run faster in a separate pull request</span></label><label><input type="radio" autocomplete="off" name="radio_KSWOWHYNKS" value=""><span>Two issues cost less than one</span></label>
 </div>
 <p><strong>Which control stops the cloud agent from quietly regenerating your reference?</strong></p>
-<div id="radio_UBWBQYFWAY" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_UBWBQYFWAY" value=""><span>The deny rules in .claude/settings.json</span></label><label><input type="radio" autocomplete="off" name="radio_UBWBQYFWAY" value=""><span>Manual mode</span></label><label><input type="radio" autocomplete="off" name="radio_UBWBQYFWAY" value="answer"><span>Branch protection and CODEOWNERS: its change reaches main only through a pull request that flags tests/ for your review and that you merge</span></label><label><input type="radio" autocomplete="off" name="radio_UBWBQYFWAY" value=""><span>AGENTS.md</span></label>
+<div id="radio_JRHFJCEUOF" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_JRHFJCEUOF" value=""><span>The deny rules in .claude/settings.json</span></label><label><input type="radio" autocomplete="off" name="radio_JRHFJCEUOF" value=""><span>Manual mode</span></label><label><input type="radio" autocomplete="off" name="radio_JRHFJCEUOF" value="answer"><span>Branch protection and CODEOWNERS: its change reaches main only through a pull request that flags tests/ for your review and that you merge</span></label><label><input type="radio" autocomplete="off" name="radio_JRHFJCEUOF" value=""><span>AGENTS.md</span></label>
 </div>
 </section><section id="going-further" class="level2"><h2 class="anchored" data-anchor-id="going-further">Going further</h2>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -1023,7 +1035,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>You can also request Copilot as a <em>reviewer</em> on any pull request: its comments appear on the changed lines, like a colleague’s. It reads the repository’s instruction files (<code>.github/copilot-instructions.md</code>, or <code>AGENTS.md</code> as in <a href="./11e-instructions-skills.html">Block 4</a>). To have it apply the standard from Block 9’s review prompt (the four Rs, the intended analysis, no praise, NEEDS HUMAN CHECK), add those rules to <code>.github/copilot-instructions.md</code> first. Grade what it finds the way you graded the review in <a href="./11h-code-review.html">Block 9</a>.</p>
+<p>You can also request Copilot as a <em>reviewer</em> on any pull request. Its comments appear on the changed lines, like a colleague’s. It reads the repository’s instruction files (<code>.github/copilot-instructions.md</code>, or <code>AGENTS.md</code> as in <a href="./11e-instructions-skills.html">Block 4</a>). Block 9’s review prompt sets a standard: the four Rs, the intended analysis, no praise, NEEDS HUMAN CHECK. To have Copilot apply it, first add those rules to <code>.github/copilot-instructions.md</code>. Grade what it finds the way you graded the review in <a href="./11h-code-review.html">Block 9</a>.</p>
 </div>
 </div>
 </div>
@@ -1035,10 +1047,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
 <th style="text-align: left;" data-quarto-table-cell-role="th">definition</th>
 </tr></thead>
-<tbody><tr class="odd">
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">branch protection</td>
+<td style="text-align: left;">GitHub repository settings that stop changes reaching a branch such as main unless conditions are met, for example a passing check and an approved review.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">CODEOWNERS</td>
+<td style="text-align: left;">A GitHub file listing who must review changes to which paths. With branch protection, a pull request that touches those paths cannot merge without their review.</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">continuous integration</td>
 <td style="text-align: left;">Automated checks, such as tests, that run on a server each time changes are pushed or a pull request is opened. In this course, GitHub Actions.</td>
-</tr></tbody>
+</tr>
+<tr class="even">
+<td style="text-align: left;">rung</td>
+<td style="text-align: left;">One level of the autonomy ladder in Block 3, from suggesting a line (rung 0) to acting with no prompts (rung 5). Each step up removes a moment when you would have seen an action before it happened.</td>
+</tr>
+</tbody>
 </table>
 </div>
 </div>

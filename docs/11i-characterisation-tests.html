@@ -664,7 +664,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><p>You let an agent turn working code into a function and prove nothing changed, with a <a class="glossary">characterisation test<span class="def">A test that checks new code reproduces the saved output of the original code exactly. It shows the output is unchanged, not that it is correct.</span></a> as in the <a href="./05-tidy-evaluation.html">tidy-evaluation chapter</a>: the original output, frozen as a reference, must be reproduced exactly. Then you decide whether the unchanged output is right; changing it on purpose, and recording why, is an exercise for after the day.</p>
+</header><p>You let an agent turn working code into a function and prove that nothing changed. The proof is a <a class="glossary">characterisation test<span class="def">A test that checks new code reproduces the saved output of the original code exactly. It shows the output is unchanged, not that it is correct.</span></a>, as in the <a href="./05-tidy-evaluation.html">tidy-evaluation chapter</a>: the new code must reproduce the original output exactly. That output is frozen as a <a class="glossary">reference<span class="def">In a characterisation test, the saved output of the original, trusted code (stored in tests/fixtures/). You capture it yourself, once, before any refactoring; the agent never creates or regenerates it.</span></a>. Then you decide whether the unchanged output is right. Changing it on purpose, and recording why, is an exercise for after the day.</p>
 <p><em>⏱ ~25 minutes · Start on <code>main</code> (or <code>checkpoint-cleaning</code>), Git pane clean, Claude Code running in Manual mode.</em></p>
 <div id="block8-files" class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
@@ -678,7 +678,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Back to <code>data/raw/voles_metabolism.csv</code>, the data you explored in Block 3, not Block 7’s cleaned file; Block 7’s tests run with everything else, and skip if you did not finish it. Nothing needs downloading. Short of time at any step? <code>checkpoint-refactor</code> has Step 1 done. The block follows <a href="./11d-context-disclosure-autonomy.html#safe-recipe">the safe vibe-coding recipe</a>: your part is one request, one commit, one read of the diff and one test run.</p>
+<p>This block goes back to <code>data/raw/voles_metabolism.csv</code>, the data you explored in Block 3, not Block 7’s cleaned file. Block 7’s tests run with everything else, and skip if you did not finish Block 7. Nothing needs downloading. Short of time at any step? <code>checkpoint-refactor</code> has Step 1 done. The block follows <a href="./11d-context-disclosure-autonomy.html#safe-recipe">the safe vibe-coding recipe</a>: your part is one request, one commit, one read of the diff and one test run.</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -726,7 +726,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <code>tests/test_reference_guard.R</code>, <code>tests/test_controls.R</code>
 </td>
 <td>Course team</td>
-<td>Check the agent’s test reads your reference file and calls the function, the reference is unchanged since your commit, and the new test is protected</td>
+<td>Check that the agent’s test reads your reference file and calls the function, that the reference is unchanged since your commit, and that the new test is protected</td>
 <td>1, 2</td>
 </tr>
 <tr class="even">
@@ -779,8 +779,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="task-container">
 <p><strong>Goal:</strong> confirm the reference and its capture script are protected, and that no reference exists yet, so that the reference you capture in Step 1 can only come from the original code.</p>
 <p><strong>Start state:</strong> as at the top of the page.</p>
-<p><strong>1. Check the protections.</strong> In Claude Code, type <code>/permissions</code>. The <a class="glossary">deny rules<span class="def">A permission rule in the deny list of .claude/settings.json that stops Claude Code’s built-in tools from editing or reading the matching files. It checks shell output redirects such as &gt; file, but not R code or most other commands that change the same files.</span></a> <code>Edit(/tests/fixtures/**)</code> and <code>Edit(/tests/make_reference.R)</code> keep the agent’s edit tools off the reference and its capture script; the Git pane shows a change by any other route.</p>
-<p><strong>2. Check there is no reference yet.</strong> <code>tests/fixtures/</code> holds only <code>raw_checksum.txt</code> (Block 7).</p>
+<p><strong>1. Check the protections.</strong> In Claude Code, type <code>/permissions</code>. The <a class="glossary">deny rules<span class="def">A permission rule in the deny list of .claude/settings.json that stops Claude Code’s built-in tools from editing or reading the matching files. It checks shell output redirects such as &gt; file, but not R code or most other commands that change the same files.</span></a> <code>Edit(/tests/fixtures/**)</code> and <code>Edit(/tests/make_reference.R)</code> keep the agent’s edit tools off the reference and its capture script. The Git pane shows a change made by any other route.</p>
+<p><strong>2. Check there is no reference yet.</strong> In the Files pane, open <code>tests/fixtures/</code>. It should hold only <code>raw_checksum.txt</code> (Block 7).</p>
 <p><strong>You are done when</strong> you have seen the two rules, and <code>tests/fixtures/</code> has no <code>.rds</code> file.</p>
 <p><strong>If it goes wrong:</strong> far behind? Switch to <code>checkpoint-refactor</code> in the Git pane’s branch menu and read on.</p>
 </div>
@@ -908,7 +908,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section><section id="step-1" class="level2"><h2 class="anchored" data-anchor-id="step-1">Step 1: snapshot, refactor and test with the skill</h2>
-<p><code>scripts/05_analysis.R</code> summarises post-treatment metabolic rate (mean, SD and count) by treatment arm and sex. Notice one thing and leave it alone: one animal has no <code>metabolic_rate_post</code> and there is no <code>na.rm</code>, so the mean and the SD for its group are both <code>NA</code>.</p>
+<p><code>scripts/05_analysis.R</code> summarises post-treatment metabolic rate (mean, SD and count) by treatment arm and sex. Notice one thing and leave it alone. One animal has no <code>metabolic_rate_post</code>, and the code has no <code>na.rm</code>, so the mean and the SD for its group are both <code>NA</code>.</p>
 <p>The shipped <a class="glossary">skill<span class="def">A folder containing a SKILL.md file (and optionally scripts and templates) that an assistant loads only when it is invoked by name or judged relevant from its description.</span></a> <code>characterisation-refactor</code> does the work in order and stops for you after each part.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
@@ -970,16 +970,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="task-container">
 <p><strong>Goal:</strong> one request to the skill, ending with a committed reference, a refactored function and a protected test that proves the output unchanged, so that you can restructure working code without fearing that its results moved.</p>
-<p><strong>Start state:</strong> Step 0 done, Git pane clean; <code>/clear</code> any earlier conversation in Claude Code.</p>
+<p><strong>Start state:</strong> Step 0 done, Git pane clean. In Claude Code, type <code>/clear</code> to clear any earlier conversation.</p>
 <p><strong>1. Ask.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a>/characterisation-refactor Move the summary in scripts/05_analysis.R into</span>
 <span id="cb5-2"><a href="#cb5-2" aria-label="2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The skill shows its plan as a message and waits. Read it, then reply in Claude Code: <em>Yes, go ahead</em>, or say what to change. The plan should capture the reference first.</p>
-<p><strong>2. Approve the capture, then commit the reference.</strong> The skill asks to run <code>tests/make_reference.R</code>. <strong>Answer each request with plain Yes or No.</strong> Never choose an option that says <em>don’t ask again</em>: it saves a rule that skips the question from then on. Approve a run only if you can say what it does and why you want it now; refusing is always safe. Here you can: it saves the original code’s output before anything changes. When the skill stops, the Git pane should show only <code>tests/fixtures/metabolic_summary.rds</code> as new: commit it (“Capture reference output before refactoring”) and tell the agent to carry on.</p>
-<p><strong>3. Read the diff when it stops again.</strong> <strong>Diff</strong> each changed file in the Git pane, looking for anything beyond moving the code into the function, then tell it to carry on and write the test. If it asks whether to commit the refactor first, reply <em>No, go ahead</em>: you commit everything at the end.</p>
-<p><strong>4. Protect the new test.</strong> The skill runs only its new test file, reports the output and stops. Now protect that test, so the agent cannot later change it to make a failing run pass: in <code>/permissions</code>, add the deny rule <code>Edit(/tests/test_summary_functions.R)</code>, saved to the project’s shared settings file, <code>.claude/settings.json</code>.</p>
-<p><strong>5. Run the whole suite.</strong> Restart R (<em>Session → Restart R</em>), so that nothing left in your session can make a test pass, then in the R console:</p>
+<p>The skill shows its plan as a message and waits. Read it: the plan should capture the reference first. Then reply in Claude Code: <em>Yes, go ahead</em>, or say what to change.</p>
+<p><strong>2. Approve the capture, then commit the reference.</strong> The skill asks to run <code>tests/make_reference.R</code>. <strong>Answer each request with plain Yes or No.</strong> Never choose an option that says <em>don’t ask again</em>: it saves a rule that skips the question from then on. Approve a run only if you can say what it does and why you want it now. Refusing is always safe. Here you can say both: it saves the original code’s output before anything changes. When the skill stops, the Git pane should show only <code>tests/fixtures/metabolic_summary.rds</code> as new. Commit it (“Capture reference output before refactoring”), then tell the agent to carry on.</p>
+<p><strong>3. Read the diff when it stops again.</strong> In the Git pane, click <strong>Diff</strong> on each changed file. Look for anything beyond moving the code into the function. Then tell the agent to carry on and write the test. If it asks whether to commit the refactor first, reply <em>No, go ahead</em>: you commit everything at the end.</p>
+<p><strong>4. Protect the new test.</strong> The skill runs only its new test file, reports the output and stops. Now protect that test, so the agent cannot later change it to make a failing run pass. In <code>/permissions</code>, add the deny rule <code>Edit(/tests/test_summary_functions.R)</code>. Save it to the project’s shared settings file, <code>.claude/settings.json</code>.</p>
+<p><strong>5. Run the whole suite.</strong> Restart R (<em>Session → Restart R</em>), so that nothing left in your session can make a test pass. Then run this in the R console:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_dir</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -1010,8 +1010,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 </tbody>
 </table>
-<p>The guard cannot tell whether numbers were also typed into the test; reading the test can. Other blocks’ tests pass or skip.</p>
-<p><strong>6. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; tool and model; task; what you kept or changed), noting whether the test passed first time.</p>
+<p>The guard cannot tell whether numbers were also typed into the test. Reading the test can. Other blocks’ tests pass or skip.</p>
+<p><strong>6. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; tool and model; task; what you kept or changed). Note whether the test passed first time.</p>
 <p><strong>You are done when</strong> the suite has no failures and the Git pane shows only the function, <code>05_analysis.R</code>, the new test, <code>.claude/settings.json</code> and your log as changed. Commit them.</p>
 <p><strong>If it goes wrong:</strong> see <em>Fixes for Step 1</em> below the task, or switch to <code>checkpoint-refactor</code>.</p>
 <p><strong>Payoff.</strong> What did the agent do, how long did checking it take, and would you automate this again?</p>
@@ -1031,11 +1031,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="callout-body-container callout-body">
 <ul>
 <li>
-<strong>The capture.</strong> If the agent declines to run <code>make_reference.R</code>, or a guard hook from Block 5 blocks it, capture it yourself: restart R, run <code>source(here::here("tests", "make_reference.R"))</code>, commit the <code>.rds</code>, and tell the agent the reference is committed.</li>
+<strong>The capture.</strong> If the agent declines to run <code>make_reference.R</code>, or a guard hook from Block 5 blocks it, capture the reference yourself. Restart R, run <code>source(here::here("tests", "make_reference.R"))</code>, commit the <code>.rds</code>, and tell the agent the reference is committed.</li>
 <li>
 <strong>Changed files.</strong> If anything other than the <code>.rds</code> changed before your commit, <strong>Revert</strong> it and ask again.</li>
 <li>
-<strong>Row order.</strong> A failure on row order, not values, means the function used <code>.by</code> without sorting: ask the agent to add <code>dplyr::arrange(treatment_arm, sex)</code>.</li>
+<strong>Row order.</strong> If the test fails on row order, not values, the function used <code>.by</code> without sorting. Ask the agent to add <code>dplyr::arrange(treatment_arm, sex)</code>.</li>
 <li>
 <strong>The new rule.</strong> If <code>test_controls.R</code> says the test is unprotected, check the rule’s spelling in <code>/permissions</code>. If <code>settings.json</code> is not in the Git pane, the rule went to the local file: remove it there and add it again, choosing <code>.claude/settings.json</code>. If the agent offers to add the rule itself, refuse: it is yours to add.</li>
 </ul>
@@ -1055,9 +1055,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p><strong>The capture.</strong> The skill runs <code>make_reference.R</code> only if no reference exists yet and <code>scripts/</code> has no uncommitted changes, and never again after that. Who runs the capture script matters less than <em>when</em>: before any code changes, from a script you trust, and committed by you. After that, git and <code>test_reference_guard.R</code> notice any change to the reference.</p>
-<p><strong>The shared settings file.</strong> <code>/permissions</code> can save a rule to <code>.claude/settings.json</code>, which you commit, or to the local <code>.claude/settings.local.json</code>, which git ignores, so a rule saved there would never reach a commit. The rule takes effect at once.</p>
-<p><strong>No known-answer case yet.</strong> Your <code>AGENTS.md</code> asks for a known-answer test with every new function. The skill’s test rules take precedence: a characterisation test compares with the original output, and known-answer tests come in Step 2, once you decide the behaviour should change. The skill also leaves the whole suite and the settings to you.</p>
+<p><strong>The capture.</strong> The skill runs <code>make_reference.R</code> only if no reference exists yet and <code>scripts/</code> has no uncommitted changes. It never runs it again after that. Who runs the capture script matters less than <em>when</em>: before any code changes, from a script you trust, and committed by you. After that, git and <code>test_reference_guard.R</code> notice any change to the reference.</p>
+<p><strong>The shared settings file.</strong> <code>/permissions</code> can save a rule to <code>.claude/settings.json</code>, which you commit. It can also save it to the local <code>.claude/settings.local.json</code>, which git ignores, so a rule saved there never reaches a commit. The rule takes effect at once.</p>
+<p><strong>No known-answer case yet.</strong> Your <code>AGENTS.md</code> asks for a known-answer test with every new function. The skill’s test rules take priority here. A characterisation test compares with the original output; known-answer tests come in Step 2, once you decide the behaviour should change. The skill also leaves the whole suite and the settings to you.</p>
 </div>
 </div>
 </div>
@@ -1151,25 +1151,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div id="callout-8" class="callout-8-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p><strong>Posit Assistant.</strong> It reads the same skill from <code>.agents/skills/</code>. Use it in Normal mode and run the same test suite; with no path rules for edits, the Git pane and <code>test_reference_guard.R</code> are what protect the reference.</p>
+<p><strong>Posit Assistant.</strong> It reads the same skill from <code>.agents/skills/</code>. Use it in Normal mode and run the same test suite. Posit Assistant has no path rules for edits, so the Git pane and <code>test_reference_guard.R</code> are what protect the reference.</p>
 </div>
 </div>
 </div>
 </section><section id="step-2" class="level2"><h2 class="anchored" data-anchor-id="step-2">Step 2: unchanged is not correct</h2>
-<p>Your test passes, <strong>including the <code>NA</code> mean and SD</strong> for one group. If you wanted the mean of the animals that were measured, the original code was wrong all along, and a characterisation test cannot tell: it compares against the past, not against the truth. Judging the behaviour correct is a separate step, and it is yours.</p>
+<p>Your test passes, <strong>including the <code>NA</code> mean and SD</strong> for one group. If you wanted the mean of the animals that were measured, the original code was wrong all along. A characterisation test cannot tell: it compares against the past, not against the truth. Deciding whether the behaviour is correct is a separate step, and it is yours.</p>
 <div class="task">
 <div class="task-header">
 <p>Discuss: is the original right? (3 minutes)</p>
 </div>
 <div class="task-container">
 <p><strong>Goal:</strong> decide whether the output you just protected is correct, so that you never mistake “unchanged” for “right”.</p>
-<p><strong>1. Look at the reference.</strong> In the R console, <code>readRDS(here::here("tests", "fixtures", "metabolic_summary.rds"))</code>: one group’s mean and SD are <code>NA</code>, and its <code>n</code> counts an animal that was never measured.</p>
-<p><strong>2. Answer in the chat:</strong> is that what the analysis should report? If not, what would you change, and how would you prove the new behaviour is right when the characterisation test, by design, will now fail?</p>
+<p><strong>1. Look at the reference.</strong> In the R console, run <code>readRDS(here::here("tests", "fixtures", "metabolic_summary.rds"))</code>. One group’s mean and SD are <code>NA</code>, and its <code>n</code> counts an animal that was never measured.</p>
+<p><strong>2. Answer in the chat:</strong> is that what the analysis should report? If not, what would you change? And how would you prove the new behaviour is right, when the characterisation test will now fail by design?</p>
 <div class="webex-solution">
 <button>
 One answer
 </button>
-<p>Use measured animals only: <code>na.rm = TRUE</code> for the mean and SD, and a count of measured and missing animals instead of <code>n</code>. Prove it with a <a class="glossary">known-answer test<span class="def">A test that checks code against a result worked out independently, for example by hand. It can show code is correct, where a characterisation test only shows it is unchanged.</span></a>, a small table whose answer you work out by hand; then re-capture the reference yourself and commit it with a message saying why. The re-captured reference is a decision you recorded, not drift.</p>
+<p>Use measured animals only: <code>na.rm = TRUE</code> for the mean and SD, and a count of measured and missing animals instead of <code>n</code>. Prove it with a <a class="glossary">known-answer test<span class="def">A test that checks code against a result worked out independently, for example by hand. It can show code is correct, where a characterisation test only shows it is unchanged.</span></a>: a small table whose answer you work out by hand. Then re-capture the reference yourself, and commit it with a message saying why. The re-captured reference is a decision you recorded, not drift.</p>
 </div>
 <p><strong>You are done when</strong> you can say why the passing test does not show the output is correct, and what would.</p>
 </div>
@@ -1202,7 +1202,7 @@ One answer
 <p>A <a class="glossary">known-answer test<span class="def">A test that checks code against a result worked out independently, for example by hand. It can show code is correct, where a characterisation test only shows it is unchanged.</span></a> checks the new behaviour against a result you can work out by hand. <strong>Check the arithmetic yourself</strong>: the mean of 10, 14 and a missing value is 12, from two measured animals.</p>
 <div class="webex-solution">
 <button>
-A function and test you should converge on
+A function and test you should end up with
 </button>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: missing values handled ----</span></span>
@@ -1249,16 +1249,16 @@ A function and test you should converge on
 <span id="cb10-17"><a href="#cb10-17" aria-label="17"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
-<p><strong>3. Watch the characterisation test fail, correctly.</strong> Run the suite as in Step 1: the output has changed, so it fails; the known-answer test passes. If the agent asks to run <code>make_reference.R</code>, refuse: re-capturing is your decision.</p>
-<p><strong>4. Re-capture the reference, as a recorded decision.</strong> Restart R, then in the R console:</p>
+<p><strong>3. Watch the characterisation test fail, correctly.</strong> Run the suite as in Step 1. The output has changed, so the characterisation test fails; the known-answer test passes. If the agent asks to run <code>make_reference.R</code>, refuse: re-capturing is your decision.</p>
+<p><strong>4. Re-capture the reference, as a recorded decision.</strong> Restart R, then run this in the R console:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"make_reference.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>5. Commit, then run the suite.</strong> Commit the reference, the function and the new test file with a message that says why, for example “Exclude missing metabolic rates from mean and SD; report n_used and n_missing”. Only then run the suite as in Step 1: <code>test_reference_guard.R</code> fails while the new reference is uncommitted.</p>
+<p><strong>5. Commit, then run the suite.</strong> Commit the reference, the function and the new test file. Use a message that says why, for example “Exclude missing metabolic rates from mean and SD; report n_used and n_missing”. Only then run the suite as in Step 1: <code>test_reference_guard.R</code> fails while the new reference is uncommitted.</p>
 <p>Re-capturing is safe here for three reasons: you decided it, a known-answer test checks the new behaviour, and the commit records why.</p>
 <p><strong>6. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; tool and model; task; what you kept or changed) and commit it.</p>
 <p><strong>You are done when</strong> the whole suite passes again, the re-captured reference is committed with its reason, and your AI-log line is committed.</p>
-<p><strong>If it goes wrong:</strong> if the known-answer test fails, the arithmetic or the function is wrong; read both before changing either.</p>
+<p><strong>If it goes wrong:</strong> if the known-answer test fails, the arithmetic or the function is wrong. Read both before changing either.</p>
 </div>
 </div>
 </div>
@@ -1288,16 +1288,16 @@ A function and test you should converge on
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>A characterisation test passes after a refactor. What has it established?</strong></p>
-<div id="radio_UHODGZWRUE" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_UHODGZWRUE" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_UHODGZWRUE" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_UHODGZWRUE" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_UHODGZWRUE" value=""><span>That the original code had no bugs</span></label>
+<div id="radio_ZRKDRTJSSF" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value=""><span>That the original code had no bugs</span></label>
 </div>
 <p><strong>Why must the reference be captured and committed before the refactor starts?</strong></p>
-<div id="radio_XEPDEQFHST" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_XEPDEQFHST" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_XEPDEQFHST" value=""><span>Because git cannot track .rds files once the code has changed</span></label><label><input type="radio" autocomplete="off" name="radio_XEPDEQFHST" value="answer"><span>Because a reference captured after the code changed is produced by the code under test, so it can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_XEPDEQFHST" value=""><span>Because the reference would be too large</span></label>
+<div id="radio_NWXUJLUYTS" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value=""><span>Because git cannot track .rds files once the code has changed</span></label><label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value="answer"><span>Because a reference captured after the code changed is produced by the code under test, so it can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value=""><span>Because the reference would be too large</span></label>
 </div>
 <p><strong>The shipped deny rules protect tests/fixtures/ in Claude Code. Once you have committed the reference, which action could still change it?</strong></p>
-<div id="radio_KIBLAXJSZG" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_KIBLAXJSZG" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_KIBLAXJSZG" value="answer"><span>The agent running tests/make_reference.R again through the shell (git and test_reference_guard.R would show it)</span></label><label><input type="radio" autocomplete="off" name="radio_KIBLAXJSZG" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_KIBLAXJSZG" value=""><span>Running the test suite with testthat::test_dir()</span></label>
+<div id="radio_GRCWKZOLBZ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value="answer"><span>The agent running tests/make_reference.R again through the shell (git and test_reference_guard.R would show it)</span></label><label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value=""><span>Running the test suite with testthat::test_dir()</span></label>
 </div>
 </section><section id="going-further" class="level2"><h2 class="anchored" data-anchor-id="going-further">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
@@ -1313,7 +1313,7 @@ A function and test you should converge on
 </div>
 <div id="callout-12" class="callout-12-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The skill turns a capture and two prompts into one request. Written out by hand, the capture is yours: restart R, run <code>source(here::here("tests", "make_reference.R"))</code>, and commit the <code>.rds</code>. The two prompts are below. Splitting the work matters: a single prompt that writes both the refactor and the test lets one misunderstanding (about row order, say) shape both files at once, producing a passing test that proves nothing.</p>
+<p>The skill turns a capture and two prompts into one request. By hand, you do the capture yourself: restart R, run <code>source(here::here("tests", "make_reference.R"))</code>, and commit the <code>.rds</code>. The two prompts are below. Splitting the work matters. A single prompt that writes both the refactor and the test lets one misunderstanding (about row order, say) shape both files at once. The result is a passing test that proves nothing.</p>
 <p><strong>Prompt 1: the refactor only.</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>Move the computation in scripts/05_analysis.R into a documented function</span>
 <span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a</span>
@@ -1329,7 +1329,14 @@ A function and test you should converge on
 <span id="cb13-6"><a href="#cb13-6" aria-label="6"></a>Do not create, regenerate or modify anything under tests/fixtures/, and do not</span>
 <span id="cb13-7"><a href="#cb13-7" aria-label="7"></a>run tests/make_reference.R. I captured that reference myself; a reference you</span>
 <span id="cb13-8"><a href="#cb13-8" aria-label="8"></a>generate proves nothing.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Before trusting a passing test you would check four things: the test reads the <code>.rds</code> rather than hard-coding numbers; it calls the function rather than reimplementing the pipeline; nothing changed under <code>tests/fixtures/</code>; and the agent’s commands (shown in the conversation) include no run of <code>tests/make_reference.R</code> after the capture you committed. The shipped <code>test_reference_guard.R</code> checks part of this automatically: that the test reads the <code>.rds</code> and calls the function, and that nothing under <code>tests/fixtures/</code> has changed since your commit. It cannot tell whether numbers were also typed into the test or the pipeline copied into it, so read the test once yourself; the fourth check is why you read approval requests in Manual mode.</p>
+<p>Before you trust a passing test, check four things:</p>
+<ol type="1">
+<li>the test reads the <code>.rds</code> rather than hard-coding numbers;</li>
+<li>it calls the function rather than reimplementing the pipeline;</li>
+<li>nothing changed under <code>tests/fixtures/</code>;</li>
+<li>the agent’s commands (shown in the conversation) include no run of <code>tests/make_reference.R</code> after the capture you committed.</li>
+</ol>
+<p>The shipped <code>test_reference_guard.R</code> checks part of this automatically: that the test reads the <code>.rds</code> and calls the function, and that nothing under <code>tests/fixtures/</code> has changed since your commit. It cannot tell whether numbers were also typed into the test, or the pipeline copied into it. So read the test once yourself. The fourth check is why you read approval requests in Manual mode.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1340,10 +1347,10 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>What a deny rule does not cover.</strong> Claude Code’s deny rules apply to its built-in file tools, and to shell output redirects such as <code>&gt; file</code>, but not to R code or most other commands it runs. The skill relies on that to take the first snapshot; an agent that ran <code>Rscript tests/make_reference.R</code> again later would overwrite your reference without touching an edit tool. That is why git, and <code>test_reference_guard.R</code>, are the final checks.</p>
+<p><strong>What a deny rule does not cover.</strong> Claude Code’s deny rules apply to its built-in file tools and to shell output redirects such as <code>&gt; file</code>. They do not apply to R code or most other commands it runs. The skill relies on that to take the first snapshot. But an agent that ran <code>Rscript tests/make_reference.R</code> again later would overwrite your reference without touching an edit tool. That is why git and <code>test_reference_guard.R</code> are the final checks.</p>
 </div>
 </div>
-<p>To use the skill in your own projects, download it and unzip it into your project’s <code>.agents/skills/</code> (and copy it into <code>.claude/skills/</code> for Claude Code):</p>
+<p>To use the skill in your own projects, download it below. Unzip it into your project’s <code>.agents/skills/</code>, and copy it into <code>.claude/skills/</code> for Claude Code:</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <button class="btn btn-success" onclick="
@@ -1389,7 +1396,7 @@ Warning
 </div>
 <div id="callout-13" class="callout-13-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Everything here is written by you; only <code>make_reference.R</code> and the data are shipped. First capture and commit the reference as above. A tidy refactor naturally reaches for the modern <code>.by</code> argument. Write this first attempt in a new file, <code>scripts/functions/summary_functions.R</code>:</p>
+<p>Here you write everything yourself; only <code>make_reference.R</code> and the data are shipped. First, capture and commit the reference as above. A tidy refactor naturally uses the modern <code>.by</code> argument. Write this first attempt in a new file, <code>scripts/functions/summary_functions.R</code>:</p>
 <div class="webex-solution">
 <button>
 First attempt (deliberately incomplete)
@@ -1420,15 +1427,15 @@ First attempt (deliberately incomplete)
 <span id="cb15-9"><a href="#cb15-9" aria-label="9"></a>  <span class="fu">expect_equal</span>(<span class="fu">summarise_metabolic_rate</span>(<span class="fu">load_voles</span>()), reference, <span class="at">tolerance =</span> <span class="fl">1e-8</span>)</span>
 <span id="cb15-10"><a href="#cb15-10" aria-label="10"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Run it as in Step 1: restart R, then <code>testthat::test_dir(here::here("tests"))</code>.</p>
+<p>Run it as in Step 1: restart R, then run <code>testthat::test_dir(here::here("tests"))</code>.</p>
 <div class="webex-solution">
 <button>
 What happened
 </button>
-<p>It fails, and not on the numbers. <code>.by</code> returns the groups in order of first appearance; the reference, made with <code>group_by()</code>, has them sorted. The values are right but the rows are in a different order, and <code>expect_equal()</code> reports a mismatch. Add <code>dplyr::arrange(treatment_arm, sex)</code> to the end of the pipeline and the test passes. That failure is the lesson in miniature: a change that improved the code altered the output, and the characterisation test caught it.</p>
+<p>It fails, and not on the numbers. <code>.by</code> returns the groups in order of first appearance. The reference, made with <code>group_by()</code>, has them sorted. The values are right but the rows are in a different order, so <code>expect_equal()</code> reports a mismatch. Add <code>dplyr::arrange(treatment_arm, sex)</code> to the end of the pipeline, and the test passes. That failure is the whole lesson on a small scale: a change that improved the code altered the output, and the characterisation test caught it.</p>
 <p>If your test passed first time, the data happen to be stored in sorted order. Check with <code>load_voles() |&gt; dplyr::distinct(treatment_arm, sex)</code>.</p>
 </div>
-<p>Do not type the expected numbers into the test as literals: a test that compares the function with numbers you transcribed proves nothing about whether the refactor preserved the original computation. The test must <em>read the <code>.rds</code></em>.</p>
+<p>Do not type the expected numbers into the test as literals. A test that compares the function with numbers you copied by hand proves nothing about whether the refactor kept the original computation. The test must <em>read the <code>.rds</code></em>.</p>
 <div class="webex-solution">
 <button>
 Refactored function, and the script that calls it
@@ -1488,7 +1495,7 @@ Refactored function, and the script that calls it
 </div>
 <div id="callout-14" class="callout-14-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p><code>/permissions</code> writes this same file when you choose the shared settings file. The same rule can be added by hand: open <code>.claude/settings.json</code> in the editor and add <code>"Edit(/tests/test_summary_functions.R)"</code> to the <code>deny</code> list, minding the comma after the line before. Claude Code reloads the file without a restart. Either way, commit the file, so the rule travels with the repository. <code>test_controls.R</code> checks the rule is there.</p>
+<p><code>/permissions</code> writes this same file when you choose the shared settings file. You can also add the rule by hand. Open <code>.claude/settings.json</code> in the editor and add <code>"Edit(/tests/test_summary_functions.R)"</code> to the <code>deny</code> list. Mind the comma after the line before. Claude Code reloads the file without a restart. Either way, commit the file, so the rule travels with the repository. <code>test_controls.R</code> checks that the rule is there.</p>
 </div>
 </div>
 </div>
@@ -1520,14 +1527,20 @@ Refactored function, and the script that calls it
 </div>
 <div id="callout-16" class="callout-16-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>A skill earns its keep the second time you use it.</p>
+<p>A skill pays off the second time you use it.</p>
 <div class="task">
 <div class="task-header">
 <p>Reuse the skill (15 minutes)</p>
 </div>
 <div class="task-container">
 <p><strong>Goal:</strong> use the skill on a second step, with a reference you captured and committed yourself, so that you know its discipline holds on code it was not written for.</p>
-<p><strong>1. Capture a reference yourself first.</strong> Pick a second step: the plotting code in <code>scripts/explore_mass_change_plot.R</code>, which you made in <a href="./11d-context-disclosure-autonomy.html">Block 3</a> (it is on <code>checkpoint-skills</code> if you need it), or a step from your own project. The skill runs only the shipped <code>make_reference.R</code>, so for any other step the capture is yours: write a small capture script modelled on it (for a plot, save <code><a href="https://ggplot2.tidyverse.org/reference/ggplot_build.html">ggplot2::layer_data()</a></code> of it, as the <a href="./11l-copilot-cloud-agent.html">Copilot cloud-agent page</a> does), run it after restarting R, commit its output in <code>tests/fixtures/</code>, and protect the script with <code>/permissions</code> (choosing <code>.claude/settings.json</code>, as in Step 1).</p>
+<p><strong>1. Capture a reference yourself first.</strong> Pick a second step. It can be the plotting code in <code>scripts/explore_mass_change_plot.R</code>, which you made in <a href="./11d-context-disclosure-autonomy.html">Block 3</a> (it is on <code>checkpoint-skills</code> if you need it), or a step from your own project. The skill runs only the shipped <code>make_reference.R</code>, so for any other step you do the capture yourself:</p>
+<ul>
+<li>write a small capture script modelled on <code>make_reference.R</code> (for a plot, save <code><a href="https://ggplot2.tidyverse.org/reference/ggplot_build.html">ggplot2::layer_data()</a></code> of it, as the <a href="./11l-copilot-cloud-agent.html">Copilot cloud-agent page</a> does);</li>
+<li>restart R, then run the script;</li>
+<li>commit its output in <code>tests/fixtures/</code>;</li>
+<li>protect the script with <code>/permissions</code> (choosing <code>.claude/settings.json</code>, as in Step 1).</li>
+</ul>
 <p><strong>2. Invoke the skill.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a>/characterisation-refactor Functionalise the step in</span>
@@ -1568,7 +1581,7 @@ Refactored function, and the script that calls it
 </div>
 <div id="callout-18" class="callout-18-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>A characterisation test is only as stable as the environment it runs in. The column types in <code>load_voles()</code> handle the finest-grained part; the R version and package set are pinned by <code>renv.lock</code>. To run the tests on GitHub as well (<code>r-checks.yml</code>) and give a cloud agent the same packages (<code>copilot-setup-steps.yml</code>), see <a href="./11l-copilot-cloud-agent.html">Self-study: Hand a task to GitHub Copilot’s cloud agent</a>.</p>
+<p>A characterisation test is only as stable as the environment it runs in. The column types in <code>load_voles()</code> handle the finest-grained part. <code>renv.lock</code> pins the R version and package set. To run the tests on GitHub as well (<code>r-checks.yml</code>) and give a cloud agent the same packages (<code>copilot-setup-steps.yml</code>), see <a href="./11l-copilot-cloud-agent.html">Self-study: Hand a task to GitHub Copilot’s cloud agent</a>.</p>
 </div>
 </div>
 </div>
@@ -1594,6 +1607,10 @@ Refactored function, and the script that calls it
 <td style="text-align: left;">A test that checks code against a result worked out independently, for example by hand. It can show code is correct, where a characterisation test only shows it is unchanged.</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">reference</td>
+<td style="text-align: left;">In a characterisation test, the saved output of the original, trusted code (stored in tests/fixtures/). You capture it yourself, once, before any refactoring; the agent never creates or regenerates it.</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">skill</td>
 <td style="text-align: left;">A folder containing a SKILL.md file (and optionally scripts and templates) that an assistant loads only when it is invoked by name or judged relevant from its description.</td>
 </tr>
