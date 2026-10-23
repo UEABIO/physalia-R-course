@@ -5,6 +5,11 @@ Moved out of the published chapters. Quarto ignores this folder because its name
 ## Documentation last verified
 
 - **11a-setup-claude-code.qmd**: 9 October 2026, against the Claude Code documentation (code.claude.com: setup, authentication, permission modes). Installation details change; if a command here fails, check the setup page first.
+- **11-AI-programming-integrated.qmd, quick reference** (`/model`, `/effort`, `/remote-control`, `/init`): 23 October 2026, checked by an AI agent against code.claude.com (model-config, remote-control, commands, memory, cli-reference). The commands and model-config wording came through an extraction step: check it on the live pages before teaching. Findings worth knowing:
+  - `/model` (picker, **Enter**) and `/model <name>` both save the choice as the default for new sessions; **s** in the picker switches for this session only. The session header shows the model next to the effort level.
+  - `/effort` opens a slider; levels `low` to `max`, plus `auto`, which clears the saved level.
+  - Remote Control needs a Pro, Max, Team or Enterprise login (no API keys; Team and Enterprise need an Owner to enable it). The session keeps running locally.
+  - `/init` writes `CLAUDE.md`; once one exists, Claude Code stops reading `AGENTS.md`. The CLI flag `claude --init` is unrelated (Setup hooks, print mode only) and is not in the book.
 - **11b-inline-completions.qmd**: 9 October 2026, against the Positron documentation (completions; release notes 2026.06 and 2026.07), Posit's announcement of Posit AI, and GitHub's Copilot plans page.
 - **11d-context-disclosure-autonomy.qmd**: 9 October 2026, against GitHub's Copilot documentation (plans, IDE agent and plan modes), the Claude Code documentation (permission modes) and the Posit Assistant documentation (docs version 1.7).
 - **11e-instructions-skills.qmd**: 9 October 2026, against GitHub's Copilot documentation (custom instructions, agent skills), the Claude Code documentation (features overview, skills) and the Posit Assistant documentation (docs version 1.7: memory, skills).
