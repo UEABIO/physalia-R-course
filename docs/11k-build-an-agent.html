@@ -541,6 +541,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 8: Functionalise a script step and prove the result is unchanged</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11h-code-review.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 9: AI-assisted code review</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -556,12 +562,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="./11b-inline-completions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Self-study: Inline completions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./11h-code-review.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Self-study: AI-assisted code review</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -667,7 +667,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 </header><p>You build the two parts of an agent yourself, a conversation and a tool, then run a complete agent on a real task and approve every step it takes. After this, every control from Blocks 3 to 5 is something you can see in code.</p>
-<p><em>⏱ ~45 minutes · Start on <code>main</code>, Git pane clean, with your API key saved as <code>AGENT_ANTHROPIC_KEY</code> (<a href="./11a-setup-claude-code.html#api-key">setup</a>). Claude Code is not used in this block.</em></p>
+<p><em>⏱ ~35 minutes · Start on <code>main</code>, Git pane clean, with your API key saved as <code>AGENT_ANTHROPIC_KEY</code> (<a href="./11a-setup-claude-code.html#api-key">setup</a>). Claude Code is not used in this block.</em></p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -706,7 +706,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td><code>agent/mini_agent.R</code></td>
 <td>Shipped; first used here</td>
-<td>The agent: four tools, its own permission rules and Manual-mode approvals</td>
+<td>The agent: three tools, its own permission rule and Manual-mode approvals</td>
 </tr>
 <tr class="even">
 <td><code>tests/test_translation.R</code></td>
@@ -843,18 +843,18 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 </div>
 </section><section id="your-agent-agentmini_agent.r" class="level2"><h2 class="anchored" data-anchor-id="your-agent-agentmini_agent.r">Your agent: <code>agent/mini_agent.R</code>
 </h2>
-<p>Your repository ships a complete agent built from the same parts, about 120 lines. Your instructor walks through it; each part matches something from this morning:</p>
+<p>Your repository ships a complete agent built from the same parts, about 80 lines. Your instructor walks through it; each part matches something from this morning:</p>
 <ul>
 <li>
-<strong>Four tools.</strong> <code>list_files()</code> and <code>read_file()</code> look around; <code>write_file()</code> and <code>run_r()</code> change things.</li>
+<strong>Three tools.</strong> <code>read_file()</code> looks around; <code>write_file()</code> changes a file; <code>run_test()</code> runs one test, <code>tests/test_translation.R</code>, in a fresh R session.</li>
 <li>
-<strong><code>inside_project()</code> is its deny rule.</strong> It may read inside the project, except raw data and credentials files, and write <strong>only under <code>scripts/</code></strong>, so it cannot edit its checks in <code>tests/</code> or its own rules in <code>agent/</code>.</li>
+<strong><code>allowed()</code> is its deny rule.</strong> It may read inside the project, but not credentials files, and write <strong>only under <code>scripts/</code></strong>, so it cannot edit its checks in <code>tests/</code> or its own rules in <code>agent/</code>.</li>
 <li>
-<strong><code>ask_first()</code> is Manual mode.</strong> Reads go straight through; every write and every run is shown to you first, and refused unless you choose <strong>Yes</strong>.</li>
+<strong><code>ask_first()</code> is Manual mode.</strong> Reads go straight through; every write and every test run is shown to you first, and refused unless you choose <strong>Yes</strong>.</li>
 <li>
 <strong>The system prompt is its instruction file.</strong> It is not given your <code>AGENTS.md</code> (it could still open the file, like any other), and like <code>AGENTS.md</code> its prompt is only a request.</li>
 </ul>
-<p><code>run_r()</code> shows the gap Block 5 found: R code can write anywhere, <code>data/raw/</code> included, and read anything you can, your <code>.Renviron</code> included. Only your approval stands in the way, which is why you read the code before you choose <strong>Yes</strong>; afterwards the Git pane shows any change.</p>
+<p>Your agent can run one test and nothing else. A general run-R tool would let the model run any code, which is the gap Block 5 found: R code can write anywhere, whatever the deny rules say.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -869,7 +869,7 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 <div class="callout-body-container callout-body">
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a><span class="co"># agent/mini_agent.R ----</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-label="2"></a><span class="co"># A small coding agent: Claude, four tools, and the loop ellmer runs for you.</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-label="2"></a><span class="co"># A small coding agent: Claude, three tools, and the loop ellmer runs for you.</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-label="3"></a><span class="co"># Load it from your workshop repository with</span></span>
 <span id="cb5-4"><a href="#cb5-4" aria-label="4"></a><span class="co">#   source(here::here("agent", "mini_agent.R"))</span></span>
 <span id="cb5-5"><a href="#cb5-5" aria-label="5"></a><span class="co"># then talk to `chat`.</span></span>
@@ -886,119 +886,84 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 <span id="cb5-16"><a href="#cb5-16" aria-label="16"></a>       <span class="st">"then restart R."</span>)</span>
 <span id="cb5-17"><a href="#cb5-17" aria-label="17"></a>}</span>
 <span id="cb5-18"><a href="#cb5-18" aria-label="18"></a></span>
-<span id="cb5-19"><a href="#cb5-19" aria-label="19"></a><span class="co"># the agent's own permission rules: it may read inside the project, except raw</span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-label="20"></a><span class="co"># data and credentials files, and it may write only under scripts/ ----</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-label="19"></a><span class="co"># the agent's deny rule: a path must sit inside `folder`, and never be a</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-label="20"></a><span class="co"># credentials file ----</span></span>
 <span id="cb5-21"><a href="#cb5-21" aria-label="21"></a>root <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>()</span>
-<span id="cb5-22"><a href="#cb5-22" aria-label="22"></a>inside_project <span class="ot">&lt;-</span> <span class="cf">function</span>(path, <span class="at">write =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb5-22"><a href="#cb5-22" aria-label="22"></a>allowed <span class="ot">&lt;-</span> <span class="cf">function</span>(path, <span class="at">folder =</span> root) {</span>
 <span id="cb5-23"><a href="#cb5-23" aria-label="23"></a>  full <span class="ot">&lt;-</span> fs<span class="sc">::</span><span class="fu">path_norm</span>(fs<span class="sc">::</span><span class="fu">path_abs</span>(path, <span class="at">start =</span> root))</span>
-<span id="cb5-24"><a href="#cb5-24" aria-label="24"></a>  allowed <span class="ot">&lt;-</span> (full <span class="sc">==</span> root <span class="sc">||</span> fs<span class="sc">::</span><span class="fu">path_has_parent</span>(full, root)) <span class="sc">&amp;&amp;</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-label="25"></a>    <span class="sc">!</span>fs<span class="sc">::</span><span class="fu">path_has_parent</span>(full, fs<span class="sc">::</span><span class="fu">path</span>(root, <span class="st">"data"</span>, <span class="st">"raw"</span>)) <span class="sc">&amp;&amp;</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-label="26"></a>    <span class="sc">!</span>fs<span class="sc">::</span><span class="fu">path_file</span>(full) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">".Renviron"</span>, <span class="st">".env"</span>)</span>
-<span id="cb5-27"><a href="#cb5-27" aria-label="27"></a>  <span class="cf">if</span> (write) {</span>
-<span id="cb5-28"><a href="#cb5-28" aria-label="28"></a>    allowed <span class="ot">&lt;-</span> allowed <span class="sc">&amp;&amp;</span> fs<span class="sc">::</span><span class="fu">path_has_parent</span>(full, fs<span class="sc">::</span><span class="fu">path</span>(root, <span class="st">"scripts"</span>))</span>
-<span id="cb5-29"><a href="#cb5-29" aria-label="29"></a>  }</span>
-<span id="cb5-30"><a href="#cb5-30" aria-label="30"></a>  <span class="cf">if</span> (<span class="sc">!</span>allowed) {</span>
-<span id="cb5-31"><a href="#cb5-31" aria-label="31"></a>    <span class="fu">stop</span>(<span class="st">"Refused: "</span>, path, <span class="cf">if</span> (write) {</span>
-<span id="cb5-32"><a href="#cb5-32" aria-label="32"></a>      <span class="st">" (the agent may write only under scripts/)"</span></span>
-<span id="cb5-33"><a href="#cb5-33" aria-label="33"></a>    } <span class="cf">else</span> {</span>
-<span id="cb5-34"><a href="#cb5-34" aria-label="34"></a>      <span class="st">" is outside the project, under data/raw/, or a credentials file"</span></span>
-<span id="cb5-35"><a href="#cb5-35" aria-label="35"></a>    })</span>
-<span id="cb5-36"><a href="#cb5-36" aria-label="36"></a>  }</span>
-<span id="cb5-37"><a href="#cb5-37" aria-label="37"></a>  full</span>
-<span id="cb5-38"><a href="#cb5-38" aria-label="38"></a>}</span>
-<span id="cb5-39"><a href="#cb5-39" aria-label="39"></a></span>
-<span id="cb5-40"><a href="#cb5-40" aria-label="40"></a><span class="co"># read tools: they observe the project and change nothing ----</span></span>
-<span id="cb5-41"><a href="#cb5-41" aria-label="41"></a>list_files <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
-<span id="cb5-42"><a href="#cb5-42" aria-label="42"></a>  <span class="co"># one folder at a time, at most 100 names: a recursive listing would include</span></span>
-<span id="cb5-43"><a href="#cb5-43" aria-label="43"></a>  <span class="co"># every package installed in renv/, and all of it would be sent to the model</span></span>
-<span id="cb5-44"><a href="#cb5-44" aria-label="44"></a>  <span class="cf">function</span>(<span class="at">path =</span> <span class="st">"."</span>) utils<span class="sc">::</span><span class="fu">head</span>(<span class="fu">list.files</span>(<span class="fu">inside_project</span>(path)), <span class="dv">100</span>),</span>
-<span id="cb5-45"><a href="#cb5-45" aria-label="45"></a>  <span class="at">name =</span> <span class="st">"list_files"</span>,</span>
-<span id="cb5-46"><a href="#cb5-46" aria-label="46"></a>  <span class="at">description =</span> <span class="st">"List the files and folders in one folder of the project."</span>,</span>
-<span id="cb5-47"><a href="#cb5-47" aria-label="47"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">path =</span> <span class="fu">type_string</span>(<span class="st">"A folder, relative to the project root."</span>)),</span>
-<span id="cb5-48"><a href="#cb5-48" aria-label="48"></a>  <span class="at">annotations =</span> <span class="fu">tool_annotations</span>(<span class="at">read_only_hint =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb5-49"><a href="#cb5-49" aria-label="49"></a>)</span>
-<span id="cb5-50"><a href="#cb5-50" aria-label="50"></a>read_file <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
-<span id="cb5-51"><a href="#cb5-51" aria-label="51"></a>  <span class="cf">function</span>(path) {</span>
-<span id="cb5-52"><a href="#cb5-52" aria-label="52"></a>    lines <span class="ot">&lt;-</span> <span class="fu">readLines</span>(<span class="fu">inside_project</span>(path), <span class="at">warn =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb5-53"><a href="#cb5-53" aria-label="53"></a>    <span class="fu">paste</span>(utils<span class="sc">::</span><span class="fu">head</span>(lines, <span class="dv">300</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>) <span class="co"># keep long files short</span></span>
-<span id="cb5-54"><a href="#cb5-54" aria-label="54"></a>  },</span>
-<span id="cb5-55"><a href="#cb5-55" aria-label="55"></a>  <span class="at">name =</span> <span class="st">"read_file"</span>,</span>
-<span id="cb5-56"><a href="#cb5-56" aria-label="56"></a>  <span class="at">description =</span> <span class="st">"Read a text file in the project."</span>,</span>
-<span id="cb5-57"><a href="#cb5-57" aria-label="57"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">path =</span> <span class="fu">type_string</span>(<span class="st">"A file, relative to the project root."</span>)),</span>
-<span id="cb5-58"><a href="#cb5-58" aria-label="58"></a>  <span class="at">annotations =</span> <span class="fu">tool_annotations</span>(<span class="at">read_only_hint =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-label="24"></a>  <span class="cf">if</span> (<span class="sc">!</span>fs<span class="sc">::</span><span class="fu">path_has_parent</span>(full, folder) <span class="sc">||</span> fs<span class="sc">::</span><span class="fu">path_file</span>(full) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">".Renviron"</span>, <span class="st">".env"</span>)) {</span>
+<span id="cb5-25"><a href="#cb5-25" aria-label="25"></a>    <span class="fu">stop</span>(<span class="st">"Refused: "</span>, path)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-label="26"></a>  }</span>
+<span id="cb5-27"><a href="#cb5-27" aria-label="27"></a>  full</span>
+<span id="cb5-28"><a href="#cb5-28" aria-label="28"></a>}</span>
+<span id="cb5-29"><a href="#cb5-29" aria-label="29"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-label="30"></a><span class="co"># the tools ----</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-label="31"></a>read_file <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
+<span id="cb5-32"><a href="#cb5-32" aria-label="32"></a>  <span class="cf">function</span>(path) <span class="fu">paste</span>(<span class="fu">readLines</span>(<span class="fu">allowed</span>(path), <span class="at">warn =</span> <span class="cn">FALSE</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>),</span>
+<span id="cb5-33"><a href="#cb5-33" aria-label="33"></a>  <span class="at">name =</span> <span class="st">"read_file"</span>,</span>
+<span id="cb5-34"><a href="#cb5-34" aria-label="34"></a>  <span class="at">description =</span> <span class="st">"Read a text file in the project."</span>,</span>
+<span id="cb5-35"><a href="#cb5-35" aria-label="35"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">path =</span> <span class="fu">type_string</span>(<span class="st">"A file, relative to the project root."</span>))</span>
+<span id="cb5-36"><a href="#cb5-36" aria-label="36"></a>)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-label="37"></a>write_file <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
+<span id="cb5-38"><a href="#cb5-38" aria-label="38"></a>  <span class="cf">function</span>(path, content) {</span>
+<span id="cb5-39"><a href="#cb5-39" aria-label="39"></a>    <span class="fu">writeLines</span>(content, <span class="fu">allowed</span>(path, <span class="at">folder =</span> fs<span class="sc">::</span><span class="fu">path</span>(root, <span class="st">"scripts"</span>)))</span>
+<span id="cb5-40"><a href="#cb5-40" aria-label="40"></a>    <span class="fu">paste</span>(<span class="st">"Wrote"</span>, path)</span>
+<span id="cb5-41"><a href="#cb5-41" aria-label="41"></a>  },</span>
+<span id="cb5-42"><a href="#cb5-42" aria-label="42"></a>  <span class="at">name =</span> <span class="st">"write_file"</span>,</span>
+<span id="cb5-43"><a href="#cb5-43" aria-label="43"></a>  <span class="at">description =</span> <span class="st">"Replace the whole contents of a text file under scripts/."</span>,</span>
+<span id="cb5-44"><a href="#cb5-44" aria-label="44"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(</span>
+<span id="cb5-45"><a href="#cb5-45" aria-label="45"></a>    <span class="at">path =</span> <span class="fu">type_string</span>(<span class="st">"A file under scripts/, relative to the project root."</span>),</span>
+<span id="cb5-46"><a href="#cb5-46" aria-label="46"></a>    <span class="at">content =</span> <span class="fu">type_string</span>(<span class="st">"The complete new contents of the file."</span>)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-label="47"></a>  )</span>
+<span id="cb5-48"><a href="#cb5-48" aria-label="48"></a>)</span>
+<span id="cb5-49"><a href="#cb5-49" aria-label="49"></a>run_test <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
+<span id="cb5-50"><a href="#cb5-50" aria-label="50"></a>  <span class="cf">function</span>() {</span>
+<span id="cb5-51"><a href="#cb5-51" aria-label="51"></a>    <span class="co"># the one thing it can run: the translation test, in a fresh R session</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-label="52"></a>    out <span class="ot">&lt;-</span> callr<span class="sc">::</span><span class="fu">r</span>(<span class="cf">function</span>() utils<span class="sc">::</span><span class="fu">capture.output</span>(</span>
+<span id="cb5-53"><a href="#cb5-53" aria-label="53"></a>      testthat<span class="sc">::</span><span class="fu">test_file</span>(<span class="st">"tests/test_translation.R"</span>, <span class="at">reporter =</span> <span class="st">"summary"</span>)</span>
+<span id="cb5-54"><a href="#cb5-54" aria-label="54"></a>    ))</span>
+<span id="cb5-55"><a href="#cb5-55" aria-label="55"></a>    <span class="fu">paste</span>(utils<span class="sc">::</span><span class="fu">tail</span>(out, <span class="dv">40</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb5-56"><a href="#cb5-56" aria-label="56"></a>  },</span>
+<span id="cb5-57"><a href="#cb5-57" aria-label="57"></a>  <span class="at">name =</span> <span class="st">"run_test"</span>,</span>
+<span id="cb5-58"><a href="#cb5-58" aria-label="58"></a>  <span class="at">description =</span> <span class="st">"Run tests/test_translation.R in a fresh R session and return its output."</span></span>
 <span id="cb5-59"><a href="#cb5-59" aria-label="59"></a>)</span>
 <span id="cb5-60"><a href="#cb5-60" aria-label="60"></a></span>
-<span id="cb5-61"><a href="#cb5-61" aria-label="61"></a><span class="co"># write tools: they change the project, so they need your approval ----</span></span>
-<span id="cb5-62"><a href="#cb5-62" aria-label="62"></a>write_file <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
-<span id="cb5-63"><a href="#cb5-63" aria-label="63"></a>  <span class="cf">function</span>(path, content) {</span>
-<span id="cb5-64"><a href="#cb5-64" aria-label="64"></a>    <span class="fu">writeLines</span>(content, <span class="fu">inside_project</span>(path, <span class="at">write =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb5-65"><a href="#cb5-65" aria-label="65"></a>    <span class="fu">paste</span>(<span class="st">"Wrote"</span>, path)</span>
-<span id="cb5-66"><a href="#cb5-66" aria-label="66"></a>  },</span>
-<span id="cb5-67"><a href="#cb5-67" aria-label="67"></a>  <span class="at">name =</span> <span class="st">"write_file"</span>,</span>
-<span id="cb5-68"><a href="#cb5-68" aria-label="68"></a>  <span class="at">description =</span> <span class="st">"Replace the whole contents of a text file under scripts/."</span>,</span>
-<span id="cb5-69"><a href="#cb5-69" aria-label="69"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(</span>
-<span id="cb5-70"><a href="#cb5-70" aria-label="70"></a>    <span class="at">path =</span> <span class="fu">type_string</span>(<span class="st">"A file under scripts/, relative to the project root."</span>),</span>
-<span id="cb5-71"><a href="#cb5-71" aria-label="71"></a>    <span class="at">content =</span> <span class="fu">type_string</span>(<span class="st">"The complete new contents of the file."</span>)</span>
-<span id="cb5-72"><a href="#cb5-72" aria-label="72"></a>  )</span>
-<span id="cb5-73"><a href="#cb5-73" aria-label="73"></a>)</span>
-<span id="cb5-74"><a href="#cb5-74" aria-label="74"></a>run_r <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
-<span id="cb5-75"><a href="#cb5-75" aria-label="75"></a>  <span class="cf">function</span>(code) {</span>
-<span id="cb5-76"><a href="#cb5-76" aria-label="76"></a>    out <span class="ot">&lt;-</span> callr<span class="sc">::</span><span class="fu">r</span>(<span class="cf">function</span>(code) utils<span class="sc">::</span><span class="fu">capture.output</span>(</span>
-<span id="cb5-77"><a href="#cb5-77" aria-label="77"></a>      <span class="fu">tryCatch</span>(<span class="fu">source</span>(<span class="at">exprs =</span> <span class="fu">parse</span>(<span class="at">text =</span> code), <span class="at">print.eval =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb5-78"><a href="#cb5-78" aria-label="78"></a>               <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">cat</span>(<span class="st">"Error:"</span>, <span class="fu">conditionMessage</span>(e), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>))</span>
-<span id="cb5-79"><a href="#cb5-79" aria-label="79"></a>    ), <span class="fu">list</span>(<span class="at">code =</span> code))</span>
-<span id="cb5-80"><a href="#cb5-80" aria-label="80"></a>    <span class="fu">paste</span>(utils<span class="sc">::</span><span class="fu">head</span>(out, <span class="dv">60</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>) <span class="co"># keep long output short</span></span>
-<span id="cb5-81"><a href="#cb5-81" aria-label="81"></a>  },</span>
-<span id="cb5-82"><a href="#cb5-82" aria-label="82"></a>  <span class="at">name =</span> <span class="st">"run_r"</span>,</span>
-<span id="cb5-83"><a href="#cb5-83" aria-label="83"></a>  <span class="at">description =</span> <span class="st">"Run R code in a fresh R session; return its printed output."</span>,</span>
-<span id="cb5-84"><a href="#cb5-84" aria-label="84"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">code =</span> <span class="fu">type_string</span>(<span class="st">"The R code to run."</span>))</span>
-<span id="cb5-85"><a href="#cb5-85" aria-label="85"></a>)</span>
-<span id="cb5-86"><a href="#cb5-86" aria-label="86"></a></span>
-<span id="cb5-87"><a href="#cb5-87" aria-label="87"></a><span class="co"># Manual mode: show every write or run request, and ask before it happens ----</span></span>
-<span id="cb5-88"><a href="#cb5-88" aria-label="88"></a>ask_first <span class="ot">&lt;-</span> <span class="cf">function</span>(request) {</span>
-<span id="cb5-89"><a href="#cb5-89" aria-label="89"></a>  <span class="cf">if</span> (request<span class="sc">@</span>name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"write_file"</span>, <span class="st">"run_r"</span>)) {</span>
-<span id="cb5-90"><a href="#cb5-90" aria-label="90"></a>    <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">The agent wants to call"</span>, request<span class="sc">@</span>name, <span class="st">"with:</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb5-91"><a href="#cb5-91" aria-label="91"></a>    <span class="cf">for</span> (arg <span class="cf">in</span> <span class="fu">names</span>(request<span class="sc">@</span>arguments)) {</span>
-<span id="cb5-92"><a href="#cb5-92" aria-label="92"></a>      <span class="fu">cat</span>(<span class="st">"--"</span>, arg, <span class="st">"--</span><span class="sc">\n</span><span class="st">"</span>, request<span class="sc">@</span>arguments[[arg]], <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb5-93"><a href="#cb5-93" aria-label="93"></a>    }</span>
-<span id="cb5-94"><a href="#cb5-94" aria-label="94"></a>    <span class="co"># outside an interactive session there is no one to ask, so refuse</span></span>
-<span id="cb5-95"><a href="#cb5-95" aria-label="95"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">interactive</span>() <span class="sc">||</span> utils<span class="sc">::</span><span class="fu">menu</span>(<span class="fu">c</span>(<span class="st">"Yes"</span>, <span class="st">"No"</span>), <span class="at">title =</span> <span class="st">"Allow it?"</span>) <span class="sc">!=</span> <span class="dv">1</span>) {</span>
-<span id="cb5-96"><a href="#cb5-96" aria-label="96"></a>      <span class="fu">tool_reject</span>()</span>
-<span id="cb5-97"><a href="#cb5-97" aria-label="97"></a>    }</span>
-<span id="cb5-98"><a href="#cb5-98" aria-label="98"></a>  }</span>
-<span id="cb5-99"><a href="#cb5-99" aria-label="99"></a>}</span>
-<span id="cb5-100"><a href="#cb5-100" aria-label="100"></a></span>
-<span id="cb5-101"><a href="#cb5-101" aria-label="101"></a>chat <span class="ot">&lt;-</span> <span class="fu">chat_anthropic</span>(</span>
-<span id="cb5-102"><a href="#cb5-102" aria-label="102"></a>  <span class="at">model =</span> model,</span>
-<span id="cb5-103"><a href="#cb5-103" aria-label="103"></a>  <span class="at">credentials =</span> agent_key,</span>
-<span id="cb5-104"><a href="#cb5-104" aria-label="104"></a>  <span class="at">system_prompt =</span> <span class="fu">paste</span>(</span>
-<span id="cb5-105"><a href="#cb5-105" aria-label="105"></a>    <span class="st">"You are a careful R assistant working in this project."</span>,</span>
-<span id="cb5-106"><a href="#cb5-106" aria-label="106"></a>    <span class="st">"Read files before you change them, and check your work by running it."</span>,</span>
-<span id="cb5-107"><a href="#cb5-107" aria-label="107"></a>    <span class="st">"Write files only under scripts/; never edit tests/ or data/raw/."</span>,</span>
-<span id="cb5-108"><a href="#cb5-108" aria-label="108"></a>    <span class="st">"Code you write must work in a fresh R session, so load packages with"</span>,</span>
-<span id="cb5-109"><a href="#cb5-109" aria-label="109"></a>    <span class="st">"library() or call them with pkg::. Say what you changed, and stop when"</span>,</span>
-<span id="cb5-110"><a href="#cb5-110" aria-label="110"></a>    <span class="st">"the task is done."</span></span>
-<span id="cb5-111"><a href="#cb5-111" aria-label="111"></a>  )</span>
-<span id="cb5-112"><a href="#cb5-112" aria-label="112"></a>)</span>
-<span id="cb5-113"><a href="#cb5-113" aria-label="113"></a>chat<span class="sc">$</span><span class="fu">register_tools</span>(<span class="fu">list</span>(list_files, read_file, write_file, run_r))</span>
-<span id="cb5-114"><a href="#cb5-114" aria-label="114"></a>chat<span class="sc">$</span><span class="fu">on_tool_request</span>(ask_first)</span>
-<span id="cb5-115"><a href="#cb5-115" aria-label="115"></a></span>
-<span id="cb5-116"><a href="#cb5-116" aria-label="116"></a><span class="co"># how many requests the agent has sent to the model: one per assistant turn ----</span></span>
-<span id="cb5-117"><a href="#cb5-117" aria-label="117"></a>count_requests <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb5-118"><a href="#cb5-118" aria-label="118"></a>  <span class="fu">sum</span>(<span class="fu">vapply</span>(chat<span class="sc">$</span><span class="fu">get_turns</span>(), <span class="cf">function</span>(turn) turn<span class="sc">@</span>role <span class="sc">==</span> <span class="st">"assistant"</span>, <span class="fu">logical</span>(<span class="dv">1</span>)))</span>
-<span id="cb5-119"><a href="#cb5-119" aria-label="119"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-61"><a href="#cb5-61" aria-label="61"></a><span class="co"># Manual mode: show every write or test run, and ask before it happens ----</span></span>
+<span id="cb5-62"><a href="#cb5-62" aria-label="62"></a>ask_first <span class="ot">&lt;-</span> <span class="cf">function</span>(request) {</span>
+<span id="cb5-63"><a href="#cb5-63" aria-label="63"></a>  <span class="cf">if</span> (request<span class="sc">@</span>name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"write_file"</span>, <span class="st">"run_test"</span>)) {</span>
+<span id="cb5-64"><a href="#cb5-64" aria-label="64"></a>    <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">The agent wants to call"</span>, request<span class="sc">@</span>name, <span class="st">"with:</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb5-65"><a href="#cb5-65" aria-label="65"></a>    <span class="cf">for</span> (arg <span class="cf">in</span> <span class="fu">names</span>(request<span class="sc">@</span>arguments)) {</span>
+<span id="cb5-66"><a href="#cb5-66" aria-label="66"></a>      <span class="fu">cat</span>(<span class="st">"--"</span>, arg, <span class="st">"--</span><span class="sc">\n</span><span class="st">"</span>, request<span class="sc">@</span>arguments[[arg]], <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb5-67"><a href="#cb5-67" aria-label="67"></a>    }</span>
+<span id="cb5-68"><a href="#cb5-68" aria-label="68"></a>    <span class="cf">if</span> (utils<span class="sc">::</span><span class="fu">menu</span>(<span class="fu">c</span>(<span class="st">"Yes"</span>, <span class="st">"No"</span>), <span class="at">title =</span> <span class="st">"Allow it?"</span>) <span class="sc">!=</span> <span class="dv">1</span>) <span class="fu">tool_reject</span>()</span>
+<span id="cb5-69"><a href="#cb5-69" aria-label="69"></a>  }</span>
+<span id="cb5-70"><a href="#cb5-70" aria-label="70"></a>}</span>
+<span id="cb5-71"><a href="#cb5-71" aria-label="71"></a></span>
+<span id="cb5-72"><a href="#cb5-72" aria-label="72"></a>chat <span class="ot">&lt;-</span> <span class="fu">chat_anthropic</span>(</span>
+<span id="cb5-73"><a href="#cb5-73" aria-label="73"></a>  <span class="at">model =</span> model,</span>
+<span id="cb5-74"><a href="#cb5-74" aria-label="74"></a>  <span class="at">credentials =</span> agent_key,</span>
+<span id="cb5-75"><a href="#cb5-75" aria-label="75"></a>  <span class="at">system_prompt =</span> <span class="fu">paste</span>(</span>
+<span id="cb5-76"><a href="#cb5-76" aria-label="76"></a>    <span class="st">"You are a careful R assistant working in this project."</span>,</span>
+<span id="cb5-77"><a href="#cb5-77" aria-label="77"></a>    <span class="st">"Read files before you change them. Write files only under scripts/;"</span>,</span>
+<span id="cb5-78"><a href="#cb5-78" aria-label="78"></a>    <span class="st">"never edit tests/. Code you write must work in a fresh R session, so load"</span>,</span>
+<span id="cb5-79"><a href="#cb5-79" aria-label="79"></a>    <span class="st">"packages with library() or call them with pkg::. Say what you changed,"</span>,</span>
+<span id="cb5-80"><a href="#cb5-80" aria-label="80"></a>    <span class="st">"and stop when the task is done."</span></span>
+<span id="cb5-81"><a href="#cb5-81" aria-label="81"></a>  )</span>
+<span id="cb5-82"><a href="#cb5-82" aria-label="82"></a>)</span>
+<span id="cb5-83"><a href="#cb5-83" aria-label="83"></a>chat<span class="sc">$</span><span class="fu">register_tools</span>(<span class="fu">list</span>(read_file, write_file, run_test))</span>
+<span id="cb5-84"><a href="#cb5-84" aria-label="84"></a>chat<span class="sc">$</span><span class="fu">on_tool_request</span>(ask_first)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><code>list_files()</code> lists one folder and at most 100 names, and <code>read_file()</code> returns at most 300 lines: a recursive listing would include every package in <code>renv/</code>, and all of it would be sent to the model. An error in a tool does not stop the agent: ellmer sends the error message back to the model, which can try something else. <code>run_r()</code> uses a fresh R session (<code><a href="https://callr.r-lib.org/reference/r.html">callr::r()</a></code>), so it cannot change the objects in yours, and only the first 60 lines of its output go back to the model.</p>
+<p>An error in a tool does not stop the agent: ellmer sends the error message back to the model, which can try something else, so a refused write comes back as “Refused: …”. <code>run_test()</code> uses a fresh R session (<code><a href="https://callr.r-lib.org/reference/r.html">callr::r()</a></code>), so it cannot change the objects in yours, and only the last 40 lines of its output go back to the model.</p>
 </div>
 </div>
 </div>
 </section><section id="task-2-run-your-agent" class="level2"><h2 class="anchored" data-anchor-id="task-2-run-your-agent">Task 2: run your agent</h2>
 <div class="task">
 <div class="task-header">
-<p>Run your agent (20 minutes)</p>
+<p>Run your agent (15 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>Goal:</strong> watch your own agent write, test and fix a translation while you approve every write and run, so that you see exactly where Manual mode and a deny rule act.</p>
+<p><strong>Goal:</strong> watch your own agent write, test and fix a translation while you approve every write and test run, so that you see exactly where Manual mode and a deny rule act.</p>
 <p><strong>Start state:</strong> <code>main</code>, Git pane clean, R’s working directory at the repository’s root (as it is when you open the project).</p>
 <p><strong>1. Load the agent.</strong> Nothing is sent to the model yet:</p>
 <div class="cell" data-layout-align="center">
@@ -1010,20 +975,18 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 <span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>  <span class="st">"Write a function summarise_rate_tidy(data) in scripts/functions/summaries.R"</span>,</span>
 <span id="cb7-3"><a href="#cb7-3" aria-label="3"></a>  <span class="st">"whose output matches legacy_rate_summary() in tests/test_translation.R."</span>,</span>
 <span id="cb7-4"><a href="#cb7-4" aria-label="4"></a>  <span class="st">"Use dplyr and the native pipe; it must work in a fresh R session."</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a>  <span class="st">"Write only that file, and no tests. Then run"</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a>  <span class="st">"testthat::test_file('tests/test_translation.R') with run_r, and fix the"</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a>  <span class="st">"function until the test passes."</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-label="8"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a>  <span class="st">"Write only that file, and no tests. Then run the test with run_test,"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a>  <span class="st">"and fix the function until it passes."</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>3. Decide each request.</strong> Reads run without asking. For a <code>write_file</code> or <code>run_r</code> request, read what it prints and choose <strong>Yes</strong> only for a write to <code>scripts/functions/summaries.R</code> or a run of the test. <strong>Refuse the first test run on purpose:</strong> the agent stops and explains. Then let it continue:</p>
+<p><strong>3. Decide each request.</strong> Reads run without asking. For a <code>write_file</code> request, read the code it prints and choose <strong>Yes</strong> only for a write to <code>scripts/functions/summaries.R</code>. <strong>Refuse the first <code>run_test</code> on purpose:</strong> the agent stops and explains. Then let it continue:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"Go ahead and run the test."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>4. Look inside.</strong></p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a>chat               <span class="co"># every turn: your prompt, its tool requests, the results</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a><span class="fu">count_requests</span>()   <span class="co"># how many requests it sent to the model</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a>chat<span class="sc">$</span><span class="fu">get_tokens</span>()  <span class="co"># the tokens it sent and received</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>chat<span class="sc">$</span><span class="fu">get_tokens</span>()  <span class="co"># the tokens it sent and received</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>5. Check its work yourself.</strong> The agent’s “the test passes” is a claim. Read the diff of <code>scripts/functions/summaries.R</code> in the Git pane, then restart R (<em>Session → Restart R</em>) and run:</p>
 <div class="cell" data-layout-align="center">
@@ -1036,7 +999,7 @@ Did your agent notice the missing value?
 </button>
 <p><code><a href="https://rdrr.io/r/stats/aggregate.html">aggregate()</a></code> with a formula silently drops the animal whose <code>metabolic_rate_post</code> is missing, so the original’s mean and count leave it out. A literal tidyverse translation keeps it: an <code>NA</code> mean and a count one too high. The test compares against the original, so the agent had to match that behaviour, and if it read the test it probably did so without comment. The test checks “the same as the original”, not “correct”: Block 8 returns to that difference.</p>
 </div>
-<p><strong>You are done when</strong> <code>test_translation.R</code> passes in your own run, the Git pane showed only <code>summaries.R</code> and your log changed, you can say how many requests and tokens the task took, and both are committed.</p>
+<p><strong>You are done when</strong> <code>test_translation.R</code> passes in your own run, the Git pane showed only <code>summaries.R</code> and your log changed, you can say how many requests the task took (count the assistant turns in the printed <code>chat</code>) and how many tokens, and both are committed.</p>
 <p><strong>If it goes wrong:</strong></p>
 <ul>
 <li>
@@ -1083,7 +1046,7 @@ Did your agent notice the missing value?
 </tr>
 <tr class="even">
 <td>
-<code>inside_project()</code>: writes only under <code>scripts/</code>
+<code>allowed()</code>: writes only under <code>scripts/</code>
 </td>
 <td>Deny rules in <code>.claude/settings.json</code>, such as <code>Edit(/data/raw/**)</code>
 </td>
@@ -1095,12 +1058,12 @@ Did your agent notice the missing value?
 </tr>
 <tr class="even">
 <td>
-<code>run_r()</code> in a fresh R session</td>
-<td>Commands it runs in the Terminal; you check results in a fresh R session</td>
+<code>run_test()</code>, which can run one test and nothing else</td>
+<td>Any command it asks to run, each with your approval</td>
 </tr>
 <tr class="odd">
 <td>
-<code>chat</code>, <code>count_requests()</code>, <code>chat$get_tokens()</code>
+<code>chat</code> and <code>chat$get_tokens()</code>
 </td>
 <td>The conversation itself, and the model shown in Claude Code</td>
 </tr>
@@ -1127,7 +1090,7 @@ Did your agent notice the missing value?
 <li>
 <strong>Check:</strong> every write and every run is shown to you before it happens; the Git pane shows what changed; the test runs in a fresh R session.</li>
 <li>
-<strong>Reproduce:</strong> <code>run_r()</code> runs in a fresh R session, so the agent’s checks do not depend on what is loaded in yours.</li>
+<strong>Reproduce:</strong> <code>run_test()</code> runs in a fresh R session, so the agent’s check does not depend on what is loaded in yours.</li>
 <li>
 <strong>Record:</strong> <code>chat</code> holds the full record of what was sent and received; your AI-use log records the tool, the model and what you kept.</li>
 </ul>
@@ -1135,15 +1098,15 @@ Did your agent notice the missing value?
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>In an agent built with ellmer, who runs a tool’s R function?</strong></p>
-<div id="radio_VKDXUGSOCG" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_VKDXUGSOCG" value=""><span>The model, on Anthropic's servers</span></label><label><input type="radio" autocomplete="off" name="radio_VKDXUGSOCG" value="answer"><span>The harness (ellmer), on your computer, after the model asks for it</span></label><label><input type="radio" autocomplete="off" name="radio_VKDXUGSOCG" value=""><span>Nobody: the model predicts what the function would return</span></label><label><input type="radio" autocomplete="off" name="radio_VKDXUGSOCG" value=""><span>RStudio, in a separate window</span></label>
+<div id="radio_RLTGZMDOLH" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_RLTGZMDOLH" value=""><span>The model, on Anthropic's servers</span></label><label><input type="radio" autocomplete="off" name="radio_RLTGZMDOLH" value="answer"><span>The harness (ellmer), on your computer, after the model asks for it</span></label><label><input type="radio" autocomplete="off" name="radio_RLTGZMDOLH" value=""><span>Nobody: the model predicts what the function would return</span></label><label><input type="radio" autocomplete="off" name="radio_RLTGZMDOLH" value=""><span>RStudio, in a separate window</span></label>
 </div>
 <p><strong>True or false: when an agent’s tool reads a file, the file’s contents are sent to the model provider.</strong> <select class="webex-select"><option value="blank"></option>
 <option value="answer">TRUE</option>
 <option value="NA">FALSE</option></select></p>
-<p><strong><code>inside_project()</code> lets the agent write only under <code>scripts/</code>. Which tool call could still change a raw data file?</strong></p>
-<div id="radio_LMSERMEEFU" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_LMSERMEEFU" value=""><span>read_file('data/raw/voles_raw.csv')</span></label><label><input type="radio" autocomplete="off" name="radio_LMSERMEEFU" value=""><span>write_file('data/raw/voles_raw.csv', '…')</span></label><label><input type="radio" autocomplete="off" name="radio_LMSERMEEFU" value="answer"><span>run_r() with code that writes to data/raw/</span></label><label><input type="radio" autocomplete="off" name="radio_LMSERMEEFU" value=""><span>list_files('data/raw')</span></label>
+<p><strong>Your agent can write only under <code>scripts/</code>, and has no general run-R tool. What would adding one put at risk?</strong></p>
+<div id="radio_RDUATMOKMI" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_RDUATMOKMI" value=""><span>Nothing: the write rule still covers every file</span></label><label><input type="radio" autocomplete="off" name="radio_RDUATMOKMI" value="answer"><span>Every file: R code the model writes can change anything, data/raw/ included, whatever the write rule says</span></label><label><input type="radio" autocomplete="off" name="radio_RDUATMOKMI" value=""><span>Only the files under scripts/</span></label><label><input type="radio" autocomplete="off" name="radio_RDUATMOKMI" value=""><span>Only the API key, because R code cannot write files</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
@@ -1153,13 +1116,29 @@ Did your agent notice the missing value?
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Add a <code>run_tests</code> tool
+<span class="screen-reader-only">Tip</span>Add a general <code>run_r()</code> tool, and see the gap reopen
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
 <div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Replace general-purpose <code>run_r()</code> for checking with a tool that can only run the project’s tests, <code>function() testthat::test_dir("tests")</code> run through <code><a href="https://callr.r-lib.org/reference/r.html">callr::r()</a></code>. A narrow tool needs less approval than a general one: you might let it through without asking, and keep asking for <code>run_r()</code>.</p>
+<p>Give the agent this tool, register it alongside the others, and add <code>"run_r"</code> to the names <code>ask_first()</code> asks about:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a>run_r <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-label="2"></a>  <span class="cf">function</span>(code) {</span>
+<span id="cb11-3"><a href="#cb11-3" aria-label="3"></a>    out <span class="ot">&lt;-</span> callr<span class="sc">::</span><span class="fu">r</span>(<span class="cf">function</span>(code) utils<span class="sc">::</span><span class="fu">capture.output</span>(</span>
+<span id="cb11-4"><a href="#cb11-4" aria-label="4"></a>      <span class="fu">tryCatch</span>(<span class="fu">source</span>(<span class="at">exprs =</span> <span class="fu">parse</span>(<span class="at">text =</span> code), <span class="at">print.eval =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb11-5"><a href="#cb11-5" aria-label="5"></a>               <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">cat</span>(<span class="st">"Error:"</span>, <span class="fu">conditionMessage</span>(e), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>))</span>
+<span id="cb11-6"><a href="#cb11-6" aria-label="6"></a>    ), <span class="fu">list</span>(<span class="at">code =</span> code))</span>
+<span id="cb11-7"><a href="#cb11-7" aria-label="7"></a>    <span class="fu">paste</span>(utils<span class="sc">::</span><span class="fu">head</span>(out, <span class="dv">60</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-label="8"></a>  },</span>
+<span id="cb11-9"><a href="#cb11-9" aria-label="9"></a>  <span class="at">name =</span> <span class="st">"run_r"</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" aria-label="10"></a>  <span class="at">description =</span> <span class="st">"Run R code in a fresh R session; return its printed output."</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-label="11"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">code =</span> <span class="fu">type_string</span>(<span class="st">"The R code to run."</span>))</span>
+<span id="cb11-12"><a href="#cb11-12" aria-label="12"></a>)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-label="13"></a>chat<span class="sc">$</span><span class="fu">register_tool</span>(run_r)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Now the model can run any code: <code><a href="https://rdrr.io/r/base/writeLines.html">writeLines()</a></code> into <code>data/raw/</code>, or <code><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv()</a></code> for your key. <code>allowed()</code> no longer protects anything, and only your approval stands in the way, exactly as in Block 5. A narrow tool such as <code>run_test()</code> needs less trust than a general one.</p>
 </div>
 </div>
 </div>

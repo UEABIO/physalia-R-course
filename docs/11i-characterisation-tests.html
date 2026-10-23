@@ -66,7 +66,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./11b-inline-completions.html" rel="next">
+<link href="./11h-code-review.html" rel="next">
 <link href="./11g-data-cleaning.html" rel="prev">
 <link href="./images/logos/advancing-r-icon.png" rel="icon" type="image/png">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
@@ -541,6 +541,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Block 8: Functionalise a script step and prove the result is unchanged</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./11h-code-review.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Block 9: AI-assisted code review</span></a>
+  </div>
+</li>
       </ul>
 </li>
         <li class="sidebar-item sidebar-item-section">
@@ -556,12 +562,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="./11b-inline-completions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Self-study: Inline completions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./11h-code-review.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Self-study: AI-assisted code review</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -643,7 +643,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#step-1" id="toc-step-1" class="nav-link" data-scroll-target="#step-1">Step 1: snapshot, refactor and test with the skill</a></li>
   <li><a href="#step-2" id="toc-step-2" class="nav-link" data-scroll-target="#step-2">Step 2: unchanged is not correct</a></li>
   <li><a href="#check-your-understanding" id="toc-check-your-understanding" class="nav-link" data-scroll-target="#check-your-understanding">Check your understanding</a></li>
-  <li><a href="#wrap-up-for-the-day" id="toc-wrap-up-for-the-day" class="nav-link" data-scroll-target="#wrap-up-for-the-day">Wrap-up for the day</a></li>
   <li><a href="#going-further" id="toc-going-further" class="nav-link" data-scroll-target="#going-further">Going further (not covered live)</a></li>
   <li><a href="#glossary" id="toc-glossary" class="nav-link" data-scroll-target="#glossary">Glossary</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
@@ -666,7 +665,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 </header><p>You let an agent turn working code into a function and prove nothing changed, with a <a class="glossary">characterisation test<span class="def">A test that checks new code reproduces the saved output of the original code exactly. It shows the output is unchanged, not that it is correct.</span></a> as in the <a href="./05-tidy-evaluation.html">tidy-evaluation chapter</a>: the original output, frozen as a reference, must be reproduced exactly. Then you change the behaviour on purpose, and record why.</p>
-<p><em>⏱ ~40 minutes · Start on <code>main</code> (or <code>checkpoint-cleaning</code>), Git pane clean, Claude Code running in Manual mode.</em></p>
+<p><em>⏱ ~25 minutes · Start on <code>main</code> (or <code>checkpoint-cleaning</code>), Git pane clean, Claude Code running in Manual mode.</em></p>
 <div id="block8-files" class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -1012,7 +1011,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>The guard cannot tell whether numbers were also typed into the test; reading the test can. Other blocks’ tests pass or skip.</p>
-<p><strong>You are done when</strong> the suite has no failures and the Git pane shows only the function, <code>05_analysis.R</code>, the new test and <code>.claude/settings.json</code> as changed. Commit them.</p>
+<p><strong>6. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; tool and model; task; what you kept or changed), noting whether the test passed first time.</p>
+<p><strong>You are done when</strong> the suite has no failures and the Git pane shows only the function, <code>05_analysis.R</code>, the new test, <code>.claude/settings.json</code> and your log as changed. Commit them.</p>
 <p><strong>If it goes wrong:</strong> see <em>Fixes for Step 1</em> below the task, or switch to <code>checkpoint-refactor</code>.</p>
 <p><strong>Payoff.</strong> What did the agent do, how long did checking it take, and would you automate this again?</p>
 </div>
@@ -1159,6 +1159,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Your test passes, <strong>including the <code>NA</code> mean and SD</strong> for one group. If you wanted the mean of the animals that were measured, the original code was wrong all along, and a characterisation test cannot tell: it compares against the past, not against the truth. Judging the behaviour correct is a separate step, and it is yours.</p>
 <div class="task">
 <div class="task-header">
+<p>Discuss: is the original right? (3 minutes)</p>
+</div>
+<div class="task-container">
+<p><strong>Goal:</strong> decide whether the output you just protected is correct, so that you never mistake “unchanged” for “right”.</p>
+<p><strong>1. Look at the reference.</strong> In the R console, <code>readRDS(here::here("tests", "fixtures", "metabolic_summary.rds"))</code>: one group’s mean and SD are <code>NA</code>, and its <code>n</code> counts an animal that was never measured.</p>
+<p><strong>2. Answer in the chat:</strong> is that what the analysis should report? If not, what would you change, and how would you prove the new behaviour is right when the characterisation test, by design, will now fail?</p>
+<div class="webex-solution">
+<button>
+One answer
+</button>
+<p>Use measured animals only: <code>na.rm = TRUE</code> for the mean and SD, and a count of measured and missing animals instead of <code>n</code>. Prove it with a <a class="glossary">known-answer test<span class="def">A test that checks code against a result worked out independently, for example by hand. It can show code is correct, where a characterisation test only shows it is unchanged.</span></a>, a small table whose answer you work out by hand; then re-capture the reference yourself and commit it with a message saying why. The re-captured reference is a decision you recorded, not drift.</p>
+</div>
+<p><strong>You are done when</strong> you can say why the passing test does not show the output is correct, and what would.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Do it yourself (after the day): change the behaviour and re-capture
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="task">
+<div class="task-header">
 <p>Decide, change, and test the change independently (12 minutes)</p>
 </div>
 <div class="task-container">
@@ -1229,7 +1258,10 @@ A function and test you should converge on
 <p>Re-capturing is safe here for three reasons: you decided it, a known-answer test checks the new behaviour, and the commit records why.</p>
 <p><strong>6. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; tool and model; task; what you kept or changed) and commit it.</p>
 <p><strong>You are done when</strong> the whole suite passes again, the re-captured reference is committed with its reason, and your AI-log line is committed.</p>
-<p><strong>If it goes wrong:</strong> if the known-answer test fails, the arithmetic or the function is wrong; read both before changing either. Short of time? Switch to <code>checkpoint-refactor</code>, which has Step 2 done.</p>
+<p><strong>If it goes wrong:</strong> if the known-answer test fails, the arithmetic or the function is wrong; read both before changing either.</p>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -1246,46 +1278,31 @@ A function and test you should converge on
 <li>
 <strong>You can now:</strong> let an agent snapshot, refactor and test working analysis code with one request, <strong>trusted because</strong> the reference came from the original code, committed by you before anything changed, and a shipped guard test checks that the agent’s test reads it.</li>
 <li>
-<strong>Check:</strong> the whole test suite; the diff in the Git pane; the arithmetic of the known-answer test.</li>
+<strong>Check:</strong> the whole test suite; the diff in the Git pane; your own judgement of whether the unchanged output is right.</li>
 <li>
 <strong>Reproduce:</strong> the suite passes after <em>Session → Restart R</em>, with nothing changed under <code>tests/fixtures/</code>.</li>
 <li>
-<strong>Record:</strong> the re-captured reference is a decision with a commit message that says why; your AI-log line records the request, whether the test passed first time, and what you changed.</li>
+<strong>Record:</strong> the committed reference, and your AI-log line: the request, whether the test passed first time, and what you changed.</li>
 </ul>
 </div>
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>A characterisation test passes after a refactor. What has it established?</strong></p>
-<div id="radio_YGAEQAJDXR" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_YGAEQAJDXR" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_YGAEQAJDXR" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_YGAEQAJDXR" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_YGAEQAJDXR" value=""><span>That the original code had no bugs</span></label>
+<div id="radio_IRGFLOZBJQ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_IRGFLOZBJQ" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_IRGFLOZBJQ" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_IRGFLOZBJQ" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_IRGFLOZBJQ" value=""><span>That the original code had no bugs</span></label>
 </div>
 <p><strong>Why must the reference be captured and committed before the refactor starts?</strong></p>
-<div id="radio_WMEFESAWGE" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_WMEFESAWGE" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_WMEFESAWGE" value=""><span>Because git cannot track .rds files once the code has changed</span></label><label><input type="radio" autocomplete="off" name="radio_WMEFESAWGE" value="answer"><span>Because a reference captured after the code changed is produced by the code under test, so it can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_WMEFESAWGE" value=""><span>Because the reference would be too large</span></label>
+<div id="radio_MBHKKOLFWR" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_MBHKKOLFWR" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_MBHKKOLFWR" value=""><span>Because git cannot track .rds files once the code has changed</span></label><label><input type="radio" autocomplete="off" name="radio_MBHKKOLFWR" value="answer"><span>Because a reference captured after the code changed is produced by the code under test, so it can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_MBHKKOLFWR" value=""><span>Because the reference would be too large</span></label>
 </div>
 <p><strong>The shipped deny rules protect tests/fixtures/ in Claude Code. Once you have committed the reference, which action could still change it?</strong></p>
-<div id="radio_ZQRUUVNKZC" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_ZQRUUVNKZC" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_ZQRUUVNKZC" value="answer"><span>The agent running tests/make_reference.R again through the shell (git and test_reference_guard.R would show it)</span></label><label><input type="radio" autocomplete="off" name="radio_ZQRUUVNKZC" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_ZQRUUVNKZC" value=""><span>Running the test suite with testthat::test_dir()</span></label>
-</div>
-</section><section id="wrap-up-for-the-day" class="level2"><h2 class="anchored" data-anchor-id="wrap-up-for-the-day">Wrap-up for the day</h2>
-<div class="task">
-<div class="task-header">
-<p>Wrap-up (10 minutes)</p>
-</div>
-<div class="task-container">
-<p><strong>Goal:</strong> finish with evidence: the whole suite passing in a fresh R session and a complete AI-use log, so that anyone can check the repository you leave with.</p>
-<p><strong>1. Run the whole suite</strong> after restarting R, as in Step 1. Expect <code>FAIL 0</code>; tests for any block you skipped may skip.</p>
-<p><strong>2. Complete your log.</strong> Every block in which an agent worked needs its line in <code>docs/ai-log.md</code>; add any that is missing, and commit.</p>
-<p><strong>3. What you leave with.</strong> <code>AGENTS.md</code> and a skill, tested deny rules, your own agent, a codebook with its logs, a characterisation test, and the AI-use log.</p>
-<p><strong>4. Where next.</strong> <a href="./11b-inline-completions.html">Self-study: Inline completions</a>, <a href="./11h-code-review.html">Self-study: AI-assisted code review</a> and <a href="./11j-statistical-checks-reporting.html">Self-study: Reporting from your repository</a> all work in this repository or beside it.</p>
-<p><strong>You are done when</strong> the suite shows <code>FAIL 0</code> and your last log line is committed.</p>
-<p><strong>If it goes wrong:</strong> a failure names its test. In <code>test_ai_log.R</code>, a log line lacks one of its four parts; in <code>test_controls.R</code>, a protection has gone or a command was approved in advance. Fix what it names, then run the suite again.</p>
-</div>
+<div id="radio_ZBLNCAAGRL" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_ZBLNCAAGRL" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_ZBLNCAAGRL" value="answer"><span>The agent running tests/make_reference.R again through the shell (git and test_reference_guard.R would show it)</span></label><label><input type="radio" autocomplete="off" name="radio_ZBLNCAAGRL" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_ZBLNCAAGRL" value=""><span>Running the test suite with testthat::test_dir()</span></label>
 </div>
 </section><section id="going-further" class="level2"><h2 class="anchored" data-anchor-id="going-further">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1294,7 +1311,7 @@ A function and test you should converge on
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-11" class="callout-11-contents callout-collapse collapse">
+<div id="callout-12" class="callout-12-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>The skill turns a capture and two prompts into one request. Written out by hand, the capture is yours: restart R, run <code>source(here::here("tests", "make_reference.R"))</code>, and commit the <code>.rds</code>. The two prompts are below. Splitting the work matters: a single prompt that writes both the refactor and the test lets one misunderstanding (about row order, say) shape both files at once, producing a passing test that proves nothing.</p>
 <p><strong>Prompt 1: the refactor only.</strong></p>
@@ -1361,7 +1378,7 @@ Warning
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1370,7 +1387,7 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-12" class="callout-12-contents callout-collapse collapse">
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Everything here is written by you; only <code>make_reference.R</code> and the data are shipped. First capture and commit the reference as above. A tidy refactor naturally reaches for the modern <code>.by</code> argument. Write this first attempt in a new file, <code>scripts/functions/summary_functions.R</code>:</p>
 <div class="webex-solution">
@@ -1460,7 +1477,7 @@ Refactored function, and the script that calls it
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-14-contents" aria-controls="callout-14" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1469,25 +1486,9 @@ Refactored function, and the script that calls it
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-13" class="callout-13-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p><code>/permissions</code> writes this same file when you choose the shared settings file. The same rule can be added by hand: open <code>.claude/settings.json</code> in the editor and add <code>"Edit(/tests/test_summary_functions.R)"</code> to the <code>deny</code> list, minding the comma after the line before. Claude Code reloads the file without a restart. Either way, commit the file, so the rule travels with the repository. <code>test_controls.R</code> checks the rule is there.</p>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-14-contents" aria-controls="callout-14" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>The review gate
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
 <div id="callout-14" class="callout-14-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Local controls do not exist for an agent that works remotely. On GitHub, a pull request that changes a file under <code>tests/</code> can be held until the code owner reviews it. How to set up CODEOWNERS and branch protection is in the <em>Going further</em> section of <a href="./11f-enforced-controls.html">Block 5</a>.</p>
+<p><code>/permissions</code> writes this same file when you choose the shared settings file. The same rule can be added by hand: open <code>.claude/settings.json</code> in the editor and add <code>"Edit(/tests/test_summary_functions.R)"</code> to the <code>deny</code> list, minding the comma after the line before. Claude Code reloads the file without a restart. Either way, commit the file, so the rule travels with the repository. <code>test_controls.R</code> checks the rule is there.</p>
 </div>
 </div>
 </div>
@@ -1497,11 +1498,27 @@ Refactored function, and the script that calls it
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Reuse the skill on a second step
+<span class="screen-reader-only">Tip</span>The review gate
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
 <div id="callout-15" class="callout-15-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Local controls do not exist for an agent that works remotely. On GitHub, a pull request that changes a file under <code>tests/</code> can be held until the code owner reviews it. How to set up CODEOWNERS and branch protection is in the <em>Going further</em> section of <a href="./11f-enforced-controls.html">Block 5</a>.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-16-contents" aria-controls="callout-16" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Reuse the skill on a second step
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-16" class="callout-16-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>A skill earns its keep the second time you use it.</p>
 <div class="task">
@@ -1524,7 +1541,7 @@ Refactored function, and the script that calls it
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-16-contents" aria-controls="callout-16" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-17-contents" aria-controls="callout-17" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1533,7 +1550,7 @@ Refactored function, and the script that calls it
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-16" class="callout-16-contents callout-collapse collapse">
+<div id="callout-17" class="callout-17-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>The same work can be handed to an agent that runs remotely while you do something else. It works on a branch in GitHub’s infrastructure and returns a pull request. Before you start, check that your Copilot plan includes the cloud agent, that <code>copilot-setup-steps.yml</code> is on your default branch (see <em>The environment the test runs in</em> below), and that the repository has the review gate from <em>The review gate on GitHub</em> in the <em>Going further</em> section of <a href="./11f-enforced-controls.html">Block 5</a> (its CODEOWNERS already covers <code>tests/</code> and <code>.github/</code>).</p>
 <p>Keep the two-step discipline by writing <strong>two issues</strong>, and assign the second only after you have reviewed and merged the first.</p>
@@ -1572,7 +1589,7 @@ Refactored function, and the script that calls it
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-17-contents" aria-controls="callout-17" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-18-contents" aria-controls="callout-18" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1581,7 +1598,7 @@ Refactored function, and the script that calls it
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-17" class="callout-17-contents callout-collapse collapse">
+<div id="callout-18" class="callout-18-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>A characterisation test is only as stable as the environment it runs in. The column types in <code>load_voles()</code> handle the finest-grained part. The R version and the package set are handled by two GitHub Actions workflows. Neither ships with the template: to use them, create each file in <code>.github/workflows/</code>.</p>
 <p><code>r-checks.yml</code> is the independent check. It runs the tests from a clean checkout on every push to <code>main</code> and on every pull request:</p>
@@ -2621,8 +2638,8 @@ window.onresize = move_sidebar;
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./11b-inline-completions.html" class="pagination-link" aria-label="Self-study: Inline completions">
-        <span class="nav-page-text">Self-study: Inline completions</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./11h-code-review.html" class="pagination-link" aria-label="Block 9: AI-assisted code review">
+        <span class="nav-page-text">Block 9: AI-assisted code review</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

@@ -22,10 +22,17 @@ Moved out of the published chapters. Quarto ignores this folder because its name
 
 ## Block 6 (11k-build-an-agent.qmd): instructor notes
 
-- **Before the course:** run Task 2 once with a key from a brand-new Console account, on a fresh fork. Note the number of requests and the cost from `chat$get_cost()`, and check the account's rate limits; if every learner's key comes from one Console organisation, the room shares that organisation's limits.
+- **Before the course:** run Task 2 once with a key from a brand-new Console account, on a fresh fork. Note the number of requests, the tokens (`chat$get_tokens()`) and the cost (`chat$get_cost()`, after `ellmer::models_update_prices()` if it shows NA), and check the account's rate limits; if every learner's key comes from one Console organisation, the room shares that organisation's limits.
 - **The agent can write only under `scripts/`.** That is deliberate: it cannot edit its checks (`tests/`) or its own rules (`agent/`). If it tries, the refusal and its next move are worth showing.
-- **The flex block.** Nothing later in the day uses `summaries.R`. If the day is late, or several keys fail, run Task 2 on screen and have learners decide each approval in the chat (about 25 minutes instead of 45). Learners whose key fails can pair with a neighbour in a breakout room.
-- **Cost control:** `list_files()` lists one folder and at most 100 names, and `read_file()` returns at most 300 lines, so a curious agent cannot send the whole `renv/` library to the model.
+- **The flex block.** Nothing later in the day uses `summaries.R`. If the day is late, or several keys fail, run Task 2 on screen and have learners decide each approval in the chat (about 20 minutes instead of 35). Learners whose key fails can pair with a neighbour in a breakout room.
+- **Three narrow tools.** The agent can read files, write under `scripts/`, and run one test (`run_test()`); it has no general run-R tool and no file listing. That keeps the walkthrough short, the cost low and the risk small. *Going further* shows how adding a general `run_r()` reopens Block 5's gap.
+
+## Block 9 (11h-code-review.qmd): instructor notes
+
+- **Before the block:** check every learner made `~/ai-review` with `ANALYSIS.R` in the pre-workshop check (11a, step 7); the files callout repeats the two lines for anyone who did not.
+- **Split the room** before Task 1: odd-numbered participants delete the 9999 line from the prompt (*without*), even-numbered keep it (*with*). Post the split in the chat.
+- **Grading:** have the P1–P12 answer key from 07-code-review.qmd open; ask everyone to post group, hit count, P8 caught or not, and the most confident false positive.
+- **Debrief (5 minutes):** compare P8 between the groups first: it is the clearest demonstration that a reviewer cannot know what the data alone reveal.
 
 ## 11g-data-cleaning.qmd: Instructor only: generating the planted data
 

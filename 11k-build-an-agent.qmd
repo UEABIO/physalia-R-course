@@ -13,7 +13,7 @@ You build the two parts of an agent yourself, a conversation and a tool, then
 run a complete agent on a real task and approve every step it takes. After
 this, every control from Blocks 3 to 5 is something you can see in code.
 
-*⏱ ~45 minutes · Start on `main`, Git pane clean, with your API key saved as
+*⏱ ~35 minutes · Start on `main`, Git pane clean, with your API key saved as
 `AGENT_ANTHROPIC_KEY` ([setup](11a-setup-claude-code.qmd#api-key)). Claude
 Code is not used in this block.*
 
@@ -30,7 +30,7 @@ on screen while you decide each approval in the chat.
 |---|---|---|
 | `data/raw/voles_metabolism.csv` | Shipped; used since Block 2 | The data the translation summarises |
 | `scripts/functions/load_voles.R` | Shipped; used since Block 3 | Reads the data with fixed column types |
-| `agent/mini_agent.R` | Shipped; first used here | The agent: four tools, its own permission rules and Manual-mode approvals |
+| `agent/mini_agent.R` | Shipped; first used here | The agent: three tools, its own permission rule and Manual-mode approvals |
 | `tests/test_translation.R` | Shipped; first used here | Compares a tidyverse translation with the original base R code |
 | `scripts/functions/summaries.R` | Written by your agent, with your approval, in Task 2 | The translation |
 | A line in `docs/ai-log.md` | You, in Task 2 | The record |
@@ -180,25 +180,24 @@ goes back inside a user turn; ellmer does that for you.
 
 ## Your agent: `agent/mini_agent.R`
 
-Your repository ships a complete agent built from the same parts, about 120
+Your repository ships a complete agent built from the same parts, about 80
 lines. Your instructor walks through it; each part matches something from this
 morning:
 
-- **Four tools.** `list_files()` and `read_file()` look around; `write_file()`
-  and `run_r()` change things.
-- **`inside_project()` is its deny rule.** It may read inside the project,
-  except raw data and credentials files, and write **only under `scripts/`**,
-  so it cannot edit its checks in `tests/` or its own rules in `agent/`.
+- **Three tools.** `read_file()` looks around; `write_file()` changes a file;
+  `run_test()` runs one test, `tests/test_translation.R`, in a fresh R session.
+- **`allowed()` is its deny rule.** It may read inside the project, but not
+  credentials files, and write **only under `scripts/`**, so it cannot edit its
+  checks in `tests/` or its own rules in `agent/`.
 - **`ask_first()` is Manual mode.** Reads go straight through; every write and
-  every run is shown to you first, and refused unless you choose **Yes**.
+  every test run is shown to you first, and refused unless you choose **Yes**.
 - **The system prompt is its instruction file.** It is not given your
   `AGENTS.md` (it could still open the file, like any other), and like
   `AGENTS.md` its prompt is only a request.
 
-`run_r()` shows the gap Block 5 found: R code can write anywhere, `data/raw/`
-included, and read anything you can, your `.Renviron` included. Only your
-approval stands in the way, which is why you read the code before you choose
-**Yes**; afterwards the Git pane shows any change.
+Your agent can run one test and nothing else. A general run-R tool would let
+the model run any code, which is the gap Block 5 found: R code can write
+anywhere, whatever the deny rules say.
 
 :::{.callout-tip collapse="true"}
 ## Reference: the full `agent/mini_agent.R`
@@ -206,12 +205,10 @@ approval stands in the way, which is why you read the code before you choose
 ```{r, eval = FALSE, file = here::here("_instructor", "template-files", "agent", "mini_agent.R")}
 ```
 
-`list_files()` lists one folder and at most 100 names, and `read_file()`
-returns at most 300 lines: a recursive listing would include every package in
-`renv/`, and all of it would be sent to the model. An error in a tool does not
-stop the agent: ellmer sends the error message back to the model, which can
-try something else. `run_r()` uses a fresh R session (`callr::r()`), so it
-cannot change the objects in yours, and only the first 60 lines of its output
+An error in a tool does not stop the agent: ellmer sends the error message
+back to the model, which can try something else, so a refused write comes back
+as "Refused: …". `run_test()` uses a fresh R session (`callr::r()`), so it
+cannot change the objects in yours, and only the last 40 lines of its output
 go back to the model.
 :::
 
@@ -220,13 +217,13 @@ go back to the model.
 
 :::{.task}
 ::::{.task-header}
-Run your agent (20 minutes)
+Run your agent (15 minutes)
 ::::
 ::::{.task-container}
 
 **Goal:** watch your own agent write, test and fix a translation while you
-approve every write and run, so that you see exactly where Manual mode and a
-deny rule act.
+approve every write and test run, so that you see exactly where Manual mode
+and a deny rule act.
 
 **Start state:** `main`, Git pane clean, R's working directory at the
 repository's root (as it is when you open the project).
@@ -247,16 +244,15 @@ chat$chat(paste(
   "Write a function summarise_rate_tidy(data) in scripts/functions/summaries.R",
   "whose output matches legacy_rate_summary() in tests/test_translation.R.",
   "Use dplyr and the native pipe; it must work in a fresh R session.",
-  "Write only that file, and no tests. Then run",
-  "testthat::test_file('tests/test_translation.R') with run_r, and fix the",
-  "function until the test passes."
+  "Write only that file, and no tests. Then run the test with run_test,",
+  "and fix the function until it passes."
 ))
 ```
 
-**3. Decide each request.** Reads run without asking. For a `write_file` or
-`run_r` request, read what it prints and choose **Yes** only for a write to
-`scripts/functions/summaries.R` or a run of the test. **Refuse the first test
-run on purpose:** the agent stops and explains. Then let it continue:
+**3. Decide each request.** Reads run without asking. For a `write_file`
+request, read the code it prints and choose **Yes** only for a write to
+`scripts/functions/summaries.R`. **Refuse the first `run_test` on purpose:**
+the agent stops and explains. Then let it continue:
 
 ```{r}
 #| eval: false
@@ -268,7 +264,6 @@ chat$chat("Go ahead and run the test.")
 ```{r}
 #| eval: false
 chat               # every turn: your prompt, its tool requests, the results
-count_requests()   # how many requests it sent to the model
 chat$get_tokens()  # the tokens it sent and received
 ```
 
@@ -300,7 +295,8 @@ that difference.
 
 **You are done when** `test_translation.R` passes in your own run, the Git
 pane showed only `summaries.R` and your log changed, you can say how many
-requests and tokens the task took, and both are committed.
+requests the task took (count the assistant turns in the printed `chat`) and
+how many tokens, and both are committed.
 
 **If it goes wrong:**
 
@@ -329,10 +325,10 @@ prices on Anthropic's pricing page. `claude-opus-5-5`, set at the top of
 | Your mini agent | Claude Code |
 |---|---|
 | `ask_first()` and `tool_reject()` | Manual mode (`default`) and the other permission modes |
-| `inside_project()`: writes only under `scripts/` | Deny rules in `.claude/settings.json`, such as `Edit(/data/raw/**)` |
+| `allowed()`: writes only under `scripts/` | Deny rules in `.claude/settings.json`, such as `Edit(/data/raw/**)` |
 | The system prompt | `AGENTS.md`, read at the start of each session |
-| `run_r()` in a fresh R session | Commands it runs in the Terminal; you check results in a fresh R session |
-| `chat`, `count_requests()`, `chat$get_tokens()` | The conversation itself, and the model shown in Claude Code |
+| `run_test()`, which can run one test and nothing else | Any command it asks to run, each with your approval |
+| `chat` and `chat$get_tokens()` | The conversation itself, and the model shown in Claude Code |
 | Git | Git |
 
 Claude Code adds plan mode, hooks, skills, compaction of long conversations,
@@ -351,8 +347,8 @@ controls.
   right.
 - **Check:** every write and every run is shown to you before it happens; the
   Git pane shows what changed; the test runs in a fresh R session.
-- **Reproduce:** `run_r()` runs in a fresh R session, so the agent's checks do
-  not depend on what is loaded in yours.
+- **Reproduce:** `run_test()` runs in a fresh R session, so the agent's check
+  does not depend on what is loaded in yours.
 - **Record:** `chat` holds the full record of what was sent and received; your
   AI-use log records the tool, the model and what you kept.
 :::
@@ -371,13 +367,13 @@ controls.
 
 **True or false: when an agent's tool reads a file, the file's contents are sent to the model provider.** `r torf(TRUE)`
 
-**`inside_project()` lets the agent write only under `scripts/`. Which tool call could still change a raw data file?**
+**Your agent can write only under `scripts/`, and has no general run-R tool. What would adding one put at risk?**
 
 `r longmcq(c(
-  "read_file('data/raw/voles_raw.csv')",
-  "write_file('data/raw/voles_raw.csv', '...')",
-  answer = "run_r() with code that writes to data/raw/",
-  "list_files('data/raw')"
+  "Nothing: the write rule still covers every file",
+  answer = "Every file: R code the model writes can change anything, data/raw/ included, whatever the write rule says",
+  "Only the files under scripts/",
+  "Only the API key, because R code cannot write files"
 ))`
 
 
@@ -387,12 +383,32 @@ This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
 
 :::{.callout-tip collapse="true"}
-## Add a `run_tests` tool
+## Add a general `run_r()` tool, and see the gap reopen
 
-Replace general-purpose `run_r()` for checking with a tool that can only run
-the project's tests, `function() testthat::test_dir("tests")` run through
-`callr::r()`. A narrow tool needs less approval than a general one: you might
-let it through without asking, and keep asking for `run_r()`.
+Give the agent this tool, register it alongside the others, and add
+`"run_r"` to the names `ask_first()` asks about:
+
+```{r}
+#| eval: false
+run_r <- tool(
+  function(code) {
+    out <- callr::r(function(code) utils::capture.output(
+      tryCatch(source(exprs = parse(text = code), print.eval = TRUE),
+               error = function(e) cat("Error:", conditionMessage(e), "\n"))
+    ), list(code = code))
+    paste(utils::head(out, 60), collapse = "\n")
+  },
+  name = "run_r",
+  description = "Run R code in a fresh R session; return its printed output.",
+  arguments = list(code = type_string("The R code to run."))
+)
+chat$register_tool(run_r)
+```
+
+Now the model can run any code: `writeLines()` into `data/raw/`, or
+`Sys.getenv()` for your key. `allowed()` no longer protects anything, and only
+your approval stands in the way, exactly as in Block 5. A narrow tool such as
+`run_test()` needs less trust than a general one.
 :::
 
 :::{.callout-tip collapse="true"}

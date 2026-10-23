@@ -1,7 +1,7 @@
 # Day 4 workshop template: checklist
 
 The participant template repository that learners fork before Day 4. The
-Day 4 pages (11a, Blocks 2–8 and the three self-study pages) assume exactly
+Day 4 pages (11a, Blocks 2–8 and the two self-study pages) assume exactly
 this layout. Quarto ignores this folder, so nothing here is published.
 
 **Source of truth:** `_instructor/template-files/` holds every file the
@@ -12,9 +12,9 @@ book and the template cannot drift apart.
 **The live day:** Block 1 Framing (`11`), 2 Debugging (`11c`), 3 Context,
 disclosure and autonomy (`11d`), 4 Instructions and skills (`11e`), 5 Enforced
 controls (`11f`), lunch, 6 Build your own agent (`11k`), 7 Data cleaning
-(`11g`), 8 Characterisation tests (`11i`), wrap-up. **Self-study:** inline
-completions (`11b`), AI-assisted code review (`11h`), reporting from your
-repository (`11j`).
+(`11g`), 8 Characterisation tests (`11i`), 9 AI-assisted code review (`11h`,
+in `~/ai-review`, outside the template), wrap-up. **Self-study:** inline
+completions (`11b`), reporting from your repository (`11j`).
 
 ## Files the template must ship
 
@@ -53,12 +53,12 @@ git-ignored), `docs/ai-log.md` (Block 3), `scripts/explore_mass_change_plot.R`
 `scripts/functions/summaries.R`, written by their mini agent (Block 6),
 `docs/codebook.csv`, `docs/profile.csv`, `docs/profile_labels.csv`,
 `docs/profile_ids.csv`, `scripts/01_clean.R` and `data/derived/*.csv`
-(Block 7), and `scripts/functions/summary_functions.R`,
-`tests/test_summary_functions.R`, `tests/test_known_answers.R`,
-`tests/fixtures/metabolic_summary.rds` and a deny rule in
-`.claude/settings.json` (Block 8). The self-study pages add `README.md`
-(reporting) and, outside the repository in `~/ai-review`, the code-review files
-(only `docs/review-prompt.md` and an AI-log line land in the repository).
+(Block 7), `scripts/functions/summary_functions.R`,
+`tests/test_summary_functions.R`, `tests/fixtures/metabolic_summary.rds` and a
+deny rule in `.claude/settings.json` (Block 8), and an AI-log line (Block 9,
+whose review runs in `~/ai-review`, made in the pre-workshop check). Optional,
+after the day: `tests/test_known_answers.R` (Block 8's *Do it yourself*),
+`docs/review-prompt.md` (Block 9) and `README.md` (the reporting page).
 
 Not shipped: `.github/` (CODEOWNERS, workflows) and `hooks/`. These appear
 only in *Going further* sections.
@@ -92,7 +92,7 @@ carry on. Build each branch on top of the previous one.
 |---|---|
 | `checkpoint-skills` | `docs/ai-log.md` (two lines), `mass_change_g` in `explore_voles.R`, `scripts/explore_mass_change_plot.R` (saves to `outputs/` with `ggsave()`), `scripts/fig_house.R`, two edits to `AGENTS.md`, and `.agents/skills/house-figures/` with its `.claude/` copy. No `CLAUDE.md` |
 | `checkpoint-cleaning` | Block 6's `scripts/functions/summaries.R` (a version that passes `test_translation.R`) and its log line; `docs/codebook.csv` (the converged codebook from Block 7, with `<unit>` kept for metabolic rate), `template-files/checkpoints/checkpoint-cleaning/scripts/01_clean.R`, and the three `data/derived/` files it writes |
-| `checkpoint-refactor` | `scripts/functions/summary_functions.R` (the missing-values version from Block 8), `scripts/05_analysis.R` calling it, `tests/test_summary_functions.R` (the characterisation test) and `tests/test_known_answers.R` (the known-answer test), `tests/fixtures/metabolic_summary.rds` re-captured, and `Edit(/tests/test_summary_functions.R)` in `.claude/settings.json` (Block 8 tells learners to save it to *Project settings*; `settings.local.json` is git-ignored, so a branch cannot carry it) |
+| `checkpoint-refactor` | Block 8's Step 1 state: `scripts/functions/summary_functions.R` (the refactored function, behaviour unchanged), `scripts/05_analysis.R` calling it, `tests/test_summary_functions.R` (the characterisation test), `tests/fixtures/metabolic_summary.rds` (the original reference), and `Edit(/tests/test_summary_functions.R)` in `.claude/settings.json` (Block 8 tells learners to save it to the shared settings file; `settings.local.json` is git-ignored, so a branch cannot carry it) |
 
 The fallback `01_clean.R` reads `docs/codebook.csv` at run time. Against the
 planted data it excludes the two duplicate rows (raw rows 31 and 52), sets

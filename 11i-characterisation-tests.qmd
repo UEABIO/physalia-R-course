@@ -16,7 +16,7 @@ with a `r glossary("characterisation test")` as in the
 as a reference, must be reproduced exactly. Then you change the behaviour on
 purpose, and record why.
 
-*⏱ ~40 minutes · Start on `main` (or `checkpoint-cleaning`), Git pane clean,
+*⏱ ~25 minutes · Start on `main` (or `checkpoint-cleaning`), Git pane clean,
 Claude Code running in Manual mode.*
 
 :::{#block8-files .callout-note collapse="true"}
@@ -250,9 +250,12 @@ testthat::test_dir(here::here("tests"))
 The guard cannot tell whether numbers were also typed into the test; reading
 the test can. Other blocks' tests pass or skip.
 
+**6. Record it.** Add a line to `docs/ai-log.md` (date; tool and model; task;
+what you kept or changed), noting whether the test passed first time.
+
 **You are done when** the suite has no failures and the Git pane shows only the
-function, `05_analysis.R`, the new test and `.claude/settings.json` as
-changed. Commit them.
+function, `05_analysis.R`, the new test, `.claude/settings.json` and your log
+as changed. Commit them.
 
 **If it goes wrong:** see *Fixes for Step 1* below the task, or switch to
 `checkpoint-refactor`.
@@ -333,6 +336,43 @@ wanted the mean of the animals that were measured, the original code was wrong
 all along, and a characterisation test cannot tell: it compares against the
 past, not against the truth. Judging the behaviour correct is a separate step,
 and it is yours.
+
+:::{.task}
+::::{.task-header}
+Discuss: is the original right? (3 minutes)
+::::
+::::{.task-container}
+
+**Goal:** decide whether the output you just protected is correct, so that
+you never mistake "unchanged" for "right".
+
+**1. Look at the reference.** In the R console,
+`readRDS(here::here("tests", "fixtures", "metabolic_summary.rds"))`: one
+group's mean and SD are `NA`, and its `n` counts an animal that was never
+measured.
+
+**2. Answer in the chat:** is that what the analysis should report? If not,
+what would you change, and how would you prove the new behaviour is right
+when the characterisation test, by design, will now fail?
+
+`r hide("One answer")`
+
+Use measured animals only: `na.rm = TRUE` for the mean and SD, and a count of
+measured and missing animals instead of `n`. Prove it with a
+`r glossary("known-answer test")`, a small table whose answer you work out by
+hand; then re-capture the reference yourself and commit it with a message
+saying why. The re-captured reference is a decision you recorded, not drift.
+
+`r unhide()`
+
+**You are done when** you can say why the passing test does not show the
+output is correct, and what would.
+
+::::
+:::
+
+::::::{.callout-tip collapse="true"}
+## Do it yourself (after the day): change the behaviour and re-capture
 
 :::{.task}
 ::::{.task-header}
@@ -444,11 +484,11 @@ what you kept or changed) and commit it.
 is committed with its reason, and your AI-log line is committed.
 
 **If it goes wrong:** if the known-answer test fails, the arithmetic or the
-function is wrong; read both before changing either. Short of time? Switch to
-`checkpoint-refactor`, which has Step 2 done.
+function is wrong; read both before changing either.
 
 ::::
 :::
+::::::
 
 
 :::{.callout-note}
@@ -458,13 +498,12 @@ function is wrong; read both before changing either. Short of time? Switch to
   code with one request, **trusted because** the reference came from the
   original code, committed by you before anything changed, and a shipped
   guard test checks that the agent's test reads it.
-- **Check:** the whole test suite; the diff in the Git pane; the arithmetic of
-  the known-answer test.
+- **Check:** the whole test suite; the diff in the Git pane; your own judgement
+  of whether the unchanged output is right.
 - **Reproduce:** the suite passes after *Session → Restart R*, with nothing
   changed under `tests/fixtures/`.
-- **Record:** the re-captured reference is a decision with a commit message
-  that says why; your AI-log line records the request, whether the test passed
-  first time, and what you changed.
+- **Record:** the committed reference, and your AI-log line: the request,
+  whether the test passed first time, and what you changed.
 :::
 
 
@@ -498,45 +537,6 @@ committed the reference, which action could still change it?**
   "Opening the .rds file in the IDE",
   "Running the test suite with testthat::test_dir()"
 ))`
-
-
-## Wrap-up for the day
-
-:::{.task}
-::::{.task-header}
-Wrap-up (10 minutes)
-::::
-::::{.task-container}
-
-**Goal:** finish with evidence: the whole suite passing in a fresh R session
-and a complete AI-use log, so that anyone can check the repository you leave
-with.
-
-**1. Run the whole suite** after restarting R, as in Step 1. Expect `FAIL 0`;
-tests for any block you skipped may skip.
-
-**2. Complete your log.** Every block in which an agent worked needs its line
-in `docs/ai-log.md`; add any that is missing, and commit.
-
-**3. What you leave with.** `AGENTS.md` and a skill, tested deny rules, your
-own agent, a codebook with its logs, a characterisation test, and the AI-use
-log.
-
-**4. Where next.**
-[Self-study: Inline completions](11b-inline-completions.qmd),
-[Self-study: AI-assisted code review](11h-code-review.qmd) and
-[Self-study: Reporting from your repository](11j-statistical-checks-reporting.qmd)
-all work in this repository or beside it.
-
-**You are done when** the suite shows `FAIL 0` and your last log line is
-committed.
-
-**If it goes wrong:** a failure names its test. In `test_ai_log.R`, a log line
-lacks one of its four parts; in `test_controls.R`, a protection has gone or a
-command was approved in advance. Fix what it names, then run the suite again.
-
-::::
-:::
 
 
 ## Going further (not covered live) {#going-further}

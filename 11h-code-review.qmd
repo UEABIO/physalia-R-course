@@ -1,4 +1,4 @@
-# Self-study: AI-assisted code review {.unnumbered}
+# Block 9: AI-assisted code review {.unnumbered}
 
 ```{r}
 #| include: false
@@ -11,75 +11,72 @@ library(webexercises)
 library(kableExtra)
 ```
 
-You will hand a script to an AI reviewer and grade what it finds. Because you
-already know this script's twelve problems, you can measure the machine rather
-than trust it. First, note your answer to a question the self-check returns
-to: if an AI code reviewer told you your analysis was clean, would you trust it
-enough to submit?
+On Day 2 you reviewed `ANALYSIS.R` by hand and found its twelve problems. Now
+an AI reviews the same script, and you grade it against your own review, so
+that you measure the machine rather than trust it.
 
-*Self-study: about 40 minutes, after the workshop day.* **Start state:** your
-workshop repository open, Git pane clean. It does not matter which blocks you
-finished, and there is no checkpoint branch.
+*⏱ ~30 minutes · Start: your workshop repository open, and the `~/ai-review`
+folder you made before the day ([setup](11a-setup-claude-code.qmd#ai-review)).
+Claude Code runs in that folder, not in your workshop repository.*
 
 :::{#code-review-files .callout-note collapse="true"}
-## This page's files, and how it fits
+## This block's files, and how it fits
 
 The review runs outside your workshop repository, on purpose. A reviewer
 started there would read `AGENTS.md` and the voles data, so its review would
-not be independent of what your project already tells it. Instead you make a
-new folder, `~/ai-review`, that holds `ANALYSIS.R`, the script you reviewed by
-hand on Day 2, and nothing else: no instructions, no settings and no data.
-Your workshop repository gains only your review prompt and an AI-log line.
+not be independent of what your project already tells it. `~/ai-review` holds
+`ANALYSIS.R` and nothing else: no instructions, no settings and no data.
 
-| File | Where | Made by | Step |
+| File | Where | Made by | Used in |
 |---|---|---|---|
-| `ANALYSIS.R` | `~/ai-review` | Downloaded from the [OSF project](https://osf.io/jgeq9/), as on Day 2 | *Run the review*, step 1 |
-| `docs/review-prompt.md` | Workshop repository | You | [*Write the review prompt*](#ai-prompting), step 3 |
-| `review_claude.md` | `~/ai-review` | You | *Run the review*, step 4 |
-| A line in `docs/ai-log.md` | Workshop repository | You | *Grade the machine*, step 4 |
-| The answer key, the P1–P12 table | The [manual code-review chapter](07-code-review.qmd#cr-manual) | Day 2; read it only after your review | *Grade the machine*, step 1 |
+| `ANALYSIS.R` | `~/ai-review` | Downloaded before the day from the [OSF project](https://osf.io/jgeq9/), as on Day 2 | Task 1 |
+| The answer key, the P1–P12 table | The [manual code-review chapter](07-code-review.qmd#cr-manual) | Day 2; open it only after the review | Task 2 |
+| A line in `docs/ai-log.md` | Workshop repository | You | Task 2 |
 
-*Going further* adds the data, a skill and a README to `~/ai-review`.
+If you did not make the folder before the day, run this in the R console:
+
+```{r}
+#| eval: false
+review_dir <- usethis::create_project("~/ai-review", open = FALSE)
+download.file("https://osf.io/download/3x6hb/",
+              file.path(review_dir, "ANALYSIS.R"), mode = "wb")
+```
 :::
 
 
-## Telling the AI how to behave {#ai-prompting}
+## Task 1: run the review {#ai-running}
 
 :::{.task}
 ::::{.task-header}
-Write the review prompt (7 minutes)
+Run the review (10 minutes)
 ::::
-
 ::::{.task-container}
 
-**Goal:** a review prompt with all four parts, saved in your workshop
-repository, so that you can reuse it on your own scripts after the course.
+**Goal:** an AI review of `ANALYSIS.R`, made from the script alone, so that you
+can grade it against problems you already know.
 
-**1. Start from the draft** below and check it has all four parts. "Review my
-code" alone gets a vague, generous review; a good review prompt has:
+**Start state:** `~/ai-review` holds `ANALYSIS.R`, and your instructor has told
+you whether you are in the *with* or the *without* group.
 
-| Part | Why |
-|---|---|
-| **A role and a standard**: "a critical reviewer applying the four Rs" | Gives the output a structure you can check |
-| **The intended analysis**: the model from the OSF page, with `TO` a count and block `B` a random effect | Without it, the AI cannot see that a Gaussian `lmer()` is the wrong family (P10) |
-| **No flattery**: line number, which R, severity, a fix | Keeps it to findings you can act on |
-| **Honest uncertainty**: "NEEDS HUMAN CHECK" instead of guessing | Shows you where to look yourself |
+**1. Start Claude Code in the review folder.** Open a **new** Terminal tab
+(Claude Code for your workshop repository keeps running in the first), then:
 
-**2. Choose your version.** The line about the 9999
-`r glossary("sentinel value")` tells the reviewer something the script alone
-cannot. Keep it, or delete it to see what the reviewer finds unaided; doing
-both, as two runs, shows the difference the line makes. Everything else stays
-the same.
+```bash
+cd ~/ai-review
+claude
+```
 
-**3. Keep it.** In your **workshop** repository, run
-`usethis::edit_file("docs/review-prompt.md")` in the R console, paste your
-prompt, save, and commit it from the Git pane. You will reuse it after the
-course.
+This folder has none of your workshop settings, so it may start in `auto`:
+check that the mode shown is Manual (`default`), and press `Shift+Tab` until it
+is.
 
-**You are done when** your prompt has all four elements and is committed as
-`docs/review-prompt.md`.
-
-`r hide("Working draft")`
+**2. Send the review.** Type `/plan`, a space, then paste the prompt below.
+If you are in the *without* group, delete the line marked with the arrow
+first: the room then shows what that one line changes. `/plan` keeps the agent
+to reading. **Answer each request with plain Yes or No.** Never choose an
+option that says *don't ask again*: it saves a rule that skips the question
+from then on. If it asks whether to proceed, choose **No, keep planning**: the
+review is all you need.
 
 **Prompt (Claude Code):**
 
@@ -96,125 +93,67 @@ Rules:
 - For each issue: line number(s), which R it violates, severity
   (critical / high / medium), and a concrete one-line fix.
 - The raw data use 9999 as a "not recorded" code. Check whether this is
-  handled.                                <- delete for a run without it
+  handled.                                <- the without group deletes this
 - Flag anything you CANNOT determine by reading alone as "NEEDS HUMAN
   CHECK" rather than guessing.
 - If you are uncertain about a finding, say so explicitly.
 Organise your output by the four Rs.
 ```
-`r unhide()`
 
-::::
-:::
+**3. Keep it on screen.** You grade it in Task 2, straight from the terminal.
 
+**You are done when** the review is on screen, organised by the four Rs.
 
-## Running the review {#ai-running}
-
-For a comparison with and without the 9999 line to work, the
-`r glossary("agent")` must see the script and nothing else; with the data it
-would find the 9999 code by itself. That is why `~/ai-review` holds only
-`ANALYSIS.R`. The chat route is in *Using another tool*, after the task.
-
-:::{.task}
-::::{.task-header}
-Run the review (10 minutes)
-::::
-
-::::{.task-container}
-
-**Goal:** an AI review of `ANALYSIS.R`, made from the script alone and saved
-as `~/ai-review/review_claude.md`, so that you can grade it against problems
-you already know.
-
-**Start state:** your review prompt committed as `docs/review-prompt.md` in
-your workshop repository.
-
-**1. Get the script into a new folder.** In the R console of any project:
-
-```{r}
-#| eval: false
-review_dir <- usethis::create_project("~/ai-review", open = FALSE)
-download.file("https://osf.io/download/3x6hb/",
-              file.path(review_dir, "ANALYSIS.R"), mode = "wb")
-```
-
-`create_project()` prints where it made the folder. Open that folder in a new
-window: in RStudio, *File → Open Project in New Session*; in Positron,
-*File → New Window*, then open the folder there.
-
-**2. Start Claude Code there, in Manual mode.** In the new window's Terminal
-tab:
-
-```bash
-claude
-```
-
-This folder has none of your workshop settings, so check that the mode shown
-is Manual (`default`); if it is not, press `Shift+Tab` until it is.
-
-**3. Ask for the review.** Type `/plan`, a space, then paste your prompt.
-Starting with `/plan` keeps it to reading. **Answer each request with plain
-Yes or No.** Never choose an option that says *don't ask again*: it saves a
-rule that skips the question from then on. If it asks whether to proceed,
-choose **No, keep planning**.
-
-**4. Save the review.** `plan` mode writes no files, so save it yourself: run
-`usethis::edit_file("~/ai-review/review_claude.md")` in the R console, paste
-the whole review and save.
-
-**You are done when** `~/ai-review/review_claude.md` holds the agent's whole
-review.
-
-**If it goes wrong:** if the download fails, download `ANALYSIS.R` from the
-[OSF project](https://osf.io/jgeq9/) in your browser into the folder
-`create_project()` reported. If Claude Code mentions `AGENTS.md` or the voles
-data, you started it in your workshop window: `/exit`, switch windows and
-start again. If you have no agent, use the chat route in *Using another tool*.
+**If it goes wrong:** if there is no `~/ai-review`, run the two lines in the
+files callout above. If Claude Code mentions `AGENTS.md` or the voles data, you
+started it in your workshop folder: `/exit`, `cd ~/ai-review` and start again.
+If you have no agent, use the chat route in *Using another tool*.
 
 ::::
 :::
 
 :::{.callout-note collapse="true"}
-## How it works
+## How it works: what makes a review prompt work
 
-- **The new folder.** `create_project()` gives the folder an `.Rproj` or
-  `.here` file, so that `here::here()` works there.
-- **The mode.** With none of your workshop settings, Claude Code may start in
-  `auto`. In Manual (`default`) it asks before doing anything.
-- **`/plan`.** Plan mode keeps the agent to reading (`r glossary("rung")` 2 in
-  [Block 3](11d-context-disclosure-autonomy.qmd)), and writes no files.
+"Review my code" alone gets a vague, generous review. The prompt above has
+four parts, each for a reason:
+
+| Part | Why |
+|---|---|
+| **A role and a standard**: "a critical reviewer applying the four Rs" | Gives the output a structure you can check |
+| **The intended analysis**: the model from the OSF page, with `TO` a count and block `B` a random effect | Without it, the AI cannot see that a Gaussian `lmer()` is the wrong family (P10) |
+| **No flattery**: line number, which R, severity, a fix | Keeps it to findings you can act on |
+| **Honest uncertainty**: "NEEDS HUMAN CHECK" instead of guessing | Shows you where to look yourself |
+
+The review must see the script and nothing else: with the data, the agent
+would find the 9999 code by itself, and the two groups would no longer differ.
+`/plan` keeps the agent to reading (`r glossary("rung")` 2 in
+[Block 3](11d-context-disclosure-autonomy.qmd)) and writes no files.
 :::
 
 :::{.callout-tip collapse="true"}
 ## Using another tool
 
-Doing the Claude Code route and the chat route both shows the difference
-between a chat window, which can only predict whether the script runs, and an
-agent, which can run it (see the stretch).
-
 **Posit Assistant.** Open `~/ai-review` in RStudio or Positron and switch
 Posit Assistant to Ask mode, so it can read but not change anything, then give
-it your review prompt. For the stretch below, use Normal mode, so it asks
-before running anything.
+it the prompt. For the stretch below, use Normal mode, so it asks before
+running anything.
 
 **Chat window.** Paste the whole of `ANALYSIS.R` into any chat window,
-followed by your review prompt. Paste the script only, not the data. A chat
-window cannot run anything, but its answer to "does this run?" can read as
-though it did: ask "what would *prevent* this running?" instead.
-
-Either way, save the review as in step 4, naming the file after the tool (for
-example `~/ai-review/review_chat.md`).
+followed by the prompt. Paste the script only, not the data. A chat window
+cannot run anything, but its answer to "does this run?" can read as though it
+did: ask "what would *prevent* this running?" instead.
 :::
 
 :::{.callout-tip collapse="true"}
 ## Stretch: let it run the script
 
 An agent that can run R turns the *Run* question from a prediction into
-evidence. In the same Claude Code session, after you have saved your review,
-check that the mode shown is Manual (`default`): after `/plan` it may still be
-in `plan`, so press `Shift+Tab` until it shows Manual and it asks before
-running anything. The folder has no data, and for this it needs none: the run
-stops before the script reads any. Where it stops, and why, is the finding.
+evidence. In the same Claude Code session, check that the mode shown is Manual
+(`default`): after `/plan` it may still be in `plan`, so press `Shift+Tab`
+until it shows Manual and it asks before running anything. The folder has no
+data, and for this it needs none: the run stops before the script reads any.
+Where it stops, and why, is the finding.
 
 **Prompt (Claude Code):**
 
@@ -225,17 +164,55 @@ report which one. Do not edit any file.
 ```
 
 Approve a run only if you can say what it does and why you want it now;
-refusing is always safe. Then read the output. "The script runs" counts only if
-you can see the command and its output in the conversation; without them it is
-a `r glossary("claimed execution")`. A missing package is a finding about your
+refusing is always safe. "The script runs" counts only if you can see the
+command and its output in the conversation; without them it is a
+`r glossary("claimed execution")`. A missing package is a finding about your
 machine, not about the code.
 :::
 
 
-## Grading the review {#ai-grading}
+## Task 2: grade the machine {#ai-grading}
+
+:::{.task}
+::::{.task-header}
+Grade the machine (12 minutes)
+::::
+::::{.task-container}
+
+**Goal:** measure the reviewer against the twelve problems you found on Day 2,
+so that you learn which of its findings you can trust before you rely on one.
+
+**1. Score the review.** Open the answer key, the P1–P12 table under *The
+problems revealed* in the
+[manual code-review chapter](07-code-review.qmd#cr-manual) (click
+*Solution*), beside the review in your terminal:
+
+- **Hits:** which of P1–P12 did it identify correctly?
+- **Misses:** which did it miss? Look especially at P4 (precedence) and P8
+  (the 9999 code), the silent, consequential ones.
+- **False positives:** what did it flag that is not a real problem, or describe
+  wrongly? Each one is a `r glossary("false positive")`.
+- **Execution claims:** did it claim the script runs or reproduces? On what
+  evidence?
+
+**2. Post in the chat:** your group (*with* or *without*), your hit count,
+whether it caught P8, and its most confident false positive.
+
+**3. Record it.** In your workshop repository, add a line to `docs/ai-log.md`
+(date; tool and model; task; what you kept or changed), with the reviewer's hit
+count and its most confident false positive in the last part, and commit it.
+
+**You are done when** every P1–P12 problem is marked hit or miss, you have
+posted your result, and your AI-log line is committed.
+
+**If it goes wrong:** if your review never arrived, run it through the chat
+route in *Using another tool*; the grading works the same way.
+
+::::
+:::
 
 :::{#ai-why .callout-tip collapse="true"}
-## Before you grade: what AI is, and is not, good for in code review
+## Background: what AI is, and is not, good for in code review
 
 An AI reviewer reads every line and never tires, but it sounds equally sure
 whether it is right or wrong. Here is where to expect help, on the four Rs of
@@ -258,99 +235,50 @@ tribble(
 **The rule:** treat every AI finding as a claim to check, and the absence of a
 finding as no evidence that the problem is absent.
 
-Run your saved review prompt on a script before you share it, and spend your
-own attention on the *Reliable* questions.
-
-**What the evidence says.** Used that way, AI review is reliably good for:
-
-- summarising what an unfamiliar script does;
-- flagging missing documentation, unexplained filters and hard-coded paths;
-- finding run errors, when it can actually execute the code;
-- a second pair of eyes that never tires on line 300.
-
 In software engineering, developers acted on about three-quarters of an AI
 reviewer's comments but saw only minor gains in quality, and the reviewer did
 worse when it was not told what the code was meant to do (Cihan et al., 2025;
 Cihan, 2025). Nobody has measured it on analysis scripts like this one, which
-is what you are about to do.
+is what you have just done.
 :::
 
-:::{.task}
-::::{.task-header}
-Grade the machine (10 minutes)
-::::
+:::{.callout-tip collapse="true"}
+## Instructor: debrief (5 minutes)
 
-::::{.task-container}
-
-**Goal:** measure the reviewer against the twelve problems you already know,
-so that you learn which of its findings you can trust before you rely on one.
-
-**1. Score the review.** Open the answer key, the P1–P12 table under *The
-problems revealed* in the
-[manual code-review chapter](07-code-review.qmd#cr-manual) (click
-*Solution*), beside `~/ai-review/review_claude.md`:
-
-- **Hits:** which of P1–P12 did it identify correctly?
-- **Misses:** which did it miss? Look especially at P4 (precedence) and P8
-  (sentinel), the silent, consequential ones.
-- **False positives:** what did it flag that is not a real problem, or describe
-  wrongly? Each one is a `r glossary("false positive")`.
-- **Execution claims:** did it claim the script runs or reproduces? On what
-  evidence?
-
-**2. Note your result.** Below the review in `review_claude.md`, write which
-version of the prompt you used (with or without the 9999 line), your hit
-count, your most consequential miss and your most confident false positive,
-with line numbers, so that a second run has something to be compared with.
-
-**3. Decide.** Which one finding would you act on first, and what would you
-check before acting on it?
-
-**4. Record it.** In your workshop repository, add a line to
-`docs/ai-log.md` (date; tool and model; task; what you kept or changed), with
-the reviewer's hit count and its most confident false positive in the last
-part. Commit it from the Git pane.
-
-**You are done when** every P1–P12 problem is marked hit or miss, you have
-listed the false positives, and your AI-log line is committed.
-
-**If it goes wrong:** if your review never arrived, run it through the chat
-route in *Using another tool*; the grading works the same way.
-
-::::
-:::
-
-:::{.callout-note}
-## Self-check (5 minutes)
-
-1. If you ran the review both with and without the 9999 line, compare P8. Only
+1. **P8 by group.** Compare the *with* and *without* results in the chat. Only
    the data and your knowledge reveal that 9999 is a code: what does that say
    about reviewing code without the data?
-2. What was the reviewer's most confident false positive, and what would
-   acting on it have cost you?
-3. Did the agent claim the script runs without having run it?
-4. Back to the question at the start. Was your answer yes, because it read
-   every line; only if you had also read it yourself; no, because you would
-   trust your own review over the AI's; or for *Run*, not for *Reliable*?
-   Would you change it now?
+2. **The most confident false positive.** What would acting on it have cost?
+3. **Execution claims.** Did any reviewer claim the script runs without having
+   run it?
+4. **Trust.** If an AI reviewer told you your analysis was clean, would you
+   submit? Only for *Run*, not for *Reliable*?
 :::
 
+:::{#ai-prompting .callout-tip collapse="true"}
+## After the day: keep your own review prompt
+
+The prompt above is a starting point for your own scripts. Adapt it (your
+standard, your intended analysis, the codes your data use), then keep it in
+your workshop repository: run `usethis::edit_file("docs/review-prompt.md")` in
+the R console, paste it, save, and commit it. Run it on a script before you
+share it, and spend your own attention on the *Reliable* questions.
+:::
 
 :::{.callout-note}
 ## Check · Reproduce · Record
 
-- **You can now:** hand a script to an AI reviewer with a prompt that makes its
-  output checkable, **trusted because** you grade it against problems you
-  already know, and treat every finding as a claim.
+- **You can now:** use AI as a code reviewer with a prompt that makes its
+  output checkable, **trusted because** you graded it against the problems you
+  found yourself on Day 2, and treat every finding as a claim.
 - **Check:** grade every AI finding against the P1–P12 answer key; the absence
   of a finding is no evidence that the problem is absent.
 - **Reproduce:** a claim that the script runs counts only with the command and
   the output from a fresh R session; to run one yourself, see
   [checking work](11a-setup-claude-code.qmd#checking-work).
-- **Record:** your review prompt and a line in `docs/ai-log.md`, both
-  committed in your workshop repository: the tool, its hit count and its most
-  confident false positive. An AI-assisted README for `~/ai-review` is in
-  *Going further*.
+- **Record:** a line in `docs/ai-log.md`, committed in your workshop
+  repository: the tool, its hit count and its most confident false positive.
+  An AI-assisted README for `~/ai-review` is in *Going further*.
 :::
 
 
@@ -375,6 +303,45 @@ need before treating that as evidence?**
   "The line lets the reviewer open the data file",
   "P8 is a syntax error that only some models detect"
 ))`
+
+
+## Wrap-up for the day
+
+:::{.task}
+::::{.task-header}
+Wrap-up (10 minutes)
+::::
+::::{.task-container}
+
+**Goal:** finish with evidence: the whole suite passing in a fresh R session
+and a complete AI-use log, so that anyone can check the repository you leave
+with.
+
+**1. Run the whole suite** in your workshop repository: restart R
+(*Session → Restart R*), then `testthat::test_dir(here::here("tests"))`.
+Expect `FAIL 0`; tests for any block you skipped may skip.
+
+**2. Complete your log.** Every block in which an agent worked needs its line
+in `docs/ai-log.md`; add any that is missing, and commit.
+
+**3. What you leave with.** `AGENTS.md` and a skill, tested deny rules, your
+own agent, a codebook with its logs, a characterisation test, a graded AI
+review, and the AI-use log.
+
+**4. Where next.**
+[Self-study: Inline completions](11b-inline-completions.qmd) and
+[Self-study: Reporting from your repository](11j-statistical-checks-reporting.qmd)
+both work in your workshop repository.
+
+**You are done when** the suite shows `FAIL 0` and your last log line is
+committed.
+
+**If it goes wrong:** a failure names its test. In `test_ai_log.R`, a log line
+lacks one of its four parts; in `test_controls.R`, a protection has gone or a
+command was approved in advance. Fix what it names, then run the suite again.
+
+::::
+:::
 
 
 ## Going further
