@@ -61,13 +61,37 @@ Keep the results visible. We will return to them.
 
 ### Quick check
 
-What type of error is each of these?
+:::::{.quiz}
+::::{.quiz-q}
+What type of error is this? *A Gaussian model fitted to offspring counts.*
 
-**A Gaussian model fitted to offspring counts:** `r mcq(c(answer = "Conceptual", "Programmatic", "Syntactic"))`
+`r mcq(c(answer = "Conceptual", "Programmatic", "Syntactic"))`
 
-**`pivot_longer(cols = 3:5)` reshapes the wrong columns after someone reorders the data file:** `r mcq(c("Conceptual", answer = "Programmatic", "Syntactic"))`
+:::{.quiz-explain}
+**Conceptual**: the wrong model for the data. Offspring counts are non-negative whole numbers and often overdispersed, so a count model fits them better.
+:::
+::::
 
-**True or false? Syntactic errors are usually the least dangerous of the three, because R stops with a visible error.** `r torf(TRUE)`
+::::{.quiz-q}
+What type of error is this? *`pivot_longer(cols = 3:5)` reshapes the wrong columns after someone reorders the data file.*
+
+`r mcq(c("Conceptual", answer = "Programmatic", "Syntactic"))`
+
+:::{.quiz-explain}
+**Programmatic**: the idea (reshape these columns) is right, but selecting by position breaks silently when the column order changes. Select columns by name.
+:::
+::::
+
+::::{.quiz-q}
+True or false? Syntactic errors are usually the least dangerous of the three, because R stops with a visible error.
+
+`r torf(TRUE)`
+
+:::{.quiz-explain}
+**True.** A misspelled function or a wrong argument usually stops R with an error you can see. Conceptual and programmatic errors often run without complaint and give wrong numbers.
+:::
+::::
+:::::
 
 ---
 
@@ -121,15 +145,47 @@ Open `ANALYSIS.R`. Without running it, type into the chat one specific example f
 
 ### Quick check
 
-Which R does each problem in `ANALYSIS.R` fail first?
+:::::{.quiz}
+::::{.quiz-q}
+Which R does `libray(tidyverse)` fail first?
 
-**`libray(tidyverse)`:** `r mcq(c("Reported", answer = "Run", "Reliable", "Reproducible"))`
+`r mcq(c("Reported", answer = "Run", "Reliable", "Reproducible"))`
 
-**The `9999` sentinel is never handled:** `r mcq(c("Reported", "Run", answer = "Reliable", "Reproducible"))`
+:::{.quiz-explain}
+**Run.** `libray()` is not a function, so R stops at that line and nothing after it runs.
+:::
+::::
 
-**Three models are fitted, and none is named as the result:** `r mcq(c("Reported", "Run", "Reliable", answer = "Reproducible"))`
+::::{.quiz-q}
+Which R does it fail first? *The `9999` sentinel is never handled.*
 
-**The script calls the batch column `block`, but the data dictionary calls it `B`:** `r mcq(c(answer = "Reported", "Run", "Reliable", "Reproducible"))`
+`r mcq(c("Reported", "Run", answer = "Reliable", "Reproducible"))`
+
+:::{.quiz-explain}
+**Reliable.** The script runs, but every 9999 enters the models as a real count, so the estimates are wrong every time.
+:::
+::::
+
+::::{.quiz-q}
+Which R does it fail first? *Three models are fitted, and none is named as the result.*
+
+`r mcq(c("Reported", "Run", "Reliable", answer = "Reproducible"))`
+
+:::{.quiz-explain}
+**Reproducible.** Without knowing which model is *the* result, and with nothing saved to disk, nobody can recover the reported numbers.
+:::
+::::
+
+::::{.quiz-q}
+Which R does it fail first? *The script calls the batch column `block`, but the data dictionary calls it `B`.*
+
+`r mcq(c(answer = "Reported", "Run", "Reliable", "Reproducible"))`
+
+:::{.quiz-explain}
+**Reported.** The code and the documented data no longer describe the same thing, so a reader has to work out the mapping for themselves.
+:::
+::::
+:::::
 
 ---
 
@@ -380,9 +436,19 @@ When done, paste your SUMMARY and your RECOMMENDATION into the chat.
 
 ### Quick check
 
-**`filter(strain == "daf" | strain == "empty_vector" & !is.na(diet))` meets a *daf* worm whose diet is `NA`. Is the worm kept or dropped?** `r mcq(c(answer = "Kept", "Dropped"))`
+:::::{.quiz}
+::::{.quiz-q}
+`filter(strain == "daf" | strain == "empty_vector" & !is.na(diet))` meets a *daf* worm whose diet is `NA`. Is the worm kept or dropped?
 
-**Which filter does what the author intended (both strains, diet recorded)?**
+`r mcq(c(answer = "Kept", "Dropped"))`
+
+:::{.quiz-explain}
+**Kept.** `&` binds more tightly than `|`, so R reads the filter as `daf | (empty_vector & diet recorded)`. Every daf worm is kept, whether or not its diet was recorded.
+:::
+::::
+
+::::{.quiz-q}
+Which filter does what the author intended (both strains, diet recorded)?
 
 `r longmcq(c(
   answer = "strain %in% c('daf', 'empty_vector') & !is.na(diet)",
@@ -391,15 +457,41 @@ When done, paste your SUMMARY and your RECOMMENDATION into the chat.
   "strain == c('daf', 'empty_vector') & !is.na(diet)"
 ))`
 
-`r hide("Why not the last one?")`
-`strain == c('daf', 'empty_vector')` recycles the two-value vector down the column, comparing row 1 with `'daf'`, row 2 with `'empty_vector'`, row 3 with `'daf'` and so on. It runs without an error (at most a recycling warning) and quietly drops about half the worms. Use `%in%`.
-`r unhide()`
+:::{.quiz-explain}
+`%in%` keeps both strains, and `& !is.na(diet)` then applies to all of them. The second option is how R actually reads the original. The last one compares row by row against a recycled `c('daf', 'empty_vector')`, so it runs without an error (at most a recycling warning) and quietly drops about half the worms.
+:::
+::::
 
-**`x <- c(250, NA, 9999)`. What does `sum(complete.cases(x))` return?** `r fitb(2, num = TRUE)`
+::::{.quiz-q}
+`x <- c(250, NA, 9999)`. What does `sum(complete.cases(x))` return?
 
-**`pivot_longer()` creates a column called `total offspring` (with a space). After `write.csv()` and `read.csv()`, what is the column called?** `r fitb("total.offspring")`
+`r fitb(2, num = TRUE)`
 
-**True or false? In the original figure, `geom_smooth(method = "lm")` draws one line per diet across the two strains.** `r torf(FALSE)`
+:::{.quiz-explain}
+**2.** `complete.cases()` only drops `NA`. 9999 is an ordinary number, so it counts as complete, which is exactly why P8 slips through.
+:::
+::::
+
+::::{.quiz-q}
+`pivot_longer()` creates a column called `total offspring` (with a space). After `write.csv()` and `read.csv()`, what is the column called?
+
+`r fitb("total.offspring")`
+
+:::{.quiz-explain}
+**`total.offspring`.** `read.csv()` cleans the header with `make.names()`, which turns the space into a dot. The script then asks for `total_offspring`, which does not exist.
+:::
+::::
+
+::::{.quiz-q}
+True or false? In the original figure, `geom_smooth(method = "lm")` draws one line per diet across the two strains.
+
+`r torf(FALSE)`
+
+:::{.quiz-explain}
+**False.** With a categorical x, each strain Ã— diet group has only one x value, so there is no line to fit and `geom_smooth()` draws nothing.
+:::
+::::
+:::::
 
 ---
 
@@ -551,7 +643,9 @@ The stages build on each other: Stages 1â€“2 deliver **data re-use**, Stages 1â€
 
 ### Quick check
 
-**Why does the corrected script use `glmer.nb()` rather than `glmer(family = poisson)`?**
+:::::{.quiz}
+::::{.quiz-q}
+Why does the corrected script use `glmer.nb()` rather than `glmer(family = poisson)`?
 
 `r longmcq(c(
   "Poisson models cannot include random effects",
@@ -560,9 +654,31 @@ The stages build on each other: Stages 1â€“2 deliver **data re-use**, Stages 1â€
   "Negative-binomial models do not need the data to be counts"
 ))`
 
-**An archive's code runs on the archived data, but its numbers do not match the paper. Up to which SORTEE stage has it passed?** `r fitb(5, num = TRUE)`
+:::{.quiz-explain}
+Counts like these usually vary more than a Poisson model allows. The negative binomial has an extra parameter for that variation; a Poisson fit would give over-confident standard errors.
+:::
+::::
 
-**True or false? DCQC runs your code automatically and tells you whether the results reproduce.** `r torf(FALSE)`
+::::{.quiz-q}
+An archive's code runs on the archived data, but its numbers do not match the paper. Up to which SORTEE stage has it passed?
+
+`r fitb(5, num = TRUE)`
+
+:::{.quiz-explain}
+**Stage 5**: the archived code runs with the archived data. It fails Stage 6, computationally reproducing the results.
+:::
+::::
+
+::::{.quiz-q}
+True or false? DCQC runs your code automatically and tells you whether the results reproduce.
+
+`r torf(FALSE)`
+
+:::{.quiz-explain}
+**False.** DCQC is a structured walk-through that records the reviewer's verdict at each stage. Someone still has to run the code and compare the numbers.
+:::
+::::
+:::::
 
 ---
 
@@ -600,7 +716,9 @@ For groups working entirely online, the **pull request** model on GitHub provide
 
 ### Quick check
 
-**In your review group, one senior member rewrites everyone's code into their own style. Which consideration is being ignored?**
+:::::{.quiz}
+::::{.quiz-q}
+In your review group, one senior member rewrites everyone's code into their own style. Which consideration is being ignored?
 
 `r longmcq(c(
   "Start collaborating early",
@@ -609,7 +727,21 @@ For groups working entirely online, the **pull request** model on GitHub provide
   "Think about credit up front"
 ))`
 
-**True or false? It is best to decide how to credit a reviewer after the review, once you know how much they found.** `r torf(FALSE)`
+:::{.quiz-explain}
+**Normalise errors and make it judgement-free.** There are usually several defensible ways to write the same code, and a group where the most confident voice rewrites everyone's style soon stops meeting.
+:::
+::::
+
+::::{.quiz-q}
+True or false? It is best to decide how to credit a reviewer after the review, once you know how much they found.
+
+`r torf(FALSE)`
+
+:::{.quiz-explain}
+**False.** Agree the default (acknowledgement, MeRIT, or co-authorship when a fix changes the conclusions) *before* the first review, so nobody has to negotiate after a bug is found.
+:::
+::::
+:::::
 
 :::{.callout-tip}
 **Closing reflection** *(type in chat)*
