@@ -14,7 +14,8 @@ disclosure and autonomy (`11d`), 4 Instructions and skills (`11e`), 5 Enforced
 controls (`11f`), lunch, 6 Build your own agent (`11k`), 7 Data cleaning
 (`11g`), 8 Characterisation tests (`11i`), 9 AI-assisted code review (`11h`,
 in `~/ai-review`, outside the template), wrap-up. **Self-study:** inline
-completions (`11b`), reporting from your repository (`11j`).
+completions (`11b`), the Copilot cloud agent (`11l`, in the learner's fork on
+GitHub; it adds `.github/` files and a plot test there).
 
 ## Files the template must ship
 
@@ -29,12 +30,11 @@ completions (`11b`), reporting from your repository (`11j`).
 | `scripts/02_validate.R`, `scripts/functions/validate_voles.R` | Block 7, *Going further* only | From `template-files/`. Use pointblank; no live step or test depends on them. |
 | `scripts/04_load_data.R`, `05_analysis.R` | Block 8 | From `template-files/`. |
 | `scripts/functions/load_voles.R` | Blocks 3, 6 and 8 | From `template-files/`. |
-| `scripts/functions/typed_numbers.R`, `reports/example_report.qmd` | Self-study (reporting) | From `template-files/`. The report has two planted typed results (lines 37–38) and three lines that are questions, not errors (date, design size, "95%"). |
 | `agent/mini_agent.R` | Block 6 | From `template-files/`. Its `library(ellmer)` also keeps ellmer in renv's implicit snapshot. |
 | `tests/fixtures/raw_checksum.txt` | Block 7 | Generate once from the shipped raw file: `writeLines(unname(tools::md5sum("data/raw/voles_raw.csv")), "tests/fixtures/raw_checksum.txt")`. |
 | `AGENTS.md` | Block 4 | From `template-files/`: the starter learners edit with `/memory`, including a *Version control* section (run `git status` before editing; stop if there is no repository). It asks the agent to run new scripts and the test suite once, before it reports a task done. Claude Code reads it directly (v2.1.281+) because there is no `CLAUDE.md`; do not ship one. |
 | `tests/make_reference.R` | Block 8 | Not picked up by `test_dir()`, which only runs `test*.R` files. |
-| `tests/test_explore.R`, `test_ai_log.R`, `test_controls.R`, `test_cleaning.R`, `test_translation.R`, `test_reference_guard.R`, `test_readme.R` | Blocks 3–8; self-study | From `template-files/`. Every test skips until its block is done, so the suite passes at any point in the day. |
+| `tests/test_explore.R`, `test_ai_log.R`, `test_controls.R`, `test_cleaning.R`, `test_translation.R`, `test_reference_guard.R` | Blocks 3–8 | From `template-files/`. Every test skips until its block is done, so the suite passes at any point in the day. |
 | `.agents/skills/` and `.claude/skills/`: `clean-with-codebook` and `characterisation-refactor` | Blocks 7, 8 | From `files/skills/`; the `.claude/` one is a copy, not a link, so it works on Windows. |
 | `.claude/settings.json` | Blocks 5, 7, 8 | From `template-files/` (starts in Manual mode via `permissions.defaultMode`; 17 deny rules, including `Edit(/renv.lock)`, `Edit(/tests/test_cleaning.R)` and `Read(/docs/data_note.md)`). |
 | `.gitignore` | All | From `template-files/` (includes `Rplots.pdf`, `.Renviron`, `.env`, `scratch/` for practice files, and `outputs/*` so saved figures never make the Git pane dirty). |
@@ -42,9 +42,8 @@ completions (`11b`), reporting from your repository (`11j`).
 | `renv.lock`, `.Rprofile`, `renv/activate.R`, `renv/settings.json` | All | The files `renv::init()` writes; without `.Rprofile` and `renv/activate.R` the project is not renv-activated and `renv::status()` in 11a Step 8 does not report "no problems". See below. |
 | `<name>.Rproj` | All | So the fork opens as a project in RStudio and `here::here()` finds the root. |
 
-**Do not ship** `README.md` (the self-study reporting page creates it, and
-`test_readme.R` would run against a GitHub stub) or `CLAUDE.md` (Claude Code
-would then read it instead of `AGENTS.md`).
+**Do not ship** `CLAUDE.md` (Claude Code would then read it instead of
+`AGENTS.md`).
 
 Learners create during the day: a practice file in `scratch/` (Block 2,
 git-ignored), `docs/ai-log.md` (Block 3), `scripts/explore_mass_change_plot.R`
@@ -58,10 +57,11 @@ git-ignored), `docs/ai-log.md` (Block 3), `scripts/explore_mass_change_plot.R`
 deny rule in `.claude/settings.json` (Block 8), and an AI-log line (Block 9,
 whose review runs in `~/ai-review`, made in the pre-workshop check). Optional,
 after the day: `tests/test_known_answers.R` (Block 8's *Do it yourself*),
-`docs/review-prompt.md` (Block 9) and `README.md` (the reporting page).
+`docs/review-prompt.md` (Block 9), and the `.github/` files, plot reference
+and plot test of the Copilot cloud-agent page.
 
-Not shipped: `.github/` (CODEOWNERS, workflows) and `hooks/`. These appear
-only in *Going further* sections.
+Not shipped: `.github/` (CODEOWNERS, workflows) and `hooks/`. Learners add
+them on the Copilot cloud-agent self-study page.
 
 ## `renv.lock`
 
@@ -106,8 +106,8 @@ expects.
       `testthat::test_dir(here::here("tests"))`.
       Expect `FAIL 0` everywhere. On `main`, `PASS 8` (deny rules, Manual
       mode, no allow rules, the `AGENTS.md` canary and `git status` rule, the
-      git repository, the raw-data checksum) and the rest skip; on `checkpoint-refactor` only
-      the self-study README test skips.
+      git repository, the raw-data checksum) and the rest skip; on `checkpoint-refactor` nothing
+      skips.
 - [ ] Fork the template on a participant-type account and run Blocks 2–8
       with Claude Code, and Block 6 with a key from a brand-new Console
       account: note the number of requests and the cost.
@@ -128,7 +128,7 @@ These depend on the GitHub repository itself, not on `template-files/`:
       `block7-done` and `block9-done` to `checkpoint-skills`,
       `checkpoint-cleaning` and `checkpoint-refactor`, and rebuilt on the new
       `main` (new `AGENTS.md`, tests, `.gitignore` and `agent/`).
-- [ ] No `README.md` or `CLAUDE.md` on any branch.
+- [ ] No `CLAUDE.md` on any branch.
 - [ ] `.Rprofile`, `renv/activate.R`, an `.Rproj` and `agent/mini_agent.R` are
       present, and ellmer is in `renv.lock`.
 - [ ] On Windows, a fresh clone passes the raw-data checksum test

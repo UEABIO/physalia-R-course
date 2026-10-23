@@ -10,6 +10,7 @@ Moved out of the published chapters. Quarto ignores this folder because its name
 - **11e-instructions-skills.qmd**: 9 October 2026, against GitHub's Copilot documentation (custom instructions, agent skills), the Claude Code documentation (features overview, skills) and the Posit Assistant documentation (docs version 1.7: memory, skills).
 - **11f-enforced-controls.qmd**: 9 October 2026, against the Claude Code documentation (code.claude.com: permissions, hooks), the Posit Assistant documentation (assistant.posit.co, docs version 1.7: Permissions & Trust, Hooks) and GitHub's documentation on code owners.
 - **11g-data-cleaning.qmd**: 9 October 2026, against the Claude Code documentation (code.claude.com) and the Posit Assistant documentation (assistant.posit.co, docs version 1.7). Tool behaviour changes quickly; check the linked pages before teaching.
+- **11l-copilot-cloud-agent.qmd**: 23 October 2026, against GitHub's Copilot documentation (plans, cloud agent, customising the agent's environment with `copilot-setup-steps.yml`).
 - **11i-characterisation-tests.qmd**: 9 October 2026, against the Claude Code permissions documentation (code.claude.com) and GitHub's documentation on customising the Copilot cloud agent's environment (docs.github.com).
 - **Claude Code claims across 11, 11a, 11d–11g and 11i**: 22 October 2026, fact-checked by an AI agent against code.claude.com (memory, permission modes, permissions, settings, skills, commands, sandboxing, data usage, interactive mode, changelog). Re-check the live pages before teaching. Findings worth knowing:
   - `AGENTS.md` is read directly from v2.1.277 and listed by `/memory` from v2.1.280; the book's minimum of v2.1.281 covers both.
@@ -168,5 +169,7 @@ and no unit given.
   test and run the whole suite themselves. If the suite is run before the test
   is protected, `test_controls.R` fails on purpose; refuse any offer from the
   agent to "fix" it by writing a settings file.
-- The Copilot cloud-agent route in *Going further* depends on account
-  features. Run it once on a participant-type account before the session.
+- The Copilot cloud-agent self-study page (`11l`) depends on the learner's
+  Copilot plan: on 23 October 2026 the cloud agent was in Student, Pro, Pro+
+  and Max, not Free. Check the plans page before recommending it, and run the
+  page once on a participant-type account.

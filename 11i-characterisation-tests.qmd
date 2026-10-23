@@ -737,8 +737,7 @@ Either way, commit the file, so the rule travels with the repository.
 
 Local controls do not exist for an agent that works remotely. On GitHub, a
 pull request that changes a file under `tests/` can be held until the code
-owner reviews it. How to set up CODEOWNERS and branch protection is in the
-*Going further* section of [Block 5](11f-enforced-controls.qmd).
+owner reviews it. The self-study page [Self-study: Hand a task to GitHub Copilot's cloud agent](11l-copilot-cloud-agent.qmd) sets this up.
 :::
 
 :::::{.callout-tip collapse="true"}
@@ -790,152 +789,19 @@ reference.
 :::{.callout-tip collapse="true"}
 ## An asynchronous agent: the Copilot cloud agent
 
-The same work can be handed to an agent that runs remotely while you do
-something else. It works on a branch in GitHub's infrastructure and returns a
-pull request. Before you start, check that your Copilot plan includes the cloud
-agent, that `copilot-setup-steps.yml` is on your default branch (see *The
-environment the test runs in* below), and that the repository has the review
-gate from *The review gate on GitHub* in the *Going further* section of
-[Block 5](11f-enforced-controls.qmd) (its CODEOWNERS already covers `tests/`
-and `.github/`).
-
-Keep the two-step discipline by writing **two issues**, and assign the second
-only after you have reviewed and merged the first.
-
-**Issue 1**
-
-```text
-Title: Move the metabolic-rate summary into a function
-
-Move the summary computation in scripts/05_analysis.R into a documented
-function summarise_metabolic_rate() in scripts/functions/summary_functions.R,
-with a roxygen2 block and an argument check. Make 05_analysis.R call it.
-
-Acceptance criteria:
-- Do not add or change anything under tests/, data/ or .github/.
-- The output must be identical to the current output, including row order
-  and the existing NA values.
-```
-
-**Issue 2 (after Issue 1 is merged)**
-
-```text
-Title: Add a characterisation test for summarise_metabolic_rate()
-
-Add tests/test_summary_functions.R. It must call local_edition(3), source
-scripts/functions/load_voles.R and scripts/functions/summary_functions.R, and
-compare summarise_metabolic_rate(load_voles()) with
-tests/fixtures/metabolic_summary.rds using expect_equal().
-
-Acceptance criteria:
-- Do not create, modify or regenerate anything under tests/fixtures/, and do
-  not run tests/make_reference.R.
-- Run the tests and report the result in the pull request description.
-```
-
-Assign each issue to Copilot. When a pull request arrives:
-
-1. Open **Files changed**. Confirm that only the expected files changed. A
-   change under `tests/fixtures/` or `.github/` should not merge, and CODEOWNERS
-   will in any case require your review for it.
-2. Read the test against the four checks in *What the skill does, step by step*
-   above; `test_reference_guard.R` automates part of them.
-3. Check that the `r-checks` run on the pull request passed.
-4. Pull the branch and run the test on your own machine. The agent's report
-   that "tests pass" is its claim; your run is the check.
-
-If something is wrong, comment on the pull request to ask for a revision, or
-close it. Nothing reaches `main` until you merge.
+The same discipline (your reference first, then a refactor, then a test, each
+reviewed) works with an agent that runs on GitHub while you do something else.
+The self-study page [Self-study: Hand a task to GitHub Copilot's cloud agent](11l-copilot-cloud-agent.qmd) applies it to the Block 3 plot script.
 :::
 
 :::{.callout-tip collapse="true"}
 ## The environment the test runs in
 
 A characterisation test is only as stable as the environment it runs in. The
-column types in `load_voles()` handle the finest-grained part. The R version and
-the package set are handled by two GitHub Actions workflows. Neither ships with
-the template: to use them, create each file in `.github/workflows/`.
-
-`r-checks.yml` is the independent check. It runs the tests from a clean
-checkout on every push to `main` and on every pull request:
-
-```yaml
-name: r-checks
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: "4.5.2"   # match the R version in renv.lock
-          use-public-rspm: true
-      - uses: r-lib/actions/setup-renv@v2
-      - name: Run tests
-        run: Rscript -e 'testthat::test_dir("tests", stop_on_failure = TRUE)'
-```
-
-It is independent of your machine and of the agent's environment, but it is not
-tamper-proof. A pull request can change the workflow file or the reference it
-checks against. CODEOWNERS and branch protection (set up in
-[Block 5](11f-enforced-controls.qmd)'s *Going further*) are what make a
-passing run meaningful: you review every change to those paths before it
-merges.
-
-`copilot-setup-steps.yml` builds the environment the Copilot cloud agent works
-in. Following GitHub's documented pattern:
-
-```yaml
-name: "Copilot Setup Steps"
-
-# Runs when this file changes, so you can see whether setup succeeds,
-# and can be run by hand from the Actions tab.
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
-  pull_request:
-    paths:
-      - .github/workflows/copilot-setup-steps.yml
-
-jobs:
-  # The job must be called copilot-setup-steps or Copilot will not use it.
-  copilot-setup-steps:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-      - name: Set up R
-        uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: "4.5.2"   # match the R version in renv.lock
-          use-public-rspm: true
-      - name: Restore packages from renv.lock
-        uses: r-lib/actions/setup-renv@v2
-```
-
-Four requirements, each with a different failure mode:
-
-- **The job name must be exactly `copilot-setup-steps`.** If it is not, Copilot
-  ignores the file and works without your packages. That failure is usually
-  loud: the tests error on the first missing function.
-- **The file must be on the default branch**, or it is not used.
-- **The runner must be Ubuntu x64 Linux or Windows 64-bit.** The cloud agent
-  does not support macOS runners; Ubuntu is the usual choice for R.
-- **The lockfile must be restored.** If it restores the wrong versions, the
-  failure is quiet: tests run and pass against different package behaviour. The
-  frozen reference then certifies sameness against the wrong baseline.
-
-When the agent's test run and the independent `r-checks` run disagree, suspect
-the environment before you suspect the code.
+column types in `load_voles()` handle the finest-grained part; the R version
+and package set are pinned by `renv.lock`. To run the tests on GitHub as well
+(`r-checks.yml`) and give a cloud agent the same packages
+(`copilot-setup-steps.yml`), see [Self-study: Hand a task to GitHub Copilot's cloud agent](11l-copilot-cloud-agent.qmd).
 :::
 
 
