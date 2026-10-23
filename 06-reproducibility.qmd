@@ -9,6 +9,7 @@ library(tidyverse)
 library(here)
 library(knitr)
 library(kableExtra)
+library(webexercises)
 ```
 
 > **Materials:** Download all files from the course OSF page: **https://osf.io/jgeq9/**
@@ -104,6 +105,22 @@ Write down your real reasons. Gomes et al. (2022) surveyed researchers and group
 > **Gomes, D.G.E., et al. (2022).** Why don't we share data and code? Perceived barriers and benefits to public archiving practices. *Proceedings of the Royal Society B*, 289, 20221113. https://doi.org/10.1098/rspb.2022.1113
 
 :::
+
+### Quick check
+
+**A colleague downloads your archived data and your archived script, runs it, and gets different numbers from the paper. Which kind of reproducibility has failed?**
+
+`r mcq(c("Analytical reproducibility", answer = "Computational reproducibility", "Replicability"))`
+
+**Kellner et al. (2025) tried to run the R code from 497 ecology papers. What share of *all* the papers had code that ran without error?**
+
+`r longmcq(c(answer = "About 7%", "About 27%", "About 50%", "About 75%"))`
+
+`r hide("Why not 27%?")`
+27% is the share of the papers whose data and code could actually be tested. Most papers fell out before that point, because their code was never archived.
+`r unhide()`
+
+**True or false? Data archiving in the British Ecological Society journals is now close to universal, so the reproducibility problem in ecology is largely solved.** `r torf(FALSE)`
 
 ---
 
@@ -303,6 +320,30 @@ The variation you just observed is a direct consequence of underspecified method
 
 This is where the SORTEE Guidelines (Pick et al. 2026) and the TADA! framework (Ivimey-Cook et al. 2025) come in. The same problem is also what code review (next chapter) is designed to catch.
 
+### Quick check
+
+**Gelman & Loken's "garden of forking paths" describes:**
+
+`r longmcq(c(
+  "Analysts deliberately trying models until one gives p < 0.05",
+  answer = "Honest analysts each taking one of many defensible routes through the analysis, with the route only looking inevitable afterwards",
+  "Random sampling error between independent experiments",
+  "Errors introduced when code is copied between projects"
+))`
+
+**True or false? In Gould et al. (2025), analyses that peer reviewers rated highly produced estimates closer to the average.** `r torf(FALSE)`
+
+**Your `"pairwise"` contrast prints `empty_vector - daf = 45`. What number should you post in the chat?** `r fitb(-45, num = TRUE)`
+
+**You fit a negative-binomial GLMM (log link) and run `emmeans(model, ~ strain) |> contrast("trt.vs.ctrl", ref = "empty_vector")`, forgetting `regrid()`. What does the contrast compare?**
+
+`r longmcq(c(
+  "The difference in offspring per worm, the same as with regrid()",
+  answer = "The strains on the log scale, so back-transformed it is a ratio of offspring, not a difference",
+  "The raw coefficients without any adjustment for diet",
+  "Nothing: emmeans stops with an error for log-link models"
+))`
+
 ---
 
 ## Part 3: Diagnosing a bad dataset and script {#repro-diagnosis}
@@ -439,6 +480,21 @@ In the chat: does the final file still contain TO = -46? TO = 2850? What does th
 
 The key point is that `celegans_repro_final.csv` has had *some* issues addressed (the DAF capitalisation rows removed, some duplicates resolved) but not all of them. The -46 and 2850 values remain. Partial cleaning like this is common in real archives, and it is a genuine reproducibility problem because different analysts working from the "final" file will still handle these values differently.
 
+### Quick check
+
+**`dat_raw |> count(strain)` lists `daf`, `DAF`, `empty_vector` and `empty_vector ` (with a trailing space). How many genuine strains are there?** `r fitb(2, num = TRUE)`
+
+**Three worms have `TO = 9999`. What is the best way to handle them?**
+
+`r longmcq(c(
+  "Keep them: they are real counts and removing data is never justified",
+  "Replace them with 0, because the worms produced no recorded offspring",
+  answer = "Treat them as missing: document the code in a codebook, exclude them in the script and log how many were removed",
+  "Delete the rows by hand in the CSV before loading it"
+))`
+
+**True or false? `celegans_repro_final.csv` has already been cleaned, so it is safe to analyse as it is.** `r torf(FALSE)`
+
 ---
 
 ## Part 4: Fixing it with structure, cleaning and a README {#repro-fix}
@@ -449,7 +505,7 @@ The key point is that `celegans_repro_final.csv` has had *some* issues addressed
 
 The SORTEE Guidelines (Pick et al. 2026) provide the broader framework covering data archiving, licensing, and peer review:
 
-> **Pick, J.L., et al. (2026).** The SORTEE guidelines for data and code quality control in ecology and evolutionary biology. *Peer Community Journal*. https://doi.org/10.24072/pcjournal.687
+> **Pick, J.L., et al. (2026).** The SORTEE guidelines for data and code quality control in ecology and evolutionary biology. *Peer Community Journal*, 6, e20. https://doi.org/10.24072/pcjournal.687
 
 ### Step 1: Set up the project structure
 
@@ -634,14 +690,42 @@ Then answer in the chat:
 
 The cleaning script you just ran is short, but several of its choices were deliberate: the header block, the `here()` calls, the explicit exclusion log and the section dividers. These map onto a small set of principles for analytical code sharing that we use throughout the rest of this course.
 
-Ivimey-Cook et al. (2025) propose **TADA!** — *Transferable, Available, Documented, Annotated* — as a minimum standard for analytical code accompanying published research. It complements the FAIR principles (which were designed mainly for data and software) by addressing the things that specifically go wrong with analysis scripts. The four letters:
+Ivimey-Cook et al. (2025) propose **TADA!** (*Transferable, Available, Documented, Annotated*): the minimum an author needs to do to share functional analysis code with a paper. The guidelines are built with the FAIR principles in mind, and each letter maps onto one or more of them: Transferable onto *Interoperable*, Available onto *Findable* and *Accessible*, and Documented and Annotated onto *Reusable*. Following TADA! is also how an author meets **Stage 3** of the SORTEE data-editor guidelines (Pick et al. 2026), which we come back to in Part 5. The four letters:
 
-- **T — Transferable.** Code runs on someone else's machine without modification. Concretely: no hard-coded absolute paths (use `here()` or relative paths from a project root), all packages declared at the top of the script, random seeds set before stochastic steps, software versions recorded somewhere reproducible (`sessionInfo()` output, `renv.lock`, or similar).
-- **A — Available.** Code is deposited in a persistent, citable archive with a stable identifier — a Zenodo DOI minted from a tagged GitHub release, an OSF project, or a Dryad submission — and released under an explicit licence. "Available on request" and a personal Dropbox link are not TADA-compliant; the first decays with careers, the second decays with subscriptions.
-- **D — Documented.** A README (at the project root) tells a reviewer what the code does, what each file is for, the order to run files in, where the input data live, what outputs are produced, and what software versions were used. We'll build one of these in the next section using READMEBuilder.
-- **A — Annotated.** Inline comments inside the scripts explain *why* a choice was made, not just *what* the line does. The cleaning script's exclusion comments — *"TO = 9999 — undocumented sentinel meaning 'offspring not recorded'… we exclude them and record the count so the loss is visible in the methods section"* — are annotation; `# read the data` next to `read_csv()` is not.
+- **T: Transferable.** Anyone can open, view and run the code without converting or altering it.
+  - Save code as a plain code file (`.R`, `.py`), never inside a Word document or PDF: copying code out of those changes characters and breaks it.
+  - Use relative file paths, never absolute ones or `setwd()`. An RStudio project together with `here()` is the recommended way.
+  - Keep data and code in one project folder with sub-folders (e.g. `data/raw/`, `data/processed/`, `code/`, `figures/`), and archive that whole folder so the paths still work.
+  - Before archiving, ask a colleague to run the code on their machine.
 
-All four are needed: a script can be perfectly annotated and still unrunnable on another machine because of a hard-coded path. A perfectly transferable script can still be unreviewable if there is no README explaining which of the seven files in the repository to run first. TADA! forces all four to be in place.
+  Dependency managers such as `renv`, workflow managers and containers help reproducibility further, but the paper treats them as beyond TADA!'s minimum.
+- **A: Available.** The code is publicly archived with a persistent identifier, such as a DOI, that is cited in the paper.
+  - Use **Zenodo** or **Figshare**. Both can connect to a GitHub repository and archive each release automatically, with a DOI for every version. **Software Heritage** is another option.
+  - GitHub (and GitLab, Bitbucket and similar) is for *developing* code, not archiving it: it gives no DOI, and files can be changed or deleted after publication.
+  - Cite the DOI of the *version* of the code that produced the paper's results.
+
+  "Available on request" and a personal Dropbox link do not count: the first decays with careers, the second with subscriptions.
+- **D: Documented.** A README tells a reader what they need to reuse the code:
+  - the authors, with contact details (these can be anonymised for double-blind review), and the title, abstract and funders of the paper;
+  - the software and its version (e.g. R 4.5.2), and **every package with its version number**, for example as a saved `sessionInfo()` file;
+  - where the data are, ideally with their DOI;
+  - what each file contains, the order to run them, what data they need, what they produce, and how long they take to run;
+  - a **licence** saying how others may use the code: typically **MIT** (permissive) or **GPL** (derivatives must use the same licence). [choosealicense.com](https://choosealicense.com/) helps you pick one.
+
+  We'll build a README in the next section using READMEBuilder, which the TADA! paper recommends.
+- **A: Annotated.** Comments inside the code explain what it does and why.
+  - Start each script with a header saying what it does and what it produces.
+  - Annotate chunks of code rather than every line: what the chunk does, *why*, and **which result in the paper it produces** (e.g. `# Poisson GLM of offspring by strain; results in Table 2`).
+  - Section markers such as `# ---- 1. Load ----` make the script collapsible and easier to navigate.
+  - Code embedded in a Quarto or R Markdown document alongside its explanation counts too.
+
+  The cleaning script's exclusion comments (*"TO = 9999: undocumented sentinel meaning 'offspring not recorded'… we exclude them and record the count so the loss is visible in the methods section"*) are annotation; `# read the data` next to `read_csv()` is not.
+
+All four are needed. A script can be perfectly annotated and still fail on another machine because of a hard-coded path, or be perfectly transferable but unusable because no README says which of seven files to run first, which package versions it needs, or whether anyone is allowed to reuse it. TADA! makes sure all four are in place.
+
+:::{.callout-tip}
+**The TADA Wiki.** For practical, step-by-step help with each letter, use the **TADA Wiki**: https://eivimeycook.github.io/TADA-Wiki/. It has a *Start here* route to getting your code ready to submit, a chapter for each principle, and guidance on licences, choosing a repository, the SORTEE guidelines and code review, with examples in R and Python.
+:::
 
 This is why TADA! comes before code review. Code review evaluates whether code is *Reported, Run, Reliable, Reproducible* (the four Rs of Ivimey-Cook et al. 2023, which we cover this afternoon). But if the code isn't TADA-compliant in the first place — if it won't transfer, isn't available, has no documentation, or isn't annotated — there is nothing for a reviewer to evaluate. TADA! is what makes code reviewable; the review itself comes later.
 
@@ -659,7 +743,9 @@ Scroll back to `01_data_cleaning.R`. Identify one specific line or block that de
 
 `r hide("Solution")`
 
-**Available** is the partial one. The script is *written* in a way that could be archived, but on its own a script is not Available — that requires deposit (Zenodo, OSF, Dryad) with a DOI and a licence. We close that gap in Part 5.
+**Available** is the partial one. The script is *written* in a way that could be archived, but on its own a script is not Available: that requires depositing the project in Zenodo or Figshare, with a DOI that the paper cites. We close that gap in Part 5.
+
+**Documented** is only partly there too. The header describes the data, but nothing yet records the package versions or a licence. Those belong in the README, which you build next.
 
 `r unhide()`
 
@@ -667,7 +753,7 @@ Scroll back to `01_data_cleaning.R`. Identify one specific line or block that de
 
 A README is the single most useful file in an archive for anyone trying to reuse it, and it is also the file that gets skipped under deadline pressure. Writing one from a blank page is hard; filling in a structured form is not.
 
-**READMEBuilder** provides that form. It is a Shiny app that walks you through the sections a good README needs — overview, directory map, data dictionary, known issues, licensing, reproduction steps — as a guided form, then exports a clean, consistently formatted `README.md`. Because the structure is fixed, every README it produces already satisfies the *Documented* requirement of TADA!. It does not write the *content* for you (you still have to know your data), but it guarantees that no section is left out.
+**READMEBuilder** provides that form. It is a Shiny app that walks you through the sections a good README needs as a guided form: project details (title, abstract, authors, contact, funders, DOIs, and separate licences for code and data), a map of the project folder, a column-by-column description of every data file, the order to run the scripts, and the R and package versions, which it detects from your scripts (or from `renv.lock`), then exports a clean, consistently formatted `README.md`. Because the structure is fixed, every README it produces already satisfies the *Documented* requirement of TADA!. It does not write the *content* for you (you still have to know your data), but it guarantees that no section is left out.
 
 :::{.callout-note}
 **READMEBuilder** is a Shiny app / R package for assembling TADA!-compliant READMEs from a guided form: https://github.com/EIvimeyCook/READMEBuilder. Launch the hosted app, or run it locally if you have the package installed.
@@ -681,7 +767,7 @@ A README is the single most useful file in an archive for anyone trying to reuse
 ::::{.task-container}
 
 
-Open **READMEBuilder** and complete a README for the C. elegans project. The app asks for the sections shown in the template below. The hardest is the data dictionary, so focus there: can you complete every row?
+Open **READMEBuilder** and complete a README for the C. elegans project. The template below shows what the finished README should contain. The hardest is the data dictionary, so focus there: can you complete every row?
 
 If you cannot get the app running, fill in the template by hand; the fields are identical.
 
@@ -689,8 +775,10 @@ If you cannot get the app running, fill in the template by hand; the fields are 
 # C. elegans strain × diet reproduction experiment
 
 ## Authors
-- [Name] ([ORCID]), [Affiliation]
+- [Name] ([ORCID]), [Affiliation], [contact email]
 
+**Paper:** [title, and the abstract or a link to it]
+**Funding:** [funders]
 **OSF project:** https://osf.io/jgeq9/
 
 ## Overview
@@ -723,7 +811,12 @@ what does this archive contain]
 ## Known data quality issues (raw file)
 [List the issues you found in the audit]
 
+## Software
+R [version], with these packages: [package (version), …]
+(or a saved `sessionInfo()` file: `results/sessionInfo.txt`)
+
 ## How to reproduce
+Run the scripts in this order (total run time: [about X minutes]):
 
     source("analysis/01_data_cleaning.R")
     source("analysis/02_analysis.R")
@@ -737,20 +830,54 @@ Export the `README.md` from READMEBuilder into your project root, then paste you
 ::::
 :::
 
+### Quick check
+
+**What does `str_trim(str_to_lower(" DAF "))` return?** `r fitb(c("daf", '"daf"'))`
+
+**The cleaning script keeps rows with `filter(TO != 9999, TO >= 0, TO <= 1000)`. What happens to a row where `TO` is `NA`?**
+
+`r longmcq(c(
+  "It is kept, because NA is not equal to 9999",
+  answer = "It is dropped, because filter() keeps only rows where every condition is TRUE, and NA != 9999 gives NA",
+  "filter() stops with an error",
+  "It is kept, and TO is set to 0"
+))`
+
+`r hide("Why this matters")`
+The row disappears without a message and without a line in the exclusion log. If your raw data could contain `NA` offspring counts, count them and log them explicitly, as the script does for 9999.
+`r unhide()`
+
+**You put your code on GitHub and paste the repository URL into the paper. Which TADA! letter is still not met?**
+
+`r mcq(c("Transferable", answer = "Available", "Documented", "Annotated"))`
+
+**Which comment is annotation in the TADA! sense?**
+
+`r longmcq(c(
+  "# read the data",
+  "# load packages",
+  answer = "# Exclude TO = 9999 (code for 'not recorded'); count logged for the methods and Table S1",
+  "# done!"
+))`
+
+**True or false? You must use `renv` to meet TADA!'s *Transferable* principle.** `r torf(FALSE)`
+
 ---
 
 ## Part 5: The SORTEE Guidelines and archiving {#repro-sortee}
 
 *⏱ ~15 minutes*
 
-TADA! sets the floor for code sharing (Part 4). The SORTEE Guidelines build on this with the full quality control framework, including data archiving, licensing, and the relationship between open data and peer review (Pick et al. 2026). Two practical points for right now:
+TADA! sets the floor for code sharing (Part 4): it is what an author needs to meet Stage 3 of the SORTEE data-editor guidelines (Pick et al. 2026). The SORTEE Guidelines build on this with the full quality control framework, including data archiving, licensing, and the relationship between open data and peer review. Two practical points for right now:
 
 **Licensing.** Without a licence, all rights are reserved by default, so others cannot legally reuse your data or code even if you intend them to. Add one to every archive. Typical choices are:
 
 - **Data:** CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
-- **Code:** MIT (https://opensource.org/licenses/MIT)
+- **Code:** MIT (https://opensource.org/licenses/MIT) for permissive reuse, or GPL if you want anyone who modifies your code to share it under the same terms
 
-**Persistent archiving.** The OSF page at https://osf.io/jgeq9/ is itself a public archive with a stable URL. However, you can still edit or remove the repository. The best method is to use GitHub connected to Zenodo or Figshare, which creates a permanent URL and a formal DOI. We cover GitHub later.
+Data and code can carry different licences in the same archive. Check what your archive allows: Dryad, for example, only supports CC0, which does not suit code. [choosealicense.com](https://choosealicense.com/) helps you pick a code licence.
+
+**Persistent archiving.** The OSF page at https://osf.io/jgeq9/ is a public page with a stable URL, but its files can still be edited or removed, so it is not a permanent record. GitHub has the same problem: it is the right place to *develop* code, not to archive it. The approach TADA! recommends is to connect your GitHub repository to **Zenodo** or **Figshare**: each GitHub release is then archived automatically with its own DOI, and the project keeps one DOI that always points to the latest version. **Software Heritage** is another option. In the paper, cite the DOI of the version that produced your results. We cover GitHub later.
 
 ### Pre-submission checklist
 
@@ -759,31 +886,46 @@ TADA! sets the floor for code sharing (Part 4). The SORTEE Guidelines build on t
 tibble(
   Done = "☐",
   Item = c(
-    "Cleaning code saved as .R (not in Word, PDF, or notebook output only)",
-    "All file paths relative — using here() or an RStudio project",
-    "Cleaning code publicly archived with a persistent DOI",
-    "README: directory map, data dictionary, known issues, reproduction guide",
-    "Comments explain *why* every cleaning decision was made",
+    "T: code saved as .R files (not inside Word or PDF)",
+    "T: relative file paths (RStudio project + here()); data and code in one project folder, archived together",
+    "T: a colleague has run the code on their machine",
+    "A: code archived in Zenodo or Figshare (or Software Heritage) with a DOI",
+    "A: the DOI of the version that produced the results is cited in the paper",
+    "D: README with authors and contact, paper title, data DOI, file descriptions, run order and run time",
+    "D: R version and every package version recorded (README, renv.lock or saved sessionInfo())",
+    "D: licence stated for the code (MIT / GPL) and for the data (CC BY / CC0)",
+    "A: each script has a header saying what it does and produces",
+    "A: chunk comments say what, why, and which result in the paper each produces",
     "Raw data preserved unmodified in data/raw/",
     "All exclusion criteria coded and counts saved to exclusion_log.csv",
     "Sentinel values (e.g. 9999) documented in a codebook, not silently dropped",
-    "Scripts numbered; run in sequence from a fresh session without errors",
-    "Package versions recorded (renv.lock or saved sessionInfo())",
     "Data archived with a persistent DOI",
-    "Licence stated for data (CC BY / CC0) and code (MIT / GPL)",
-    "DOI cited in the Data Availability Statement",
+    "Scripts run in sequence from a fresh session without errors",
     "Code reviewed by at least one other person before submission"
   )
 ) |>
   kbl(booktabs = TRUE,
       caption = "Pre-submission checklist: TADA! + SORTEE Guidelines") |>
   kable_styling(full_width = TRUE, bootstrap_options = c("striped","hover")) |>
-  pack_rows("TADA! minimum", 1, 5) |>
-  pack_rows("Data", 6, 8) |>
-  pack_rows("Code", 9, 10) |>
-  pack_rows("Archiving", 11, 13) |>
-  pack_rows("Code review", 14, 14)
+  pack_rows("TADA!: Transferable", 1, 3) |>
+  pack_rows("TADA!: Available", 4, 5) |>
+  pack_rows("TADA!: Documented", 6, 8) |>
+  pack_rows("TADA!: Annotated", 9, 10) |>
+  pack_rows("Data (SORTEE)", 11, 14) |>
+  pack_rows("Code review", 15, 16)
 ```
+
+### Quick check
+
+**True or false? Code on a public website with no licence is free for anyone to reuse.** `r torf(FALSE)`
+
+**Which of these gives your code a permanent record with a DOI for the exact version used in the paper?**
+
+`r mcq(c("A public OSF page", "A GitHub repository", answer = "A Zenodo release", "A shared Dropbox folder"))`
+
+**You archive your data and code together on Dryad. Which licence will they carry?**
+
+`r mcq(c(answer = "CC0", "CC BY 4.0", "MIT", "GPL"))`
 
 :::{.callout-tip}
 **Closing reflection** *(type in chat)*
@@ -807,7 +949,7 @@ tribble(
   "Researcher degrees of freedom","The space of defensible analytical decisions in an underspecified analysis (Simmons et al. 2011)",
   "Garden of forking paths",      "The metaphor for multiple valid analytical paths through any dataset (Gelman & Loken 2013)",
   "Sentinel value",               "A special number used to encode meaning, e.g. 9999 standing in for 'not recorded'; must be documented and handled explicitly",
-  "TADA!",                        "Transferable, Available, Documented, Annotated — minimum code sharing requirements (Ivimey-Cook et al. 2025)",
+  "TADA!",                        "Transferable, Available, Documented, Annotated: the minimum requirements for sharing functional analysis code (Ivimey-Cook et al. 2025, preprint v3)",
   "FAIR",                         "Findable, Accessible, Interoperable, Reusable — principles for open research data (Wilkinson et al. 2016)",
   "SORTEE",                       "Society for Open, Reliable, and Transparent Ecology and Evolutionary Biology",
   "Replication crisis",           "The finding that many published results fail when independently repeated; also called the reproducibility crisis",
@@ -823,8 +965,9 @@ tribble(
 ## Reading
 
 - **Ivimey-Cook, E.R., et al. (2023).** Implementing code review in the scientific workflow. *Journal of Evolutionary Biology*, 36, 1347–1356. https://doi.org/10.1111/jeb.14230
-- **Ivimey-Cook, E.R., et al. (2025).** TADA! https://doi.org/10.32942/X2D93K
-- **Pick, J.L., et al. (2026).** SORTEE Guidelines. https://doi.org/10.24072/pcjournal.687
+- **Ivimey-Cook, E.R., et al. (2025).** TADA! Simple guidelines to improve analytical code sharing for transparency and reproducibility. *EcoEvoRxiv* (preprint, version 3, 2026). https://doi.org/10.32942/X2D93K. The paper includes the TADA! checklist for several programming languages (Figure S1), and a worked example is at https://eivimeycook.github.io/TADA/
+- **The TADA Wiki.** Practical guides to each TADA! principle, licensing, repositories and code review. https://eivimeycook.github.io/TADA-Wiki/
+- **Pick, J.L., et al. (2026).** The SORTEE guidelines for data and code quality control in ecology and evolutionary biology. *Peer Community Journal*, 6, e20. https://doi.org/10.24072/pcjournal.687
 - **Goodman, S.N., Fanelli, D., & Ioannidis, J.P.A. (2016).** What does research reproducibility mean? *Science Translational Medicine*, 8, 341ps12. https://doi.org/10.1126/scitranslmed.aaf5027
 - **Simmons, J.P., Nelson, L.D., & Simonsohn, U. (2011).** False-positive psychology. *Psychological Science*, 22, 1359–1366. https://doi.org/10.1177/0956797611417632
 - **Silberzahn, R., et al. (2018).** Many analysts, one data set. *Advances in Methods and Practices in Psychological Science*, 1, 337–356. https://doi.org/10.1177/2515245917747646

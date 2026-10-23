@@ -48,7 +48,7 @@ The workshop runs in seven in-session blocks across three and a half hours inclu
 | 3. Themes and scales | 35 min | `theme()`, `element_*()`, `theme_project()`, 🏆 the ThemePark Ugly-Off, `scales` package |
 | Break | 15 min |  |
 | 4. Extensions in action | 40 min | `ggdist`, `colorspace`, `ggrepel`, `ggtext`, `patchwork`, 🏆 recreate-this-figure capstone |
-| 5. Saving figures correctly | 10 min | `ggview`, `ragg`, two-format save |
+| 5. Saving figures correctly | 10 min | `ggview`, `ragg`, two-format save, quick-save size test |
 | 6. Writing figure legends | 20 min | The four-element legend, legend triage game, 🏆 legend repair |
 | 7. Three questions for every figure | 5 min | Closing reflection |
 | **Take-home exercise** | (own time) | Apply the workshop to your own data |
@@ -70,10 +70,16 @@ The facilitator shares one tab at a time. Each hides one odd point among 80. Typ
 ```{r}
 #| include: false
 set.seed(7)
-spot <- tibble::tibble(x = runif(80), y = runif(80),
-                       odd = c(TRUE, rep(FALSE, 79)))
-spot_plot <- function(...) {
-  ggplot(spot, aes(x, y, ...)) +
+spot <- tibble::tibble(x = runif(80), y = runif(80))
+# a different odd point in each tab: the point nearest (tx, ty)
+odd_near <- function(tx, ty) {
+  seq_len(nrow(spot)) == which.min((spot$x - tx)^2 + (spot$y - ty)^2)
+}
+spot_colour <- dplyr::mutate(spot, odd = odd_near(0.85, 0.80))  # top right
+spot_shape  <- dplyr::mutate(spot, odd = odd_near(0.15, 0.20))  # bottom left
+spot_mixed  <- dplyr::mutate(spot, odd = odd_near(0.62, 0.50))  # centre right
+spot_plot <- function(data, ...) {
+  ggplot(data, aes(x, y, ...)) +
     geom_point(size = 4, show.legend = FALSE) +
     theme_void() +
     theme(plot.background = element_rect(fill = "white", colour = NA))
@@ -87,7 +93,7 @@ spot_plot <- function(...) {
 ```{r}
 #| echo: false
 #| fig-height: 3
-spot_plot(colour = odd) + scale_colour_manual(values = c("grey60", "#D95F02"))
+spot_plot(spot_colour, colour = odd) + scale_colour_manual(values = c("grey60", "#D95F02"))
 ```
 
 ## Shape
@@ -95,7 +101,7 @@ spot_plot(colour = odd) + scale_colour_manual(values = c("grey60", "#D95F02"))
 ```{r}
 #| echo: false
 #| fig-height: 3
-spot_plot(shape = odd) + scale_shape_manual(values = c(16, 17))
+spot_plot(spot_shape, shape = odd) + scale_shape_manual(values = c(16, 17))
 ```
 
 ## Colour *and* shape, mixed up
@@ -105,10 +111,10 @@ spot_plot(shape = odd) + scale_shape_manual(values = c(16, 17))
 #| fig-height: 3
 # grey points are circles, orange points are triangles;
 # the odd one out is the only grey triangle
-spot <- dplyr::mutate(spot,
-                      col = ifelse(odd, "grey", sample(c("grey", "orange"), 80, TRUE)),
-                      shp = ifelse(odd, "triangle", ifelse(col == "grey", "circle", "triangle")))
-ggplot(spot, aes(x, y, colour = col, shape = shp)) +
+spot_mixed <- dplyr::mutate(spot_mixed,
+                            col = ifelse(odd, "grey", sample(c("grey", "orange"), 80, TRUE)),
+                            shp = ifelse(odd, "triangle", ifelse(col == "grey", "circle", "triangle")))
+ggplot(spot_mixed, aes(x, y, colour = col, shape = shp)) +
   geom_point(size = 4, show.legend = FALSE) +
   scale_colour_manual(values = c(grey = "grey60", orange = "#D95F02")) +
   scale_shape_manual(values = c(circle = 16, triangle = 17)) +
@@ -166,7 +172,7 @@ ggplot(r2, aes(x = "", y = value, fill = item)) +
   theme(legend.position = "none")
 ```
 
-B is what % of A? `r fitb(38, num = TRUE, tol = 5)`
+B is what % of A? `r fitb(38, num = TRUE, tol = 10)` (from here on, within 10 points counts)
 
 ## Round 3
 
@@ -184,30 +190,33 @@ r3 |>
   theme(legend.position = "none")
 ```
 
-B is what % of A? `r fitb(45, num = TRUE, tol = 5)`
+B is what % of A? `r fitb(45, num = TRUE, tol = 10)`
 
 ## Round 4
 
 ```{r}
 #| echo: false
-#| fig-height: 2.5
+#| fig-height: 3
+# the key runs from 0 (white) to 100 (black), so there is a reference
 ggplot(r4, aes(item, 1, fill = value)) +
   geom_tile(colour = "white", linewidth = 2) +
-  geom_text(aes(label = item), colour = "red", size = 6) +
-  scale_fill_gradient(low = "white", high = "black", limits = c(0, 100)) +
-  theme_void() +
-  theme(legend.position = "none")
+  geom_text(aes(y = 0.3, label = item), size = 6) +
+  scale_fill_gradient(low = "white", high = "black", limits = c(0, 100),
+                      breaks = c(0, 100), name = NULL) +
+  theme_void(base_size = 14) +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(4, "cm"))
 ```
 
-B is what % of A? `r fitb(71, num = TRUE, tol = 5)`
+B is what % of A? `r fitb(71, num = TRUE, tol = 10)` (use the key: white is 0, black is 100)
 
 :::
 
 `r hide("What just happened?")`
 
-The answers were 62%, 38%, 45% and 71%. Look back at the chat: most people find Round 1 easy, get scattered on Round 2, scatter further on Round 3 (people judge circles by *width*, not area, so they overestimate small ones), and are close to guessing on Round 4.
+The answers were 62%, 38%, 45% and 71%. Look back at the chat: Round 1 guesses are usually tight, and they spread out with each round after that. In Round 3 most guesses are too high, because we underestimate differences in area: the small circle looks closer in size to the big one than it really is. In Round 4, even with a key, the shades are hard to place.
 
-You have just played a version of Cleveland and McGill's (1984) experiment (Rounds 3 and 4 go beyond what they tested). People read the same ratio most accurately as **position on a common scale**, then length, angle, area, colour lightness and colour hue. Mackinlay (1986) extended the ranking to categorical data: position is still best, but colour hue rises to second. Shape is weaker but useful as a redundant cue.
+You have just played a version of Cleveland and McGill's (1984) experiment (they tested bars and pie slices; Rounds 3 and 4 go further). People read the same ratio most accurately as **position on a common scale**, then length, angle, area, and last shading and colour saturation. Mackinlay (1986) extended the ranking to categorical data: position is still best, but colour hue rises to second. Shape is weaker but useful as a redundant cue.
 
 `r unhide()`
 

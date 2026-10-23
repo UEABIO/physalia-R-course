@@ -93,6 +93,46 @@ ggplot2::ggsave(
 Always specify `width`, `height`, `units`, and `dpi` explicitly. Never rely on `ggsave()` defaults. The defaults rarely match the dimensions of the figure you actually want.
 :::
 
+:::{.task}
+::::{.task-header}
+Quick save: same plot, two sizes (3 minutes)
+::::
+::::{.task-container}
+
+Run this in your own RStudio. It saves the same plot twice: once at full-page width, and once at half the width and height, the size of a single journal column.
+
+```{r}
+#| eval: false
+quick <- penguins_complete |>
+  ggplot(aes(flipper_length_mm, body_mass_g, colour = species)) +
+  geom_point() +
+  labs(x = "Flipper length (mm)", y = "Body mass (g)", colour = "Species") +
+  theme_minimal(base_size = 12)
+
+dir.create(here::here("outputs", "figures"), recursive = TRUE, showWarnings = FALSE)
+
+ggsave(here::here("outputs", "figures", "quick_big.png"), quick,
+       width = 7, height = 5, units = "in", dpi = 300,
+       device = ragg::agg_png, bg = "white")
+
+ggsave(here::here("outputs", "figures", "quick_small.png"), quick,
+       width = 3.5, height = 2.5, units = "in", dpi = 300,
+       device = ragg::agg_png, bg = "white")
+```
+
+**Before you open the files, predict in the chat:** in the small version, will the text look *bigger* or *smaller* compared with the plot?
+
+Then open both files (from the Files pane) and check. What went wrong in the small one, and which single argument would you change to fix it?
+
+::::
+:::
+
+`r hide("What happened")`
+
+The text is the same 12 pt in both files, but the small figure has half the room, so the text takes up far more of it. The legend squeezes the panel and the x-axis labels run into each other. You could fix it by lowering `base_size` (for example to 8), by moving the legend to the bottom, or, better, by deciding the final size first and designing the figure at that size. `ggview::canvas()` lets you do exactly that.
+
+`r unhide()`
+
 :::{.callout-note}
 **Interactive figures** (the `ggiraph` examples from Blocks 2 and 4) are web pages, not images, so `ggsave()` cannot write them. Save them as HTML with `htmlwidgets::saveWidget(girafe(ggobj = fig), "fig.html")`, and always save a static PDF/PNG of the same plot as well, for the manuscript.
 :::
