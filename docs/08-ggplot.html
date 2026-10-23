@@ -127,6 +127,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="include/glossary.css">
 <link rel="stylesheet" href="include/style.css">
 <link rel="stylesheet" href="include/palette.css">
+<link rel="stylesheet" href="include/quiz.css">
 <link rel="stylesheet" href="include/diagrams.css">
 </head>
 <body class="nav-sidebar floating nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
@@ -759,13 +760,13 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>How this works on Zoom.</strong> This is a doing session, not a watching one. Keep RStudio open beside Zoom, and keep the <strong>chat</strong> open: most games ask you to post an answer <em>before</em> the reveal, and the fastest correct answer wins bragging rights. Challenges marked 🏆 are solo races: everyone works in their own RStudio against the clock, posts results in the chat, and the facilitator shares the best ones on screen. They work the same whether there are five of you or fifty. Vote with Zoom <strong>reactions</strong> when asked. Wrong guesses are the point — they are how the principles stick.</p>
+<p><strong>How this works on Zoom.</strong> This is a doing session, not a watching one. Keep RStudio open beside Zoom, and keep the <strong>chat</strong> open: most games ask you to post an answer <em>before</em> the reveal, and the fastest correct answer wins bragging rights. Challenges marked 🏆 are solo races: everyone works in their own RStudio against the clock, posts results in the chat, and we share the best ones on screen. They work the same whether there are five of you or fifty. Vote with Zoom <strong>reactions</strong> when asked. Wrong guesses are the point — they are how the principles stick.</p>
 </div>
 </div>
 </section><section id="how-we-see-data" class="level2"><h2 class="anchored" data-anchor-id="how-we-see-data">How we see data</h2>
 <p>Our visual system did not evolve to read graphs. Some visual features are detected before conscious attention engages: a red dot among grey dots, a single triangle in a sea of circles, an unusually large shape in a field of small ones. This is called <strong>pre-attentive processing</strong> (Healey and Enns, 2012). If you encode important information as a feature the eye picks up automatically, readers see it without having to search. Encoding the same information as a subtle change in line style or a slightly different shade requires the reader to look for it.</p>
 </section><section id="game-spot-it" class="level2"><h2 class="anchored" data-anchor-id="game-spot-it">Game: spot it</h2>
-<p>The facilitator shares one tab at a time. Each hides one odd point among 80. Type <strong>found</strong> in the chat the moment you see it (no scrolling ahead!).</p>
+<p>We’ll go through the tabs one at a time. Each plot hides one odd point among 80: type <strong>found</strong> in the chat as soon as you spot it, and don’t click ahead to the next tab.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist">
 <li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Colour</a></li>
@@ -1092,7 +1093,7 @@ Warning
 </div>
 <div class="task-container">
 <p>You are the jury. For each figure below, post a one-line verdict in the chat in the form <strong>crime → sentence</strong> (e.g.&nbsp;<em>“truncated axis → start at zero”</em>). Is the crime one of <em>distortion</em> (the visual misrepresents the data) or <em>omission</em> (the figure leaves out something the reader needs)?</p>
-<p>Three minutes, then the facilitator reads out the best (and harshest) sentences.</p>
+<p>You have three minutes, then we’ll read out the best (and harshest) sentences.</p>
 </div>
 </div>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
@@ -1158,9 +1159,9 @@ The verdicts
 <li>
 <strong>Rehabilitate (8 min).</strong> Rewrite the code into an honest, accessible figure in your own RStudio.</li>
 <li>
-<strong>Report.</strong> Post a screenshot of your fixed figure in the chat. The facilitator shares the best few on screen, and you score yourself against the case file below.</li>
+<strong>Report.</strong> Post a screenshot of your fixed figure in the chat. We’ll put the best few on screen, and you score yourself against the case file below.</li>
 </ol>
-<p><strong>Scoring:</strong> 1 point per crime you were first to post, 2 more for each crime fixed in your figure. Highest score chooses which figure the facilitator shows first.</p>
+<p><strong>Scoring:</strong> 1 point per crime you were first to post, 2 more for each crime fixed in your figure. The highest scorer picks which figure we show first.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a>chickwts <span class="sc">|&gt;</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-label="2"></a>  <span class="fu">group_by</span>(feed) <span class="sc">|&gt;</span></span>
@@ -1679,6 +1680,63 @@ window.onresize = move_sidebar;
   // Stay in sync if dark mode is changed any other way
   new MutationObserver(sync).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   sync();
+})();
+</script><script>
+// Quiz cards (.quiz-q): show the explanation (.quiz-explain) once the
+// question has been answered, with a "Correct" or "Not quite" verdict.
+// Runs after include/webex.js, which marks answers webex-correct/-incorrect.
+(function () {
+  document.documentElement.classList.add("quiz-js");
+
+  document.querySelectorAll(".quiz-q").forEach(function (card) {
+    var explain = card.querySelector(".quiz-explain");
+    if (!explain) return;
+
+    var verdict = document.createElement("p");
+    verdict.className = "quiz-verdict";
+    explain.insertBefore(verdict, explain.firstChild);
+
+    var select = card.querySelector("select.webex-select");
+    var radios = card.querySelector(".webex-radiogroup");
+    var text = card.querySelector("input.webex-solveme");
+
+    function isCorrect() {
+      if (select) return select.classList.contains("webex-correct");
+      if (radios) return !!radios.querySelector("label.webex-correct input:checked");
+      if (text) return text.classList.contains("webex-correct");
+      return false;
+    }
+    function reveal() {
+      var ok = isCorrect();
+      card.classList.toggle("quiz-right", ok);
+      card.classList.toggle("quiz-wrong", !ok);
+      verdict.textContent = ok ? "Correct" : "Not quite";
+      explain.classList.add("shown");
+    }
+    function hide() {
+      card.classList.remove("quiz-right", "quiz-wrong");
+      explain.classList.remove("shown");
+    }
+    // webex updates its classes in its own listeners; read them afterwards
+    function later(fn) { return function () { setTimeout(fn, 0); }; }
+
+    if (select) {
+      select.addEventListener("change", later(function () {
+        if (select.value === "blank") hide(); else reveal();
+      }));
+    }
+    if (radios) radios.addEventListener("change", later(reveal));
+    if (text) {
+      // a right answer shows at once; a wrong one waits until Enter or leaving the box
+      text.addEventListener("input", later(function () {
+        if (text.value.trim() === "") hide();
+        else if (isCorrect()) reveal();
+      }));
+      text.addEventListener("change", later(function () {
+        if (text.value.trim() !== "") reveal();
+      }));
+    }
+  });
 })();
 </script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
