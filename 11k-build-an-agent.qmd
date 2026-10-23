@@ -1,4 +1,4 @@
-# Build your own agent in R {.unnumbered}
+# Block 6: Build your own agent in R {.unnumbered}
 
 ```{r}
 #| include: false
@@ -9,72 +9,78 @@ library(here)
 library(webexercises)
 ```
 
-*Self-study: about 45 minutes, not part of the timed day.*
+You build the two parts of an agent yourself, a conversation and a tool, then
+run a complete agent on a real task and approve every step it takes. After
+this, every control from Blocks 3 to 5 is something you can see in code.
 
-All day you have worked with Claude Code. At its core it is a model, a
-`r glossary("harness")` and a few `r glossary("tools")` in a loop.
-On this page you build that loop yourself in R, in under 100 lines, with the
-ellmer package. Once you have built it, every control from Blocks 4 to 6 is
-something you can see in your own code: what Manual mode approves, what a deny
-rule blocks, and what leaves your machine.
+*⏱ ~45 minutes · Start on `main`, Git pane clean, with your API key saved as
+`AGENT_ANTHROPIC_KEY` ([setup](11a-setup-claude-code.qmd#api-key)). Claude
+Code is not used in this block.*
+
+:::{.callout-note collapse="true"}
+## This block's files, and how it fits
+
+You stay in your workshop repository, on `main`, straight after lunch. Claude
+Code is set aside: you use an agent you can read line by line, and give it the
+translation that the shipped `tests/test_translation.R` checks. Nothing later
+in the day uses its output, so if time is short your instructor may run Task 2
+on screen while you decide each approval in the chat.
+
+| File | Where it comes from | Its job here |
+|---|---|---|
+| `data/raw/voles_metabolism.csv` | Shipped; used since Block 2 | The data the translation summarises |
+| `scripts/functions/load_voles.R` | Shipped; used since Block 3 | Reads the data with fixed column types |
+| `agent/mini_agent.R` | Shipped; first used here | The agent: four tools, its own permission rules and Manual-mode approvals |
+| `tests/test_translation.R` | Shipped; first used here | Compares a tidyverse translation with the original base R code |
+| `scripts/functions/summaries.R` | Written by your agent, with your approval, in Task 2 | The translation |
+| A line in `docs/ai-log.md` | You, in Task 2 | The record |
+
+**Before you start.** ellmer, the package that talks to Claude and runs the
+loop, is pinned in your repository's `renv.lock`, so `renv::restore()`
+installed it; never run `install.packages()` inside the project. Your key
+comes from an Anthropic Console account, separate from a Claude subscription,
+and lives in your user-level `.Renviron`, outside every repository. Every
+request costs a little; Task 2 shows you how much the agent used.
 
 The page follows the order of Hadley Wickham's explainer
-[*What is an agent?*](https://substack.hadley.nz/p/what-is-an-agent): first a
+[*What is an agent?*](https://substack.hadley.nz/p/what-is-an-agent): a
 conversation, then a tool, then the loop. Joseph Barbier's talk *50 lines of
 code to rebuild Claude Code in R* builds the same kind of agent; the version
 here is our own.
+:::
 
 
-## Before you start
+## Task 1: a conversation, then a tool
 
-You need:
+:::{.task}
+::::{.task-header}
+Talk to a model, then give it a tool (8 minutes)
+::::
+::::{.task-container}
 
-- **ellmer**, which talks to Claude and runs the loop: `install.packages("ellmer")`.
-  The agent also uses callr and fs, which the course install script includes.
-- **An Anthropic API key** from a Console account. A Claude Pro or Max
-  subscription does not include API use.
-  ellmer reads it from the environment variable `ANTHROPIC_API_KEY`. Open your
-  user-level `.Renviron` with `usethis::edit_r_environ()`, add the line
-  `ANTHROPIC_API_KEY=your-key-here`, save, and restart R.
-- **The key kept out of every repository.** Your user-level `.Renviron` is
-  outside your projects; never paste the key into a script. The workshop
-  repository's `.gitignore` lists `.Renviron`, and its deny rule
-  `Read(/.Renviron)` stops Claude Code reading a project copy
-  ([Block 6](11f-enforced-controls.qmd)).
+**Goal:** see what one request to a model is, and what a tool request is, so
+that nothing your agent does in Task 2 is a surprise.
 
-Every request costs money. `chat$get_cost()` shows what a conversation has
-cost so far, so check it after each task. The code names its
-model explicitly, `claude-opus-5-5`, so your AI-use log can record it; you can
-swap in another Claude model ID.
-
-
-## A conversation is turns
+**1. Have a conversation.** In the R console:
 
 ```{r}
 #| eval: false
 library(ellmer)
 
-chat <- chat_anthropic(model = "claude-opus-5-5")
+key <- function() Sys.getenv("AGENT_ANTHROPIC_KEY")
+chat <- chat_anthropic(model = "claude-sonnet-5-5", credentials = key)
 chat$chat("Tell me a joke about R.")
 chat$chat("Explain why it is funny, in one sentence.")
 chat
 ```
 
-Printing `chat` shows the conversation as a list of
-`r glossary("turn", "turns")`, in pairs: your user turn, then the model's
-assistant turn. `chat$get_turns()` returns them as R objects.
+Printing `chat` shows the conversation as `r glossary("turn", "turns")`. The
+second question works only because ellmer sends the **whole conversation so
+far** with each request: the model keeps nothing between requests. That is the
+[context window](11-AI-programming-integrated.qmd) from Block 1, and why a long
+conversation costs more per question.
 
-The second question works because of the harness, not the model. The model
-keeps nothing between requests, so for each new question ellmer sends the
-**whole conversation so far**. That is why a long conversation costs more per
-question: you pay for every `r glossary("token")` of it again. It is also the
-[context window](11-AI-programming-integrated.qmd) from Block 1, seen from
-the inside.
-
-
-## A tool is an R function, run on your computer
-
-A model can only produce text. A tool lets it ask for something to be done:
+**2. Give it a tool.** A tool is an R function the model may ask you to run:
 
 ```{r}
 #| eval: false
@@ -84,27 +90,47 @@ today <- tool(
   description = "Get today's date."
 )
 
-chat <- chat_anthropic(model = "claude-opus-5-5")
+chat <- chat_anthropic(model = "claude-sonnet-5-5", credentials = key)
 chat$register_tool(today)
 chat$chat("How many days until 25 December?")
+chat
 ```
 
-The model never sees your function, only its name and description, so the
-description is everything it knows about the tool. When it wants the date, its
-reply is not an answer but a request: "call `today` with no arguments". ellmer
-runs `today()` **on your computer** and sends the result back in a new user
-turn. The model then answers, using the date it was given.
+The model sees only the tool's name and description. Its first reply is a
+request, "call `today`"; ellmer runs `today()` **on your computer** and sends
+the result back; then the model answers. That is two
+`r glossary("request", "requests")` for one question.
 
-That is two `r glossary("round", "rounds")` for one question: one request that
-ended in a tool request, and one that ended in the answer.
-`chat$get_rounds()` shows them.
+**You are done when** you can point, in the printed `chat`, to the tool
+request and to the tool result, and say which of them ran on your computer.
+
+**If it goes wrong:** if the first `chat$chat()` reports a missing or invalid
+key, check `Sys.getenv("AGENT_ANTHROPIC_KEY") != ""`, and restart R after
+editing `.Renviron`.
+
+::::
+:::
 
 
-## The loop, with no model at all
+## The loop
 
-You can run this section without an API key. It replaces the model with a
-pretend one that follows a script, so that you can see the loop the harness
-runs. Each pass of `repeat` is one round.
+An `r glossary("agent")` repeats that exchange: the harness sends the
+conversation, runs any tool the model asks for, adds the result, and sends it
+all again, until a reply asks for no tool. Every control in this course acts on
+one of three facts:
+
+- **The model only asks.** The harness runs each tool on your computer, so
+  that is where Manual mode asks you, a deny rule refuses, and a hook inspects.
+- **Results go back to the model.** A tool that reads a data file sends that
+  data to the provider: [Block 3's disclosure route](11d-context-disclosure-autonomy.qmd).
+- **The model decides when to stop.** It can loop longer than you expect,
+  which is why a real harness has limits and a stop key.
+
+:::{.callout-tip collapse="true"}
+## How it works: the loop with no model at all
+
+This code runs without an API key. It replaces the model with a pretend one
+that follows a script; each pass of `repeat` is one request.
 
 ```{r}
 # the tools, as plain R functions
@@ -146,92 +172,51 @@ for (t in turns) {
 }
 ```
 
-Three things to notice:
-
-- **The model only asks.** `do.call()` in the harness is the only line that
-  does anything to your computer. Every control in the course acts at that
-  line: Manual mode asks you before it runs, a deny rule refuses it, a hook
-  inspects it.
-- **Results go back to the model.** Whatever a tool returns joins the
-  conversation, and the conversation is sent to the provider. That is
-  [Block 4's disclosure route](11d-context-disclosure-autonomy.qmd): a tool
-  that reads a data file sends that data.
-- **The model decides when to stop.** The loop ends when a reply asks for no
-  tool. A real model can also loop for longer than you expected, which is why
-  a real harness has limits and a stop key.
-
-In the real API the tool result goes back inside a user turn; ellmer does that
-for you.
-
-
-## What an agent is
-
-An `r glossary("agent")` is a model in a harness, calling tools in a loop.
-Read tools let it look around: list files, read them. Write tools let it change
-things: edit a file, run code. With both, it can explore, make a change, check
-the result and try again, which is what Claude Code did for you all day.
-
-The write tools are where the risk is. Wickham's article warns with a tool
-that deletes files: give an agent one without confirmation and it may use it.
-
-
-## Build a mini coding agent
-
-The agent below has four tools and three safeguards. Download it and save it
-**outside your workshop repository**, for example in your Downloads folder, so
-the agent cannot edit its own rules, just as Block 6 protects
-`.claude/settings.json`.
-
-```{r}
-#| echo: false
-downloadthis::download_file(
-  path = here::here("files", "agent", "mini_agent.R"),
-  output_name = "mini_agent",
-  output_extension = ".R",
-  button_label = "Download mini_agent.R",
-  button_type = "success",
-  has_icon = TRUE,
-  icon = "fa fa-save",
-  self_contained = FALSE
-)
-```
-
-The walkthrough below explains each part of the file.
-
-:::{.callout-tip collapse="true"}
-## Reference: the full mini_agent.R
-
-```{r, eval = FALSE, file = here::here("files", "agent", "mini_agent.R")}
-```
+`do.call()` is the only line that does anything to your computer: that is
+where Manual mode, deny rules and hooks act. In the real API the tool result
+goes back inside a user turn; ellmer does that for you.
 :::
 
-Each part matches something you met during the day:
 
-- **Read and write tools.** `list_files()` and `read_file()` only observe;
-  `tool_annotations(read_only_hint = TRUE)` labels them, but a label is only a
-  hint and enforces nothing. `write_file()` and `run_r()` change things.
-- **`inside_project()` is the agent's deny rule.** Every file tool calls it,
-  and it refuses paths outside the project, under `data/raw/`, or to a
-  credentials file (`.Renviron` or `.env`, in any folder). An error in a
-  tool does not stop the agent: ellmer sends the error message back to the
-  model, which can try something else.
-- **`ask_first()` is Manual mode.** `chat$on_tool_request()` runs it before
-  every tool call. Read calls go straight through; for a write or a run it
-  prints the arguments, the file contents or the code, and calls
-  `tool_reject()` unless you choose **Yes**.
-- **`run_r()` uses a fresh R session.** `callr::r()` runs the code in a new
-  R process, so it cannot change the objects in yours, and only the first 60
-  lines of output go back to the model.
-- **The system prompt is its `AGENTS.md`.** The
-  `r glossary("system prompt")` is sent with every request, and like an
-  instruction file it is only a request.
+## Your agent: `agent/mini_agent.R`
 
-`run_r()` shows the limit Block 6 found in deny rules. `inside_project()`
-guards the file tools, but R code run by `run_r()` can write anywhere, `data/raw/`
-included. Only your approval stands in the way, which is why you read the code
-before you choose **Yes**, and why the raw-data checksum test checks the result
-whatever route a change took.
+Your repository ships a complete agent built from the same parts, about 120
+lines. Your instructor walks through it; each part matches something from this
+morning:
 
+- **Four tools.** `list_files()` and `read_file()` look around; `write_file()`
+  and `run_r()` change things.
+- **`inside_project()` is its deny rule.** It may read inside the project,
+  except raw data and credentials files, and write **only under `scripts/`**,
+  so it cannot edit its checks in `tests/` or its own rules in `agent/`.
+- **`ask_first()` is Manual mode.** Reads go straight through; every write and
+  every run is shown to you first, and refused unless you choose **Yes**.
+- **The system prompt is its instruction file.** It is not given your
+  `AGENTS.md` (it could still open the file, like any other), and like
+  `AGENTS.md` its prompt is only a request.
+
+`run_r()` shows the gap Block 5 found: R code can write anywhere, `data/raw/`
+included, and read anything you can, your `.Renviron` included. Only your
+approval stands in the way, which is why you read the code before you choose
+**Yes**; afterwards the Git pane shows any change.
+
+:::{.callout-tip collapse="true"}
+## Reference: the full `agent/mini_agent.R`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "agent", "mini_agent.R")}
+```
+
+`list_files()` lists one folder and at most 100 names, and `read_file()`
+returns at most 300 lines: a recursive listing would include every package in
+`renv/`, and all of it would be sent to the model. An error in a tool does not
+stop the agent: ellmer sends the error message back to the model, which can
+try something else. `run_r()` uses a fresh R session (`callr::r()`), so it
+cannot change the objects in yours, and only the first 60 lines of its output
+go back to the model.
+:::
+
+
+## Task 2: run your agent
 
 :::{.task}
 ::::{.task-header}
@@ -239,68 +224,101 @@ Run your agent (20 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** your workshop repository open in RStudio or Positron, committed and
-clean in the Git pane. If `scripts/explore_voles.R` already has a
-`mass_change_g` line from Block 4, delete that line and commit first. The
-working directory must be the repository's root, as it is when you open the
-project.
+**Goal:** watch your own agent write, test and fix a translation while you
+approve every write and run, so that you see exactly where Manual mode and a
+deny rule act.
 
-**1. Load the agent.** In the R console, with the path to where you saved it:
+**Start state:** `main`, Git pane clean, R's working directory at the
+repository's root (as it is when you open the project).
+
+**1. Load the agent.** Nothing is sent to the model yet:
 
 ```{r}
 #| eval: false
-source("~/Downloads/mini_agent.R")
+source(here::here("agent", "mini_agent.R"))
 ```
 
-**2. Give it the task.**
+**2. Give it the task.** The original base R code is `legacy_rate_summary()`
+in `tests/test_translation.R`, which also checks the translation:
 
 ```{r}
 #| eval: false
 chat$chat(paste(
-  "Add a mass_change_g column (mass_post_g minus mass_pre_g) to the voles",
-  "data in scripts/explore_voles.R, then run",
-  "testthat::test_file('tests/test_explore.R') to check it."
+  "Write a function summarise_rate_tidy(data) in scripts/functions/summaries.R",
+  "whose output matches legacy_rate_summary() in tests/test_translation.R.",
+  "Use dplyr and the native pipe; it must work in a fresh R session.",
+  "Write only that file, and no tests. Then run",
+  "testthat::test_file('tests/test_translation.R') with run_r, and fix the",
+  "function until the test passes."
 ))
 ```
 
-**3. Watch and decide.** The read calls run without asking. For each
-`write_file` or `run_r` request, read what it prints, then choose **Yes** only
-if you would have written it yourself. Try choosing **No** once and watch how
-the agent responds.
-
-**4. Look inside.** In the console:
+**3. Decide each request.** Reads run without asking. For a `write_file` or
+`run_r` request, read what it prints and choose **Yes** only for a write to
+`scripts/functions/summaries.R` or a run of the test. **Refuse the first test
+run on purpose:** the agent stops and explains. Then let it continue:
 
 ```{r}
 #| eval: false
-chat                # the turns, with tokens and cost
-chat$get_rounds()   # one entry per request to the model
-chat$get_cost()
+chat$chat("Go ahead and run the test.")
 ```
 
-**5. Check its work.** Open the Git pane and read the diff of
-`explore_voles.R`. Then restart R (*Session → Restart R*) and run the test
-yourself, as in [checking work](11a-setup-claude-code.qmd#checking-work):
+**4. Look inside.**
 
 ```{r}
 #| eval: false
-testthat::test_file(here::here("tests", "test_explore.R"))
+chat               # every turn: your prompt, its tool requests, the results
+count_requests()   # how many requests it sent to the model
+chat$get_tokens()  # the tokens it sent and received
 ```
 
-**6. Record it.** Add a line to `docs/ai-log.md`, for example:
+**5. Check its work yourself.** The agent's "the test passes" is a claim. Read
+the diff of `scripts/functions/summaries.R` in the Git pane, then restart R
+(*Session → Restart R*) and run:
 
+```{r}
+#| eval: false
+testthat::test_dir(here::here("tests"))
 ```
-2026-10-22; mini agent (ellmer, claude-opus-5-5); added mass_change_g; kept after reading the diff and running the test
-```
 
-**You are done when** the test passes when you run it yourself, the Git pane
-shows only the change you approved, and you can say how many rounds the task
-took and what it cost.
+**6. Record and commit.** Add a line to `docs/ai-log.md` with today's date,
+for example
+`2026-10-22; mini agent (ellmer, claude-sonnet-5-5); translated the rate summary to tidyverse; kept after reading the diff and running the tests`,
+then commit `summaries.R` and the log.
 
-**If it goes wrong:** if the agent changed something you did not want, revert
-the file in the Git pane. If `chat_anthropic()` reports a missing key, check
-`Sys.getenv("ANTHROPIC_API_KEY") != ""` and restart R after editing
-`.Renviron`. If the agent refuses a path you expected it to reach, check
-`getwd()` is the repository's root.
+`r hide("Did your agent notice the missing value?")`
+
+`aggregate()` with a formula silently drops the animal whose
+`metabolic_rate_post` is missing, so the original's mean and count leave it
+out. A literal tidyverse translation keeps it: an `NA` mean and a count one
+too high. The test compares against the original, so the agent had to match
+that behaviour, and if it read the test it probably did so without comment.
+The test checks "the same as the original", not "correct": Block 8 returns to
+that difference.
+
+`r unhide()`
+
+**You are done when** `test_translation.R` passes in your own run, the Git
+pane showed only `summaries.R` and your log changed, you can say how many
+requests and tokens the task took, and both are committed.
+
+**If it goes wrong:**
+
+- **The agent loops or goes off course:** answer **No**, then steer it with
+  `chat$chat("…")`, or `source()` the file again to start a new conversation.
+- **A refused path you expected to work:** check `getwd()` is the
+  repository's root.
+- **An unwanted change:** **Revert** it in the Git pane.
+
+:::{.callout-tip collapse="true"}
+## What did it cost?
+
+`chat$get_cost()` turns the tokens into money when ellmer knows the model's
+price. If it shows `NA`, run `ellmer::models_update_prices()` once to refresh
+ellmer's price list, or multiply the tokens from `chat$get_tokens()` by the
+prices on Anthropic's pricing page. `claude-opus-5-5`, set at the top of
+`mini_agent.R`, is a larger model at a higher price per token.
+:::
 
 ::::
 :::
@@ -311,30 +329,32 @@ the file in the Git pane. If `chat_anthropic()` reports a missing key, check
 | Your mini agent | Claude Code |
 |---|---|
 | `ask_first()` and `tool_reject()` | Manual mode (`default`) and the other permission modes |
-| `inside_project()` | Deny rules in `.claude/settings.json`, such as `Read(/.Renviron)` |
+| `inside_project()`: writes only under `scripts/` | Deny rules in `.claude/settings.json`, such as `Edit(/data/raw/**)` |
 | The system prompt | `AGENTS.md`, read at the start of each session |
-| `run_r()` in a fresh R session with `callr::r()` | Commands it runs in the Terminal; you check results in a fresh R session |
-| `get_turns()`, `get_rounds()`, `get_cost()` | The conversation itself, and the model shown above the prompt |
+| `run_r()` in a fresh R session | Commands it runs in the Terminal; you check results in a fresh R session |
+| `chat`, `count_requests()`, `chat$get_tokens()` | The conversation itself, and the model shown in Claude Code |
 | Git | Git |
 
-Claude Code also has what this agent lacks: plan mode, hooks, skills,
-compaction of long conversations, many more tools, and far more checks around
-each one. Building the small version is not a reason to use it for real
-work. It is a way to understand what the big one is doing.
+Claude Code adds plan mode, hooks, skills, compaction of long conversations,
+many more tools and far more checks around each one. Building the small
+version is a way to understand the big one, not a reason to use it for real
+work. In Block 7 you hand Claude Code a much bigger job under the same
+controls.
 
 
 :::{.callout-note}
 ## Check · Reproduce · Record
 
 - **You can now:** explain an agent as a model, a harness and tools in a loop,
-  and build one in R, **trusted because** you wrote every line that touches
-  your files, and a test you did not write decides whether its change is right.
+  and run one in R, **trusted because** you can read every line that touches
+  your files, and a test you did not write decides whether its change is
+  right.
 - **Check:** every write and every run is shown to you before it happens; the
   Git pane shows what changed; the test runs in a fresh R session.
 - **Reproduce:** `run_r()` runs in a fresh R session, so the agent's checks do
   not depend on what is loaded in yours.
-- **Record:** `chat$get_turns()` is the full record of what was sent and
-  received; your AI-use log records the tool, model and what you kept.
+- **Record:** `chat` holds the full record of what was sent and received; your
+  AI-use log records the tool, the model and what you kept.
 :::
 
 
@@ -351,7 +371,7 @@ work. It is a way to understand what the big one is doing.
 
 **True or false: when an agent's tool reads a file, the file's contents are sent to the model provider.** `r torf(TRUE)`
 
-**`inside_project()` refuses any path under `data/raw/`. Which tool call could still change a raw data file?**
+**`inside_project()` lets the agent write only under `scripts/`. Which tool call could still change a raw data file?**
 
 `r longmcq(c(
   "read_file('data/raw/voles_raw.csv')",
@@ -380,7 +400,7 @@ let it through without asking, and keep asking for `run_r()`.
 
 Change `ask_first()` so it asks before every call, reads included. You then
 see every file the agent wants to read before it is sent to the provider,
-which is the habit Block 4 recommends near confidential data.
+which is the habit Block 3 recommends near confidential data.
 :::
 
 :::{.callout-tip collapse="true"}

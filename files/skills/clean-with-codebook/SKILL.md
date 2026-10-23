@@ -35,9 +35,8 @@ disable-model-invocation: true
    copy rules into the script by hand. Run it in a fresh R session
    (Rscript scripts/01_clean.R), then run it a second time and confirm the
    outputs are identical.
-4. Run scripts/02_validate.R (raw data should fail, clean data should pass)
-   and every test: Rscript -e "testthat::test_dir('tests')". Report both
-   outputs verbatim, including skips.
+4. Run every test: Rscript -e "testthat::test_dir('tests')". Report the
+   output verbatim, including skips.
 
 ## Outputs (exact columns)
 - data/derived/voles_clean.csv: raw_row, then the codebook columns. raw_row

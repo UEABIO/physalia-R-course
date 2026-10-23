@@ -1,5 +1,5 @@
 # scripts/01_clean.R ----
-# Checkpoint version (branch block7-done): applies docs/codebook.csv to
+# Checkpoint version (branch checkpoint-cleaning): applies docs/codebook.csv to
 # data/raw/voles_raw.csv. Every changed cell goes in the cleaning log and every
 # excluded row in the exclusion log, with a reason. The codebook is the only
 # source of rules: nothing is inferred beyond it.

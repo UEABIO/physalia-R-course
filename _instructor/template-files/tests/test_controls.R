@@ -1,8 +1,8 @@
 # tests/test_controls.R ----
-# Blocks 5, 6 and 9: the instruction file is in place, the project is under
-# git, it still starts in Manual mode, and no deny rule has been removed. An agent cannot
-# edit .claude/ with its edit tools, but R code it runs could; this test
-# catches that by any route.
+# Blocks 4, 5 and 8: the instruction file is in place, the project is under
+# git, it still starts in Manual mode, no deny rule has been removed, and no
+# command is approved in advance. An agent cannot edit .claude/ with its edit
+# tools, but R code it runs could; this test catches that by any route.
 library(testthat)
 testthat::local_edition(3)
 
@@ -47,6 +47,15 @@ test_that("the project starts in Manual mode", {
               label = "permissions.defaultMode is \"default\" (Manual)")
 })
 
+test_that("no command is approved in advance", {
+  # answering "Yes, and don't ask again" saves an allow rule, usually in the
+  # git-ignored settings.local.json; from then on that command runs unasked
+  allowed <- unlist(lapply(read_project_settings(), \(s) s$permissions$allow))
+  expect_true(length(allowed) == 0,
+              label = paste("no allow rules; remove these with /permissions:",
+                            paste(allowed, collapse = ", ")))
+})
+
 test_that("AGENTS.md is in place, with its canary and version-control rule", {
   agents <- here::here("AGENTS.md")
   expect_true(file.exists(agents))
@@ -54,24 +63,18 @@ test_that("AGENTS.md is in place, with its canary and version-control rule", {
   expect_true(any(grepl("agents-md: active", lines, fixed = TRUE)))
   expect_true(any(grepl("git status", lines, fixed = TRUE)),
               label = "AGENTS.md asks the agent to run git status before editing")
+})
+
+test_that("the project is a git repository", {
   # a rule about git is only a request; git itself must be there
   repo <- tryCatch(gert::git_find(here::here()), error = function(e) NULL)
   expect_false(is.null(repo), label = "the project is a git repository")
 })
 
-test_that("a CLAUDE.md, if there is one, imports AGENTS.md", {
-  # Claude Code reads AGENTS.md itself unless a CLAUDE.md exists; a CLAUDE.md
-  # without the import would hide your conventions from it.
-  claude <- here::here("CLAUDE.md")
-  skip_if_not(file.exists(claude), "no CLAUDE.md: Claude Code reads AGENTS.md")
-  expect_true(any(grepl("@AGENTS.md", readLines(claude, warn = FALSE),
-                        fixed = TRUE)))
-})
-
-test_that("the Block 9 test is protected once it exists", {
+test_that("the Block 8 test is protected once it exists", {
   skip_if_not(
     file.exists(here::here("tests", "test_summary_functions.R")),
-    "Block 9 not done yet"
+    "Block 8 not done yet"
   )
   expect_true("Edit(/tests/test_summary_functions.R)" %in% deny_rules())
 })

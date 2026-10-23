@@ -1,4 +1,4 @@
-# Block 5: Instructions and skills {.unnumbered}
+# Block 4: Instructions and skills {.unnumbered}
 
 ```{r}
 #| include: false
@@ -10,30 +10,148 @@ library(here)
 library(webexercises)
 ```
 
-The higher an agent works on the autonomy ladder, the more its guesses about
-your conventions land in your files. This block shows you how to state those
-conventions once, so every conversation follows them, in two ways:
+You write your conventions down once, so that every conversation follows them:
+in an `r glossary("instruction file")`, which loads every time, and in a
+`r glossary("skill")`, which loads only when needed. Both are requests the model
+usually follows; [Block 5](11f-enforced-controls.qmd) covers rules that always hold.
 
-- An `r glossary("instruction file")` loads into **every** conversation. Use it
-  for what is always true: structure, style, reproducibility rules.
-- A `r glossary("skill")` loads **only when needed**: a procedure such as
-  producing a publication figure or cleaning data against a codebook.
+*⏱ ~35 minutes · Start on `main`, Git pane clean, Claude Code running in Manual mode.*
 
-Both are requests the model usually follows; [Block 6](11f-enforced-controls.qmd)
-covers rules that hold every time.
+:::{#block4-files .callout-note collapse="true"}
+## This block's files, and how it fits
 
-*⏱ ~45 minutes*
+Same repository and data as Block 3; nothing here depends on Block 3's scripts.
+Short of time? `checkpoint-skills` holds Blocks 3 and 4 finished; Block 5 starts
+from `main` or that branch. The optional `pub-figures` bundle is in *Going further*.
 
+| File | Where it comes from | Used in |
+|---|---|---|
+| `AGENTS.md`, `tests/test_controls.R` | Shipped: the starter instruction file, which you make yours, and the test that checks it keeps its canary and `git status` rule, Manual mode and the deny rules | Activity 1 |
+| `data/raw/voles_metabolism.csv` | Shipped: the data the figures show | Activity 2 |
+| `.agents/skills/`, `.claude/skills/` | Shipped with the course's own skills, `clean-with-codebook` and `characterisation-refactor`, for Blocks 7 and 8; you add `house-figures` to both | Activity 2, step 2 |
+| `scripts/fig_house.R` | The agent, using your skill | Activity 2, step 3 |
+| `docs/ai-log.md` | You, in Block 3; if it is missing, create it with `usethis::edit_file("docs/ai-log.md")` | Activity 2, step 5: you add a line |
+:::
 
-## Part A: Instructions
+## Activity 1: Make AGENTS.md yours
 
-Your conventions live in one file, `AGENTS.md`, at the repository root, and
-both Claude Code and Posit Assistant read it at the start of every
-conversation. There is no `CLAUDE.md`: Claude Code reads `AGENTS.md` only when
-no `CLAUDE.md` exists, so creating one (for example with `/init`) would hide
-your conventions.
+:::{.task}
+::::{.task-header}
+Edit, check, verify (12 minutes)
+::::
+::::{.task-container}
 
-:::::: {.dia .dia-lanes role="figure" aria-label="Which files each tool reads: Claude Code and Posit Assistant both read AGENTS.md directly; a skill is kept in .agents/skills/your-skill and copied to .claude/skills/your-skill for Claude Code"}
+**Goal:** make `AGENTS.md` describe your own practice and prove Claude Code
+loads it, so that every later conversation starts from your conventions.
+
+**Start state:** your workshop repository on `main`, Git pane clean, Claude
+Code running in Manual mode in the Terminal tab
+([checking work](11a-setup-claude-code.qmd#checking-work)).
+
+:::{.callout-tip collapse="true"}
+## Using another tool
+
+The activities use Claude Code. **Posit Assistant** reads the same
+`AGENTS.md`: open it from the gear menu (*Open project memory*), or describe
+your conventions and run `/savememory`. If the canary is missing, check that
+you trusted the workspace. It reads skills from `.agents/skills/` directly,
+so it needs no copy in `.claude/skills/`; invoke a skill by name in the same
+way. For other tools, see *Instruction and skill files in other tools* in
+*Going further*.
+:::
+
+**1. Baseline.** See the starter file at work before you change it.
+
+**Prompt (Claude Code):**
+
+```text
+Read data/raw/voles_metabolism.csv and make a quick exploratory plot
+of mass_post_g by treatment arm. Show the R code in your reply; do not
+create any files.
+```
+
+Look for the `r glossary("canary")`, `# agents-md: active v1`, as the first
+line of the code: it shows `AGENTS.md` was loaded.
+
+**Answer each request with plain Yes or No.** Never choose an option that
+says *don't ask again*: it saves a rule that skips the question from then on.
+Here, answer No if it asks to create or run anything: you asked only to see
+the code.
+
+:::{.callout-note collapse="true"}
+## The starter `AGENTS.md`
+
+The canary is a fixed first line the assistant is asked to put in any R code it
+writes, so you can see the file was loaded; asking for the code in the reply
+gives it somewhere to appear. The "Tests" rules ask the agent to prove its own
+work after every edit, which later blocks rely on.
+
+```{r}
+#| echo: false
+#| comment: ""
+#| class-output: markdown
+cat(readLines(here::here("_instructor", "template-files", "AGENTS.md")), sep = "\n")
+```
+:::
+
+**2. Make it yours.** Open `AGENTS.md` from the Files pane (or run
+`usethis::edit_file("AGENTS.md")`), and:
+
+1. delete one rule you do not actually follow;
+2. add one convention you always follow, on one line and specific enough to
+   check ("use the native pipe `|>`", not "write clean code").
+
+Keep the canary and the *Tests*, *Statistics*, *Version control* and *Working
+with me* sections, which later blocks and `tests/test_controls.R` rely on.
+Save.
+
+:::{.callout-note collapse="true"}
+## What makes an instruction work
+
+Use `AGENTS.md` for what is always true: structure, style, reproducibility
+rules. Instructions that work are:
+
+- **One per line**, and specific enough to check ("use the native pipe `|>`",
+  not "write clean code").
+- **True of your own code**, or the model gets mixed signals.
+- **Short**, because the file loads into every request.
+- **Added when a mistake repeats:** a correction in chat is forgotten next
+  conversation.
+- **Not a guarantee:** "never edit raw data" belongs here *and* in the enforced
+  controls of [Block 5](11f-enforced-controls.qmd).
+:::
+
+**3. Verify.** Type `/memory` only to check that `AGENTS.md` is listed. Then
+type `/clear` and repeat the step 1 prompt. The canary
+shows the file was **loaded**; check the plot code against your new rule to see
+whether it was **followed**.
+
+**4. Check it with a test.** Restart R (*Session → Restart R*), then in the R
+console:
+
+```{r}
+#| eval: false
+testthat::test_dir(here::here("tests"))
+```
+
+Then commit `AGENTS.md` from the Git pane.
+
+**You are done when** the canary appears, the test suite has no failures (tests
+for later blocks skip), and your edited `AGENTS.md` is committed.
+
+**If it goes wrong:** if `/memory` does not list `AGENTS.md`, delete any
+`CLAUDE.md` you created (*How it works*, below). If `test_controls.R` fails,
+restore the canary or the `git status` line; a failure in `test_explore.R` or
+`test_ai_log.R` is left over from Block 3. Still stuck? Compare with the
+`checkpoint-skills` branch.
+
+::::
+:::
+
+:::::::{.callout-note collapse="true"}
+## How it works: which files Claude Code reads
+
+:::::: {.dia .dia-lanes role="figure" aria-label="Which files Claude Code reads: AGENTS.md, at the start of every conversation; a skill, kept in .agents/skills/your-skill and copied to .claude/skills/your-skill, which Claude Code reads"}
 ::::: {.dia-flow}
 ::: {.dia-label}
 Instruction file: loaded into every conversation
@@ -42,10 +160,10 @@ Instruction file: loaded into every conversation
 `AGENTS.md`: your conventions
 :::
 ::: {.dia-arrow}
-read directly by
+read by
 :::
 ::: {.dia-node .dia-ai}
-Claude Code and Posit Assistant
+Claude Code
 :::
 :::::
 ::::: {.dia-flow}
@@ -69,173 +187,58 @@ Claude Code
 :::
 :::::
 ::: {.dia-caption}
-Posit Assistant reads `.agents/skills/` directly, so it needs no copy. The
-course's own skills already ship in both folders.
+The course's own skills already ship in both folders; Activity 2 shows how to
+copy one you write.
 :::
 ::::::
 
-**Instructions that work** are:
-
-- **one per line**, and specific enough to check ("use the native pipe `|>`",
-  not "write clean code");
-- **true of your own code**, or the model gets mixed signals;
-- **short**, because the file loads into every request;
-- **added when a mistake repeats**: a correction in chat is forgotten next
-  conversation;
-- **not guarantees**: "never edit raw data" belongs here *and* in the enforced
-  controls of [Block 6](11f-enforced-controls.qmd).
+Claude Code reads `AGENTS.md`, at the repository root, at the start of every
+conversation because the template ships no `CLAUDE.md`; creating one (for example with `/init`) would
+hide your conventions. `/memory` lists the instruction files it loaded.
+Choosing one opens it in an external editor, which may be vi on macOS, so edit
+`AGENTS.md` from the Files pane instead.
+:::::::
 
 
-### Activity: Make AGENTS.md yours
+## Activity 2: Write a skill and test it
 
-Your workshop repository already contains a starter `AGENTS.md`. Make it
-describe *your* practice, then prove that Claude Code reads it.
-
-:::{.callout-note collapse="true"}
-## The starter `AGENTS.md`
-
-It includes a `r glossary("canary")`: a fixed first line the assistant is asked
-to put in any R code it writes, so you can see the file was loaded. The
-"Tests" rules ask the agent to prove its own work after every edit, which later
-blocks rely on.
-
-```{r}
-#| echo: false
-#| comment: ""
-#| class-output: markdown
-cat(readLines(here::here("_instructor", "template-files", "AGENTS.md")), sep = "\n")
-```
-:::
+A skill is a folder holding a `SKILL.md` file. Its `r glossary("front matter")`,
+between two lines of three dashes, gives a `name` and a `description`, and
+**the description is the trigger**: "Use when producing a ggplot2 figure for a
+report, poster or paper" loads when it should; "for plots" loads erratically.
+The body is the procedure.
 
 :::{.task}
 ::::{.task-header}
-Edit, check, verify (15 minutes)
+A house figure style (15 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** your workshop repository open, a clean Git pane, and Claude Code
-running in the project's Terminal tab
-([checking work](11a-setup-claude-code.qmd#checking-work)).
+**Goal:** write a skill and grade a figure made with it against your
+instructor's baseline made without it, so that you judge the skill by what it
+changes, not by its own report.
 
-**1. Baseline.**
+**Start state:** your workshop repository on `main`, Git pane clean (your
+`AGENTS.md` committed), Claude Code running in Manual mode in the Terminal tab.
 
-**Prompt (Claude Code):**
+**1. The baseline, made without the skill.** Your instructor runs this prompt
+on screen, before the skill exists; you don't run it. **Instructor:** post the
+figure in the Zoom chat, because learners grade against it in step 4.
 
-```text
-/plan Read data/raw/voles_metabolism.csv and make a quick exploratory plot
-of mass_post_g by treatment arm. Show the R code in your reply; do not
-create any files.
-```
-
-Look for the canary, `# agents-md: active v1`, as the first line of the code.
-(Asking for the code in the reply gives the canary somewhere to appear.)
-
-**2. Make it yours.** Type `/memory`, choose `AGENTS.md`, and in your editor:
-
-1. delete one rule you do not actually follow;
-2. add one convention you always follow.
-
-Keep the canary and the "Tests", "Statistics" and "Working with me" sections,
-which later blocks rely on. Save.
-
-**3. Verify.** Type `/clear` and repeat the step 1 prompt. The canary shows the
-file was **loaded**; check the plot code against your new rule to see whether
-it was **followed**.
-
-**4. Check it with a test.** In the R console, after *Session → Restart R*:
-
-```{r}
-#| eval: false
-testthat::test_file(here::here("tests", "test_controls.R"))
-```
-
-It confirms `AGENTS.md` is in place with its canary, the project still starts
-in Manual mode, and the deny rules are intact. Commit `AGENTS.md` from the Git
-pane.
-
-**You are done when** the canary appears, the test passes, and your edited
-`AGENTS.md` is committed.
-
-**If it goes wrong:** check there is no `CLAUDE.md` (the test checks this too)
-and that `/memory` lists `AGENTS.md`. Still stuck? Compare with the
-`block5-done` branch from the Git pane's branch menu.
-
-:::{.callout-tip collapse="true"}
-## Using Posit Assistant
-
-Posit Assistant reads the same `AGENTS.md`. Open it from the gear menu
-(*Open project memory*), or describe your conventions and run `/savememory`.
-If the canary is missing, check that you trusted the workspace.
-:::
-
-::::
-:::
-
-
-## Part B: Skills
-
-A skill is a folder holding a `SKILL.md` file, plus any scripts or templates it
-needs. Its `r glossary("front matter")`, between two lines of three dashes at
-the top, gives a `name` and a `description`:
-
-- **The description is the trigger.** "Use when producing a ggplot2 figure for
-  a report, poster or paper" loads when it should; "for plots" loads
-  erratically. Invoking it by name (`/skill-name`) always works.
-- **The body is a procedure:** when to use it, the steps, hard rules and a
-  final check. It loads only when used, so it can be longer than `AGENTS.md`.
-
-:::{.callout-tip collapse="true"}
-## Background: skills that run only by name
-
-For a skill that writes files, `disable-model-invocation: true` in the front
-matter makes it run only when you invoke it by name.
-:::
-
-Keep the master copy in `.agents/skills/` and copy it into `.claude/skills/`
-for Claude Code (Posit Assistant reads `.agents/skills/` directly). The deny
-rules protect `.claude/` from the agent's edit tools but not `.agents/skills/`,
-so check the master copy in the Git pane too. The
-course's own skills already ship in both; type `/skills` to list them. For a
-skill you write, copy it once, and again whenever you change it:
-
-**In the R console:**
-
-```{r}
-#| eval: false
-fs::dir_copy(
-  here::here(".agents", "skills", "house-figures"),
-  here::here(".claude", "skills", "house-figures"),
-  overwrite = TRUE
-)
-```
-
-
-### Activity: Write a skill and test it
-
-:::{.task}
-::::{.task-header}
-A house figure style (20 minutes)
-::::
-::::{.task-container}
-
-**Start state:** Claude Code in Manual mode in your project's Terminal tab, with your
-`AGENTS.md` committed.
-
-**1. Baseline, before the skill exists.**
-
-**Prompt (Claude Code):**
+**Prompt (Claude Code, run by your instructor):**
 
 ```text
 Make a figure of mass_post_g by treatment_arm for the voles data, for a
 lab report. Save the code as scripts/fig_baseline.R.
 ```
 
-Approve the edit. Doing this first guarantees the baseline was written without
-the skill.
-
 **2. Create the skill.** In the R console,
 `usethis::edit_file(".agents/skills/house-figures/SKILL.md")` creates and opens
-the file. Paste in:
+the file. Open the box below, copy the skill into the file, and save. Read its
+`description` and six rules as you do: step 4 grades three of them.
+
+:::{.callout-note collapse="true"}
+## The `house-figures` skill: copy this into `SKILL.md`
 
 ```markdown
 ---
@@ -264,10 +267,41 @@ description: >-
 ## Before returning code
 List which rules you applied, and any you could not apply and why.
 ```
+:::
 
-Copy it into `.claude/skills/` with the `fs::dir_copy()` line above (you do
-this yourself, because `.claude/` is protected from the agent). Type `/skills`:
-`house-figures` should be listed, with no restart.
+Copy it into `.claude/skills/`, where Claude Code reads it:
+
+```{r}
+#| eval: false
+fs::dir_copy(
+  here::here(".agents", "skills", "house-figures"),
+  here::here(".claude", "skills", "house-figures"),
+  overwrite = TRUE
+)
+```
+
+Type `/skills`: `house-figures` should be listed.
+
+:::{.callout-note collapse="true"}
+## How it works: two skill folders
+
+`.agents/skills/` is the master copy, which other tools such as Posit Assistant
+read directly; Claude Code reads `.claude/skills/`, so copy the folder again
+whenever you change the skill. The deny rules keep the agent's edit tools out
+of `.claude/`, so you make the copy yourself, but they do not cover
+`.agents/skills/`, so check the master copy in the Git pane too. On macOS or
+Linux you can link the folders instead of copying them: see *Going further*.
+
+A skill suits a procedure, such as producing a publication figure or cleaning
+data against a codebook, and can hold scripts or templates beside `SKILL.md`.
+Its body is a procedure (when to use it, the steps, hard rules and a final check) and loads
+only when the skill is used, so it can be longer than `AGENTS.md`. Invoking it
+by name (`/skill-name`) always works. Claude Code picks up a new skill in
+`.claude/skills/` without a restart; if `/skills` does not list it, type
+`/reload-skills`. For a skill that writes files,
+`disable-model-invocation: true` in the front matter makes it run only when you
+invoke it by name.
+:::
 
 **3. With the skill.**
 
@@ -278,50 +312,48 @@ this yourself, because `.claude/` is protected from the agent). Type `/skills`:
 data, for a lab report. Save the code as scripts/fig_house.R.
 ```
 
-**4. Grade it.** Run both scripts in a fresh R session and look at the
-figures: `callr::rscript(here::here("scripts", "fig_baseline.R"))`, then the
-same for `fig_house.R`. Then record, for each rule:
+`AGENTS.md` makes it ask to run `git status` before it edits: that only reads,
+so Yes is fine. Read the edit before you approve it. Approve a run only if you
+can say what it does and why you want it now; refusing is always safe. So if it
+asks to run the new script, choose **No**: you run it yourself next.
 
-| Rule | Without skill | With skill |
+**4. Grade it.** Restart R (*Session → Restart R*), run
+`source(here::here("scripts", "fig_house.R"))` and open the figure it saved in
+`outputs/`. Compare it with your instructor's baseline on three rules you can
+see at a glance:
+
+| Rule | Baseline (no skill) | Your figure (with skill) |
 |---|---|---|
 | 1. Raw data shown; no dynamite plot | | |
 | 2. Okabe-Ito colour plus shape | | |
-| 3. Units in axis titles | | |
-| 4. `theme_classic(base_size = 12)` | | |
 | 5. n per group shown | | |
-| 6. No unrequested p-values | | |
 
-**5. Record it.** Add a line to `docs/ai-log.md` in the same form as Block 4,
-with today's date, naming the skill you tested and what you kept or changed in
-its output. Commit it with the skill and the two scripts.
+**5. Record it.** Add a line to `docs/ai-log.md`, as in Block 3, naming the
+skill and what you kept or changed in its output. Commit it with the skill
+(both folders) and `scripts/fig_house.R`.
 
 **You are done when** the table is filled in from the figures you looked at,
 not from the agent's list of rules it applied, and your log line is committed.
 
 **If it goes wrong:** if `/skills` does not list it, check that
 `.claude/skills/house-figures/SKILL.md` exists and its front matter starts and
-ends with three dashes. Out of time? Commit or discard your changes in the Git
-pane first, so the switch is not blocked, then switch to `block5-done`.
-
-**Payoff.** What did the skill do for you, how long did checking it take, and
-would you use it for the next figure?
+ends with three dashes. If no figure appears in `outputs/`, ask the agent to
+save it there with `ggsave()`, as `AGENTS.md` asks. Out of time? Commit or
+discard your changes in the Git pane first, so the switch is not blocked, then
+switch to `checkpoint-skills`.
 
 :::{.callout-tip collapse="true"}
 ## Stretch: test the trigger
 
 In a new conversation (`/clear`), test the trigger: "Give me a quick look at
-mass_post_g by arm" should *not* load the skill; "Polish the figure in
-scripts/fig_baseline.R for the poster" should. Or test rule 6: ask it to "add
-significance stars between the groups in scripts/fig_house.R" and see whether
-it declines. Either way, what makes the output trustworthy is the grading in
-step 4, which you can repeat on every figure.
-:::
+mass_post_g by arm" should *not* load the skill; "Make a figure of
+metabolic_rate_post by treatment_arm for a poster" should. Or test rule 6: ask
+it to "add significance stars between the groups in scripts/fig_house.R" and
+see whether it declines. Either way, what makes the output trustworthy is the
+grading in step 4, which you can repeat on every figure.
 
-:::{.callout-tip collapse="true"}
-## Using Posit Assistant
-
-Posit Assistant reads `.agents/skills/` directly, so no copy is needed. Invoke
-the skill by name in the same way.
+**Payoff.** What did the skill do for you, how long did checking it take, and
+would you use it for the next figure?
 :::
 
 ::::
@@ -331,16 +363,13 @@ the skill by name in the same way.
 :::{.callout-note}
 ## Check · Reproduce · Record
 
-- **You can now:** state your conventions once for every conversation, and
-  package a procedure as a skill you invoke by name, **trusted because** the
-  canary and `tests/test_controls.R` show the files are connected, and you
-  grade the output rule by rule.
-- **Check:** a canary shows a file was loaded, not followed; grade the output
-  and run the figure code.
-- **Reproduce:** your `AGENTS.md` states the reproducibility rules (renv, fresh
-  R session, seeds); Blocks 7 and 9 check the agent kept to them.
-- **Record:** add a line to `docs/ai-log.md` naming the skill you tested and
-  what you changed in its output.
+- **You can now:** state your conventions once, and package a procedure as a
+  skill, **trusted because** the canary and `tests/test_controls.R` show the
+  files are connected, and you grade the output rule by rule.
+- **Check:** a canary shows a file was loaded, not followed.
+- **Reproduce:** your `AGENTS.md` states the reproducibility rules; Blocks 7
+  and 8 check the agent kept to them.
+- **Record:** your log line from step 5.
 :::
 
 
@@ -438,6 +467,9 @@ Create and test a scoped rule
 ::::
 ::::{.task-container}
 
+**Goal:** make a rule that loads only for Quarto files and check that it does,
+so that a convention that is wrong elsewhere stays out of your R scripts.
+
 The rules themselves:
 
 ```markdown
@@ -456,8 +488,10 @@ The rules themselves:
 (The "hashpipe" is the `#|` at the start of a chunk-option line.) Place them
 where your tool looks:
 
-- **Claude Code:** `.claude/rules/quarto.md`, beginning with front matter that
-  restricts it to Quarto files:
+- **Claude Code:** `.claude/rules/quarto.md` (create it yourself, for example
+  with `usethis::edit_file(".claude/rules/quarto.md")`: the deny rules keep the
+  agent out of `.claude/`), beginning with front matter that restricts it to
+  Quarto files:
 
   ```text
   ---
@@ -485,6 +519,9 @@ caption and `here::here()`. Then ask for the same plot in an `.R` script; the
 Quarto rules should not appear. If they do not appear in the `.qmd` either, the
 rule is not loading on your surface. Report what you found; behaviour differs
 between tools.
+
+**You are done when** you know whether the rules appeared for the `.qmd` chunk
+and stayed out of the `.R` script on your tool.
 
 ::::
 :::
@@ -531,46 +568,46 @@ A skill bundle you did not write
 ::::
 ::::{.task-container}
 
+**Goal:** install a skill you did not write, run it by name and check its
+output yourself, so that you know what it does before you rely on it.
+
 **1. Read before you install.** Open `SKILL.md` and `theme-project.R` (both are
 also reproduced below). Find two places where `pub-figures` contradicts your
 `house-figures` rules. (There are at least two: the palette and the theme.)
 Find the line that tells the assistant what to do when information is
 missing.
 
-**2. Remove the overlap.** Both skills describe themselves as being for
-figures in reports, posters and papers, so with both installed you cannot tell
-which one loaded. Move `house-figures` out of both skills folders (or rename
-`SKILL.md` inside it) before going on. Overlapping descriptions are a real
-hazard once you collect skills from several sources.
-
-**3. Install.** In the R console,
+**2. Install.** In the R console,
 `unzip(file.choose(), exdir = here::here(".agents", "skills"))` lets you pick
 the downloaded zip and unpacks it into `.agents/skills/`; then copy it into
-`.claude/skills/` for Claude Code with `fs::dir_copy()`, as above. The skill uses ggdist,
-colorspace, ragg, colorBlindness, emmeans and ggpubr; if your project uses
-renv and they are not in its lockfile, add them yourself before the test,
-rather than letting the assistant install packages.
+`.claude/skills/` for Claude Code with the `fs::dir_copy()` line above,
+changing `house-figures` to `pub-figures`. The skill uses ggdist, colorspace,
+ragg, colorBlindness, emmeans and ggpubr; if your project uses renv and they
+are not in its lockfile, add them yourself before the test, rather than
+letting the assistant install packages.
 
-**4. Same prompt, new skill.** Type `/skills` to check it is listed (skills
-reload without a restart), then, without naming the skill, ask the prompt from the house-figures activity:
+**3. Same prompt, named skill.** Both skills describe themselves as being for
+figures in reports, posters and papers, so a plain request could load either;
+overlapping descriptions are a real hazard once you collect skills from
+several sources. So name the one you want. Type `/skills` to check it is
+listed (skills reload without a restart), then:
 
 **Prompt (Claude Code):**
 
 ```text
-Make a figure of mass_post_g by treatment_arm for the voles data, for a
-lab report.
+/pub-figures Make a figure of mass_post_g by treatment_arm for the voles
+data, for a lab report.
 ```
 
-Did the skill load from its description alone? Did the assistant ask about
-the audience, or record a default?
+Did the assistant ask about the audience, or record a default?
 
-**5. Grade it against its own checklist.** The skill ends with a pre-flight
+**4. Grade it against its own checklist.** The skill ends with a pre-flight
 checklist. Check the script against each item yourself, rather than accepting
 the assistant's report that it did. Then run the script: are both a PDF and a
 PNG in `outputs/figures/`? Run the `colorBlindness::cvdPlot()` line it left
 for you, and look at the result.
 
-**6. Test a rule under pressure.** Ask it to "add significance stars between
+**5. Test a rule under pressure.** Ask it to "add significance stars between
 the groups" without fitting a model. The skill says it must insert a legend
 placeholder rather than invent p-values. Then give it a fitted model it can
 actually see. Claude Code cannot see objects in your R console, so a model you
@@ -579,9 +616,13 @@ fit there does not count: ask it to add
 itself, or paste the output of `summary(model)` into the prompt. Ask again: it
 should now use the `emmeans-bridge.R` pattern with an adjusted p-value.
 
-**7. Compare.** Which skill would you hand to a colleague? Which would you
+**6. Compare.** Which skill would you hand to a colleague? Which would you
 trust without rereading it after an update? A long skill encodes more of your
 standards, and hides more of them from view.
+
+**You are done when** you have checked the figure script against the skill's
+pre-flight checklist yourself, seen how it handles significance stars without
+and with a model, and decided which skill you would hand to a colleague.
 
 ::::
 :::

@@ -41,10 +41,13 @@ has changed proves nothing.
    compare it with the function's output using expect_equal(). Never
    hard-code expected values, and never reimplement the computation inside
    the test. Include an expect_error() test showing that the argument check
-   rejects data with a required column missing.
-5. Run every test in a fresh R session,
-   Rscript -e "testthat::test_dir('tests')", and report the output verbatim,
-   including skips.
+   rejects data with a required column missing. This step's rules take
+   precedence over any project instruction to add known-answer tests: those
+   come later, if the user decides the behaviour should change.
+5. Run only the new test file in a fresh R session, for example
+   Rscript -e "testthat::test_file('tests/test_summary_functions.R')", and
+   report the output verbatim. Then stop: the user protects the new test and
+   runs the whole suite. Do not change any settings file.
 
 ## Rules
 - If the test fails, report the difference. Never change the test, the

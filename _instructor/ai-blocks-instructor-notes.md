@@ -11,6 +11,21 @@ Moved out of the published chapters. Quarto ignores this folder because its name
 - **11f-enforced-controls.qmd**: 9 October 2026, against the Claude Code documentation (code.claude.com: permissions, hooks), the Posit Assistant documentation (assistant.posit.co, docs version 1.7: Permissions & Trust, Hooks) and GitHub's documentation on code owners.
 - **11g-data-cleaning.qmd**: 9 October 2026, against the Claude Code documentation (code.claude.com) and the Posit Assistant documentation (assistant.posit.co, docs version 1.7). Tool behaviour changes quickly; check the linked pages before teaching.
 - **11i-characterisation-tests.qmd**: 9 October 2026, against the Claude Code permissions documentation (code.claude.com) and GitHub's documentation on customising the Copilot cloud agent's environment (docs.github.com).
+- **Claude Code claims across 11, 11a, 11d–11g and 11i**: 22 October 2026, fact-checked by an AI agent against code.claude.com (memory, permission modes, permissions, settings, skills, commands, sandboxing, data usage, interactive mode, changelog). Re-check the live pages before teaching. Findings worth knowing:
+  - `AGENTS.md` is read directly from v2.1.277 and listed by `/memory` from v2.1.280; the book's minimum of v2.1.281 covers both.
+  - `auto` is the start mode of recent interactive sessions; the docs disagree on the version (permission-modes page v2.1.283, changelog v2.1.284), so the book gives no version.
+  - Read and Edit deny rules also cover simple Bash file commands (`cat`, `head`, `tail`, `sed`, `tee`) and `> file`; they do not cover scripts that open files themselves, such as `Rscript`.
+  - `/permissions` offers a choice of settings file, but the docs do not give the option labels, so the book names the file (`.claude/settings.json`) rather than a label.
+  - Claude Code adds `.claude/settings.local.json` to your global git excludes on first write, so a branch cannot carry it.
+  - A `.claude/skills/` directory created after a session starts needs `/reload-skills`; the template ships the directory, so new skills inside it are picked up.
+- **11k-build-an-agent.qmd (Block 6)**: 22 October 2026, against the installed ellmer 0.5.0 (help pages and NEWS): `chat_anthropic(credentials =)`, `Chat$on_tool_request()`, `tool_reject()`, `tool_annotations()`, and `Chat$get_rounds()`, which groups each user prompt with all the turns that follow it, so the book counts requests (assistant turns) instead.
+
+## Block 6 (11k-build-an-agent.qmd): instructor notes
+
+- **Before the course:** run Task 2 once with a key from a brand-new Console account, on a fresh fork. Note the number of requests and the cost from `chat$get_cost()`, and check the account's rate limits; if every learner's key comes from one Console organisation, the room shares that organisation's limits.
+- **The agent can write only under `scripts/`.** That is deliberate: it cannot edit its checks (`tests/`) or its own rules (`agent/`). If it tries, the refusal and its next move are worth showing.
+- **The flex block.** Nothing later in the day uses `summaries.R`. If the day is late, or several keys fail, run Task 2 on screen and have learners decide each approval in the chat (about 25 minutes instead of 45). Learners whose key fails can pair with a neighbour in a breakout room.
+- **Cost control:** `list_files()` lists one folder and at most 100 names, and `read_file()` returns at most 300 lines, so a curious agent cannot send the whole `renv/` library to the model.
 
 ## 11g-data-cleaning.qmd: Instructor only: generating the planted data
 
@@ -126,21 +141,25 @@ and 60 g and 9999 entered when an animal could not be weighed; metabolic rate
 `-1` when the respirometry run failed, with valid readings between 5 and 30
 and no unit given.
 
-## 11i-characterisation-tests.qmd: Instructor notes
+## Block 8 (11i-characterisation-tests.qmd): instructor notes
 
-- Check your copy of `voles_metabolism.csv` before teaching: the `.by` failure
-  in Path A appears only if
+- Check your copy of `voles_metabolism.csv` before teaching: the row-order
+  failure (a function using `.by` without sorting) appears only if
   `load_voles() |> dplyr::distinct(treatment_arm, sex)` is not already in sorted
   order. If it is sorted, reorder the rows of the file once and commit it before
   the session.
 - Confirm that the file contains exactly one missing value in
-  `metabolic_rate_post`, and note which group it falls in, for the Step 4
-  discussion.
+  `metabolic_rate_post`, and note which group it falls in, for the Step 2
+  discussion ("unchanged is not correct").
 - The skill now takes the first snapshot itself (it runs the shipped
   `tests/make_reference.R` when no reference exists), then stops for the
-  learner to commit it. If you registered Block 6's guard hook for the
+  learner to commit it. If you registered Block 5's guard hook for the
   demonstration, it blocks that command (it matches `make_reference.R`):
-  remove the hook before Block 9, or have learners capture by hand as the
+  remove the hook before Block 8, or have learners capture by hand as the
   page's *If it goes wrong* describes.
-- Path C depends on account features. Run it once on a participant-type account
-  before the session.
+- The skill runs only its new test file, then stops: learners protect that
+  test and run the whole suite themselves. If the suite is run before the test
+  is protected, `test_controls.R` fails on purpose; refuse any offer from the
+  agent to "fix" it by writing a settings file.
+- The Copilot cloud-agent route in *Going further* depends on account
+  features. Run it once on a participant-type account before the session.

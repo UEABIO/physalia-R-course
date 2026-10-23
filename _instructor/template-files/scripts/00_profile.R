@@ -31,15 +31,18 @@ labels_df <- raw_df |>
   pivot_longer(everything(), names_to = "column", values_to = "value") |>
   count(column, value, sort = TRUE)
 
-# identifiers that appear more than once ----
-repeated_ids_df <- raw_df |>
+# identifiers that appear more than once, or whose length differs from the
+# usual one (a possible formatting slip) ----
+usual_length <- as.integer(names(which.max(table(nchar(raw_df$subject_id)))))
+ids_df <- raw_df |>
   count(subject_id) |>
-  filter(n > 1)
+  mutate(unusual_length = nchar(subject_id) != usual_length) |>
+  filter(n > 1 | unusual_length)
 
 # print in full, and save each table so it can be opened, pasted or diffed ----
 print(profile_df, n = Inf, width = Inf)
 print(labels_df, n = Inf, width = Inf)
-print(repeated_ids_df, width = Inf)
+print(ids_df, width = Inf)
 write_csv(profile_df, here("docs", "profile.csv"))
 write_csv(labels_df, here("docs", "profile_labels.csv"))
-write_csv(repeated_ids_df, here("docs", "profile_ids.csv"))
+write_csv(ids_df, here("docs", "profile_ids.csv"))

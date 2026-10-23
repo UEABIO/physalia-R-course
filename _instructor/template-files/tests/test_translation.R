@@ -1,9 +1,8 @@
 # tests/test_translation.R ----
-# Block 10, Part A: the tidyverse translation gives the same output as the
-# original base R code, once only presentation (types, row order) is
-# normalised. If you decide the translation should behave differently from the
-# original (for example over missing values), change the reference below and
-# say why in the commit message: that is a recorded decision, not a fix.
+# Block 6: the tidyverse translation your mini agent wrote gives the same
+# output as the original base R code, once only presentation (types, row
+# order) is normalised. The translation must behave like the original,
+# including how it handles the missing value.
 library(testthat)
 testthat::local_edition(3)
 
@@ -29,7 +28,7 @@ normalise <- function(data) {
 
 test_that("the tidyverse summary matches the original base R summary", {
   path <- here::here("scripts", "functions", "summaries.R")
-  skip_if_not(file.exists(path), "Block 10 not done yet: no summaries.R")
+  skip_if_not(file.exists(path), "Block 6 not done yet: no summaries.R")
 
   # run the translation in a fresh R session, so library() calls in it cannot
   # change this one

@@ -6,7 +6,6 @@
 # logged old value can be compared character for character.
 library(testthat)
 testthat::local_edition(3)
-source(here::here("scripts", "functions", "validate_voles.R"))
 
 read_chr <- function(...) {
   readr::read_csv(
@@ -124,10 +123,31 @@ test_that("cleaning is reproducible: a fresh run writes identical files", {
   expect_identical(unname(tools::md5sum(derived)), before)
 })
 
-test_that("clean data pass every codebook rule", {
+test_that("clean data pass every rule in the agreed codebook", {
   skip_if_not(file.exists(clean_path), "Block 7 not done yet: no clean data")
-  clean_df <- readr::read_csv(clean_path, col_types = voles_col_types())
+  clean_df <- readr::read_csv(
+    clean_path,
+    col_types = readr::cols(
+      subject_id = readr::col_character(),
+      sex = readr::col_character(),
+      treatment_arm = readr::col_character(),
+      mass_pre_g = readr::col_double(),
+      mass_post_g = readr::col_double(),
+      metabolic_rate_post = readr::col_double(),
+      .default = readr::col_character()
+    )
+  )
   expect_equal(nrow(readr::problems(clean_df)), 0)
-  validation <- validate_voles(clean_df, "Clean data")
-  expect_true(pointblank::all_passed(validation))
+
+  # identifiers and labels
+  expect_true(all(grepl("^V[0-9]{3}$", clean_df$subject_id)))
+  expect_false(anyDuplicated(clean_df$subject_id) > 0)
+  expect_true(all(clean_df$sex %in% c("M", "F")))
+  expect_true(all(clean_df$treatment_arm %in% c("Control", "Low_dose", "High_dose")))
+
+  # ranges; a missing value is allowed, an out-of-range one is not
+  in_range <- function(x, lo, hi) all(is.na(x) | (x >= lo & x <= hi))
+  expect_true(in_range(clean_df$mass_pre_g, 15, 60))
+  expect_true(in_range(clean_df$mass_post_g, 15, 60))
+  expect_true(in_range(clean_df$metabolic_rate_post, 5, 30))
 })

@@ -1,4 +1,4 @@
-# Block 10: Checking the statistics, and reporting the results {.unnumbered}
+# Self-study: Reporting from your repository {.unnumbered}
 
 ```{r}
 #| include: false
@@ -9,212 +9,71 @@ library(here)
 library(webexercises)
 ```
 
-The day ends with two checks on the analysis and its report, then a README
-assembled from everything your repository now holds. Each part splits the work
-the same way:
+Two tasks finish the record your workshop repository has built up during the
+day: a check that every result in a report is computed rather than typed, then
+a README drafted from the files you made. Both split the work the same way:
+you own the facts, the AI writes the text around them, and an independent
+check, not the AI, tells you whether to trust it.
+
+*Self-study: about 25 minutes, after the workshop day.* **Start state:** your
+workshop repository on `main`, with your work from the day committed. If
+Block 7 is unfinished, switch to the `checkpoint-cleaning` branch from the Git
+pane's branch menu **first**, and do the whole page there.
+
+:::{#reporting-files .callout-note collapse="true"}
+## This page's files, and how it fits
+
+You work in the **same workshop repository**, with the `AGENTS.md` from
+Block 4 and the deny rules from Block 5, and check the agent's work from the R
+console and the Git pane, as in
+[checking work](11a-setup-claude-code.qmd#checking-work). Part A scans a
+report that ships with the template. Part B's README draws on two files you
+made during the day: your AI-use log (Block 3) and your codebook (Block 7).
+If Block 7 is unfinished, the `checkpoint-cleaning` branch has both. Either
+way, every file you need is in the repository; nothing needs downloading. Two
+more statistical checks (robustness and simulation) are in *Going further*.
+
+How the two tasks split the work:
 
 | You own | The AI writes | The independent check |
 |---|---|---|
-| The original code and its output | A translation | Do both versions give the same output? |
 | The numbers in your report | Text around inline code | Is any number typed rather than computed? |
 | The codebook, scripts, tests, lockfile and AI-use log | A README drafted from them | Can every statement be traced to one of those files? |
 
-You check the agent's work from the R console and the Git pane, as in
-[checking work](11a-setup-claude-code.qmd#checking-work). Two more statistical
-checks (robustness and simulation) are in *Going further*.
+**Shipped with the template.** You run or read these; you do not create them.
 
-*⏱ ~30 minutes*
+| File | Its job | Used in |
+|---|---|---|
+| `scripts/functions/typed_numbers.R` | Lists prose lines with numbers outside inline code | Part A |
+| `reports/example_report.qmd` | An interim report with some results typed in | Part A |
+| `tests/test_readme.R` | Checks the README against the files it was drafted from | Part B |
+
+**Created in an earlier block.**
+
+| File | Created by | Used in |
+|---|---|---|
+| `docs/ai-log.md` | You, Block 3 (a line per block since) | Part B: the README's AI declaration |
+| `docs/codebook.csv` | You, Block 7, from the agent's draft | Part B: the README's data dictionary |
+
+**Created on this page.**
+
+| File | Created by | Step |
+|---|---|---|
+| `README.md` | The agent | Part B, step 1 |
+| A new line in `docs/ai-log.md` | You | Part B, step 3 |
+:::
 
 
-## Part A: Translation with an equivalence check
-
-*⏱ ~15 minutes*
-
-AI translates code quickly: base R to tidyverse, or SPSS, Stata or SAS to R.
-An `r glossary("equivalence check")` runs both versions and compares the
-outputs, as in [Block 9](11i-characterisation-tests.qmd). The agent writes the
-translation; the shipped `tests/test_translation.R`, which it did not write,
-decides whether it is equivalent.
+## Part A: Reporting without typed numbers
 
 :::{.task}
 ::::{.task-header}
-Translate and compare (15 minutes)
+Scan a report
 ::::
 ::::{.task-container}
 
-**Start state:** your workshop repository, committed and clean, with Claude
-Code in Manual mode (`default`) in the Terminal tab, which the repository sets.
-
-**1. Run the original.** It reads `voles_metabolism.csv`, the clean trial data
-that `load_voles()` also reads, not Block 7's dirty `voles_raw.csv`. In the R
-console:
-
-```{r}
-#| eval: false
-library(tidyverse)
-library(here)
-
-voles <- read.csv(here("data", "raw", "voles_metabolism.csv"),
-                  stringsAsFactors = TRUE)
-rate_mean <- aggregate(metabolic_rate_post ~ treatment_arm + sex,
-                       data = voles, FUN = mean)
-rate_n <- aggregate(metabolic_rate_post ~ treatment_arm + sex,
-                    data = voles, FUN = length)
-names(rate_n)[3] <- "n"
-legacy_summary <- merge(rate_mean, rate_n, by = c("treatment_arm", "sex"))
-legacy_summary
-```
-
-**2. Ask for a translation.**
-
-**Prompt (Claude Code):**
-
-```text
-Translate this base R code into a tidyverse function summarise_rate_tidy(data)
-in scripts/functions/summaries.R. It takes the tibble returned by load_voles()
-and returns one row per treatment_arm and sex, with the columns treatment_arm,
-sex, metabolic_rate_post (the mean) and n. Use the native pipe. Do not edit
-any other file.
-
-[paste the base R code from step 1]
-```
-
-Approve the edit when asked, after reading it.
-
-**3. Compare.** Normalise only *presentation* (type and row order), never
-values; `waldo::compare()` shows what still differs. In the R console:
-
-```{r}
-#| eval: false
-source(here("scripts", "functions", "load_voles.R"))
-source(here("scripts", "functions", "summaries.R"))
-tidy_summary <- summarise_rate_tidy(load_voles())
-
-normalise <- function(data) {
-  data |>
-    as_tibble() |>
-    mutate(across(where(is.factor), as.character)) |>
-    arrange(treatment_arm, sex)
-}
-
-waldo::compare(normalise(tidy_summary), normalise(legacy_summary))
-```
-
-**4. Find the difference.** A different column name is presentation: ask for a
-rename. A different value is behaviour: find out why before reading on. No
-difference? Check how the translation handled the missing value anyway.
-
-`r hide("The difference")`
-
-`aggregate()` with a formula silently drops rows with a missing value, so the
-animal with no `metabolic_rate_post` is left out of both the mean and the
-count. A direct translation with `summarise(mean(metabolic_rate_post), n())`
-returns `NA` for that cell and counts the animal in `n`. Neither is "the
-translation": they make different decisions about missing data. Decide which
-you want, write it explicitly (`na.rm = TRUE` and a count of non-missing
-values), and record the decision. It is Block 9's "unchanged is not correct",
-from a different direction.
-
-`r unhide()`
-
-**5. Run the shipped test.** Restart R (*Session → Restart R*), then in the R
-console:
-
-```{r}
-#| eval: false
-testthat::test_file(here::here("tests", "test_translation.R"))
-```
-
-The test uses the original code as its reference. If you chose different
-missing-value handling, it fails, correctly: change the test's reference and
-say why in your commit message.
-
-**6. Log it and commit.** Add a line to `docs/ai-log.md`, for example:
-
-```
-2026-10-19; Claude Code (model as shown above the Claude Code prompt); translated summary script to tidyverse; kept the translation, matched the original's missing-value handling after the equivalence check
-```
-
-Then commit `summaries.R` and the log from the Git pane, with a message that
-records the missing-value decision.
-
-**You are done when** `test_translation.R` passes in a fresh R session and your
-commit message records how missing values are handled.
-
-**If it goes wrong:** if the agent edited anything other than `summaries.R`,
-select the file in the Git pane and choose **Revert**. If you run short of
-time, write `summarise_rate_tidy()` yourself from the hidden explanation above.
-
-::::
-:::
-
-:::{.callout-tip collapse="true"}
-## Background: translating from SPSS, Stata or SAS
-
-From other software, export the original's results to a file and compare
-against those. Expect differences in defaults (missing values, quantiles,
-rounding); each needs a decision, not a looser tolerance.
-:::
-
-
-
-## Part B: Reporting without typed numbers
-
-*⏱ ~7 minutes*
-
-A typed number can be mistyped, or go stale when the data change, and an
-assistant drafting text may restate numbers it saw earlier. So every number in
-the prose comes from inline code: a code chunk computes the result, and the
-text calls it with `` `r knitr::inline_expr("round(primary$estimate, 2)")` ``.
-
-:::{.callout-tip collapse="true"}
-## Reference: how inline numbers look
-
-In a code chunk of your report:
-
-```{r}
-#| eval: false
-# fit the pre-registered primary analysis
-library(tidyverse)
-library(here)
-source(here("scripts", "functions", "load_voles.R"))
-
-voles_df <- load_voles() |>
-  mutate(treatment_arm = factor(treatment_arm, levels = c("Control", "Low_dose", "High_dose")))
-
-fit <- lm(mass_post_g ~ mass_pre_g + treatment_arm + sex, data = voles_df)
-ci <- confint(fit)["treatment_armHigh_dose", ]
-primary <- tibble(
-  estimate = unname(coef(fit)["treatment_armHigh_dose"]),
-  lower = unname(ci[1]),
-  upper = unname(ci[2])
-)
-```
-
-and in the text of the report:
-
-```
-High-dose voles were `r knitr::inline_expr("round(primary$estimate, 2)")` g heavier than controls
-after treatment (95% CI `r knitr::inline_expr("round(primary$lower, 2)")` to
-`r knitr::inline_expr("round(primary$upper, 2)")` g).
-```
-:::
-
-Your `AGENTS.md` asks for this; the shipped `find_typed_numbers()` checks it,
-by listing prose lines that still contain numbers outside inline code.
-
-:::{.callout-note collapse="true"}
-## `scripts/functions/typed_numbers.R`
-
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "typed_numbers.R")}
-```
-:::
-
-:::{.task}
-::::{.task-header}
-Scan a report (3 minutes)
-::::
-::::{.task-container}
+**Goal:** find the results in a report that were typed rather than computed, so
+that each can become inline code that updates when the data change.
 
 **Start state:** the template's `reports/example_report.qmd`, an interim summary
 of the voles trial with some numbers typed in.
@@ -253,16 +112,109 @@ other three can stay.
 The same scan works on any `.qmd` you write, including your Quarto report from
 Day 3. Every hit is a question, not an error.
 
+:::{.callout-note collapse="true"}
+## How it works: inline code, and what the scan checks
 
-## Part C: The repository you leave with
+A typed number can be mistyped, or go stale when the data change, and an
+assistant drafting text may restate numbers it saw earlier. So every number in
+the prose comes from inline code: a code chunk computes the result, and the
+text calls it with `` `r knitr::inline_expr("round(primary$estimate, 2)")` ``.
+`reports/example_report.qmd`, the report you scanned, does this in the first
+paragraph of its Results.
 
-*⏱ ~8 minutes*
+Your `AGENTS.md` asks for this; the shipped `find_typed_numbers()` checks it,
+by listing prose lines that still contain numbers outside inline code.
+:::
+
+:::{.callout-note collapse="true"}
+## `scripts/functions/typed_numbers.R`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "typed_numbers.R")}
+```
+:::
+
+
+## Part B: A README from the record
 
 Your repository now holds most of what a reader needs: a
 `r glossary("codebook")`, cleaning logs, numbered scripts, a
 `r glossary("lockfile")`, tests and an `r glossary("AI-use log")`. A README
 pulls them together. The rule: the AI may only phrase facts you can trace to a
 file; anything else becomes a visible placeholder for you to fill.
+
+:::{.task}
+::::{.task-header}
+Draft from the record, then test it
+::::
+::::{.task-container}
+
+**Goal:** a README drafted only from your repository's files and checked
+against them by a test, so that a reader can trace every statement in it to a
+source.
+
+**Start state:** your workshop repository on `main` (or `checkpoint-cleaning`), Git
+pane clean, Claude Code running in Manual mode in the Terminal tab.
+
+**1. Draft.**
+
+**Prompt (Claude Code):**
+
+```text
+Draft README.md from these files only, naming the source of each section:
+- Data dictionary, as a Markdown table whose first column is the column
+  name: docs/codebook.csv
+- Scripts and run order: the numbered scripts in scripts/
+- Dependencies: the R version in renv.lock, and renv::restore()
+- How to verify, from a terminal: Rscript -e "testthat::test_dir('tests')",
+  and what the tests in tests/ check
+- AI declaration: docs/ai-log.md, claiming nothing beyond it
+Anything these files do not give (authors, licence, DOI, a unit the codebook
+leaves blank or as <unit>) becomes a placeholder in exactly this form:
+**TODO: supply [field]: not provided**
+Edit README.md only.
+```
+
+Approve the edit when asked, after reading it. **Answer each request with
+plain Yes or No.** Never choose an option that says *don't ask again*: it saves
+a rule that skips the question from then on.
+
+**2. Let the tests audit it.** Restart R (*Session → Restart R*), then in the
+R console:
+
+```{r}
+#| eval: false
+testthat::test_dir(here::here("tests"))
+```
+
+The shipped `tests/test_readme.R` checks the README against the files it was
+drafted from, and reports how many placeholders are left; *How it works*,
+after this task, lists what it checks.
+
+**3. Check the scope, log it and commit.** The Git pane should show only
+`README.md` as changed. Add a line to `docs/ai-log.md`, for example:
+
+```
+2026-10-20; Claude Code (model as shown above the Claude Code prompt); drafted README.md from the repository's files; kept the draft after test_readme.R passed, placeholders still to fill
+```
+
+Then commit `README.md` and the log from the Git pane.
+
+**You are done when** `test_readme.R` passes, the agent changed only
+`README.md`, and the README and your log line are committed.
+
+**If it goes wrong:** if the agent changed any file other than `README.md`,
+select it in the Git pane and choose **Revert**. If the README test fails,
+ask Claude Code to fix only the statements the test names, and run the suite
+again.
+
+::::
+:::
+
+**Ask yourself:** what did the agent do, how long did checking it take, and
+would you automate this again?
+
+:::{.callout-note collapse="true"}
+## How it works: the README's sources, and what the test checks
 
 ::::::: {.dia .dia-flow role="figure" aria-label="The README is drafted by the AI only from five kinds of file in your repository, the only sources: docs/codebook.csv, the numbered scripts in scripts/, the tests in tests/, renv.lock and docs/ai-log.md. The AI drafts README.md, with placeholders for anything missing. You trace every statement to a file."}
 :::::: {.dia-branches}
@@ -295,111 +247,67 @@ You trace every statement to a file
 :::
 :::::::
 
-:::{.task}
-::::{.task-header}
-Draft from the record, then test it (8 minutes)
-::::
-::::{.task-container}
+The shipped `tests/test_readme.R` checks the R version in `renv.lock` and the
+`renv::restore()` command, every numbered script, no leftover `{{` tokens, and
+no invented unit in the data-dictionary table row for a column the codebook
+leaves without a unit: that row must hold a TODO instead. It also reports how
+many placeholders are left.
+:::
 
-**Start state:** your workshop repository, committed and clean. If Block 7 or 9
-is unfinished, switch to the `block9-done` branch from the Git pane's branch
-menu first, so the files the README draws on exist.
+:::{.callout-tip collapse="true"}
+## Using another tool
 
-**1. Draft.** In Claude Code, in Manual mode (`default`):
-
-**Prompt (Claude Code):**
-
-```text
-Create or update README.md for this repository. Use ONLY these sources, and
-name the source of each section:
-- Data: docs/codebook.csv.
-- Scripts and run order: the numeric prefixes of the files in scripts/.
-- Dependencies: the R version and packages pinned in renv.lock, and the
-  restore command renv::restore().
-- How to verify: the command Rscript -e "testthat::test_dir('tests')", run
-  from the project folder, and what the tests check.
-- AI declaration: a summary of docs/ai-log.md, making no claim beyond it.
-Where a value is not in these files (authors, ORCIDs, licence, DOI, funding,
-units the codebook leaves blank), insert a visible placeholder in exactly
-this form:
-  **TODO: supply [field]: not provided**
-Edit README.md only. Show me your plan first.
-```
-
-**2. Let the test audit it.** The shipped `tests/test_readme.R` checks the
-README against its sources: the R and package versions against `renv.lock`,
-every numbered script, no leftover `{{` tokens, and no invented unit for
-`metabolic_rate_post`. In the R console:
-
-```{r}
-#| eval: false
-testthat::test_file(here::here("tests", "test_readme.R"))
-```
-
-It also reports how many placeholders are left.
-
-**3. Confirm the scope and commit.** The Git pane should show only `README.md`
-as changed. Commit it.
-
-**4. Payoff.** What did the agent do, how long did checking it take, and would
-you automate this again?
-
-**You are done when** `test_readme.R` passes and `README.md` is the only file
-the commit changed. You run the whole suite, which the README's "How to
-verify" section points to, in the day's wrap-up (15:55).
-
-**If it goes wrong:** if the agent changed any file other than `README.md`,
-select it in the Git pane and choose **Revert**. If the README test fails,
-ask Claude Code to fix only the statements the test names, and run it again.
-
-::::
+Posit Assistant can do Part B with the same prompt. Use it in Normal mode, so
+it asks before each change. The checks do not change: the test suite in a
+fresh R session, and the Git pane.
 :::
 
 :::{.callout-tip collapse="true"}
 ## Stretch: audit the README by hand
 
-The test checks versions, scripts, tokens and units. Trace the statements it
-cannot check yourself: confirm that the `r glossary("AI declaration")` says no
-more than your log, and that each section names a source you gave it.
+The test checks the R version, the scripts, leftover tokens and blank units.
+Trace the statements it cannot check yourself: confirm that the
+`r glossary("AI declaration")` says no more than your log, and that each
+section names a source you gave it.
 
 **Before you share it,** the placeholders are your to-do list. Work through
 licence, ORCIDs, DOI and archiving with the
-[SORTEE checklist from Day 2](06-reproducibility.qmd#repro-sortee). Then add the
-last line to `docs/ai-log.md`, and commit.
-:::
+[SORTEE checklist from Day 2](06-reproducibility.qmd#repro-sortee), then
+commit.
 
-A fuller version, with a README skill, is in *Going further* in
-[Block 8](11h-code-review.qmd). Check your institution's and target journal's
-policy on declaring AI use.
+A fuller version, with a README skill, is in *Going further* on the
+self-study page on [AI-assisted code review](11h-code-review.qmd).
+:::
 
 
 :::{.callout-note}
 ## Check · Reproduce · Record
 
-- **You can now:** have an agent translate analysis code and draft a README,
-  **trusted because** shipped tests compare the translation with the original
-  and the README with its sources, and the whole suite passes in a fresh R
-  session.
-- **Check:** an equivalence test between the original and the translation; a
-  scan for typed numbers; every README statement traced to a file.
+- **You can now:** find the results in a report that were typed rather than
+  computed, and have an agent draft a README, **trusted because** a scan lists
+  every number outside inline code, a shipped test checks the README against
+  its sources, and the whole suite passes in a fresh R session.
+- **Check:** a scan for typed numbers; every README statement traced to a
+  file.
 - **Reproduce:** numbers come from code, so the report updates when the data
   do; the README's dependencies come from `renv.lock`, not from memory.
 - **Record:** the README and the AI-use log complete the record. Together with
   the codebook, logs, tests and lockfile, they are what a reviewer, a
-  co-author or you in a year's time will need.
+  co-author or you in a year's time will need. Check your institution's and
+  target journal's policy on declaring AI use.
 :::
 
 
 ## Check your understanding
 
-**A translated script and the original disagree only after you convert factors
-to characters and sort the rows. What should you do next?**
+**`find_typed_numbers()` lists a line of your report. What does that tell
+you?**
 
 `r longmcq(c(
-  "Increase the tolerance until the test passes",
-  "Accept the translation, since the AI wrote it",
-  answer = "Find the behavioural difference (for example, missing-value handling), decide which behaviour is correct, and record the decision",
-  "Revert to the original script"
+  "The number on that line is wrong",
+  "The AI typed that number",
+  answer = "A number on that line sits outside inline code: decide whether it is a result that should be computed, or a number that can stay as text",
+  "The report will not render"
 ))`
 
 **The README draft gives the unit of `metabolic_rate_post`, but your codebook
@@ -413,10 +321,9 @@ leaves it blank. What should you do?**
 ))`
 
 
-## Going further (not covered live)
+## Going further
 
-This material is not covered in the live session. Work through it afterwards
-if it is useful to you.
+This material is optional. Work through it if it is useful to you.
 
 :::::{.callout-tip collapse="true"}
 ## Robustness, not choice
@@ -436,6 +343,10 @@ Run the steps yourself, and judge each answer before running it.
 Enumerate, judge, run
 ::::
 ::::{.task-container}
+
+**Goal:** run defensible alternatives beside your fixed primary analysis, so
+that you know whether your conclusion depends on the analysis choice, without
+letting the AI make that choice.
 
 **1. Ask for alternatives, not a recommendation:**
 
@@ -495,6 +406,14 @@ has made exactly the error step 2 asks you to catch.
 
 `r unhide()`
 
+**4. Log it.** Add a line to `docs/ai-log.md` in the same form as in Part B:
+the tool and model, the alternatives it listed, and which you kept as
+defensible.
+
+**You are done when** every alternative is marked defensible or not, with a
+reason, and the table beside your primary estimate holds only specifications
+that estimate the same quantity.
+
 ::::
 :::
 
@@ -551,6 +470,9 @@ code against it.
 Write, check, recover
 ::::
 ::::{.task-container}
+
+**Goal:** run your analysis code on data simulated from a mechanism you wrote,
+so that you test it against a known answer, which real data never give.
 
 **1. Simulation code.** Give the AI the data-generating mechanism above,
 word for word, and ask for a function `simulate_voles()` returning a tibble with
@@ -647,7 +569,7 @@ should be within about two Monte Carlo standard errors of 0.95, roughly 0.936 to
 0.964 with 1,000 runs.
 
 **5. Prove the check can fail.** Replace the analysis with a version that models
-the change the wrong way round, as in [Block 3](11c-debugging.qmd):
+the change the wrong way round, as in [Block 2](11c-debugging.qmd):
 
 ```{r}
 #| eval: false
@@ -670,6 +592,14 @@ estimate_buggy <- function(data) {
 Rerun the recovery with `estimate_buggy()`. Bias should be about −3 g and
 coverage near zero. A check you have never seen fail is a check you are
 assuming works.
+
+**6. Log it.** Add a line to `docs/ai-log.md` in the same form as in Part B:
+the tool and model, the two functions it wrote, and what the recovery check
+showed.
+
+**You are done when** `estimate_high_vs_control()` gives bias and coverage
+within about two Monte Carlo standard errors of their targets, and
+`estimate_buggy()` fails the same check.
 
 ::::
 :::
@@ -696,6 +626,20 @@ What has it shown?**
   "That the model's assumptions hold for the real data"
 ))`
 :::::
+
+:::{.callout-tip collapse="true"}
+## Translating from SPSS, Stata or SAS
+
+**Translation with an equivalence check** was the task your own agent did in
+[Block 6](11k-build-an-agent.qmd): `tests/test_translation.R` compared its
+tidyverse translation with the original base R code, run side by side in R.
+[Block 8](11i-characterisation-tests.qmd) explains why "the same as the
+original" is not the same as "correct".
+
+From other software, export the original's results to a file and compare the
+translation against those. Expect differences in defaults (missing values,
+quantiles, rounding); each needs a decision, not a looser tolerance.
+:::
 
 
 ## Glossary

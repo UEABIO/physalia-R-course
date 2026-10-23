@@ -1,4 +1,4 @@
-# Block 3: Debugging with AI {.unnumbered}
+# Block 2: Debugging with AI {.unnumbered}
 
 ```{r}
 #| include: false
@@ -9,183 +9,68 @@ library(here)
 library(webexercises)
 ```
 
-AI is a fast debugging partner for code you wrote yourself, because you know
-what you meant and can judge its answer against that. This block works through
-three kinds of bug, each needing a little more from you: a typo (the AI can fix
-it alone), a logic error (it needs to see the data), and a result that runs but
-is wrong (only your knowledge of the study catches it).
+AI is a fast debugging partner for code you wrote yourself, because you can
+judge its answer against what you meant. You fix two bugs that raise no error:
+one the data reveal, and one that only your knowledge of the study catches.
 
-*⏱ ~20 minutes*
+*⏱ ~20 minutes · Start on `main`, Git pane clean, Claude Code running in Manual mode.*
 
+:::{#block2-files .callout-note collapse="true"}
+## This block's files, and how it fits
 
-## Setup
+The first live block in your workshop repository
+([setup](11a-setup-claude-code.qmd#your-workshop-repository)). The code you fix
+is practice, so it goes in the git-ignored `scratch/` folder; there is no
+checkpoint branch, because nothing later depends on it. A misspelt function
+name, a bug the AI can fix alone, is in *Going further*.
 
-Load the voles data.
+| File | Where it comes from | Used in |
+|---|---|---|
+| `data/raw/voles_metabolism.csv` | Shipped with the template: 72 voles, 24 per treatment arm | Both exercises |
+| `AGENTS.md` | Shipped with the template; Claude Code reads it at the start of every conversation | Exercise 1, step 3: the line you did not ask for |
+| `scratch/debugging.R` | You create it, in Exercise 1, step 1 | Both exercises |
+:::
 
-**In the R console:**
+## Exercise 1: A logic error
+
+:::{.task}
+::::{.task-header}
+A logic error (12 minutes)
+::::
+::::{.task-container}
+
+**Goal:** find a bug that raises no error by inspecting the data first, so that
+you can check the agent's diagnosis against evidence you have seen yourself.
+
+**Start state:** your workshop repository on `main`; Claude Code in Manual
+mode, with a new conversation (`/clear`).
+
+:::{.callout-tip collapse="true"}
+## Using another tool
+
+**Posit Assistant:** type `/ask` first. Ask mode is read-only: it cannot edit
+files or run R code, so the answer-only line is not needed. It does see the
+names and types of the objects in your session (not their values) and can read
+your console history, so it may already have your `distinct()` output: that is
+a disclosure route too ([Block 3](11d-context-disclosure-autonomy.qmd)). For
+step 4, type `/normal` so it can run the diagnostics in your live R session,
+approving each call; `/normal` is also how you leave Ask mode.
+
+**A chat window:** paste the same prompts, without the answer-only line, and
+skip step 4.
+:::
+
+**1. Set up.** In the R console, `usethis::edit_file("scratch/debugging.R")`
+creates this block's practice script and opens it. Paste this in and run it;
+the last two commands are code you wrote to compute mean post-treatment mass
+for high-dose voles:
 
 ```{r}
 #| eval: false
 library(tidyverse)
 library(here)
 voles <- read_csv(here("data", "raw", "voles_metabolism.csv"))
-```
 
-**How you use Claude Code in this block.** Claude Code is an
-`r glossary("agent")`: given a question, it may search your project, read files
-and offer to run code. In this block you only **ask**, so:
-
-- type `/clear` before each exercise, so each starts a new conversation;
-- end each prompt with *"Answer from what I've pasted: don't read files, run
-  code or edit anything."* Without it, Claude Code may gather evidence itself:
-  when we tested Exercise 2's prompt without that line, it searched the project
-  and read both data files, including the one Block 7 asks you to explore
-  yourself;
-- if it still asks to run a command or edit a file, choose **No**. Manual mode
-  means it must ask first, and your answer is the control.
-
-Claude Code cannot see the objects in your R console, such as `voles`: it sees
-your data only by reading files or running code, and each `Rscript` command it
-runs starts a fresh R process. Check its work in the R console
-([checking work](11a-setup-claude-code.qmd#checking-work)).
-
-**Expect a line you did not ask for.** Code it suggests is likely to start with
-`# agents-md: active v1`, and its answers may mention project rules such as
-reporting `n`. These come from the repository's instruction file, `AGENTS.md`,
-which Claude Code reads at the start of every conversation: a first sign that
-it sees context you did not paste ([Block 4](11d-context-disclosure-autonomy.qmd)).
-[Block 5](11e-instructions-skills.qmd) explains the line; for now, ignore it.
-
-:::{.callout-tip collapse="true"}
-## Using Posit Assistant or a chat window instead
-
-**Posit Assistant:** type `/ask` first. Ask mode is read-only: it cannot edit
-files or run R code, so the answer-only line is not needed. It does see the
-names and types of the objects in your session (not their values) and can read
-your console history, so it may already have your `distinct()` output: that is
-a disclosure route too ([Block 4](11d-context-disclosure-autonomy.qmd)). For
-step 3 of Exercise 2, type `/normal` so it can run the diagnostics in your live
-R session, approving each call; `/normal` is also how you leave Ask mode.
-
-**A chat window:** paste the same prompts, without the answer-only line, and
-skip step 3 of Exercise 2.
-:::
-
-
-## Exercise 1: A syntax error
-
-:::{.task}
-::::{.task-header}
-A syntax error (7 minutes)
-::::
-::::{.task-container}
-
-**Start state:** `voles` is loaded in your R console, and Claude Code is open
-with a new conversation (`/clear`).
-
-You wrote this in your script to count voles per treatment:
-
-```{r}
-#| eval: false
-ggplot(voles, aes(x = treatment_arm)) +
-  geom_barchart()
-```
-
-R returns:
-
-```
-Error in geom_barchart(): could not find function "geom_barchart"
-```
-
-**1. Ask for a fix.** Paste the code and the error, and ask.
-
-**Prompt (Claude Code or a chat window):**
-
-```text
-This code gives an error:
-
-  ggplot(voles, aes(x = treatment_arm)) +
-    geom_barchart()
-
-Error in geom_barchart(): could not find function "geom_barchart"
-
-What is wrong, and what is the fix?
-Answer from what I've pasted: don't read files, run code or edit anything.
-```
-
-**2. Explain it before you accept it.** Write one sentence saying why the
-original failed. If you can write it, you understood the fix; that sentence is
-your check.
-
-:::{.callout-tip collapse="true"}
-## With inline completion instead
-
-Paste the code and the error into your script as a comment, add
-`# Fix this code:` on the next line, and let the `r glossary("assistant")`
-suggest a continuation.
-:::
-
-`r hide("Solution")`
-
-```{r, eval = FALSE}
-ggplot(voles, aes(x = treatment_arm)) +
-  geom_bar()
-```
-
-The function is `geom_bar()`; ggplot2's geoms have no `_chart` suffix. "Could
-not find function" means no loaded package has a function of that name.
-
-`r unhide()`
-
-**You are done when** the corrected plot draws a bar for each treatment arm, and
-you have written your one-sentence explanation.
-
-**If it goes wrong:** if the fix produces a different error, paste that error
-back in the same conversation; the assistant now has two clues.
-
-::::
-:::
-
-
-## Asking or acting
-
-So far you have used AI that **answers**: you gather the evidence and paste it
-in. Exercise 2 ends with AI that **acts**, an `r glossary("agent")` that reads
-your files and runs code itself, so you check each command and its output.
-
-:::{.callout-tip collapse="true"}
-## Background: AI that answers versus AI that acts
-
-| | AI that answers | AI that acts |
-|---|---|---|
-| Examples | A chat window; Posit Assistant's Ask mode (`/ask`); Claude Code given the answer-only line, with you refusing any approval | Claude Code allowed to read and run; Posit Assistant in Normal mode |
-| Who gathers the evidence | You: you run `distinct()` and paste the output | It does, and shows you each command |
-| What you check | That its reasoning fits the evidence you pasted | That each command is sensible, and what its output says |
-
-Use AI that answers when you want to learn, or when the data must not be
-touched. Posit Assistant's Ask mode enforces it; with Claude Code, which has no
-ask mode, the answer-only line is a request and your **No** at each approval is
-what holds. [Block 4](11d-context-disclosure-autonomy.qmd) sets out the full
-range.
-:::
-
-
-## Exercise 2: A logic error
-
-:::{.task}
-::::{.task-header}
-A logic error (8 minutes)
-::::
-::::{.task-container}
-
-**Start state:** `voles` is loaded in your R console, and Claude Code is open
-with a new conversation (`/clear`).
-
-You wrote this in your script to compute mean post-treatment mass for
-high-dose voles:
-
-```{r}
-#| eval: false
 high_dose <- voles |>
   filter(treatment_arm == "high_dose")
 
@@ -193,21 +78,11 @@ high_dose |>
   summarise(mean_mass = mean(mass_post_g))
 ```
 
-The code runs without error. R returns:
+It runs without error but returns `NaN`: the bug is in what you asked for, so
+put the evidence in front of you first, then in front of the
+`r glossary("assistant")`.
 
-```
-# A tibble: 1 × 1
-  mean_mass
-      <dbl>
-1       NaN
-```
-
-There is no error to paste: the bug is in what you asked for. The fix is to put
-the evidence in front of you first, and then in front of the assistant.
-
-**1. Inspect the data before asking for help.**
-
-**In the R console:**
+**2. Inspect the data before asking for help.** In the R console:
 
 ```{r}
 #| eval: false
@@ -219,10 +94,10 @@ nrow(high_dose)
 The values are `Control`, `Low_dose` and `High_dose`, and `nrow()` is zero: you
 have found the bug yourself in seconds.
 
-**2. Ask with the evidence in hand.** Paste the code and the diagnostic output
-together.
+**3. Ask with the evidence in hand.** Paste the code and the diagnostic output
+together, so that the answer rests on the real values, not a guess.
 
-**Prompt (Claude Code or a chat window):**
+**Prompt (Claude Code):**
 
 ```text
 I am trying to compute mean post-treatment mass for high-dose voles.
@@ -240,8 +115,30 @@ the capitalisation. Is that the only problem?
 Answer from what I've pasted: don't read files, run code or edit anything.
 ```
 
-**3. Now let the agent gather the evidence.** This is the one step in the block
-where it acts. Type `/clear`, then:
+If it asks to run a command or edit a file despite the last line, choose
+**No**. **Answer each request with plain Yes or No.** Never
+choose an option that says *don't ask again*: it saves a rule that skips the
+question from then on. Ignore a first line `# agents-md: active v1` in its
+code: [Block 4](11e-instructions-skills.qmd) explains it.
+
+:::{.callout-note collapse="true"}
+## How it works: asking an agent only to answer
+
+Claude Code is an `r glossary("agent")`: given a question, it may search your
+project, read files and offer to run code. The answer-only line is only a
+request: Claude Code has no ask mode, and plan mode is not used here because it
+still reads your files while it plans. Manual mode is the control: it must ask
+before it runs a command or edits a file, and your answer decides.
+
+Claude Code cannot see the objects in your R console, such as `voles`: it sees
+your data only by reading files or running code, and each `Rscript` command it
+runs starts a fresh R process. Check its work in the R console
+([checking work](11a-setup-claude-code.qmd#checking-work)).
+:::
+
+**4. Now let the agent gather the evidence.** This is the one step in the block
+where it acts. Type `/clear`, so that it starts without the evidence you
+pasted, then:
 
 **Prompt (Claude Code):**
 
@@ -251,10 +148,14 @@ filtering treatment_arm for "high_dose" returns no rows. Don't edit any files.
 Show each command and its output.
 ```
 
-It reads the file without asking, because reading needs no approval in Manual
-mode. Before it runs R it asks: read the `Rscript` command, and choose **Yes**
-if it only reads the data and prints results. Then compare its diagnosis with
-the one you found in step 1.
+It reads the file without asking (reading needs no approval), but asks before
+it runs R. Approve a run only if you can say what it does and why you want it
+now; refusing is always safe. Here you can, so choose **Yes** if the `Rscript`
+command only reads the data and prints results. Then compare its diagnosis with
+yours from step 2.
+
+**Keep this conversation open:** in Block 3 you read its transcript to see what
+reached the model provider.
 
 `r hide("Solution")`
 
@@ -271,8 +172,8 @@ which usually have missing values.
 
 `r unhide()`
 
-**You are done when** `nrow(high_dose)` is 24 and the mean is a number, not
-`NaN`.
+**You are done when** `nrow(high_dose)` is 24, the mean is a number, not
+`NaN`, and the agent's diagnosis in step 4 matches yours from step 2.
 
 **If it goes wrong:** if `nrow()` is still zero, run
 `voles |> distinct(treatment_arm)` again and copy the value exactly as printed.
@@ -281,18 +182,24 @@ which usually have missing values.
 :::
 
 
-## Exercise 3: A correct-looking but wrong result
+## Exercise 2: A correct-looking but wrong result
 
 :::{.task}
 ::::{.task-header}
-A correct-looking but wrong result (5 minutes)
+A correct-looking but wrong result (8 minutes)
 ::::
 ::::{.task-container}
 
-**Start state:** `voles` is loaded in your R console, and Claude Code is open
-with a new conversation (`/clear`).
+**Goal:** catch a result that runs cleanly but is wrong by stating the expected
+answer before you ask, so that a plausible but wrong number does not reach your
+results.
 
-You wrote this to get the mean change in body mass by treatment arm:
+**Start state:** `scratch/debugging.R` is open with `voles` loaded. Ask in
+Exercise 1's conversation, without `/clear`, so that its transcript is still
+there for Block 3.
+
+You wrote this to get the mean change in body mass by treatment arm. Paste it
+into `scratch/debugging.R` and run it:
 
 ```{r}
 #| eval: false
@@ -301,21 +208,10 @@ voles |>
   summarise(mean_change = mean(mass_change_g), .by = treatment_arm)
 ```
 
-It runs. There is no error and no `NaN`. R returns something like:
-
-```
-# A tibble: 3 × 2
-  treatment_arm mean_change
-  <chr>               <dbl>
-1 Control             -0.21
-2 Low_dose            -1.49
-3 High_dose           -3.19
-```
-
-The numbers look plausible, but the treatment was designed to increase mass,
-and this table says mass falls. Nothing in the data or the code reveals the
-error: only your knowledge of the study does. An AI can catch it too, but only
-if you tell it what the answer should be.
+It runs, and the numbers look plausible. But the treatment was designed to
+increase mass, and they say mass falls. Only your knowledge of the study
+reveals the error: an AI catches it only if you tell it what the answer should
+be.
 
 **1. Write down what a correct result should look like, then compare.** Here:
 positive values, rising from Control to High_dose. The mismatch is the
@@ -323,7 +219,7 @@ diagnosis.
 
 **2. Ask for a second opinion, stating the expected direction.**
 
-**Prompt (Claude Code or a chat window):**
+**Prompt (Claude Code):**
 
 ```text
 This should show mass gain increasing with dose, but the values are negative
@@ -359,6 +255,7 @@ subtract from which: post minus pre is gain.
 :::
 
 
+:::{.callout-note collapse="true"}
 ## The debugging checklist
 
 Inspect the data first, ask the AI second.
@@ -373,20 +270,20 @@ Inspect the data first, ask the AI second.
 5. **Explain the fix in one sentence** before you accept it.
 6. **Before trusting a clean run,** state what the result should look like
    (sign, size, order) and compare.
-
+:::
 
 :::{.callout-note}
 ## Check · Reproduce · Record
 
 - **You can now:** use an assistant to diagnose and fix errors in your own
-  code, **trusted because** you inspect the data first, explain each fix in a
-  sentence, and compare every clean-running result with what you expected.
-- **Check:** inspect the data before asking, and write one sentence explaining
-  each fix; state the expected sign and size of a result before trusting it.
+  code, **trusted because** you inspect the data first and explain each fix in
+  a sentence.
+- **Check:** before trusting a clean run, state the sign and size the result
+  should have, and compare.
 - **Reproduce:** rerun the fixed code in a `r glossary("fresh R session")`, so
-  the fix does not depend on an object left over from your experiments.
+  it does not depend on a leftover object.
 - **Record:** nothing to log yet; the AI-use log starts in
-  [Block 4](11d-context-disclosure-autonomy.qmd).
+  [Block 3](11d-context-disclosure-autonomy.qmd).
 :::
 
 
@@ -417,6 +314,71 @@ reliable first check?**
 
 This material is not covered in the live session. Work through it afterwards if
 it is useful to you.
+
+:::{.callout-tip collapse="true"}
+## A misspelt function name (self-study)
+
+**Goal:** fix an error with Claude Code's help and explain the fix in one
+sentence, so that you accept only a fix you understand.
+
+**Start state:** `scratch/debugging.R` is open with `voles` loaded, and Claude
+Code has a new conversation (`/clear`). During the workshop, wait until after
+Block 3, which reads Exercise 1's conversation.
+
+You wrote this in `scratch/debugging.R` to count voles per treatment:
+
+```{r}
+#| eval: false
+ggplot(voles, aes(x = treatment_arm)) +
+  geom_barchart()
+```
+
+R returns:
+
+```
+Error in geom_barchart(): could not find function "geom_barchart"
+```
+
+**1. Ask for a fix.** Paste the code and the error, and ask.
+
+**Prompt (Claude Code):**
+
+```text
+This code gives an error:
+
+  ggplot(voles, aes(x = treatment_arm)) +
+    geom_barchart()
+
+Error in geom_barchart(): could not find function "geom_barchart"
+
+What is wrong, and what is the fix?
+Answer from what I've pasted: don't read files, run code or edit anything.
+```
+
+**2. Explain it before you accept it.** Write one sentence saying why the
+original failed. If you can write it, you understood the fix; that sentence is
+your check.
+
+`r hide("Solution")`
+
+```{r, eval = FALSE}
+ggplot(voles, aes(x = treatment_arm)) +
+  geom_bar()
+```
+
+The function is `geom_bar()`; ggplot2's geoms have no `_chart` suffix. This is
+not a syntax error: R parses the code without complaint, and fails only when it
+looks for a function called `geom_barchart()` and finds none. "Could not find
+function" means no loaded package has a function of that name.
+
+`r unhide()`
+
+**You are done when** the corrected plot draws a bar for each treatment arm, and
+you have written your one-sentence explanation.
+
+**If it goes wrong:** if the fix produces a different error, paste that error
+back in the same conversation; the assistant now has two clues.
+:::
 
 :::{.callout-tip collapse="true"}
 ## An aesthetic-mapping error

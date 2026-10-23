@@ -22,13 +22,13 @@ When you write or edit R code, make the first line of the first code block:
 - Do not edit renv.lock.
 - Set a seed immediately before any random step.
 - Every script must run in a fresh R session.
-- Every script must run with Rscript from the project root; after writing one,
-  run it that way and report the exit status.
+- Before you report a task done, run each new script once with Rscript from
+  the project root and report the exit status.
 - Save figures with ggsave() to outputs/.
 
 ## Tests
-- After editing any R file, run Rscript -e "testthat::test_dir('tests')" and
-  paste the final summary line verbatim.
+- Before you report a task done, run Rscript -e "testthat::test_dir('tests')"
+  once and paste the final summary line verbatim.
 - Never edit anything in tests/fixtures/, an existing expectation or a
   tolerance to make a test pass.
 - Every new function in scripts/functions/ gets a test with at least one
