@@ -73,6 +73,9 @@ existed, and `fixtures/raw_checksum.txt`, a `r glossary("checksum")` of the
 raw file. The raw-data checksum test runs from the start; the others skip
 until clean data exist.
 
+For every guardrail in the repository and what each one does, see *How your
+workshop repository is guarded* in [Block 5](11f-enforced-controls.qmd).
+
 **You are done when** you have seen the four rules and the two files.
 
 **If it goes wrong:** if `/permissions` lists no rules, check that you started
@@ -254,6 +257,9 @@ commit them in item 4 of this task.
 Approve a run only if you can say what it does and why you want it now.
 Refusing is always safe. The read rule stops Claude Code's own reads of the
 note, but not R code that opens it. Refuse any code that would open the note.
+A search of the whole project run as a shell command, such as `grep -r`, can
+also show the agent lines from the note, and it runs without asking. So if the
+draft contains a fact that only the note gives, the agent saw the note.
 
 **2. Make it yours.** In the R console, run these lines. They copy the draft
 into place (git ignores `scratch/`) and open it:
@@ -381,9 +387,13 @@ the script twice, then runs the tests and reports the output.
 `cleaning_log.csv` and `exclusion_log.csv`, and the agent has reported the
 test output.
 
-**If it goes wrong:** if it stalls, loops or writes elsewhere, press `Ctrl+C`.
-Click **Revert** in the Git pane, then switch to `checkpoint-cleaning` (a
-working `01_clean.R` and its outputs).
+**If it goes wrong:** if it stalls, loops or writes elsewhere, press Esc (or
+`Ctrl+C` once) to stop it. Revert any file it changed in the Git pane. Then
+delete the new files it made, `scripts/01_clean.R` and anything in
+`data/derived/`, from the Files pane: they are new, so there is nothing for
+git to revert to, and `/rewind` would restore only the script, not what its R
+code wrote ([Block 5](11f-enforced-controls.qmd)). Then switch to
+`checkpoint-cleaning` (a working `01_clean.R` and its outputs).
 
 ::::
 :::
@@ -436,7 +446,8 @@ testthat::test_dir(here::here("tests"))
 **2. Read the change and record it.** In the Git pane, click **Diff** on
 `scripts/01_clean.R` and look for anything the plan did not mention. Add a
 line to `docs/ai-log.md` (date; tool and model; task; what you kept or
-changed). Then commit the script, its outputs and the log.
+changed): ask the agent to draft it, as in Block 3, then write the last part
+yourself. Then commit the script, its outputs and the log.
 
 **You are done when** every cleaning test passes (other blocks' tests may skip)
 and the work, with its AI-log line, is committed.
@@ -519,6 +530,8 @@ codebook, not in the cleaning.
    the codebook?
 2. What did the agent do with the mass recorded in kilograms and the value ten
    times too large? If it "corrected" them, on whose authority?
+3. Did any first draft contain a fact that only the data note gives? If so,
+   the agent reached the note by a route the read rule does not cover.
 
 **Payoff.** What did the agent do, how long did checking it take, and would you
 automate this again?
@@ -730,13 +743,15 @@ file edits. Use the guard hook from the *Going further* section of
 [Block 5](11f-enforced-controls.qmd) instead.
 
 :::{.callout-warning}
-**What each control covers.** The deny rule blocks the agent's file-editing
-tools, and shell output redirects such as `> file`. It does not cover R code
-the agent runs: an R script that writes to `data/raw/` is a different route.
-The checksum test catches a change made by *any* route, but only after the
-fact. Use both: one prevents, the other detects. A deny rule on reading does
-not stop data reaching the model provider by other routes. See
-[Block 3](11d-context-disclosure-autonomy.qmd).
+**What each control covers.** The deny rule blocks the agent's own file tools,
+simple file commands it recognises (such as `cat`, `sed` and `tee`) and shell
+redirects such as `> file`. It does not cover R code the agent runs: an R
+script that writes to `data/raw/` is a different route. Nor does a read rule
+cover a search of the whole project with `grep -r`. The checksum test catches
+a change made by *any* route, but only after the fact. Use both: one prevents,
+the other detects. See [Block 3](11d-context-disclosure-autonomy.qmd) for
+reading, and *Set up guardrails in your own project* in
+[Block 5](11f-enforced-controls.qmd) for a starting set of rules.
 :::
 
 **The skill.** The skill ships in `.agents/skills/` and `.claude/skills/`. To

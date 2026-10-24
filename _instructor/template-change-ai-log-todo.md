@@ -58,6 +58,10 @@ happened once during the scratch test, when a shell collapsed the backslashes.
     TODO".
   - In *If it goes wrong*, add: "If `test_ai_log.R` names a line with
     TODO, replace it with what you kept or changed."
+- `11h-code-review.qmd`, *Wrap-up for the day*, *If it goes wrong*: the list
+  of reasons `test_ai_log.R` fails ("a log line lacks one of its four parts,
+  its date is not YYYY-MM-DD, or a semicolon is not followed by a space") gains
+  "or a line still says TODO".
 - `11a-setup-claude-code.qmd`, file tree (`test_ai_log.R  from Block 3: the
   AI-use log`): no change.
 

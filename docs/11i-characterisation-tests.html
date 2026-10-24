@@ -2,20 +2,17 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.10.18">
+<meta name="generator" content="quarto-1.9.37">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Block 8: Functionalise a script step and prove the result is unchanged – Advancing in R</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
+code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: 1.5em;}
-div.column{flex: auto;}
-@media screen {
-div.columns{gap: min(4vw, 1.5em);}
-div.column{overflow-x: auto;}
-}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -75,14 +72,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-3419ea62b3ca2d77d3d547f86109e84e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-eaeb381c6b7494c50009502241a4985c.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-3419ea62b3ca2d77d3d547f86109e84e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-cad2a2f8a56dfe71ee895a68e79c9b9a.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-70be5ccd51f03de5ce195d75fadf0882.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-cad2a2f8a56dfe71ee895a68e79c9b9a.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-bccafbfbdaf167a5cc62eb1cd36cd68f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-f74b38f5aea087cbb55664d1170cc612.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-bccafbfbdaf167a5cc62eb1cd36cd68f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light"><script id="quarto-search-options" type="application/json">{
+<link href="site_libs/bootstrap/bootstrap-51f8a0f47ca4ad41c9e4cfc0492a693a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-a8dba935c66644e2f12e515264e9281f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-51f8a0f47ca4ad41c9e4cfc0492a693a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light"><script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
   "collapse-after": 3,
@@ -799,14 +796,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="callout-body-container callout-body">
 <p>It runs the original <code>05_analysis.R</code> and saves the result. The course team wrote it; a deny rule stops the agent editing it.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a><span class="co"># tests/make_reference.R ----</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-label="2"></a><span class="co"># Run ONCE, by you, BEFORE any refactoring.</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-label="3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"05_analysis.R"</span>))</span>
-<span id="cb1-4"><a href="#cb1-4" aria-label="4"></a><span class="fu">dir.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>), <span class="at">showWarnings =</span> <span class="cn">FALSE</span>, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-label="5"></a><span class="fu">saveRDS</span>(</span>
-<span id="cb1-6"><a href="#cb1-6" aria-label="6"></a>  metabolic_summary,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-label="7"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"metabolic_summary.rds"</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-label="8"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># tests/make_reference.R ----</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="co"># Run ONCE, by you, BEFORE any refactoring.</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"05_analysis.R"</span>))</span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="fu">dir.create</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>), <span class="at">showWarnings =</span> <span class="cn">FALSE</span>, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="fu">saveRDS</span>(</span>
+<span id="cb1-6"><a href="#cb1-6"></a>  metabolic_summary,</span>
+<span id="cb1-7"><a href="#cb1-7"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"metabolic_summary.rds"</span>)</span>
+<span id="cb1-8"><a href="#cb1-8"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -909,7 +906,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section><section id="step-1" class="level2"><h2 class="anchored" data-anchor-id="step-1">Step 1: snapshot, refactor and test with the skill</h2>
 <p><code>scripts/05_analysis.R</code> summarises post-treatment metabolic rate (mean, SD and count) by treatment arm and sex. Notice one thing and leave it alone. One animal has no <code>metabolic_rate_post</code>, and the code has no <code>na.rm</code>, so the mean and the SD for its group are both <code>NA</code>.</p>
-<p>The shipped <a class="glossary">skill<span class="def">A folder containing a SKILL.md file (and optionally scripts and templates) that an assistant loads only when it is invoked by name or judged relevant from its description.</span></a> <code>characterisation-refactor</code> does the work in order and stops for you after each part.</p>
+<p>The shipped <a class="glossary">skill<span class="def">A reusable procedure for one kind of task: a folder containing a SKILL.md file (and optionally scripts and templates) that an assistant loads only when it is invoked by name or judged relevant from its description.</span></a> <code>characterisation-refactor</code> does the work in order and stops for you after each part.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -923,43 +920,43 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="callout-4" class="callout-4-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-label="1"></a><span class="co"># scripts/05_analysis.R: the original, trusted version ----</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"04_load_data.R"</span>))</span>
-<span id="cb2-5"><a href="#cb2-5" aria-label="5"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-label="6"></a>metabolic_summary <span class="ot">&lt;-</span> voles <span class="sc">|&gt;</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-label="7"></a>  <span class="fu">group_by</span>(treatment_arm, sex) <span class="sc">|&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-label="8"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb2-9"><a href="#cb2-9" aria-label="9"></a>    <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
-<span id="cb2-10"><a href="#cb2-10" aria-label="10"></a>    <span class="at">sd_rate   =</span> <span class="fu">sd</span>(metabolic_rate_post),</span>
-<span id="cb2-11"><a href="#cb2-11" aria-label="11"></a>    <span class="at">n         =</span> <span class="fu">n</span>(),</span>
-<span id="cb2-12"><a href="#cb2-12" aria-label="12"></a>    <span class="at">.groups   =</span> <span class="st">"drop"</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-label="13"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co"># scripts/05_analysis.R: the original, trusted version ----</span></span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="fu">library</span>(here)</span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"04_load_data.R"</span>))</span>
+<span id="cb2-5"><a href="#cb2-5"></a></span>
+<span id="cb2-6"><a href="#cb2-6"></a>metabolic_summary <span class="ot">&lt;-</span> voles <span class="sc">|&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7"></a>  <span class="fu">group_by</span>(treatment_arm, sex) <span class="sc">|&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb2-9"><a href="#cb2-9"></a>    <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
+<span id="cb2-10"><a href="#cb2-10"></a>    <span class="at">sd_rate   =</span> <span class="fu">sd</span>(metabolic_rate_post),</span>
+<span id="cb2-11"><a href="#cb2-11"></a>    <span class="at">n         =</span> <span class="fu">n</span>(),</span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="at">.groups   =</span> <span class="st">"drop"</span></span>
+<span id="cb2-13"><a href="#cb2-13"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a><span class="co"># scripts/04_load_data.R ----</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
-<span id="cb3-5"><a href="#cb3-5" aria-label="5"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-label="6"></a>voles <span class="ot">&lt;-</span> <span class="fu">load_voles</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># scripts/04_load_data.R ----</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="fu">library</span>(here)</span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
+<span id="cb3-5"><a href="#cb3-5"></a></span>
+<span id="cb3-6"><a href="#cb3-6"></a>voles <span class="ot">&lt;-</span> <span class="fu">load_voles</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-label="1"></a><span class="co"># scripts/functions/load_voles.R ----</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-label="2"></a>load_voles <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
-<span id="cb4-3"><a href="#cb4-3" aria-label="3"></a>  readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
-<span id="cb4-4"><a href="#cb4-4" aria-label="4"></a>    here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>),</span>
-<span id="cb4-5"><a href="#cb4-5" aria-label="5"></a>    <span class="at">col_types =</span> readr<span class="sc">::</span><span class="fu">cols</span>(</span>
-<span id="cb4-6"><a href="#cb4-6" aria-label="6"></a>      <span class="at">subject_id          =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
-<span id="cb4-7"><a href="#cb4-7" aria-label="7"></a>      <span class="at">sex                 =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
-<span id="cb4-8"><a href="#cb4-8" aria-label="8"></a>      <span class="at">treatment_arm       =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
-<span id="cb4-9"><a href="#cb4-9" aria-label="9"></a>      <span class="at">mass_pre_g          =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
-<span id="cb4-10"><a href="#cb4-10" aria-label="10"></a>      <span class="at">mass_post_g         =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
-<span id="cb4-11"><a href="#cb4-11" aria-label="11"></a>      <span class="at">metabolic_rate_post =</span> readr<span class="sc">::</span><span class="fu">col_double</span>()</span>
-<span id="cb4-12"><a href="#cb4-12" aria-label="12"></a>    )</span>
-<span id="cb4-13"><a href="#cb4-13" aria-label="13"></a>  )</span>
-<span id="cb4-14"><a href="#cb4-14" aria-label="14"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># scripts/functions/load_voles.R ----</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>load_voles <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb4-3"><a href="#cb4-3"></a>  readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb4-4"><a href="#cb4-4"></a>    here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>),</span>
+<span id="cb4-5"><a href="#cb4-5"></a>    <span class="at">col_types =</span> readr<span class="sc">::</span><span class="fu">cols</span>(</span>
+<span id="cb4-6"><a href="#cb4-6"></a>      <span class="at">subject_id          =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
+<span id="cb4-7"><a href="#cb4-7"></a>      <span class="at">sex                 =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
+<span id="cb4-8"><a href="#cb4-8"></a>      <span class="at">treatment_arm       =</span> readr<span class="sc">::</span><span class="fu">col_character</span>(),</span>
+<span id="cb4-9"><a href="#cb4-9"></a>      <span class="at">mass_pre_g          =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
+<span id="cb4-10"><a href="#cb4-10"></a>      <span class="at">mass_post_g         =</span> readr<span class="sc">::</span><span class="fu">col_double</span>(),</span>
+<span id="cb4-11"><a href="#cb4-11"></a>      <span class="at">metabolic_rate_post =</span> readr<span class="sc">::</span><span class="fu">col_double</span>()</span>
+<span id="cb4-12"><a href="#cb4-12"></a>    )</span>
+<span id="cb4-13"><a href="#cb4-13"></a>  )</span>
+<span id="cb4-14"><a href="#cb4-14"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -973,15 +970,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><strong>Start state:</strong> Step 0 done, Git pane clean. In Claude Code, type <code>/clear</code> to clear any earlier conversation.</p>
 <p><strong>1. Ask.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb5-1"><a href="#cb5-1" aria-label="1"></a>/characterisation-refactor Move the summary in scripts/05_analysis.R into</span>
-<span id="cb5-2"><a href="#cb5-2" aria-label="2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb5-1"><a href="#cb5-1"></a>/characterisation-refactor Move the summary in scripts/05_analysis.R into</span>
+<span id="cb5-2"><a href="#cb5-2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The skill shows its plan as a message and waits. Read it: the plan should capture the reference first. Then reply in Claude Code: <em>Yes, go ahead</em>, or say what to change.</p>
 <p><strong>2. Approve the capture, then commit the reference.</strong> The skill asks to run <code>tests/make_reference.R</code>. <strong>Answer each request with plain Yes or No.</strong> Never choose an option that says <em>don’t ask again</em>: it saves a rule that skips the question from then on. Approve a run only if you can say what it does and why you want it now. Refusing is always safe. Here you can say both: it saves the original code’s output before anything changes. When the skill stops, the Git pane should show only <code>tests/fixtures/metabolic_summary.rds</code> as new. Commit it (“Capture reference output before refactoring”), then tell the agent to carry on.</p>
 <p><strong>3. Read the diff when it stops again.</strong> In the Git pane, click <strong>Diff</strong> on each changed file. Look for anything beyond moving the code into the function. Then tell the agent to carry on and write the test. If it asks whether to commit the refactor first, reply <em>No, go ahead</em>: you commit everything at the end.</p>
 <p><strong>4. Protect the new test.</strong> The skill runs only its new test file, reports the output and stops. Now protect that test, so the agent cannot later change it to make a failing run pass. In <code>/permissions</code>, add the deny rule <code>Edit(/tests/test_summary_functions.R)</code>. Save it to the project’s shared settings file, <code>.claude/settings.json</code>.</p>
 <p><strong>5. Run the whole suite.</strong> Restart R (<em>Session → Restart R</em>), so that nothing left in your session can make a test pass. Then run this in the R console:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-label="1"></a>testthat<span class="sc">::</span><span class="fu">test_dir</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>testthat<span class="sc">::</span><span class="fu">test_dir</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <table class="caption-top table">
 <colgroup>
@@ -1011,7 +1008,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>The guard cannot tell whether numbers were also typed into the test. Reading the test can. Other blocks’ tests pass or skip.</p>
-<p><strong>6. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; tool and model; task; what you kept or changed). Note whether the test passed first time.</p>
+<p><strong>6. Record it.</strong> Add a line to <code>docs/ai-log.md</code> (date; tool and model; task; what you kept or changed): ask the agent to draft it, as in Block 3, then write the last part yourself. Note whether the test passed first time.</p>
 <p><strong>You are done when</strong> the suite has no failures and the Git pane shows only the function, <code>05_analysis.R</code>, the new test, <code>.claude/settings.json</code> and your log as changed. Commit them.</p>
 <p><strong>If it goes wrong:</strong> see <em>Fixes for Step 1</em> below the task, or switch to <code>checkpoint-refactor</code>.</p>
 <p><strong>Payoff.</strong> What did the agent do, how long did checking it take, and would you automate this again?</p>
@@ -1033,7 +1030,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>
 <strong>The capture.</strong> If the agent declines to run <code>make_reference.R</code>, or a guard hook from Block 5 blocks it, capture the reference yourself. Restart R, run <code>source(here::here("tests", "make_reference.R"))</code>, commit the <code>.rds</code>, and tell the agent the reference is committed.</li>
 <li>
-<strong>Changed files.</strong> If anything other than the <code>.rds</code> changed before your commit, <strong>Revert</strong> it and ask again.</li>
+<strong>Changed files.</strong> If anything other than the <code>.rds</code> changed before your commit, <strong>Revert</strong> it in the Git pane and ask again. The Git pane undoes a change whatever made it; <code>/rewind</code> undoes only changes made with the agent’s edit tools, not by R code it ran (<a href="./11f-enforced-controls.html">Block 5</a>).</li>
 <li>
 <strong>Row order.</strong> If the test fails on row order, not values, the function used <code>.by</code> without sorting. Ask the agent to add <code>dplyr::arrange(treatment_arm, sex)</code>.</li>
 <li>
@@ -1075,65 +1072,65 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="callout-body-container callout-body">
 <div class="cell" data-layout-align="center">
 <div class="cell-output cell-output-stdout">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1" aria-label="1"></a><span class="co">---</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-label="2"></a><span class="an">name:</span><span class="co"> characterisation-refactor</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-label="3"></a><span class="an">description:</span><span class="co"> &gt;-</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-label="4"></a><span class="co">  Refactors working R analysis code into documented functions under a</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-label="5"></a><span class="co">  characterisation test, so the output is proved unchanged. Use when asked to</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-label="6"></a><span class="co">  functionalise, refactor or tidy a script whose output must not change.</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-label="7"></a><span class="co">  Not for fixing bugs or changing results.</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-label="8"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-label="9"></a><span class="co">---</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-label="10"></a></span>
-<span id="cb7-11"><a href="#cb7-11" aria-label="11"></a><span class="fu"># Refactor under a characterisation test</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-label="12"></a></span>
-<span id="cb7-13"><a href="#cb7-13" aria-label="13"></a><span class="fu">## The reference comes from the original code, and the user commits it</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-label="14"></a>The frozen reference in tests/fixtures/ is written by the user's own capture</span>
-<span id="cb7-15"><a href="#cb7-15" aria-label="15"></a>script (tests/make_reference.R) from the original, unchanged code, and the</span>
-<span id="cb7-16"><a href="#cb7-16" aria-label="16"></a>user commits it before anything else changes. A reference made after the code</span>
-<span id="cb7-17"><a href="#cb7-17" aria-label="17"></a>has changed proves nothing.</span>
-<span id="cb7-18"><a href="#cb7-18" aria-label="18"></a><span class="ss">- </span>Run tests/make_reference.R at most once, in step 2 below, and only if no</span>
-<span id="cb7-19"><a href="#cb7-19" aria-label="19"></a>  reference exists yet and git status shows no uncommitted changes under</span>
-<span id="cb7-20"><a href="#cb7-20" aria-label="20"></a>  scripts/. Never run it at any other time, and never edit the capture script.</span>
-<span id="cb7-21"><a href="#cb7-21" aria-label="21"></a><span class="ss">- </span>Never edit, regenerate or delete anything under tests/fixtures/.</span>
-<span id="cb7-22"><a href="#cb7-22" aria-label="22"></a><span class="ss">- </span>If a reference already exists, use it as it is.</span>
-<span id="cb7-23"><a href="#cb7-23" aria-label="23"></a></span>
-<span id="cb7-24"><a href="#cb7-24" aria-label="24"></a><span class="fu">## Procedure</span></span>
-<span id="cb7-25"><a href="#cb7-25" aria-label="25"></a><span class="ss">1. </span>Present a plan: whether a reference must be captured, the code to move,</span>
-<span id="cb7-26"><a href="#cb7-26" aria-label="26"></a>   the function name and file, and the test file. Wait for the user to</span>
-<span id="cb7-27"><a href="#cb7-27" aria-label="27"></a>   confirm.</span>
-<span id="cb7-28"><a href="#cb7-28" aria-label="28"></a><span class="ss">2. </span>Capture only, if no reference exists. Run git status; if anything under</span>
-<span id="cb7-29"><a href="#cb7-29" aria-label="29"></a>   scripts/ has uncommitted changes, stop and ask. Otherwise run</span>
-<span id="cb7-30"><a href="#cb7-30" aria-label="30"></a>   Rscript tests/make_reference.R, report the file it wrote, and stop: ask</span>
-<span id="cb7-31"><a href="#cb7-31" aria-label="31"></a>   the user to commit it before you change any code. Do not commit it</span>
-<span id="cb7-32"><a href="#cb7-32" aria-label="32"></a>   yourself.</span>
-<span id="cb7-33"><a href="#cb7-33" aria-label="33"></a><span class="ss">3. </span>Refactor only. Write the function in scripts/functions/ with a roxygen2</span>
-<span id="cb7-34"><a href="#cb7-34" aria-label="34"></a>   block and an argument check, and make the original script call it. Do not</span>
-<span id="cb7-35"><a href="#cb7-35" aria-label="35"></a>   write or edit tests in this step. Stop and let the user review the diff.</span>
-<span id="cb7-36"><a href="#cb7-36" aria-label="36"></a><span class="ss">4. </span>Test only. Write tests/test_<span class="dt">&lt;</span><span class="kw">functions</span><span class="ot"> file</span><span class="dt">&gt;</span>.R (for</span>
-<span id="cb7-37"><a href="#cb7-37" aria-label="37"></a>   scripts/functions/summary_functions.R, that is</span>
-<span id="cb7-38"><a href="#cb7-38" aria-label="38"></a>   tests/test_summary_functions.R). Start it with library(testthat) and</span>
-<span id="cb7-39"><a href="#cb7-39" aria-label="39"></a>   testthat::local_edition(3), source the function files with</span>
-<span id="cb7-40"><a href="#cb7-40" aria-label="40"></a>   here::here(), read the reference from tests/fixtures/ with readRDS(), and</span>
-<span id="cb7-41"><a href="#cb7-41" aria-label="41"></a>   compare it with the function's output using expect_equal(). Never</span>
-<span id="cb7-42"><a href="#cb7-42" aria-label="42"></a>   hard-code expected values, and never reimplement the computation inside</span>
-<span id="cb7-43"><a href="#cb7-43" aria-label="43"></a>   the test. Include an expect_error() test showing that the argument check</span>
-<span id="cb7-44"><a href="#cb7-44" aria-label="44"></a>   rejects data with a required column missing. This step's rules take</span>
-<span id="cb7-45"><a href="#cb7-45" aria-label="45"></a>   precedence over any project instruction to add known-answer tests: those</span>
-<span id="cb7-46"><a href="#cb7-46" aria-label="46"></a>   come later, if the user decides the behaviour should change.</span>
-<span id="cb7-47"><a href="#cb7-47" aria-label="47"></a><span class="ss">5. </span>Run only the new test file in a fresh R session, for example</span>
-<span id="cb7-48"><a href="#cb7-48" aria-label="48"></a>   Rscript -e "testthat::test_file('tests/test_summary_functions.R')", and</span>
-<span id="cb7-49"><a href="#cb7-49" aria-label="49"></a>   report the output verbatim. Then stop: the user protects the new test and</span>
-<span id="cb7-50"><a href="#cb7-50" aria-label="50"></a>   runs the whole suite. Do not change any settings file.</span>
-<span id="cb7-51"><a href="#cb7-51" aria-label="51"></a></span>
-<span id="cb7-52"><a href="#cb7-52" aria-label="52"></a><span class="fu">## Rules</span></span>
-<span id="cb7-53"><a href="#cb7-53" aria-label="53"></a><span class="ss">- </span>If the test fails, report the difference. Never change the test, the</span>
-<span id="cb7-54"><a href="#cb7-54" aria-label="54"></a>  tolerance or the reference to make it pass.</span>
-<span id="cb7-55"><a href="#cb7-55" aria-label="55"></a><span class="ss">- </span>Sort the output rows explicitly with dplyr::arrange() on the grouping</span>
-<span id="cb7-56"><a href="#cb7-56" aria-label="56"></a>  columns, so the order never depends on how the data happen to be stored.</span>
-<span id="cb7-57"><a href="#cb7-57" aria-label="57"></a><span class="ss">- </span>Do not change behaviour, including how missing values are handled. A</span>
-<span id="cb7-58"><a href="#cb7-58" aria-label="58"></a>  passing test shows the output is unchanged, not that it is correct; list</span>
-<span id="cb7-59"><a href="#cb7-59" aria-label="59"></a>  anything that looks wrong for the user to decide.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode numberSource markdown number-lines code-with-copy"><code class="sourceCode markdown"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">---</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="an">name:</span><span class="co"> characterisation-refactor</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="an">description:</span><span class="co"> &gt;-</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="co">  Refactors working R analysis code into documented functions under a</span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="co">  characterisation test, so the output is proved unchanged. Use when asked to</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="co">  functionalise, refactor or tidy a script whose output must not change.</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="co">  Not for fixing bugs or changing results.</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="co">---</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="fu"># Refactor under a characterisation test</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="fu">## The reference comes from the original code, and the user commits it</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>The frozen reference in tests/fixtures/ is written by the user's own capture</span>
+<span id="cb7-15"><a href="#cb7-15"></a>script (tests/make_reference.R) from the original, unchanged code, and the</span>
+<span id="cb7-16"><a href="#cb7-16"></a>user commits it before anything else changes. A reference made after the code</span>
+<span id="cb7-17"><a href="#cb7-17"></a>has changed proves nothing.</span>
+<span id="cb7-18"><a href="#cb7-18"></a><span class="ss">- </span>Run tests/make_reference.R at most once, in step 2 below, and only if no</span>
+<span id="cb7-19"><a href="#cb7-19"></a>  reference exists yet and git status shows no uncommitted changes under</span>
+<span id="cb7-20"><a href="#cb7-20"></a>  scripts/. Never run it at any other time, and never edit the capture script.</span>
+<span id="cb7-21"><a href="#cb7-21"></a><span class="ss">- </span>Never edit, regenerate or delete anything under tests/fixtures/.</span>
+<span id="cb7-22"><a href="#cb7-22"></a><span class="ss">- </span>If a reference already exists, use it as it is.</span>
+<span id="cb7-23"><a href="#cb7-23"></a></span>
+<span id="cb7-24"><a href="#cb7-24"></a><span class="fu">## Procedure</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a><span class="ss">1. </span>Present a plan: whether a reference must be captured, the code to move,</span>
+<span id="cb7-26"><a href="#cb7-26"></a>   the function name and file, and the test file. Wait for the user to</span>
+<span id="cb7-27"><a href="#cb7-27"></a>   confirm.</span>
+<span id="cb7-28"><a href="#cb7-28"></a><span class="ss">2. </span>Capture only, if no reference exists. Run git status; if anything under</span>
+<span id="cb7-29"><a href="#cb7-29"></a>   scripts/ has uncommitted changes, stop and ask. Otherwise run</span>
+<span id="cb7-30"><a href="#cb7-30"></a>   Rscript tests/make_reference.R, report the file it wrote, and stop: ask</span>
+<span id="cb7-31"><a href="#cb7-31"></a>   the user to commit it before you change any code. Do not commit it</span>
+<span id="cb7-32"><a href="#cb7-32"></a>   yourself.</span>
+<span id="cb7-33"><a href="#cb7-33"></a><span class="ss">3. </span>Refactor only. Write the function in scripts/functions/ with a roxygen2</span>
+<span id="cb7-34"><a href="#cb7-34"></a>   block and an argument check, and make the original script call it. Do not</span>
+<span id="cb7-35"><a href="#cb7-35"></a>   write or edit tests in this step. Stop and let the user review the diff.</span>
+<span id="cb7-36"><a href="#cb7-36"></a><span class="ss">4. </span>Test only. Write tests/test_<span class="dt">&lt;</span><span class="kw">functions</span><span class="ot"> file</span><span class="dt">&gt;</span>.R (for</span>
+<span id="cb7-37"><a href="#cb7-37"></a>   scripts/functions/summary_functions.R, that is</span>
+<span id="cb7-38"><a href="#cb7-38"></a>   tests/test_summary_functions.R). Start it with library(testthat) and</span>
+<span id="cb7-39"><a href="#cb7-39"></a>   testthat::local_edition(3), source the function files with</span>
+<span id="cb7-40"><a href="#cb7-40"></a>   here::here(), read the reference from tests/fixtures/ with readRDS(), and</span>
+<span id="cb7-41"><a href="#cb7-41"></a>   compare it with the function's output using expect_equal(). Never</span>
+<span id="cb7-42"><a href="#cb7-42"></a>   hard-code expected values, and never reimplement the computation inside</span>
+<span id="cb7-43"><a href="#cb7-43"></a>   the test. Include an expect_error() test showing that the argument check</span>
+<span id="cb7-44"><a href="#cb7-44"></a>   rejects data with a required column missing. This step's rules take</span>
+<span id="cb7-45"><a href="#cb7-45"></a>   precedence over any project instruction to add known-answer tests: those</span>
+<span id="cb7-46"><a href="#cb7-46"></a>   come later, if the user decides the behaviour should change.</span>
+<span id="cb7-47"><a href="#cb7-47"></a><span class="ss">5. </span>Run only the new test file in a fresh R session, for example</span>
+<span id="cb7-48"><a href="#cb7-48"></a>   Rscript -e "testthat::test_file('tests/test_summary_functions.R')", and</span>
+<span id="cb7-49"><a href="#cb7-49"></a>   report the output verbatim. Then stop: the user protects the new test and</span>
+<span id="cb7-50"><a href="#cb7-50"></a>   runs the whole suite. Do not change any settings file.</span>
+<span id="cb7-51"><a href="#cb7-51"></a></span>
+<span id="cb7-52"><a href="#cb7-52"></a><span class="fu">## Rules</span></span>
+<span id="cb7-53"><a href="#cb7-53"></a><span class="ss">- </span>If the test fails, report the difference. Never change the test, the</span>
+<span id="cb7-54"><a href="#cb7-54"></a>  tolerance or the reference to make it pass.</span>
+<span id="cb7-55"><a href="#cb7-55"></a><span class="ss">- </span>Sort the output rows explicitly with dplyr::arrange() on the grouping</span>
+<span id="cb7-56"><a href="#cb7-56"></a>  columns, so the order never depends on how the data happen to be stored.</span>
+<span id="cb7-57"><a href="#cb7-57"></a><span class="ss">- </span>Do not change behaviour, including how missing values are handled. A</span>
+<span id="cb7-58"><a href="#cb7-58"></a>  passing test shows the output is unchanged, not that it is correct; list</span>
+<span id="cb7-59"><a href="#cb7-59"></a>  anything that looks wrong for the user to decide.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -1195,64 +1192,64 @@ One answer
 <p><strong>1. Decide.</strong> The mean and standard deviation should use measured animals only, and the count should not include the unmeasured animal (<code>n()</code> counts rows).</p>
 <p><strong>2. Ask for the change and a known-answer test.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb8-1"><a href="#cb8-1" aria-label="1"></a>In summarise_metabolic_rate(), compute the mean and SD with na.rm = TRUE, and</span>
-<span id="cb8-2"><a href="#cb8-2" aria-label="2"></a>report n_used and n_missing instead of n. Add a known-answer test on a small</span>
-<span id="cb8-3"><a href="#cb8-3" aria-label="3"></a>tibble in a new file, tests/test_known_answers.R, and show me how you worked</span>
-<span id="cb8-4"><a href="#cb8-4" aria-label="4"></a>out the expected values. Do not change tests/test_summary_functions.R.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb8-1"><a href="#cb8-1"></a>In summarise_metabolic_rate(), compute the mean and SD with na.rm = TRUE, and</span>
+<span id="cb8-2"><a href="#cb8-2"></a>report n_used and n_missing instead of n. Add a known-answer test on a small</span>
+<span id="cb8-3"><a href="#cb8-3"></a>tibble in a new file, tests/test_known_answers.R, and show me how you worked</span>
+<span id="cb8-4"><a href="#cb8-4"></a>out the expected values. Do not change tests/test_summary_functions.R.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A <a class="glossary">known-answer test<span class="def">A test that checks code against a result worked out independently, for example by hand. It can show code is correct, where a characterisation test only shows it is unchanged.</span></a> checks the new behaviour against a result you can work out by hand. <strong>Check the arithmetic yourself</strong>: the mean of 10, 14 and a missing value is 12, from two measured animals.</p>
 <div class="webex-solution">
 <button>
 A function and test you should end up with
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: missing values handled ----</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-label="2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb9-3"><a href="#cb9-3" aria-label="3"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
-<span id="cb9-4"><a href="#cb9-4" aria-label="4"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-label="5"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
-<span id="cb9-6"><a href="#cb9-6" aria-label="6"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb9-7"><a href="#cb9-7" aria-label="7"></a>    <span class="fu">stop</span>(</span>
-<span id="cb9-8"><a href="#cb9-8" aria-label="8"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
-<span id="cb9-9"><a href="#cb9-9" aria-label="9"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
-<span id="cb9-10"><a href="#cb9-10" aria-label="10"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-label="11"></a>    )</span>
-<span id="cb9-12"><a href="#cb9-12" aria-label="12"></a>  }</span>
-<span id="cb9-13"><a href="#cb9-13" aria-label="13"></a></span>
-<span id="cb9-14"><a href="#cb9-14" aria-label="14"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb9-15"><a href="#cb9-15" aria-label="15"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb9-16"><a href="#cb9-16" aria-label="16"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb9-17"><a href="#cb9-17" aria-label="17"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb9-18"><a href="#cb9-18" aria-label="18"></a>      <span class="at">n_used    =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(metabolic_rate_post)),</span>
-<span id="cb9-19"><a href="#cb9-19" aria-label="19"></a>      <span class="at">n_missing =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(metabolic_rate_post)),</span>
-<span id="cb9-20"><a href="#cb9-20" aria-label="20"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
-<span id="cb9-21"><a href="#cb9-21" aria-label="21"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb9-22"><a href="#cb9-22" aria-label="22"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
-<span id="cb9-23"><a href="#cb9-23" aria-label="23"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># scripts/functions/summary_functions.R: missing values handled ----</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb9-3"><a href="#cb9-3"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
+<span id="cb9-4"><a href="#cb9-4"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
+<span id="cb9-6"><a href="#cb9-6"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb9-7"><a href="#cb9-7"></a>    <span class="fu">stop</span>(</span>
+<span id="cb9-8"><a href="#cb9-8"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
+<span id="cb9-9"><a href="#cb9-9"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
+<span id="cb9-10"><a href="#cb9-10"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a>    )</span>
+<span id="cb9-12"><a href="#cb9-12"></a>  }</span>
+<span id="cb9-13"><a href="#cb9-13"></a></span>
+<span id="cb9-14"><a href="#cb9-14"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb9-16"><a href="#cb9-16"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-17"><a href="#cb9-17"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-18"><a href="#cb9-18"></a>      <span class="at">n_used    =</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(metabolic_rate_post)),</span>
+<span id="cb9-19"><a href="#cb9-19"></a>      <span class="at">n_missing =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(metabolic_rate_post)),</span>
+<span id="cb9-20"><a href="#cb9-20"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
+<span id="cb9-21"><a href="#cb9-21"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb9-22"><a href="#cb9-22"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
+<span id="cb9-23"><a href="#cb9-23"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-label="1"></a><span class="co"># tests/test_known_answers.R ----</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-label="2"></a><span class="fu">library</span>(testthat)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-label="3"></a>testthat<span class="sc">::</span><span class="fu">local_edition</span>(<span class="dv">3</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-label="4"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
-<span id="cb10-5"><a href="#cb10-5" aria-label="5"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-label="6"></a><span class="fu">test_that</span>(<span class="st">"means ignore missing values and n_used counts measured animals"</span>, {</span>
-<span id="cb10-7"><a href="#cb10-7" aria-label="7"></a>  toy_df <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
-<span id="cb10-8"><a href="#cb10-8" aria-label="8"></a>    <span class="at">treatment_arm       =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Control"</span>, <span class="st">"Control"</span>),</span>
-<span id="cb10-9"><a href="#cb10-9" aria-label="9"></a>    <span class="at">sex                 =</span> <span class="fu">c</span>(<span class="st">"F"</span>, <span class="st">"F"</span>, <span class="st">"F"</span>),</span>
-<span id="cb10-10"><a href="#cb10-10" aria-label="10"></a>    <span class="at">metabolic_rate_post =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">14</span>, <span class="cn">NA</span>)</span>
-<span id="cb10-11"><a href="#cb10-11" aria-label="11"></a>  )</span>
-<span id="cb10-12"><a href="#cb10-12" aria-label="12"></a>  result <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(toy_df)</span>
-<span id="cb10-13"><a href="#cb10-13" aria-label="13"></a></span>
-<span id="cb10-14"><a href="#cb10-14" aria-label="14"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>mean_rate, <span class="dv">12</span>)</span>
-<span id="cb10-15"><a href="#cb10-15" aria-label="15"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_used, <span class="dv">2</span>)</span>
-<span id="cb10-16"><a href="#cb10-16" aria-label="16"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_missing, <span class="dv">1</span>)</span>
-<span id="cb10-17"><a href="#cb10-17" aria-label="17"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="co"># tests/test_known_answers.R ----</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="fu">library</span>(testthat)</span>
+<span id="cb10-3"><a href="#cb10-3"></a>testthat<span class="sc">::</span><span class="fu">local_edition</span>(<span class="dv">3</span>)</span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
+<span id="cb10-5"><a href="#cb10-5"></a></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="fu">test_that</span>(<span class="st">"means ignore missing values and n_used counts measured animals"</span>, {</span>
+<span id="cb10-7"><a href="#cb10-7"></a>  toy_df <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
+<span id="cb10-8"><a href="#cb10-8"></a>    <span class="at">treatment_arm       =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Control"</span>, <span class="st">"Control"</span>),</span>
+<span id="cb10-9"><a href="#cb10-9"></a>    <span class="at">sex                 =</span> <span class="fu">c</span>(<span class="st">"F"</span>, <span class="st">"F"</span>, <span class="st">"F"</span>),</span>
+<span id="cb10-10"><a href="#cb10-10"></a>    <span class="at">metabolic_rate_post =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">14</span>, <span class="cn">NA</span>)</span>
+<span id="cb10-11"><a href="#cb10-11"></a>  )</span>
+<span id="cb10-12"><a href="#cb10-12"></a>  result <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(toy_df)</span>
+<span id="cb10-13"><a href="#cb10-13"></a></span>
+<span id="cb10-14"><a href="#cb10-14"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>mean_rate, <span class="dv">12</span>)</span>
+<span id="cb10-15"><a href="#cb10-15"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_used, <span class="dv">2</span>)</span>
+<span id="cb10-16"><a href="#cb10-16"></a>  <span class="fu">expect_equal</span>(result<span class="sc">$</span>n_missing, <span class="dv">1</span>)</span>
+<span id="cb10-17"><a href="#cb10-17"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <p><strong>3. Watch the characterisation test fail, correctly.</strong> Run the suite as in Step 1. The output has changed, so the characterisation test fails; the known-answer test passes. If the agent asks to run <code>make_reference.R</code>, refuse: re-capturing is your decision.</p>
 <p><strong>4. Re-capture the reference, as a recorded decision.</strong> Restart R, then run this in the R console:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-label="1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"make_reference.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"make_reference.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>5. Commit, then run the suite.</strong> Commit the reference, the function and the new test file. Use a message that says why, for example “Exclude missing metabolic rates from mean and SD; report n_used and n_missing”. Only then run the suite as in Step 1: <code>test_reference_guard.R</code> fails while the new reference is uncommitted.</p>
 <p>Re-capturing is safe here for three reasons: you decided it, a known-answer test checks the new behaviour, and the commit records why.</p>
@@ -1288,16 +1285,16 @@ A function and test you should end up with
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>A characterisation test passes after a refactor. What has it established?</strong></p>
-<div id="radio_ZRKDRTJSSF" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_ZRKDRTJSSF" value=""><span>That the original code had no bugs</span></label>
+<div id="radio_SYRSBPSPXW" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_SYRSBPSPXW" value=""><span>That the function's output is correct</span></label><label><input type="radio" autocomplete="off" name="radio_SYRSBPSPXW" value="answer"><span>That the function's output is the same as the original code's output, whether or not that output was correct</span></label><label><input type="radio" autocomplete="off" name="radio_SYRSBPSPXW" value=""><span>That the function is faster than the original code</span></label><label><input type="radio" autocomplete="off" name="radio_SYRSBPSPXW" value=""><span>That the original code had no bugs</span></label>
 </div>
 <p><strong>Why must the reference be captured and committed before the refactor starts?</strong></p>
-<div id="radio_NWXUJLUYTS" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value=""><span>Because git cannot track .rds files once the code has changed</span></label><label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value="answer"><span>Because a reference captured after the code changed is produced by the code under test, so it can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_NWXUJLUYTS" value=""><span>Because the reference would be too large</span></label>
+<div id="radio_XVVTZGODTV" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_XVVTZGODTV" value=""><span>Because agents cannot write .rds files</span></label><label><input type="radio" autocomplete="off" name="radio_XVVTZGODTV" value=""><span>Because git cannot track .rds files once the code has changed</span></label><label><input type="radio" autocomplete="off" name="radio_XVVTZGODTV" value="answer"><span>Because a reference captured after the code changed is produced by the code under test, so it can only confirm that the code agrees with itself</span></label><label><input type="radio" autocomplete="off" name="radio_XVVTZGODTV" value=""><span>Because the reference would be too large</span></label>
 </div>
 <p><strong>The shipped deny rules protect tests/fixtures/ in Claude Code. Once you have committed the reference, which action could still change it?</strong></p>
-<div id="radio_GRCWKZOLBZ" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value="answer"><span>The agent running tests/make_reference.R again through the shell (git and test_reference_guard.R would show it)</span></label><label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_GRCWKZOLBZ" value=""><span>Running the test suite with testthat::test_dir()</span></label>
+<div id="radio_WCFDLXPTJN" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_WCFDLXPTJN" value=""><span>Asking the agent to edit the .rds file with its editing tool</span></label><label><input type="radio" autocomplete="off" name="radio_WCFDLXPTJN" value="answer"><span>The agent running tests/make_reference.R again through the shell (git and test_reference_guard.R would show it)</span></label><label><input type="radio" autocomplete="off" name="radio_WCFDLXPTJN" value=""><span>Opening the .rds file in the IDE</span></label><label><input type="radio" autocomplete="off" name="radio_WCFDLXPTJN" value=""><span>Running the test suite with testthat::test_dir()</span></label>
 </div>
 </section><section id="going-further" class="level2"><h2 class="anchored" data-anchor-id="going-further">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
@@ -1315,20 +1312,20 @@ A function and test you should end up with
 <div class="callout-body-container callout-body">
 <p>The skill turns a capture and two prompts into one request. By hand, you do the capture yourself: restart R, run <code>source(here::here("tests", "make_reference.R"))</code>, and commit the <code>.rds</code>. The two prompts are below. Splitting the work matters. A single prompt that writes both the refactor and the test lets one misunderstanding (about row order, say) shape both files at once. The result is a passing test that proves nothing.</p>
 <p><strong>Prompt 1: the refactor only.</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb12-1"><a href="#cb12-1" aria-label="1"></a>Move the computation in scripts/05_analysis.R into a documented function</span>
-<span id="cb12-2"><a href="#cb12-2" aria-label="2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a</span>
-<span id="cb12-3"><a href="#cb12-3" aria-label="3"></a>roxygen2 block and an argument check. Make 05_analysis.R call the new function</span>
-<span id="cb12-4"><a href="#cb12-4" aria-label="4"></a>instead of the inline pipeline. Do not write any tests, and do not touch</span>
-<span id="cb12-5"><a href="#cb12-5" aria-label="5"></a>anything under tests/.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb12-1"><a href="#cb12-1"></a>Move the computation in scripts/05_analysis.R into a documented function</span>
+<span id="cb12-2"><a href="#cb12-2"></a>summarise_metabolic_rate() in scripts/functions/summary_functions.R, with a</span>
+<span id="cb12-3"><a href="#cb12-3"></a>roxygen2 block and an argument check. Make 05_analysis.R call the new function</span>
+<span id="cb12-4"><a href="#cb12-4"></a>instead of the inline pipeline. Do not write any tests, and do not touch</span>
+<span id="cb12-5"><a href="#cb12-5"></a>anything under tests/.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>Prompt 2: the test only.</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb13-1"><a href="#cb13-1" aria-label="1"></a>Add tests/test_summary_functions.R. It must call local_edition(3), source</span>
-<span id="cb13-2"><a href="#cb13-2" aria-label="2"></a>scripts/functions/load_voles.R and scripts/functions/summary_functions.R,</span>
-<span id="cb13-3"><a href="#cb13-3" aria-label="3"></a>read tests/fixtures/metabolic_summary.rds, and compare it with</span>
-<span id="cb13-4"><a href="#cb13-4" aria-label="4"></a>summarise_metabolic_rate(load_voles()) using expect_equal().</span>
-<span id="cb13-5"><a href="#cb13-5" aria-label="5"></a></span>
-<span id="cb13-6"><a href="#cb13-6" aria-label="6"></a>Do not create, regenerate or modify anything under tests/fixtures/, and do not</span>
-<span id="cb13-7"><a href="#cb13-7" aria-label="7"></a>run tests/make_reference.R. I captured that reference myself; a reference you</span>
-<span id="cb13-8"><a href="#cb13-8" aria-label="8"></a>generate proves nothing.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb13-1"><a href="#cb13-1"></a>Add tests/test_summary_functions.R. It must call local_edition(3), source</span>
+<span id="cb13-2"><a href="#cb13-2"></a>scripts/functions/load_voles.R and scripts/functions/summary_functions.R,</span>
+<span id="cb13-3"><a href="#cb13-3"></a>read tests/fixtures/metabolic_summary.rds, and compare it with</span>
+<span id="cb13-4"><a href="#cb13-4"></a>summarise_metabolic_rate(load_voles()) using expect_equal().</span>
+<span id="cb13-5"><a href="#cb13-5"></a></span>
+<span id="cb13-6"><a href="#cb13-6"></a>Do not create, regenerate or modify anything under tests/fixtures/, and do not</span>
+<span id="cb13-7"><a href="#cb13-7"></a>run tests/make_reference.R. I captured that reference myself; a reference you</span>
+<span id="cb13-8"><a href="#cb13-8"></a>generate proves nothing.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Before you trust a passing test, check four things:</p>
 <ol type="1">
 <li>the test reads the <code>.rds</code> rather than hard-coding numbers;</li>
@@ -1347,7 +1344,7 @@ Warning
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>What a deny rule does not cover.</strong> Claude Code’s deny rules apply to its built-in file tools and to shell output redirects such as <code>&gt; file</code>. They do not apply to R code or most other commands it runs. The skill relies on that to take the first snapshot. But an agent that ran <code>Rscript tests/make_reference.R</code> again later would overwrite your reference without touching an edit tool. That is why git and <code>test_reference_guard.R</code> are the final checks.</p>
+<p><strong>What a deny rule does not cover.</strong> Claude Code’s deny rules apply to its built-in file tools, to simple file commands it recognises (such as <code>cat</code>, <code>sed</code> and <code>tee</code>) and to shell redirects such as <code>&gt; file</code>. They do not apply to R code or most other commands it runs (<a href="./11f-enforced-controls.html">Block 5</a>). The skill relies on that to take the first snapshot. But an agent that ran <code>Rscript tests/make_reference.R</code> again later would overwrite your reference without touching an edit tool. That is why git and <code>test_reference_guard.R</code> are the final checks.</p>
 </div>
 </div>
 <p>To use the skill in your own projects, download it below. Unzip it into your project’s <code>.agents/skills/</code>, and copy it into <code>.claude/skills/</code> for Claude Code:</p>
@@ -1357,7 +1354,7 @@ Warning
     async function downloadFile(event) {
       event.preventDefault();
       try {
-        const response = await fetch('data:application/zip;base64,UEsDBAAAAAgAAHQ4V10AAAAAAAAAAAAAAAAaAAAAY2hhcmFjdGVyaXNhdGlvbi1yZWZhY3Rvci9QSwMEFAAICAgAdDhXXQAAAAAAAAAAAAAAACIAAABjaGFyYWN0ZXJpc2F0aW9uLXJlZmFjdG9yL1NLSUxMLm1kfVZNbxs3EL3rVwySQ2xA2qBJe1GKAEFzySUtnBQ9GtTuyGLNXW5JrmX11/c9cj8kxShgGBCXfJx58+YNN5vNqjOtbqU+mGDqpMFGk6zvNkH3+O3DqtFYB9tzcSsfNyuRu/FTlKMPj7Z7kDsxnXGnaKPUvlGxXfLS+HpotUvayH7oagJEGbpGgxigXN8oSWNaS/SSDip+SP2QBIB98E+AAMLBdA/aVPJnVDketBMTH/EleaBNNxhno65lil7wl2xzEiMlCxz0cYZvh5ik80kKdgWgr/i1x6m9fWZmu+EhEiRv4ELQOLgUq1WDuHdONy0SdhvbPfnaFJJSGHS1AbWr1zNXU+Ivp42dr+U70kbcGrSrFTy2GmUffFv4CBbXG5f5XYPuJi8PEaDY2toUxaYVMXDmX5CzQNlySXyLnNKABN6S12OwKWHf7jQjvUGqx05q03PbamTsphxuzaPez6DV3e2Pwa2XKl3GubqKU3YKjhWfT+lAVtWhKOVorOTTWfCtgZ7MHoTlqwi7Opgo0z1ZHpFFJFC12sjdMOV7HbIYlNyj5B4/1+QlJu3lHcJx/lii9Z07id0DEGJYwtBnC0Q5acq7HpBDTCYNUeLBH3k/c88JUvBjKqXqACpUxreVfNUnpBIQIyAM0U6C2JmebUfGurxHG+zIOZd6jCBM8eu8gVJ/0E6DSayDQIuazogtsrsqPyG+7CHGJT/jghr0SclzTTnkAHO1LOROhf4RfK0NpfFThR8a0d1A6Z2B6tGROY1z1NxfuzmDZj3XEF2LUjzpGuTkxamBhX6UWdhbd6Z0ppCXKvnL2NKjcwdkCwBut7ehrVbvKvlt5IzlXJd6/lDNKktlKeUH7rtkjrBT7YSye6HI8Kzk+xwoDKmS30nDETbEKhPgbmykl0XJCvY+lFIzQTJ+DD6NyRN8S+SJqTHjsZ3OuunkhzGmrCrSXMlnXwxu2kwUbAxR3b5ava8WhyJVIBe2oJcVYZ+MHMxG/laONh1YbP98ggDfEXfnfP1YiIA5h4ds/whJ68eSC3O/tLORmto4h+CmcAl2zIH4qQ/IXXayA7yLbVvJt4l2SH5hJuiT1WP+3dg9cvy5ku+am/4sv1wK/r//dRlOZP8jbOIGdJ5Xfsk6Dm1rwul+XmH90sGwR3J9FtwXtt4yZhNyzTJ9zu4C9mSHJcot05lwuLDdglLj7skBMG7e33JCDqG+KhEjjxmTp6E/3W75/+aW8jKlhRb9F+e+mgk5Im6++/yN58ZQoJzeBJ1jPr+XA6NM0iFmG3/utU73+s9g3M3taHY5IhOaTe77sgXd82TcwOZZDC+obXunWTTFJ1pAm1GD0cL5xxZg6JV86Wo3cDp088Uh+HBzW8yCxsygcnl46lKRxAr6N45FaUwys6ARvQ15grmh7aS1kblBRJPykHUYyHeCnAnTB4UvZmY9E2H3YS4Rm4HjPVCqhKY1TSOPHabsxnTxOFkz3gx8lox0qzi4eci2Ncu60RoExLyw04N5spABcxxcMz9ffimWlmcYN3ZshMk42T0Gpdd4wIMtKtLy3TobqT4bMn9uVhuVV4sKs6IJcvPm/yX+5vbVrJwzXxtVAnJ2qGdLMrUbrW1OsafpsRwXoU9gQ1c+4AGHXOKANl7cbXG9qCmhXKWZy9i6Y7HKyFsmibEuXlgvzWL05HG+jqjTmTy8EErC/cHkYoervuJQo8WhV3oTI+fstysKAl8LkKuztU0oU1Zd07tT2G5NCLwRAqZYcOYh+KFHNnwuZzXG5YEcONhL4zTaa9dEnoLmSzZU9MH0+MCoMINBNlTNkC5Jm8XEBxEbij1DmFH4Y6MKPQAnGscn+CdExAxzf03NFq9e7vNjcJ3vKzaZv9Q+oGXSBxhgpNnPQzfvcd4/8n3qsXA15sc2qFb/AVBLBwg/xTpSmAUAALoMAABQSwECAAAAAAAIAAB0OFddAAAAAAAAAAAAAAAAGgAAAAAAAAAAABAAAAAAAAAAY2hhcmFjdGVyaXNhdGlvbi1yZWZhY3Rvci9QSwECAAAUAAgICAB0OFddP8U6UpgFAAC6DAAAIgAAAAAAAAAAAAAAAAA4AAAAY2hhcmFjdGVyaXNhdGlvbi1yZWZhY3Rvci9TS0lMTC5tZFBLBQYAAAAAAgACAJgAAAAgBgAAAAA=');
+        const response = await fetch('data:application/zip;base64,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');
         if (!response.ok) throw new Error('Network response failed');
         const blob = await response.blob();
         const blobUrl = window.URL.createObjectURL(blob);
@@ -1402,30 +1399,30 @@ Warning
 First attempt (deliberately incomplete)
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: first attempt ----</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-label="2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb14-3"><a href="#cb14-3" aria-label="3"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-label="4"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb14-5"><a href="#cb14-5" aria-label="5"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
-<span id="cb14-6"><a href="#cb14-6" aria-label="6"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
-<span id="cb14-7"><a href="#cb14-7" aria-label="7"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
-<span id="cb14-8"><a href="#cb14-8" aria-label="8"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-label="9"></a>    )</span>
-<span id="cb14-10"><a href="#cb14-10" aria-label="10"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># scripts/functions/summary_functions.R: first attempt ----</span></span>
+<span id="cb14-2"><a href="#cb14-2"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb14-3"><a href="#cb14-3"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb14-4"><a href="#cb14-4"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb14-5"><a href="#cb14-5"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
+<span id="cb14-6"><a href="#cb14-6"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
+<span id="cb14-7"><a href="#cb14-7"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
+<span id="cb14-8"><a href="#cb14-8"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
+<span id="cb14-9"><a href="#cb14-9"></a>    )</span>
+<span id="cb14-10"><a href="#cb14-10"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <p>Now write the test and run it:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-label="1"></a><span class="co"># tests/test_summary_functions.R ----</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-label="2"></a><span class="fu">library</span>(testthat)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-label="3"></a><span class="fu">local_edition</span>(<span class="dv">3</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-label="4"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
-<span id="cb15-5"><a href="#cb15-5" aria-label="5"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
-<span id="cb15-6"><a href="#cb15-6" aria-label="6"></a></span>
-<span id="cb15-7"><a href="#cb15-7" aria-label="7"></a><span class="fu">test_that</span>(<span class="st">"summarise_metabolic_rate() reproduces the original summary"</span>, {</span>
-<span id="cb15-8"><a href="#cb15-8" aria-label="8"></a>  reference <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"metabolic_summary.rds"</span>))</span>
-<span id="cb15-9"><a href="#cb15-9" aria-label="9"></a>  <span class="fu">expect_equal</span>(<span class="fu">summarise_metabolic_rate</span>(<span class="fu">load_voles</span>()), reference, <span class="at">tolerance =</span> <span class="fl">1e-8</span>)</span>
-<span id="cb15-10"><a href="#cb15-10" aria-label="10"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co"># tests/test_summary_functions.R ----</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a><span class="fu">library</span>(testthat)</span>
+<span id="cb15-3"><a href="#cb15-3"></a><span class="fu">local_edition</span>(<span class="dv">3</span>)</span>
+<span id="cb15-4"><a href="#cb15-4"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"load_voles.R"</span>))</span>
+<span id="cb15-5"><a href="#cb15-5"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
+<span id="cb15-6"><a href="#cb15-6"></a></span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="fu">test_that</span>(<span class="st">"summarise_metabolic_rate() reproduces the original summary"</span>, {</span>
+<span id="cb15-8"><a href="#cb15-8"></a>  reference <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>, <span class="st">"fixtures"</span>, <span class="st">"metabolic_summary.rds"</span>))</span>
+<span id="cb15-9"><a href="#cb15-9"></a>  <span class="fu">expect_equal</span>(<span class="fu">summarise_metabolic_rate</span>(<span class="fu">load_voles</span>()), reference, <span class="at">tolerance =</span> <span class="fl">1e-8</span>)</span>
+<span id="cb15-10"><a href="#cb15-10"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Run it as in Step 1: restart R, then run <code>testthat::test_dir(here::here("tests"))</code>.</p>
 <div class="webex-solution">
@@ -1441,43 +1438,43 @@ What happened
 Refactored function, and the script that calls it
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-label="1"></a><span class="co"># scripts/functions/summary_functions.R: refactored ----</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-label="2"></a><span class="co">#' Summarise post-treatment metabolic rate by treatment arm and sex</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-label="3"></a><span class="co">#'</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-label="4"></a><span class="co">#' @param data A data frame with columns treatment_arm, sex and</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-label="5"></a><span class="co">#'   metabolic_rate_post.</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-label="6"></a><span class="co">#' @return A tibble with one row per treatment_arm and sex, sorted by both,</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-label="7"></a><span class="co">#'   giving the mean, standard deviation and number of rows.</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-label="8"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb16-9"><a href="#cb16-9" aria-label="9"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
-<span id="cb16-10"><a href="#cb16-10" aria-label="10"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
-<span id="cb16-11"><a href="#cb16-11" aria-label="11"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
-<span id="cb16-12"><a href="#cb16-12" aria-label="12"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
-<span id="cb16-13"><a href="#cb16-13" aria-label="13"></a>    <span class="fu">stop</span>(</span>
-<span id="cb16-14"><a href="#cb16-14" aria-label="14"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
-<span id="cb16-15"><a href="#cb16-15" aria-label="15"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
-<span id="cb16-16"><a href="#cb16-16" aria-label="16"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
-<span id="cb16-17"><a href="#cb16-17" aria-label="17"></a>    )</span>
-<span id="cb16-18"><a href="#cb16-18" aria-label="18"></a>  }</span>
-<span id="cb16-19"><a href="#cb16-19" aria-label="19"></a></span>
-<span id="cb16-20"><a href="#cb16-20" aria-label="20"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb16-21"><a href="#cb16-21" aria-label="21"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
-<span id="cb16-22"><a href="#cb16-22" aria-label="22"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
-<span id="cb16-23"><a href="#cb16-23" aria-label="23"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
-<span id="cb16-24"><a href="#cb16-24" aria-label="24"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
-<span id="cb16-25"><a href="#cb16-25" aria-label="25"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
-<span id="cb16-26"><a href="#cb16-26" aria-label="26"></a>    ) <span class="sc">|&gt;</span></span>
-<span id="cb16-27"><a href="#cb16-27" aria-label="27"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
-<span id="cb16-28"><a href="#cb16-28" aria-label="28"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="co"># scripts/functions/summary_functions.R: refactored ----</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a><span class="co">#' Summarise post-treatment metabolic rate by treatment arm and sex</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a><span class="co">#'</span></span>
+<span id="cb16-4"><a href="#cb16-4"></a><span class="co">#' @param data A data frame with columns treatment_arm, sex and</span></span>
+<span id="cb16-5"><a href="#cb16-5"></a><span class="co">#'   metabolic_rate_post.</span></span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="co">#' @return A tibble with one row per treatment_arm and sex, sorted by both,</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="co">#'   giving the mean, standard deviation and number of rows.</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a>summarise_metabolic_rate <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb16-9"><a href="#cb16-9"></a>  <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(data))</span>
+<span id="cb16-10"><a href="#cb16-10"></a>  required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>, <span class="st">"metabolic_rate_post"</span>)</span>
+<span id="cb16-11"><a href="#cb16-11"></a>  missing_cols <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(required, <span class="fu">names</span>(data))</span>
+<span id="cb16-12"><a href="#cb16-12"></a>  <span class="cf">if</span> (<span class="fu">length</span>(missing_cols) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb16-13"><a href="#cb16-13"></a>    <span class="fu">stop</span>(</span>
+<span id="cb16-14"><a href="#cb16-14"></a>      <span class="st">"`data` is missing required column(s): "</span>,</span>
+<span id="cb16-15"><a href="#cb16-15"></a>      <span class="fu">paste</span>(missing_cols, <span class="at">collapse =</span> <span class="st">", "</span>),</span>
+<span id="cb16-16"><a href="#cb16-16"></a>      <span class="at">call. =</span> <span class="cn">FALSE</span></span>
+<span id="cb16-17"><a href="#cb16-17"></a>    )</span>
+<span id="cb16-18"><a href="#cb16-18"></a>  }</span>
+<span id="cb16-19"><a href="#cb16-19"></a></span>
+<span id="cb16-20"><a href="#cb16-20"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb16-21"><a href="#cb16-21"></a>    dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb16-22"><a href="#cb16-22"></a>      <span class="at">mean_rate =</span> <span class="fu">mean</span>(metabolic_rate_post),</span>
+<span id="cb16-23"><a href="#cb16-23"></a>      <span class="at">sd_rate   =</span> stats<span class="sc">::</span><span class="fu">sd</span>(metabolic_rate_post),</span>
+<span id="cb16-24"><a href="#cb16-24"></a>      <span class="at">n         =</span> dplyr<span class="sc">::</span><span class="fu">n</span>(),</span>
+<span id="cb16-25"><a href="#cb16-25"></a>      <span class="at">.by       =</span> <span class="fu">c</span>(treatment_arm, sex)</span>
+<span id="cb16-26"><a href="#cb16-26"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb16-27"><a href="#cb16-27"></a>    dplyr<span class="sc">::</span><span class="fu">arrange</span>(treatment_arm, sex)</span>
+<span id="cb16-28"><a href="#cb16-28"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-label="1"></a><span class="co"># scripts/05_analysis.R: after refactoring ----</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-label="2"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-label="3"></a><span class="fu">library</span>(here)</span>
-<span id="cb17-4"><a href="#cb17-4" aria-label="4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"04_load_data.R"</span>))</span>
-<span id="cb17-5"><a href="#cb17-5" aria-label="5"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
-<span id="cb17-6"><a href="#cb17-6" aria-label="6"></a></span>
-<span id="cb17-7"><a href="#cb17-7" aria-label="7"></a>metabolic_summary <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(voles)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a><span class="co"># scripts/05_analysis.R: after refactoring ----</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb17-3"><a href="#cb17-3"></a><span class="fu">library</span>(here)</span>
+<span id="cb17-4"><a href="#cb17-4"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"04_load_data.R"</span>))</span>
+<span id="cb17-5"><a href="#cb17-5"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summary_functions.R"</span>))</span>
+<span id="cb17-6"><a href="#cb17-6"></a></span>
+<span id="cb17-7"><a href="#cb17-7"></a>metabolic_summary <span class="ot">&lt;-</span> <span class="fu">summarise_metabolic_rate</span>(voles)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -1543,13 +1540,14 @@ Refactored function, and the script that calls it
 </ul>
 <p><strong>2. Invoke the skill.</strong></p>
 <p><strong>Prompt (Claude Code):</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb18-1"><a href="#cb18-1" aria-label="1"></a>/characterisation-refactor Functionalise the step in</span>
-<span id="cb18-2"><a href="#cb18-2" aria-label="2"></a>scripts/explore_mass_change_plot.R that I captured in tests/fixtures/.</span>
-<span id="cb18-3"><a href="#cb18-3" aria-label="3"></a>Start with the plan.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb18-1"><a href="#cb18-1"></a>/characterisation-refactor Functionalise the step in</span>
+<span id="cb18-2"><a href="#cb18-2"></a>scripts/explore_mass_change_plot.R that I captured in tests/fixtures/.</span>
+<span id="cb18-3"><a href="#cb18-3"></a>Start with the plan.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>3. Compare.</strong> Did the agent still stop between the refactor and the test? Run the whole suite, and check the Git pane for anything changed under <code>tests/fixtures/</code>.</p>
 <p><strong>You are done when</strong> the whole suite has no failures and the Git pane shows nothing changed under <code>tests/fixtures/</code> since you committed the new reference.</p>
 </div>
 </div>
+<p>To make a skill of your own from work like this, see <em>Turn a conversation into a skill</em> in <a href="./11e-instructions-skills.html">Block 4</a>.</p>
 </div>
 </div>
 </div>
@@ -1612,7 +1610,7 @@ Refactored function, and the script that calls it
 </tr>
 <tr class="odd">
 <td style="text-align: left;">skill</td>
-<td style="text-align: left;">A folder containing a SKILL.md file (and optionally scripts and templates) that an assistant loads only when it is invoked by name or judged relevant from its description.</td>
+<td style="text-align: left;">A reusable procedure for one kind of task: a folder containing a SKILL.md file (and optionally scripts and templates) that an assistant loads only when it is invoked by name or judged relevant from its description.</td>
 </tr>
 </tbody>
 </table>

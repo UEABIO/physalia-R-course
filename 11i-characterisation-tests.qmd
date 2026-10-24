@@ -257,7 +257,8 @@ The guard cannot tell whether numbers were also typed into the test. Reading
 the test can. Other blocks' tests pass or skip.
 
 **6. Record it.** Add a line to `docs/ai-log.md` (date; tool and model; task;
-what you kept or changed). Note whether the test passed first time.
+what you kept or changed): ask the agent to draft it, as in Block 3, then
+write the last part yourself. Note whether the test passed first time.
 
 **You are done when** the suite has no failures and the Git pane shows only the
 function, `05_analysis.R`, the new test, `.claude/settings.json` and your log
@@ -280,7 +281,9 @@ automate this again?
   R, run `source(here::here("tests", "make_reference.R"))`, commit the `.rds`,
   and tell the agent the reference is committed.
 - **Changed files.** If anything other than the `.rds` changed before your
-  commit, **Revert** it and ask again.
+  commit, **Revert** it in the Git pane and ask again. The Git pane undoes a
+  change whatever made it; `/rewind` undoes only changes made with the agent's
+  edit tools, not by R code it ran ([Block 5](11f-enforced-controls.qmd)).
 - **Row order.** If the test fails on row order, not values, the function used
   `.by` without sorting. Ask the agent to add
   `dplyr::arrange(treatment_arm, sex)`.
@@ -602,8 +605,9 @@ Manual mode.
 
 :::{.callout-warning}
 **What a deny rule does not cover.** Claude Code's deny rules apply to its
-built-in file tools and to shell output redirects such as `> file`. They do
-not apply to R code or most other commands it runs. The skill relies on that
+built-in file tools, to simple file commands it recognises (such as `cat`,
+`sed` and `tee`) and to shell redirects such as `> file`. They do not apply to
+R code or most other commands it runs ([Block 5](11f-enforced-controls.qmd)). The skill relies on that
 to take the first snapshot. But an agent that ran
 `Rscript tests/make_reference.R` again later would overwrite your reference
 without touching an edit tool. That is why git and `test_reference_guard.R`
@@ -803,6 +807,9 @@ reference.
 
 ::::
 :::
+
+To make a skill of your own from work like this, see *Turn a conversation into
+a skill* in [Block 4](11e-instructions-skills.qmd).
 :::::
 
 :::{.callout-tip collapse="true"}
