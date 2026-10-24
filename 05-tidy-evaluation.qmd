@@ -10,11 +10,18 @@ library(here)
 ```
 
 
-`fit_model()` always fits `body_mass_g ~ flipper_length_mm`. To fit body mass on
-bill length, or bill length on bill depth, we would have to write more functions.
-The fix is to make the response and predictor arguments. The complication is that
-dplyr verbs do not look up column names the way ordinary R does. This block
-teaches the mental model and the four patterns you need.
+`fit_model()` always fits `body_mass_g ~ flipper_length_mm`, and
+`make_scatter_plot()` always plots the same two columns. To fit or plot other
+columns, we would have to write more functions. The fix is to make the columns
+arguments. The complication is easy to state:
+
+> dplyr lets you type a column name as if it were an ordinary object. Inside
+> your own function, the column name arrives *inside an argument*, one step
+> removed, and you have to tell dplyr to look inside.
+
+This block teaches the idea behind that sentence, how to tell which kind of
+argument you are dealing with, and the four patterns that cover almost every
+case.
 
 ## The problem
 
@@ -38,43 +45,51 @@ summarise_by_species(penguins_clean, body_mass_g)
 The function received `var = body_mass_g`, and `body_mass_g` is plainly a column
 of `penguins_clean`. Yet the error says it cannot be found. Why?
 
-## The mental model
+## Two meanings of "variable"
 
-Ordinary R looks up names in the calling environment: `mean(x)` searches the
-function's environment, then the enclosing one, and so on.
+dplyr's own guide to programming (`vignette("programming", package = "dplyr")`)
+explains this by splitting the word "variable" in two:
 
-Tidyverse verbs do something different. Inside `summarise()`, `filter()`,
-`mutate()` and `arrange()`, names are looked up *inside the data frame first*. So
-`summarise(mean = mean(body_mass_g))` finds `body_mass_g` as a column. This is
-**data-masking**: the data frame masks the calling environment.
+- An **env-variable** is a programming object that lives in your R session or
+  in a function. You make one with `<-`, or it arrives as a function argument.
+- A **data-variable** is a column that lives inside a data frame.
 
-When you wrap a verb in your own function, the argument `var` lives in the
-function's environment. dplyr looks for a column called `var`, does not find one,
-then falls back to the function environment and finds the argument `var`. R
-arguments are evaluated lazily, so only now is the expression the user typed,
-`body_mass_g`, evaluated, and it is evaluated as an ordinary object in the
-*calling* environment, not inside the data frame. There is no object called
-`body_mass_g` in your workspace, hence "object 'body_mass_g' not found". The data
+```{r}
+#| eval: false
+df <- tibble::tibble(x = 1:3)   # df is an env-variable
+df$x                            # x is a data-variable inside it
+```
+
+Inside `filter()`, `mutate()`, `summarise()` and friends, dplyr lets you type a
+data-variable as if it were an env-variable: `summarise(mean = mean(body_mass_g))`
+finds the column. This is **data masking**: the data frame "masks" your session,
+so its columns are found first. It is what makes interactive dplyr so pleasant.
+
+The trouble starts with **indirection**: the column name is no longer typed in
+the verb, but held in an env-variable, here the argument `var`. dplyr sees the
+name `var`, finds no column called `var`, and never discovers that `var` holds
+the column name you meant.
+
+Think of the argument as an envelope with a column name written inside. dplyr
+reads the label on the envelope (`var`), not what is inside it. You need to
+tell it to open the envelope.
+
+:::{.callout-note collapse="true"}
+## Why exactly does the error say `body_mass_g`?
+
+dplyr looks for a column called `var`, does not find one, and so falls back to
+the function's own objects, where it finds the argument `var`. R evaluates
+arguments lazily: only now does it work out what `var` holds, by evaluating the
+expression the user typed, `body_mass_g`. It evaluates that in the *calling*
+environment, your workspace, not inside the data frame. Your workspace has no
+object called `body_mass_g`, hence "object 'body_mass_g' not found". The data
 mask was applied to the name `var`, never to the column name the user meant.
-
-The fix is to tell dplyr "the user handed me a column name; substitute it into the
-expression before evaluating". That is what the **embracing operator** `{{ }}`
-does: it captures the unevaluated expression the user passed and re-injects it
-where written.
-
-:::{.callout-note}
-
-In rlang's terms this is a "data-masked context", and `{{ }}` is sometimes called
-"curly-curly" for its shape. The canonical references are dplyr's programming
-vignette (`vignette("programming", package = "dplyr")`) and rlang's help topics
-on data masking (`help("topic-data-mask", package = "rlang")` and
-`help("topic-data-mask-programming", package = "rlang")`).
-
 :::
 
-## Embracing in practice
+## Embracing: `{{ }}`
 
-The fix:
+The **embracing operator** `{{ }}` opens the envelope: it tells dplyr "the user
+handed me a column name; use that, not the word `var`".
 
 ```{r}
 #| eval: false
@@ -110,135 +125,24 @@ summary_grouped(penguins_clean, body_mass_g, species)
 summary_grouped(penguins_clean, body_mass_g, island)
 ```
 
-:::{.callout-note}
+Only arguments that name columns are embraced. A threshold, a confidence level
+or a file name is an ordinary value: use it as it is.
 
-**Under the hood (optional).** `{{ var }}` is shorthand for `!!enquo(var)`.
-`rlang::enquo()` captures the argument as a *quosure* (the expression plus the
-environment it came from), and `!!` injects it back into the verb. You almost
-never need to write `enquo()`/`!!` by hand, but seeing the expansion demystifies
-the curly braces: they capture, then inject.
+:::{.callout-note collapse="true"}
+## Under the hood (optional)
 
+`{{ var }}` is shorthand for `!!enquo(var)`. `rlang::enquo()` captures the
+argument as a *quosure* (the expression plus the environment it came from), and
+`!!` injects it back into the verb. You almost never need to write
+`enquo()`/`!!` by hand, but seeing the expansion demystifies the braces: they
+capture, then inject.
 :::
 
-## Data-masking versus tidy-selection
-
-This distinction is rarely taught explicitly, and it later becomes the single
-biggest source of confusion, so it is worth spending time on here.
-
-The same column name is evaluated in one of two ways depending on the verb and the
-argument position:
-
-```
-                       USER WRITES
-                            |
-                 +----------+----------+
-                 |                     |
-                 v                     v
-         DATA-MASKING            TIDY-SELECTION
-                 |                     |
-   "names are values you      "names label columns
-    compute with"             you want to pick"
-                 |                     |
-                 v                     v
-  filter(body_mass_g > 4000)   select(species, body_mass_g)
-  mutate(z = x + y)            pivot_longer(cols = ends_with("_mm"))
-  summarise(m = mean(x))       across(.cols = where(is.numeric), ...)
-  arrange(desc(x))
-```
-
-The principle:
-
-- **Data-masking** treats column names as **values you compute with**.
-- **Tidy-selection** treats column names as **labels you use to pick columns**.
-
-To filter penguins by mass you compute `body_mass_g > 4000` per row: the values
-matter, so it is data-masking. To select the mass column for a table you compute
-nothing; only the name matters, so it is tidy-selection.
-
-### The reference table
-
-Memorise the first three rows; the rest is reference.
-
-| | Data-masking | Tidy-selection |
-|---|---|---|
-| **Names refer to** | values to compute with | columns to pick |
-| **Forward a bare name** | `{{ var }}` | `{{ var }}` |
-| **Forward a string** | `.data[[var]]` | `all_of(var)` |
-| **Forward a character vector** | `pick(all_of(vars))` | `all_of(vars)` |
-| **Example verbs** | `filter`, `mutate`, `summarise`, `arrange`, `aes` | `select`, `across` (cols), `pivot_longer` (cols), `.by` |
-| **Helpers (`starts_with`, `where`)** | no | yes |
-
-Three things to internalise: both contexts forward a bare name with `{{ }}`; they
-need *different* syntax for strings; and selection helpers work only in
-tidy-selection.
-
-### The same task in both contexts
-
-```{r}
-#| eval: false
-# Task A: compute with a column's values -> data-masking
-mean_by_species <- function(data, var) {
-  data |> dplyr::summarise(mean = mean({{ var }}, na.rm = TRUE), .by = species)
-}
-
-# Task B: pick a column by name -> tidy-selection
-pick_with_species <- function(data, var) {
-  data |> dplyr::select(species, {{ var }})
-}
-```
-
-Both forward the argument with `{{ var }}`. The semantics differ: one applies a
-function to the column's values, the other extracts the column.
-
-### Activity 1: identify the context
+### Activity 1: fix the broken function
 
 :::{.task}
 ::::{.task-header}
-Activity 1: identify the context
-::::
-::::{.task-container}
-
-For each call, say whether the column reference is data-masking or tidy-selection.
-
-1. `filter(penguins_clean, body_mass_g > 4000)`
-2. `select(penguins_clean, species, body_mass_g)`
-3. `mutate(penguins_clean, mass_kg = body_mass_g / 1000)`
-4. `pivot_longer(penguins_clean, cols = ends_with("_mm"))`
-5. `summarise(penguins_clean, mean(body_mass_g), .by = species)`
-6. `select(penguins_clean, starts_with("bill"))`
-7. `arrange(penguins_clean, desc(body_mass_g))`
-8. `filter_out(penguins_clean, body_mass_g > 4000)`
-9. `summarise(penguins_clean, across(where(is.numeric), mean))`
-
-::::
-:::
-
-
-`r hide("Solution")`
-
-1. **Data-masking.** A comparison is computed per row.
-2. **Tidy-selection.** Columns picked by name.
-3. **Data-masking.** A new value computed from existing values.
-4. **Tidy-selection** (the `cols` argument).
-5. **Mixed.** The summary `mean(body_mass_g)` is data-masking; the `.by`
-   argument is tidy-selection (it picks the grouping column by name).
-6. **Tidy-selection.** A helper picks by name pattern.
-7. **Data-masking.** Sorting by computed values.
-8. **Data-masking.** A comparison is computed per row.
-9. **Mixed.** `across()` takes a tidy-selection in `.cols` and applies a function
-   in a data-masking context: the bridge case.
-
-The trickiest are 5 and 9: both mix the two contexts in one call (different
-contexts at different argument positions), and 9 uses `across()` as the bridge.
-
-
-`r unhide()`
-
-### Activity 2: fix the broken function (data-masking)
-
-:::{.task}
-::::{.task-header}
-Activity 2: fix the broken function (data-masking)
+Activity 1: fix the broken function
 ::::
 ::::{.task-container}
 
@@ -262,10 +166,9 @@ my_filter(penguins_clean, body_mass_g, 4000)
 
 `r hide("Solution")`
 
-`filter()` is data-masking but `var` is not embraced, so dplyr looks for a literal
-column `var`, fails, and falls back to the function argument. Evaluating that
-argument evaluates `body_mass_g` as an ordinary object outside the data, which
-does not exist. Embrace `var`:
+`filter()` uses data masking, but `var` is not embraced, so dplyr reads the
+label on the envelope: it looks for a column called `var`, fails, and falls back
+to the argument, which evaluates `body_mass_g` outside the data. Embrace `var`:
 
 ```{r}
 #| eval: false
@@ -275,20 +178,141 @@ my_filter <- function(data, var, threshold) {
 ```
 
 `threshold` does not need embracing: it is an ordinary number, not a column
-reference. Only column-name arguments get the treatment.
+name.
 
 
 `r unhide()`
 
-### Activity 3: fix the broken function (tidy-selection)
+## Two kinds of column argument
+
+Column names are used in two different ways in the tidyverse:
+
+| | Data masking | Tidy selection |
+|---|---|---|
+| **What the column name does** | Stands for the column's *values*, which you compute with | Labels a column you want to *pick* |
+| **Typical code** | `filter(body_mass_g > 4000)`, `mutate(kg = body_mass_g / 1000)`, `summarise(m = mean(body_mass_g))`, `arrange(desc(body_mass_g))`, `aes(x = body_mass_g)` | `select(species, body_mass_g)`, `select(starts_with("bill"))`, `pivot_longer(cols = ends_with("_mm"))`, `across(.cols = where(is.numeric))`, `.by = species` |
+| **Helpers such as `starts_with()`, `where()`** | No | Yes |
+
+To filter penguins by mass you compute `body_mass_g > 4000` for every row: the
+values matter, so it is data masking. To select the mass column you compute
+nothing; only the name matters, so it is tidy selection.
+
+**How to tell, without memorising.** Two quick tests:
+
+1. **Read the help page.** In `?filter` or `?select`, each argument is labelled
+   `<data-masking>` or `<tidy-select>`.
+2. **Ask what you could write there.** If you could write `body_mass_g + 1`, it
+   is data masking. If you could write `bill_length_mm:body_mass_g` or
+   `starts_with("bill")`, it is tidy selection. (This test comes from *R for Data
+   Science*, chapter 25.)
+
+Either way, **a bare column name passed through your function is embraced with
+`{{ }}`.** The two kinds differ only when the name arrives as a string, which is
+the next section.
+
+### Activity 2: identify the kind
 
 :::{.task}
 ::::{.task-header}
-Activity 3: fix the broken function (tidy-selection)
+Activity 2: identify the kind
 ::::
 ::::{.task-container}
 
-A different problem: this one runs, but not cleanly. Identify and fix it.
+For each call, choose whether the column reference is data masking, tidy
+selection, or both (in different arguments).
+
+1. `filter(penguins_clean, body_mass_g > 4000)` `r mcq(c(answer = "data masking", "tidy selection", "both"))`
+2. `select(penguins_clean, species, body_mass_g)` `r mcq(c("data masking", answer = "tidy selection", "both"))`
+3. `mutate(penguins_clean, mass_kg = body_mass_g / 1000)` `r mcq(c(answer = "data masking", "tidy selection", "both"))`
+4. `pivot_longer(penguins_clean, cols = ends_with("_mm"))` `r mcq(c("data masking", answer = "tidy selection", "both"))`
+5. `summarise(penguins_clean, mean(body_mass_g), .by = species)` `r mcq(c("data masking", "tidy selection", answer = "both"))`
+6. `select(penguins_clean, starts_with("bill"))` `r mcq(c("data masking", answer = "tidy selection", "both"))`
+7. `arrange(penguins_clean, desc(body_mass_g))` `r mcq(c(answer = "data masking", "tidy selection", "both"))`
+8. `filter_out(penguins_clean, body_mass_g > 4000)` `r mcq(c(answer = "data masking", "tidy selection", "both"))`
+9. `summarise(penguins_clean, across(where(is.numeric), mean))` `r mcq(c("data masking", "tidy selection", answer = "both"))`
+
+::::
+:::
+
+
+`r hide("Explanations")`
+
+1. **Data masking.** A comparison is computed for every row.
+2. **Tidy selection.** Columns picked by name.
+3. **Data masking.** A new value computed from existing values.
+4. **Tidy selection** (the `cols` argument).
+5. **Both.** `mean(body_mass_g)` is data masking; `.by` is tidy selection (it
+   picks the grouping column by name).
+6. **Tidy selection.** A helper picks by name pattern.
+7. **Data masking.** Sorting by computed values.
+8. **Data masking.** A comparison is computed for every row, as in `filter()`.
+9. **Both.** `summarise()` is data masking, and `across()` is used inside it,
+   but `across()`'s `.cols` argument is tidy selection, so `where()` works there.
+   `across()` is the bridge between the two kinds; Activity 4 uses it.
+
+
+`r unhide()`
+
+## When the name arrives as a string
+
+So far the column name arrived bare, as the user typed it. Often it arrives as
+a string instead: from a vector of names you loop over, a configuration file, or
+a Shiny input. `{{ }}` is for bare names only. A string needs a different
+pattern, and here the two kinds of argument part ways:
+
+- **Data masking:** look the string up with the `.data` pronoun,
+  `.data[[var_name]]`.
+- **Tidy selection:** wrap the string, or a character vector of strings, in
+  `all_of()`.
+
+The commonest reason for strings is a loop over column names, as in Block 4:
+
+```{r}
+#| eval: false
+for (var in c("bill_length_mm", "flipper_length_mm")) {
+  penguins_clean |>
+    dplyr::summarise(mean = mean(.data[[var]], na.rm = TRUE), .by = species) |>
+    print()
+}
+# # A tibble: 3 x 2
+#   species    mean
+#   <chr>     <dbl>
+# 1 Adelie     38.8
+# 2 Gentoo     47.5
+# 3 Chinstrap  48.8
+# # A tibble: 3 x 2
+#   species    mean
+#   <chr>     <dbl>
+# 1 Adelie     190.
+# 2 Gentoo     217.
+# 3 Chinstrap  196.
+```
+
+In the envelope picture, `.data[[var]]` says: "this envelope holds a string;
+find the column with that name". `.data` is not a data frame you can use
+elsewhere: it works only inside data-masking verbs.
+
+The same idea, wrapped in a function:
+
+```{r}
+#| eval: false
+summarise_by_string <- function(data, var_name) {
+  data |>
+    dplyr::summarise(mean = mean(.data[[var_name]], na.rm = TRUE), .by = species)
+}
+
+summarise_by_string(penguins_clean, "body_mass_g")
+```
+
+### Activity 3: fix the warning
+
+:::{.task}
+::::{.task-header}
+Activity 3: fix the warning
+::::
+::::{.task-container}
+
+This one runs, but not cleanly. Identify and fix the problem.
 
 ```{r}
 #| eval: false
@@ -326,23 +350,80 @@ keep_columns <- function(data, cols) {
 ```
 
 If instead the function takes a *bare* name, embracing works: `select({{ cols }})`.
-The right tool depends on whether the input arrives as a bare name (`{{ }}`) or as
-a string or character vector (`all_of()`).
+The right tool depends on how the input arrives: bare (`{{ }}`) or as strings
+(`all_of()`).
 
 
 `r unhide()`
 
-### Activity 4: the bridge
+### Activity 4: predict the result
 
 :::{.task}
 ::::{.task-header}
-Activity 4: the bridge
+Activity 4: predict the result
+::::
+::::{.task-container}
+
+Before running anything, predict what each call does: does it succeed, return
+the wrong answer, or error? Then explain why, using the envelope picture.
+
+```{r}
+#| eval: false
+# (i) embracing a string
+summarise_mean <- function(data, var) {
+  data |> dplyr::summarise(mean = mean({{ var }}, na.rm = TRUE), .by = species)
+}
+summarise_mean(penguins_clean, "body_mass_g")
+
+# (ii) a string into a data-masking verb without .data
+summarise_mean_str <- function(data, var_name) {
+  data |> dplyr::summarise(mean = mean(var_name, na.rm = TRUE), .by = species)
+}
+summarise_mean_str(penguins_clean, "body_mass_g")
+```
+
+::::
+:::
+
+
+`r hide("Solution")`
+
+Both **return the wrong answer, with only a warning**: a column of `NA`.
+
+(i) `{{ }}` opens the envelope and finds the string `"body_mass_g"`, not a
+column name. `mean()` then receives a single piece of text, and the mean of a
+piece of text is `NA`, with the warning "argument is not numeric or logical:
+returning NA". Embracing is for bare names; a string needs `.data[[ ]]`.
+
+(ii) `var_name` is not embraced, so dplyr looks for a column called `var_name`,
+fails, and finds the argument, which holds the string `"body_mass_g"`. It
+computes the mean of that string: `NA` again. Nothing told dplyr to treat the
+string as a column name; that is the job of `.data[[var_name]]`.
+
+The general lesson: passing the wrong *kind* of name to a data-masking verb
+rarely errors loudly. It often produces `NA` with at most a warning, which is
+more dangerous than an error. Match the pattern to how the name arrives.
+
+
+`r unhide()`
+
+## The bridge: `across()`
+
+Sometimes you need both kinds in one call: *pick* several columns, then
+*compute* with each. `across()` does exactly that. It is used inside a
+data-masking verb such as `summarise()` or `mutate()`, and its `.cols` argument
+is tidy selection, so `all_of()`, `starts_with()` and `where()` all work there.
+
+### Activity 5: the bridge
+
+:::{.task}
+::::{.task-header}
+Activity 5: the bridge
 ::::
 ::::{.task-container}
 
 Write `mean_of_columns(data, cols)` that takes a character vector of column names
-and returns the mean of each, grouped by species. You need both contexts: select
-the columns (they arrive as strings), then compute a mean for each.
+and returns the mean of each, grouped by species.
 
 ::::
 :::
@@ -361,34 +442,27 @@ mean_of_columns <- function(data, cols) {
 }
 
 mean_of_columns(penguins_clean, c("body_mass_g", "flipper_length_mm"))
+# # A tibble: 3 x 3
+#   species   body_mass_g flipper_length_mm
+#   <chr>           <dbl>             <dbl>
+# 1 Adelie          3701.              190.
+# 2 Gentoo          5076.              217.
+# 3 Chinstrap       3733.              196.
 ```
 
-`across()` is the bridge. Its `.cols` argument is tidy-selection (so `all_of()`
-accepts the string vector); its `.fns` argument is data-masking (applying a
-function to each selected column). The bridge is the whole reason `across()`
-exists: it lets tidy-selection helpers reach into data-masking verbs.
+The strings arrive in `.cols`, a tidy-selection argument, so they are wrapped in
+`all_of()`. The function `\(x) mean(x, na.rm = TRUE)` is then applied to each
+selected column. If the user should pass bare names or helpers instead, embrace
+the argument: `across({{ cols }}, ...)` accepts `c(body_mass_g, bill_length_mm)`
+or `ends_with("_mm")`.
 
 
 `r unhide()`
 
-## Strings and dynamic names
+## Naming the output columns
 
-When a column name arrives as a string, embracing does not apply: strings are
-values, not expressions to capture. Use the `.data` pronoun in data-masking
-contexts:
-
-```{r}
-#| eval: false
-summarise_by_string <- function(data, var_name) {
-  data |>
-    dplyr::summarise(mean = mean(.data[[var_name]], na.rm = TRUE), .by = species)
-}
-
-summarise_by_string(penguins_clean, "body_mass_g")
-```
-
-For *output* column names built from an argument, `=` is not enough: with `=` the
-name is used literally, so `"{{ var }}_mean" = …` makes a column called
+For *output* column names built from an argument, `=` is not enough: with `=`
+the name is used literally, so `"{{ var }}_mean" = …` makes a column called
 `{{ var }}_mean`. The **walrus operator** `:=` lets rlang fill in `{{ var }}`,
 using glue-style name injection:
 
@@ -415,34 +489,49 @@ summarise_dynamic(penguins_clean, body_mass_g)
 Two things happen on the left of `:=`. `"{{ var }}_mean"` is glue-style injection,
 replacing `{{ var }}` with the argument's name; `:=` is the assignment that lets
 rlang do that injection (with `=` the name is used literally). Both are needed.
+If the name is held in a string instead, use single braces: `"{var_name}_mean" :=`.
+
+The same trick works for text that is not a column name, such as a plot title or
+axis label: `rlang::englue("Mean of {{ var }}")` returns the string
+`"Mean of body_mass_g"`. The payoff uses it.
 
 ## Choosing the pattern
 
-Activities 1 to 4 each drilled one pattern in isolation. In practice the hard part
-is deciding *which* pattern a situation calls for, because the answer depends on
-two independent questions: how does the column name arrive (bare name, string, or
-character vector), and what is the context (data-masking or tidy-selection)? This
-activity makes that decision the task.
+The patterns above each answer one combination of two questions:
 
-### Activity 5: choose the pattern
+1. **How does the column name arrive?** Bare, as the user typed it; or as a
+   string or character vector?
+2. **What kind of argument receives it?** Data masking or tidy selection (check
+   the help page)?
+
+| The name arrives as… | …into data masking | …into tidy selection |
+|---|---|---|
+| A bare name | `{{ var }}` | `{{ var }}` |
+| A string | `.data[[var]]` | `all_of(var)` |
+| A character vector | `across(all_of(vars), f)` | `all_of(vars)` |
+
+And for new **output** names: `"{{ var }}_mean" :=` (bare) or
+`"{var_name}_mean" :=` (string). Memorise the first row; the rest is reference.
+
+### Activity 6: choose the pattern
 
 :::{.task}
 ::::{.task-header}
-Activity 5: choose the pattern
+Activity 6: choose the pattern
 ::::
 ::::{.task-container}
 
-For each scenario, name the correct forwarding pattern, then write the function.
-(a), (b) and (d) group by `species`.
+For each scenario, name the correct pattern from the table, then write the
+function. (a), (b) and (d) group by `species`.
 
-(a) `var` arrives as a **bare name**; compute its mean (data-masking).
+(a) `var` arrives as a **bare name**; compute its mean (data masking).
 
-(b) `var_name` arrives as a **string**; compute its mean (data-masking).
+(b) `var_name` arrives as a **string**; compute its mean (data masking).
 
-(c) `cols` arrives as a **character vector**; select those columns (tidy-selection).
+(c) `cols` arrives as a **character vector**; select those columns (tidy selection).
 
 (d) `var` arrives as a **bare name**; compute its mean into an output column named
-    `<var>_mean` (data-masking with a dynamic output name).
+    `<var>_mean` (data masking with a new output name).
 
 ::::
 :::
@@ -452,113 +541,73 @@ For each scenario, name the correct forwarding pattern, then write the function.
 
 ```{r}
 #| eval: false
-# (a) bare name, data-masking -> {{ }}
+# (a) bare name, data masking -> {{ }}
 summarise_mean <- function(data, var) {
   data |>
     dplyr::summarise(mean = mean({{ var }}, na.rm = TRUE), .by = species)
 }
 
-# (b) string, data-masking -> .data[[ ]]
+# (b) string, data masking -> .data[[ ]]
 summarise_mean_str <- function(data, var_name) {
   data |>
     dplyr::summarise(mean = mean(.data[[var_name]], na.rm = TRUE), .by = species)
 }
 
-# (c) character vector, tidy-selection -> all_of()
+# (c) character vector, tidy selection -> all_of()
 select_cols <- function(data, cols) {
   data |>
     dplyr::select(species, dplyr::all_of(cols))
 }
 
-# (d) bare name, dynamic output name -> {{ }} with :=
+# (d) bare name, new output name -> {{ }} with :=
 summarise_named <- function(data, var) {
   data |>
     dplyr::summarise("{{ var }}_mean" := mean({{ var }}, na.rm = TRUE), .by = species)
 }
 ```
 
-Each scenario uses one of the four patterns summarised at the end of this block. The
-decision procedure is: first ask whether the name arrives bare, as a string, or as
-a vector; then, if it is a string or vector, ask whether the verb is data-masking
-(`.data[[ ]]`) or tidy-selection (`all_of()`). A bare name uses `{{ }}` in either
-context.
+The decision procedure: first ask whether the name arrives bare or as a string;
+a bare name is always `{{ }}`. For a string or vector, ask what kind of argument
+receives it: data masking (`.data[[ ]]`) or tidy selection (`all_of()`).
 
 
 `r unhide()`
 
-### Activity 6: predict the error
+## The payoff: generalising the pipeline
 
-:::{.task}
-::::{.task-header}
-Activity 6: predict the error
-::::
-::::{.task-container}
-
-Before running anything, predict what each call does: does it succeed, return the
-wrong answer, or error? Then explain why in terms of the masking model.
+Blocks 3 and 4 left two functions that hardcode the same pair of columns:
 
 ```{r}
 #| eval: false
-# (i) embracing a string
-summarise_mean <- function(data, var) {
-  data |> dplyr::summarise(mean = mean({{ var }}, na.rm = TRUE), .by = species)
+make_scatter_plot <- function(data, sp) {
+  data |>
+    dplyr::filter(species == sp) |>
+    ggplot2::ggplot(ggplot2::aes(flipper_length_mm, body_mass_g)) +
+    ggplot2::geom_point(alpha = 0.6) +
+    ggplot2::geom_smooth(method = "lm") +
+    ggplot2::labs(title = sp, x = "Flipper length (mm)", y = "Body mass (g)") +
+    ggplot2::theme_minimal()
 }
-summarise_mean(penguins_clean, "body_mass_g")
 
-# (ii) a string into a data-masking verb without .data
-summarise_mean_str <- function(data, var_name) {
-  data |> dplyr::summarise(mean = mean(var_name, na.rm = TRUE), .by = species)
-}
-summarise_mean_str(penguins_clean, "body_mass_g")
-```
-
-::::
-:::
-
-
-`r hide("Solution")`
-
-(i) **Returns the wrong answer (or a warning), not an error.** `{{ }}` captures the
-expression `"body_mass_g"`, which is a string literal, not a column reference.
-`mean()` then receives a single character value, and `mean()` of a character
-returns `NA` with a warning. Embracing is for bare names; a string needs
-`.data[[ ]]`.
-
-(ii) **Returns the wrong answer.** `var_name` is not embraced, so dplyr first looks
-for a column called `var_name`, fails, then finds `var_name` in the function
-environment holding the string `"body_mass_g"`. It computes the mean of that single
-string, again yielding `NA`. The string never reaches the data frame as a column
-reference because nothing told dplyr to treat it as one; that is the job of
-`.data[[var_name]]`.
-
-The general lesson: passing the wrong *kind* of object to a masked verb rarely
-errors loudly. It often produces an `NA` with at most a warning, which is more
-dangerous than an error. Match the pattern to how the name arrives.
-
-
-`r unhide()`
-
-## The payoff: generalising `fit_model`
-
-```{r}
-#| eval: false
 fit_model <- function(data) {
   lm(body_mass_g ~ flipper_length_mm, data = data)
 }
 ```
 
-### Activity
+### Activity 7: generalise the plot
 
 :::{.task}
 ::::{.task-header}
-Generalise `fit_model`
+Activity 7: generalise the plot
 ::::
 ::::{.task-container}
 
-Make `fit_model()` accept a response and predictor as bare column names,
-defaulting to body mass and flipper length so existing calls still work. There is
-a wrinkle: `lm()`'s first argument is a formula, and `lm()` is base R, not a
-tidyverse verb. Does `{{ }}` work there? If not, how can you build the formula?
+Give `make_scatter_plot()` two new arguments, `x` and `y`, that take bare column
+names. Default them to `flipper_length_mm` and `body_mass_g`, so existing calls
+still work. Label the axes with the column names. Then plot bill depth against
+bill length for Gentoo penguins.
+
+Hint: `aes()` uses data masking.
 
 ::::
 :::
@@ -566,26 +615,134 @@ tidyverse verb. Does `{{ }}` work there? If not, how can you build the formula?
 
 `r hide("Solution")`
 
-Embracing does *not* work here. `{{ }}` is only understood by functions that
-use tidy evaluation (dplyr, tidyr, ggplot2's `aes()`). `lm()` is not one of
-them, so to it `{{ response }}` is just the symbol `response` wrapped in two
-pairs of braces. `lm()` evaluates that as an ordinary object and fails:
+```{r}
+#| eval: false
+make_scatter_plot <- function(data, sp,
+                              x = flipper_length_mm, y = body_mass_g) {
+  data |>
+    dplyr::filter(species == sp) |>
+    ggplot2::ggplot(ggplot2::aes({{ x }}, {{ y }})) +
+    ggplot2::geom_point(alpha = 0.6) +
+    ggplot2::geom_smooth(method = "lm") +
+    ggplot2::labs(
+      title = sp,
+      x = rlang::englue("{{ x }}"),
+      y = rlang::englue("{{ y }}")
+    ) +
+    ggplot2::theme_minimal()
+}
+
+make_scatter_plot(penguins_clean, "Adelie")                                 # as before
+make_scatter_plot(penguins_clean, "Gentoo", bill_length_mm, bill_depth_mm)  # new
+```
+
+`aes()` uses data masking, so `x` and `y` are embraced, exactly as in
+`summarise()`. `englue()` turns the same arguments into text for the axis labels.
+Note that `sp` is *not* embraced: it is an ordinary value (`"Adelie"`) compared
+with the `species` column, not a column name.
+
+
+`r unhide()`
+
+### Activity 8: generalise the model
+
+:::{.task}
+::::{.task-header}
+Activity 8: generalise the model
+::::
+::::{.task-container}
+
+Now let `fit_model()` fit any response on any predictor, defaulting to body mass
+on flipper length. First, predict: does this work?
 
 ```{r}
 #| eval: false
 fit_model <- function(data,
                       response  = body_mass_g,
                       predictor = flipper_length_mm) {
-  lm({{ response }} ~ {{ predictor }}, data = data)   # does NOT work
+  lm({{ response }} ~ {{ predictor }}, data = data)
 }
+```
 
+Then find a version that does work. Hint: `lm()` is base R, not the tidyverse.
+How does base R already let you pass column names to `lm()` without evaluating
+them?
+
+::::
+:::
+
+
+`r hide("Solution")`
+
+It does **not** work:
+
+```{r}
+#| eval: false
 fit_model(penguins_clean)
 # Error in eval(mf, parent.frame()) : object 'body_mass_g' not found
 ```
 
-Instead, inject the column names into the call before `lm()` sees it.
-`rlang::ensym()` captures the bare name and `rlang::inject()` with `!!` splices
-it into the formula:
+`{{ }}` is understood only by functions that use tidy evaluation: dplyr, tidyr
+and ggplot2's `aes()`. `lm()` is not one of them, so to it `{{ response }}` is
+just `response` wrapped in two pairs of braces, and the column name is never
+found.
+
+Base R already has its own way to pass column names without evaluating them:
+the **formula**. So the simplest generalisation takes a formula:
+
+```{r}
+#| eval: false
+fit_model <- function(data, formula = body_mass_g ~ flipper_length_mm) {
+  lm(formula, data = data)
+}
+
+fit_model(penguins_clean)                                 # as before
+fit_model(penguins_clean, bill_length_mm ~ bill_depth_mm) # new
+```
+
+No tidy evaluation at all. The lesson: before reaching for `{{ }}`, check whether
+the function you are calling is a tidyverse function. If it is not, it usually
+has its own way of taking column names.
+
+**When the names come from a vector.** To fit the same model to several
+responses, as you iterated in Block 4, take the names as strings and build the
+formula with base R's `reformulate()`:
+
+```{r}
+#| eval: false
+fit_model <- function(data,
+                      response  = "body_mass_g",
+                      predictor = "flipper_length_mm") {
+  lm(reformulate(predictor, response = response), data = data)
+}
+
+c("body_mass_g", "bill_length_mm") |>
+  purrr::set_names() |>
+  purrr::map(\(r) fit_model(penguins_clean, r)) |>
+  purrr::map(broom::tidy) |>
+  purrr::list_rbind(names_to = "response")
+# # A tibble: 4 x 6
+#   response       term               estimate std.error statistic   p.value
+#   <chr>          <chr>                 <dbl>     <dbl>     <dbl>     <dbl>
+# 1 body_mass_g    (Intercept)       -5781.     306.        -18.9  5.59e- 55
+# 2 body_mass_g    flipper_length_mm    49.7      1.52       32.7  4.37e-107
+# 3 bill_length_mm (Intercept)          -7.26     3.20       -2.27 2.38e-  2
+# 4 bill_length_mm flipper_length_mm     0.255    0.0159     16.0  1.74e- 43
+```
+
+`predictor` can also be a vector, such as
+`c("flipper_length_mm", "bill_depth_mm")`, for a model with two predictors.
+Strings are the right choice whenever the names come from a vector, a loop or a
+file: the same reason you met `.data[[ ]]` and `all_of()`.
+
+
+`r unhide()`
+
+:::{.callout-tip collapse="true"}
+## Optional: bare names for `lm()`
+
+If you want `fit_model(penguins_clean, bill_length_mm, bill_depth_mm)` with bare
+names, you must inject the names into the call yourself, with rlang:
 
 ```{r}
 #| eval: false
@@ -596,37 +753,17 @@ fit_model <- function(data,
     lm(!!rlang::ensym(response) ~ !!rlang::ensym(predictor), data = data)
   )
 }
-
-fit_model(penguins_clean)                                  # defaults
-fit_model(penguins_clean, bill_length_mm)                  # new response
-fit_model(penguins_clean, bill_length_mm, bill_depth_mm)   # both
 ```
 
-Alternatively, build the formula explicitly, which is useful if you want to
-inspect or manipulate it first:
-
-```{r}
-#| eval: false
-fit_model <- function(data,
-                      response  = body_mass_g,
-                      predictor = flipper_length_mm) {
-  formula <- rlang::new_formula(
-    lhs = rlang::enexpr(response),
-    rhs = rlang::enexpr(predictor)
-  )
-  lm(formula, data = data)
-}
-```
-
-`enexpr()` captures the unevaluated argument; `new_formula()` assembles it. Both
-versions give identical models; `inject()` is shorter, `new_formula()` gives you
-the formula as an object.
-
-
-`r unhide()`
+`rlang::ensym()` captures the bare name the user typed, and `!!` inside
+`rlang::inject()` places it into the formula before `lm()` sees it. This works,
+but it is the kind of rlang machinery that most code never needs; the formula
+and string versions above are simpler to read and to test.
+:::
 
 When you change a function's interface, pin the old behaviour down first with a
-**characterisation test**, then confirm the change preserves it:
+**characterisation test**, then confirm the change preserves it. Both versions of
+`fit_model()` above pass this test with their defaults:
 
 ```{r}
 #| eval: false
@@ -639,15 +776,36 @@ test_that("fit_model defaults reproduce previous behaviour", {
 ```
 
 :::{.callout-note}
+## The four patterns, on one card
 
-**You have now seen the four patterns that cover most practical cases:**
+| How the column name arrives | Into data masking | Into tidy selection |
+|---|---|---|
+| Bare name | `{{ var }}` | `{{ var }}` |
+| String | `.data[[var]]` | `all_of(var)` |
+| Character vector | `across(all_of(vars), f)` | `all_of(vars)` |
+| New output name | `"{{ var }}_mean" :=` or `"{var_name}_mean" :=` | — |
 
-- `{{ }}` to forward bare names,
-- `:=` for dynamic output names,
-- `.data[[ ]]` for string column names,
-- `all_of()` for character vectors of column names.
+- **Which kind of argument?** Check the help page for `<data-masking>` or
+  `<tidy-select>`; or ask whether you could write `x + 1` there (data masking)
+  or `starts_with("x")` (tidy selection).
+- **Not a tidyverse function?** `{{ }}` does nothing there. Look for its own
+  way of taking column names, such as a formula for `lm()`.
 
-rlang has more machinery (`enquo()`, `!!`, `enquos()`, `!!!`) but most user code
+rlang has more machinery (`enquo()`, `!!`, `enquos()`, `!!!`), but most code
 never needs it.
-
 :::
+
+## Further reading
+
+- dplyr's vignette *Programming with dplyr*: `vignette("programming", package =
+  "dplyr")`. The source of the env-variable and data-variable idea.
+- *R for Data Science*, 2nd edition, by Hadley Wickham, Mine Çetinkaya-Rundel and
+  Garrett Grolemund, chapter 25, *Functions*:
+  <https://r4ds.hadley.nz/functions.html>. Many short examples of data-frame
+  and plot functions.
+- rlang's help topics on data masking: `help("topic-data-mask", package =
+  "rlang")` and `help("topic-data-mask-programming", package = "rlang")`, which
+  groups the patterns into forwarding, names, bridge and transformation
+  patterns.
+- The metaprogramming chapters of *Advanced R* [@advanced-r], for the theory
+  behind quosures and injection.
