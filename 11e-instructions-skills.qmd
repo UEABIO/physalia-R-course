@@ -124,14 +124,35 @@ rules. Instructions that work are:
   controls of [Block 5](11f-enforced-controls.qmd).
 :::
 
-**3. Verify.** Type `/memory` and check that `AGENTS.md` is listed. Press Esc
-rather than choosing it: choosing it opens the file in an external editor. Type
-`/clear`, then repeat the step 1 prompt. The canary shows the file was
-**loaded**. To see whether it was **followed**, check the plot code against
-your new rule.
+:::{.callout-note collapse="true"}
+## Where an instruction file comes from in your own projects
 
-**4. Check it with a test.** Restart R (*Session → Restart R*). Then run this in
-the R console:
+Here you start from a file we wrote. In your own projects there are three
+routes:
+
+| Route | Strengths | Weaknesses |
+|---|---|---|
+| **Write it yourself** | Holds conventions the code cannot show; short; true of your practice | Slow; a blank page |
+| **`/init`** | Fast; finds the layout, commands and packages | Writes a `CLAUDE.md`, which hides any `AGENTS.md`; describes what the code *does*, including habits you would not choose; cannot see unwritten conventions; tends to run long |
+| **Ask Claude to assess the project and draft an `AGENTS.md`** | As fast as `/init`; you choose the file name and see the draft before any file exists | The same risks: rules inferred from your code that are not really yours, and length |
+
+The third route usually works best: let the agent draft, then delete every line
+that is not true of your practice, and add what it could not discover (your
+statistics rules, what must never be touched). Keep the file short: the Claude
+Code documentation suggests well under 200 lines. *Draft an instruction file
+for a project of your own*, in *Going further*, walks through it. Do not run
+`/init` in the workshop repository.
+:::
+
+**3. Verify.** Type `/memory` and check that `AGENTS.md` is listed. Press Esc
+rather than choosing it: choosing it opens the file in an external editor.
+(When Claude Code starts, it may also print a line such as
+`AGENTS.md loaded: …`.) Type `/clear`, then repeat the step 1 prompt. The
+canary shows the file was **loaded**. To see whether it was **followed**, check
+the plot code against your new rule.
+
+**4. Check it with a test.** Restart R (*Session → Restart R*), so the tests run
+in a clean session. Then run this in the R console:
 
 ```{r}
 #| eval: false
@@ -140,11 +161,23 @@ testthat::test_dir(here::here("tests"))
 
 Then commit `AGENTS.md` from the Git pane.
 
+Why a test, when the canary already appeared? The canary shows the file was
+loaded *today*. `tests/test_controls.R` guards *later*: it fails if an edit,
+yours or one made by R code the agent runs, removes the canary or the
+`git status` rule, or loosens the settings (Manual mode, the deny rules, no
+command approved in advance). Blocks 5 and 8 rely on all of these. The test
+checks what the files *say*, not whether the model *obeys* them; that gap is
+the subject of [Block 5](11f-enforced-controls.qmd). Your `AGENTS.md` also asks
+the agent to run this same suite before it reports a task done, so it is the
+agent's check as well as yours.
+
 **You are done when** the canary appears, the test suite has no failures (tests
 for later blocks skip), and your edited `AGENTS.md` is committed.
 
-**If it goes wrong:** if `/memory` does not list `AGENTS.md`, delete any
-`CLAUDE.md` you created (*How it works*, below). Also check that
+**If it goes wrong:** if `/memory` does not list `AGENTS.md`, look for a
+`CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` in the project **or in
+any folder above it**, such as your Documents or OneDrive folder. Any of them
+hides `AGENTS.md` (*How it works*, below): rename or delete it. Also check that
 `claude --version` is 2.1.281 or later ([setup](11a-setup-claude-code.qmd)).
 If `test_controls.R` fails, restore the canary or the `git status` line. A
 failure in `test_explore.R` or `test_ai_log.R` is left over from Block 3.
@@ -198,17 +231,44 @@ copy one you write.
 ::::::
 
 Claude Code reads `AGENTS.md`, at the repository root, at the start of every
-conversation. It does so because the template ships no `CLAUDE.md`. Creating
-one (for example with `/init`) would hide your conventions. `/memory` lists
-the instruction files that Claude Code loaded. Choosing one opens it in an
-external editor, which may be vi on macOS, so edit `AGENTS.md` from the Files
-pane instead.
+conversation. `/memory` lists the instruction files that Claude Code loaded.
+Choosing one opens it in an external editor, which may be vi on macOS, so edit
+`AGENTS.md` from the Files pane instead.
+
+**Why `AGENTS.md` and not `CLAUDE.md`?** `CLAUDE.md` is Claude Code's own name
+for the file, and for Claude Code alone it works in exactly the same way.
+`AGENTS.md` is a name that several tools share, including Posit Assistant and
+GitHub Copilot, so one file serves them all. This course uses `AGENTS.md`, and
+`tests/test_controls.R` looks for it, so keep that name here.
+
+The two names do not combine by default. Claude Code reads `AGENTS.md` only
+when there is no `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` in the
+project or any folder above it. Creating one, for example with `/init`, hides
+your conventions without any warning. (Your personal `~/.claude/CLAUDE.md` does
+not count.) If a project needs both, put this line in its `CLAUDE.md`, and add
+any Claude-only instructions below it:
+
+```text
+@AGENTS.md
+```
+
+The `@` imports the file, so Claude Code reads both. On Windows, use this
+import rather than a symbolic link.
 :::::::
 
 
 ## Activity 2: Install a skill and test it
 
-A skill is a folder that holds a `SKILL.md` file. The file starts with
+If `AGENTS.md` is the list of rules on the lab wall, a skill is a standard
+operating procedure in the drawer. It is the written-down way to do one kind of
+task, such as making a publication figure, and the agent takes it out only
+when that task comes up. Only the skill's name and one-line description sit in
+every conversation. The full procedure, and any scripts or templates beside it,
+load when you invoke the skill by name (`/house-figures`) or when the agent
+judges from the description that your request fits. So a skill can be long
+without costing anything in conversations that do not use it.
+
+On disk, a skill is a folder that holds a `SKILL.md` file. The file starts with
 `r glossary("front matter")` between two lines of three dashes. The front
 matter gives a `name` and a `description`, and **the description is the
 trigger**. A skill described as "Use when producing a ggplot2 figure for a
@@ -368,6 +428,24 @@ would you use it for the next figure?
 ::::
 :::
 
+:::{.callout-tip collapse="true"}
+## Skills in your own work
+
+You wrote `house-figures` from a finished list of rules. In practice you rarely
+start from one. The usual route: work with the agent until an output is right,
+correcting it over several rounds. Then ask it to "turn what we just did into a
+skill in `.agents/skills/<name>/`". Read the draft before you install it:
+
+- Remove details that applied to that one task only.
+- Check that the description says when to use the skill and when not to.
+- Check that nothing contradicts `AGENTS.md` or your other skills.
+
+Then copy it to `.claude/skills/`, start a new conversation and grade the
+output, as in step 4. Next time, one request gets you to where those rounds of
+correction ended. *Turn a conversation into a skill*, in *Going further*, walks
+through it.
+:::
+
 
 :::{.callout-note}
 ## Check · Reproduce · Record
@@ -392,6 +470,15 @@ likely explanation?**
   answer = "The instructions are not reaching Claude Code, for example because a CLAUDE.md in the repository hides AGENTS.md, or Claude Code was started outside the project",
   "The canary only works with Anthropic models",
   "AGENTS.md must be committed to GitHub before Claude Code can read it"
+))`
+
+**The canary appeared, so why also run `tests/test_controls.R`?**
+
+`r longmcq(c(
+  "The test shows that the model followed every rule in AGENTS.md",
+  answer = "The test checks that the files still contain what later blocks rely on (the canary, the git status rule, Manual mode and the deny rules), so a later edit that removes one is caught",
+  "Claude Code reads AGENTS.md only after the tests pass",
+  "The canary is not reliable, so the test replaces it"
 ))`
 
 **What is the main difference between an instruction file and a skill?**
@@ -443,6 +530,126 @@ you move the project. On Windows, symbolic links need extra configuration, so
 copy the folder.
 :::
 
+:::::{.callout-tip collapse="true"}
+## Draft an instruction file for a project of your own
+
+*Where an instruction file comes from in your own projects*, in Activity 1,
+compares three routes. This task follows the third: the agent drafts, you
+decide.
+
+:::{.task}
+::::{.task-header}
+From draft to your own file
+::::
+::::{.task-container}
+
+**Goal:** give one of your own projects an `AGENTS.md` that holds only rules
+you would defend, so that the agent starts every conversation there from your
+conventions.
+
+Work in one of your own projects, not the workshop repository, and commit or
+back it up first. Start Claude Code in the project's folder.
+
+**1. Ask for a draft, not a file.**
+
+**Prompt (Claude Code):**
+
+```text
+Look through this project: its folders, scripts, README and any existing
+instruction files. Propose an AGENTS.md of conventions for working here,
+one rule per line, under 60 lines. Mark each rule "seen in the code" or
+"suggested". Show it in your reply; do not create any files.
+```
+
+**2. Prune it.** Create `AGENTS.md` yourself
+(`usethis::edit_file("AGENTS.md")`) and paste in only the rules you would
+defend. Go through *What makes an instruction work* line by line. A rule
+marked "seen in the code" may only describe a habit you want to break. A
+"suggested" rule may sound sensible but not be yours. Then add what the agent
+could not see: your statistics rules, and what must never be touched.
+
+**3. Add a canary and verify.** Put a canary section at the top, as in the
+workshop file. Then type `/clear`, check `/memory` and ask for a small piece
+of R code.
+
+**Optional comparison.** In a throwaway copy of the project, run `/init` and
+compare the `CLAUDE.md` it writes with your file. Delete that `CLAUDE.md`
+afterwards: while it exists, Claude Code does not read `AGENTS.md`.
+
+**You are done when** the canary appears and every line in your `AGENTS.md`
+is one you would defend.
+
+::::
+:::
+:::::
+
+:::::{.callout-tip collapse="true"}
+## Turn a conversation into a skill
+
+*Skills in your own work*, after Activity 2, describes the usual route to a
+skill: get an output right over several rounds, then distil the result.
+
+:::{.task}
+::::{.task-header}
+Distil a skill
+::::
+::::{.task-container}
+
+**Goal:** turn the corrections you make in one conversation into a skill, so
+that one request reaches the same result next time.
+
+**1. Get it right the long way.** Start with `/clear`.
+
+**Prompt (Claude Code):**
+
+```text
+Make a summary table of mass_post_g by treatment_arm for the voles data,
+for a lab report. Save the code as scripts/tab_summary.R.
+```
+
+Run the script yourself and correct the table at least twice, with your own
+preferences: decimal places, a column for n, units in the headers, the order
+of the arms.
+
+**2. Distil it.**
+
+**Prompt (Claude Code):**
+
+```text
+Turn the decisions we reached in this conversation into a skill at
+.agents/skills/summary-tables/SKILL.md. Keep the rules that would apply to
+any summary table in this project; leave out details specific to this
+variable. Write a description that says when to use it and when not to.
+```
+
+The deny rules keep the agent out of `.claude/`, but not out of
+`.agents/skills/`, so it can write this draft. Read it before you approve it.
+(Posit Assistant has a built-in `create-skill` skill for this step.)
+
+**3. Review it** as you reviewed `pub-figures`:
+
+- Is the description specific enough to trigger only for summary tables?
+- Has every detail of this one table gone?
+- Does anything contradict `AGENTS.md`?
+
+Edit the file until all three answers are yes.
+
+**4. Install and test.** Copy it with the `fs::dir_copy()` line from Activity 2,
+changing `house-figures` to `summary-tables`. Type `/clear`, then ask in one
+line for a summary table of another variable in the voles data, starting with
+`/summary-tables`. Grade the table against the skill's rules from the table
+itself, not from the agent's report.
+
+**You are done when** one request produces a table that meets the rules you
+reached in step 1, and you have committed the skill (both folders).
+
+**Payoff.** How many rounds of correction did the skill save, and what did you
+still have to check?
+
+::::
+:::
+:::::
+
 :::{.callout-tip collapse="true"}
 ## Instruction and skill files in other tools
 
@@ -469,8 +676,12 @@ Posit Assistant also includes built-in skills such as `quarto-authoring` and
 
 Some rules are right for one kind of file and wrong elsewhere. A chunk option
 such as `#| echo: false` is meaningful in a `.qmd` file and meaningless in an
-`.R` script. The test for a scoped rule: would it be *wrong*, not merely
-irrelevant, in the files it excludes? If not, put it in `AGENTS.md`.
+`.R` script. A **path-scoped rule** is an instruction file that loads only when
+the agent works on matching files. It differs from a skill: a rule states
+conventions, a skill sets out a procedure. (A skill can also be limited to
+matching files, with the same `paths:` field in its front matter.) The test
+for a scoped rule: would it be *wrong*, not merely irrelevant, in the files it
+excludes? If not, put it in `AGENTS.md`.
 
 :::{.task}
 ::::{.task-header}
@@ -481,9 +692,31 @@ Create and test a scoped rule
 **Goal:** make a rule that loads only for Quarto files and check that it does,
 so that a convention that is wrong elsewhere stays out of your R scripts.
 
-The rules themselves:
+**1. Where the file goes.** For Claude Code, a rule is one Markdown file in
+`.claude/rules/`:
 
-```markdown
+```text
+your-project/
+├── AGENTS.md                 loads in every conversation
+└── .claude/
+    ├── settings.json
+    ├── skills/
+    └── rules/
+        └── quarto.md         loads only when the agent works on a .qmd file
+```
+
+**2. What the file holds.** The whole file is shown below. The front matter at
+the top, between the two lines of three dashes, says which files the rule
+applies to: `paths:` takes a list of patterns, and `"**/*.qmd"` means any
+`.qmd` file in any folder. The rules follow, one per line. (The "hashpipe" is
+the `#|` at the start of a chunk-option line.)
+
+```{.markdown filename=".claude/rules/quarto.md"}
+---
+paths:
+  - "**/*.qmd"
+---
+
 # Quarto document conventions
 
 - Set chunk options with the hashpipe (#|) inside the chunk, not in the
@@ -496,40 +729,54 @@ The rules themselves:
   document's folder.
 ```
 
-(The "hashpipe" is the `#|` at the start of a chunk-option line.) Put the rules
-where your tool looks for them:
+**3. Create it.** In practice you would describe the rule and let the agent
+draft the file. Try that first:
 
-- **Claude Code:** `.claude/rules/quarto.md`. Create it yourself, for example
-  with `usethis::edit_file(".claude/rules/quarto.md")`, because the deny rules
-  keep the agent out of `.claude/`. Begin the file with front matter that
-  restricts it to Quarto files:
+**Prompt (Claude Code):**
 
-  ```text
-  ---
-  paths:
-    - "**/*.qmd"
-  ---
-  ```
+```text
+Draft a Claude Code rule file for .claude/rules/quarto.md that applies only
+to .qmd files, with the front matter it needs and our Quarto chunk
+conventions. Show it in your reply; do not create the file.
+```
 
-- **Copilot:** `.github/instructions/quarto.instructions.md`, beginning with
-  this front matter:
+Compare its draft with the file above. The deny rules keep the agent out of
+`.claude/`, so you save the file yourself: run
+`usethis::edit_file(".claude/rules/quarto.md")`, paste in the version you
+prefer, and save.
 
-  ```text
-  ---
-  applyTo: "**/*.qmd"
-  ---
-  ```
+**4. Test.** A rule loads only when the agent itself reads or edits a matching
+file; opening the file in RStudio does not count. So:
 
-- **Posit Assistant:** no path-scoped instruction file is documented. Add the
-  rules to `AGENTS.md` under a heading such as "When editing .qmd files", or
-  rely on its built-in `quarto-authoring` skill.
+1. Create a short Quarto file yourself with
+   `usethis::edit_file("reports/rule_test.qmd")`. A title and one line of text
+   are enough. Save it.
+2. Ask the agent to read `reports/rule_test.qmd` and add a chunk that plots
+   `mass_post_g` by `treatment_arm`. A correct answer uses hashpipe options, a
+   `fig-` label, a caption and `here::here()`.
+3. Type `/clear`, then ask for the same plot in a new script,
+   `scripts/rule_test.R`. The Quarto rules should not appear.
 
-**Test.** Open a `.qmd` file, then ask for a chunk that plots `mass_post_g` by
-`treatment_arm`. A correct answer uses hashpipe options, a `fig-` label, a
-caption and `here::here()`. Then ask for the same plot in an `.R` script; the
-Quarto rules should not appear. If they do not appear in the `.qmd` either, the
-rule is not loading in your tool. Report what you found; behaviour differs
-between tools.
+If the rules do not appear in the `.qmd` either, the rule is not loading.
+
+**Other tools.** Copilot uses a different folder and a different front-matter
+key:
+
+```{.markdown filename=".github/instructions/quarto.instructions.md"}
+---
+applyTo: "**/*.qmd"
+---
+
+# Quarto document conventions
+
+(the same rules as above)
+```
+
+**Posit Assistant** has no path-scoped rules: its documentation describes
+only the project's `AGENTS.md` and a personal one. Add the rules to
+`AGENTS.md` under a heading such as "When editing .qmd files", or rely on its
+built-in `quarto-authoring` skill. Behaviour differs between
+tools, so test on yours.
 
 **You are done when** you know whether the rules appeared for the `.qmd` chunk
 and stayed out of the `.R` script on your tool.
