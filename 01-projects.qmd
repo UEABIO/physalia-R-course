@@ -42,7 +42,7 @@ knitr::include_graphics("images/project.png")
 An **absolute path** spells out the full location from the root of the disk:
 
 ```
-/home/your-username/project/data/raw/penguins.csv
+/home/your-username/project/data/raw/penguins_raw.csv
 ```
 
 It breaks the moment anyone else opens your code, because nobody else has your
@@ -50,7 +50,7 @@ directory structure. A **relative path** is relative to the project root, so it
 travels with the project:
 
 ```
-data/raw/penguins.csv
+data/raw/penguins_raw.csv
 ```
 
 ## A sensible layout
@@ -231,12 +231,14 @@ called from or which operating system runs it.
 ```{r}
 #| eval: false
 # Fragile: relative to wherever the session happens to sit
-raw_data <- readr::read_csv("data/raw/penguins.csv")
+raw_data <- readr::read_csv("data/raw/penguins_raw.csv")
 
 # Robust: built from the project root every time
 library(here)
-raw_data <- readr::read_csv(here("data", "raw", "penguins.csv"))
+raw_data <- readr::read_csv(here("data", "raw", "penguins_raw.csv"))
 ```
+
+(These lines read a file you save into the project after the next activity.)
 
 `here()` finds the root by looking for the `.Rproj` file (or a `.here` file), so
 it does not depend on the working directory. We recommend using an RStudio project
@@ -267,7 +269,7 @@ directory line, and the path.
 #| eval: false
 setwd("/Users/sam/Documents/penguin_thesis/")
 
-penguins_raw <- read.csv("/Users/sam/Documents/penguin_thesis/data/raw/penguins.csv")
+penguins_raw <- read.csv("/Users/sam/Documents/penguin_thesis/data/raw/penguins_raw.csv")
 ```
 
 ::::
@@ -281,7 +283,7 @@ penguins_raw <- read.csv("/Users/sam/Documents/penguin_thesis/data/raw/penguins.
 library(here)
 library(tidyverse)
 
-penguins_raw <- readr::read_csv(here("data", "raw", "penguins.csv"))
+penguins_raw <- readr::read_csv(here("data", "raw", "penguins_raw.csv"))
 ```
 
 The `setwd()` line is deleted entirely, not replaced. Setting the working directory
@@ -291,6 +293,29 @@ is the project's job, not the script's. The path is rebuilt from the project roo
 `read_csv()` comes from the `readr` package, which is part of the tidyverse, so loading `tidyverse` covers it. You could load `readr` on its own instead; we load `tidyverse` because it is a common choice for data analysis.
 
 `r unhide()`
+
+## Save the raw data into your project
+
+The palmerpenguins package ships the data in two versions: `penguins`, a
+ready-cleaned table, and `penguins_raw`, the data as first recorded, with the
+original column names such as `Culmen Length (mm)`. Save the raw version into
+`data/raw/` now. It stands in for a file you would receive from the people who
+collected the data. From here on, Day 1 reads this file, never the package.
+
+```{r}
+#| eval: false
+library(here)
+
+readr::write_csv(
+  palmerpenguins::penguins_raw,
+  here("data", "raw", "penguins_raw.csv")
+)
+```
+
+You write this file once. After that, `data/raw/` is read-only: your code reads
+it and never changes it. The `here()` lines and the de-path solution above now
+run in your project. Other chapters use other versions of the same data;
+[Which penguins?](index.qmd#which-penguins) on the Overview page lists them.
 
 ## Blank slates
 
