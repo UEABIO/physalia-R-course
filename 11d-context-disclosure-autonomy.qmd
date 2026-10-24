@@ -31,7 +31,7 @@ holds its files.
 | `AGENTS.md`, `.claude/settings.json` | Shipped: the instruction file, and the settings that start Claude Code in Manual mode; you edit the first in Block 4 and test the second in Block 5 | Throughout |
 | `tests/test_explore.R`, `tests/test_ai_log.R` | Shipped: check the agent's column and plot script, and the form of your log line | Exercise 2, step 5 |
 | `scripts/explore_mass_change_plot.R`, and the figure it saves in `outputs/` (which git ignores) | The agent writes the script in Exercise 2, step 2; the tests run it in step 5 | Exercise 2 |
-| `docs/ai-log.md` | You, in Exercise 2, step 4 | Every block from now on |
+| `docs/ai-log.md` | The agent drafts its first line and you finish it, in Exercise 2, step 4 | Every block from now on |
 :::
 
 ## Exercise 1: What can it see?
@@ -53,10 +53,9 @@ Block 2.
 
 The exercises use Claude Code. With **Posit Assistant**:
 
-- **Exercise 1:** scroll back to your Block 2 conversation in the same way.
-  R code it ran in your session is route 4. Every request also carries the
-  names and types of your objects (route 3), though no action in the
-  transcript shows it.
+- **Exercise 1:** scroll back to your Block 2 conversation in the same way,
+  and use the Posit Assistant column of *What each tool can see*, below the
+  diagram.
 - **Exercise 2:** use `/plan` for step 1 and Normal mode (`/normal`) for
   step 2. The checks are the same: the Git pane and the R console.
 
@@ -69,12 +68,12 @@ where the agent read `data/raw/voles_metabolism.csv` and ran `Rscript`. Above
 each reply, Claude Code lists the actions it took. If you cleared the
 conversation, re-run that prompt from [Block 2](11c-debugging.qmd).
 
-**2. Name each route** in the diagram below. A file it read is route 2. The
-output of a command it ran is route 4. What you pasted yourself, in Block 2's
-Exercise 2 prompt, is route 1. Then add two routes that no action shows. One
-is `AGENTS.md`, which Claude Code reads at the start of every conversation
-(route 2). The other is the context it adds itself, including your recent
-commit messages (route 3).
+**2. Name each route** in the diagram below; the table under it gives the
+detail for each tool. A file it read is route 2. The output of a command it
+ran is route 4. What you pasted yourself, in Block 2's Exercise 2 prompt, is
+route 1. Then add two routes that no action shows. One is `AGENTS.md`, which
+Claude Code reads at the start of every conversation (route 2). The other is
+the context it adds itself, including your recent commit messages (route 3).
 
 **You are done when** you can name every file or command output that reached
 the model provider.
@@ -86,112 +85,59 @@ which is why the habits below matter for confidential data.
 ::::
 :::
 
-:::::: {.dia .dia-lanes role="figure" aria-label="Four routes by which data reach the model provider: 1, what you paste, in any tool; 2, project files the tool reads; 3, context the tool adds itself: Claude Code adds the project folder, platform, date and a snapshot of git status with recent commit messages, and Posit Assistant adds the R version and the names and types of your objects, not their values; 4, the output of commands the agent runs"}
-::::: {.dia-flow}
-::: {.dia-label}
-Route 1: what you paste
-:::
+::::::: {.dia .dia-flow role="figure" aria-label="Four routes, all leading to the model provider with each request: 1, what you paste; 2, project files the tool reads, including AGENTS.md; 3, context the tool adds by itself; 4, the output of code and commands it runs. Anything that reaches one of these routes leaves your machine."}
+:::::: {.dia-branches}
 ::: {.dia-node .dia-you}
-Errors, output and results you paste into a chat or prompt
-:::
-::: {.dia-arrow}
-any tool
-:::
-::: {.dia-node .dia-plain}
-Model provider
-:::
-:::::
-::::: {.dia-flow}
-::: {.dia-label}
-Route 2: files it reads
+**Route 1.** What you paste: errors, output, results
 :::
 ::: {.dia-node .dia-file}
-Copilot: open files. Claude Code and Posit Assistant: any project file they
-choose to read
-:::
-::: {.dia-arrow}
-read
+**Route 2.** Project files it reads, including `AGENTS.md`
 :::
 ::: {.dia-node .dia-plain}
-Model provider
-:::
-:::::
-::::: {.dia-flow}
-::: {.dia-label}
-Route 3: context the tool adds itself
-:::
-::: {.dia-node .dia-plain}
-Claude Code: project folder, platform, date, and a snapshot of git status with
-recent commit messages. Posit Assistant: R version, and the names and types of
-your objects (not their values)
-:::
-::: {.dia-arrow}
-Claude Code, Posit Assistant
-:::
-::: {.dia-node .dia-plain}
-Model provider
-:::
-:::::
-::::: {.dia-flow}
-::: {.dia-label}
-Route 4: output of commands it runs
+**Route 3.** Context the tool adds by itself
 :::
 ::: {.dia-node .dia-ai}
-The agent runs `Rscript` or `head data.csv`, and reads what it prints
+**Route 4.** Output of the code and commands it runs
 :::
+::::::
 ::: {.dia-arrow}
-Claude Code, Posit Assistant
+sent with each request
 :::
 ::: {.dia-node .dia-plain}
 Model provider
 :::
-:::::
 ::: {.dia-caption}
-Everything before an arrow reaches the model provider: any data file in the
-project the agent reads, and any values its code prints.
+Anything that reaches one of these four routes leaves your machine. The table
+below shows what each route carries in each tool.
 :::
-::::::
+:::::::
 
-::::{.callout-important}
-## Working with confidential data: five habits
+**What each tool can see.** The routes are the same in every tool; what
+travels along them is not. The biggest difference is your R session: Claude
+Code cannot see it, and Posit Assistant works inside it.
 
-1. **Work on a copy.** Put a synthetic or anonymised copy in the project, and
-   run the final analysis on the real data yourself, outside the agent's
-   folder.
-2. **Know your account.** Commercial accounts (Team, Enterprise, API) are not
-   used for model training. On Pro or Max, set `/privacy-settings`. Check your
-   institution's approval, ethics approval and data agreements first.
-3. **Deny reads of sensitive folders** in `/permissions`, for example
-   `Read(/data/confidential/**)`. It stops Claude Code's own file reads and
-   simple commands such as `cat`, but not R code that opens the file itself.
-4. **Stay in Manual mode,** but remember that it does not ask before read-only
-   commands such as `head` and `cat`. Keep confidential files out of the
-   project (habit 1).
-5. **Describe, don't show.** `names()` and `dim()` describe the data without
-   showing values. `summary()` prints real minima and maxima. `print()`,
-   `glimpse()` and `str()` print actual rows.
-
-:::{.callout-tip collapse="true"}
-## How it works: tool notes
-
-There is no `.claudeignore` file, and `/sandbox` is not available on native
-Windows. Posit Assistant blocks `.Renviron` and `.env` by default. It shares
-the names and types of objects in your session, not their values, but code it
-runs can still print values.
-:::
-::::
+| | Claude Code | Posit Assistant | Browser chat |
+|---|---|---|---|
+| **Route 1:** what you paste | Yes | Yes | Yes |
+| **Route 2:** project files | Any file in the project, read without asking, unless a deny rule names it (habit 4, below) | Files in the project; it asks before reading outside it. `.Renviron` and `.env` are blocked | Only files you upload |
+| **Route 3:** added by itself | `AGENTS.md`, the project folder, platform, date, git branch, uncommitted changes and recent commit messages | `AGENTS.md`, the R version, and the names and types of the objects in your session, not their values (this session context can be switched off) | Its memory or project files, if you have switched them on |
+| **Route 4:** code it runs | `Rscript`, in a new R process that cannot see the objects in your console; it reads whatever the code prints | R code in your own live session, so the code can reach your objects; it reads whatever the code prints | None |
+| Your console and plots | No | Yes: it can read your console history and view plots | Only what you paste |
 
 :::{.callout-tip collapse="true"}
 ## Context you hold in your head (instructor demonstration)
 
 An assistant's answer about your data is only as good as its context. It is
-reliable only when it has real information, such as something you pasted, a
-file it read, or output from a command it ran. In Block 2 you mostly pasted
-that information yourself; once, you let the agent fetch it. Either way,
-everything it uses leaves your machine.
+reliable only when it has real information: something you pasted, a file it
+read, or output from a command it ran. A data file supplies column names, but
+not your question or your design.
 
-A data file supplies column names, but not your question or your design. Your
-instructor asks a new chat:
+**Where to run it:** a new browser chat (claude.ai or similar) with no project,
+files or memory attached, such as a temporary chat. Not Claude Code: inside
+the workshop repository it would read `AGENTS.md` and the data file (route 2),
+so even the first prompt would get a specific answer.
+
+Your instructor asks a new chat:
 
 **Prompt (browser chat):**
 
@@ -218,15 +164,69 @@ analysis, and what are the main threats to its validity?
 
 The first gets a tour of options. The second can get a recommendation, because
 the design now exists outside your head. Treat it as a proposal to check: the
-primary analysis is your decision. To try it yourself, see *Going further*.
+primary analysis is your decision.
+
+**Try it yourself** after the session: give each prompt to its own new browser
+chat and compare the answers. For a third run, give the first prompt to Claude
+Code in your workshop repository. It reads the data without being asked and
+names the columns, but it still cannot know your question.
 :::
+
+::::{.callout-important}
+## Working with confidential data: five habits, strongest first
+
+An agent reads what it judges useful. If one route is closed, it often tries
+another: refused a file, it may offer R code that opens the same file. So the
+habits are listed from the one that always holds to the ones that only slow it
+down.
+
+1. **Keep it out of the project.** Put a synthetic or anonymised copy in the
+   project, and run the final analysis on the real data yourself, outside the
+   agent's folder. A file that is not there cannot be read by any route.
+2. **Know your account.** Commercial accounts (Team, Enterprise, API) are not
+   used for model training. On Pro or Max, set `/privacy-settings`. Check your
+   institution's approval, ethics approval and data agreements first.
+3. **Read every R command before you approve it.** In Manual mode, Claude Code
+   asks before it runs `Rscript`. Look for file paths in the code, and say No
+   to any that would open a file you want kept out. You will see an agent
+   offer this route in [Block 7](11g-data-cleaning.qmd).
+4. **Add a deny rule as well,** in `/permissions`, for example
+   `Read(/data/confidential/**)`. It stops Claude Code's own file reads and
+   simple commands such as `cat` and `head`. It does not stop R code that
+   opens the file, or a search of the whole project such as `grep -r`, which
+   runs without asking. Treat it as a speed bump, not a wall
+   ([Block 5](11f-enforced-controls.qmd)).
+5. **Describe, don't show.** `names()` and `dim()` describe the data without
+   showing values. `summary()` prints real minima and maxima. `print()`,
+   `glimpse()` and `str()` print actual rows.
+
+:::{.callout-tip collapse="true"}
+## How it works: tool notes
+
+- **Claude Code:**
+  - There is no `.claudeignore` file.
+  - Read-only commands such as `cat`, `head`, `grep` and `ls` never ask, even
+    in Manual mode.
+  - On macOS, Linux and WSL2, the `/sandbox` command adds an operating-system
+    block on reading paths you list (`sandbox.filesystem.denyRead`). That block
+    applies to R code too. The sandbox is not available on native Windows.
+- **Posit Assistant:**
+  - It blocks `.Renviron` and `.env` by default.
+  - Its session context, the names and types of your objects, can be switched
+    off.
+  - Code it runs in your live session can still print values.
+  - Its documentation does not say whether a deny rule can name a folder, so
+    test one before you rely on it.
+:::
+::::
 
 
 ## Exercise 2: What can it do?
 
 The model is the same at every `r glossary("rung")` of the autonomy ladder.
-What changes is its `r glossary("permission mode")`: what it may do without
-asking. Rung 3, act with approval, is where routine work is safe:
+What changes is what it may do without asking you, which in Claude Code is set
+by its `r glossary("permission mode")`. Rung 3, act with approval, is where
+routine work stays checkable:
 
 - you start from a commit, so you can revert any change;
 - you see every edit and command first;
@@ -239,21 +239,25 @@ An assistant that advises leaves you to filter every change. An agent that acts
 removes that filter, unless you put it back. The rungs differ in how much of
 that filtering is left to you.
 
-| Rung | What happens | Claude Code | Posit Assistant |
-|---|---|---|---|
-| 0. Suggest | Completes the line you are typing | — | Next Edit Suggestions |
-| 1. Ask | Answers; changes nothing | — (no ask mode; Block 2's answer-only line is a request) | Ask mode (`/ask`) |
-| 2. Plan | Proposes steps; changes nothing until you approve | `/plan` | `/plan` |
-| 3. Act, with approval | Edits files and runs commands, asking first | Manual (`default`): the workshop's starting mode | Normal mode |
-| 4. Act, partly unsupervised | Some actions without asking | `acceptEdits`; `auto` (a classifier approves actions) | Auto mode (`/auto`) |
-| 5. Act, unsupervised | No prompts | `bypassPermissions` | YOLO mode (`/yolo`) |
+Each rung answers two questions: can the assistant change your files or run
+code, and what do you approve?
 
+| Rung | Changes files or runs code? | What you approve | Claude Code | Posit Assistant |
+|---|---|---|---|---|
+| 0. Suggest | No: it completes the line you are typing | Each suggestion, by accepting it | — | Next Edit Suggestions |
+| 1. Ask | No: it answers in the chat | Nothing; it may still read files | — (no ask mode; Block 2's answer-only line is a request) | Ask mode (`/ask`) |
+| 2. Plan | No edits: it proposes steps | The plan, before anything changes | `/plan` | `/plan` |
+| 3. Act, with approval | Yes | Every edit and every command, except read-only ones | Manual (`default`): the workshop's starting mode | Normal mode |
+| 4. Act, partly unsupervised | Yes | Only actions outside a set it may take alone | `acceptEdits` (edits and file commands); `auto` (a classifier approves actions) | Auto mode (`/auto`) |
+| 5. Act, unsupervised | Yes | Nothing | `bypassPermissions` | YOLO mode (`/yolo`) |
+
+In Claude Code, reading a project file never needs approval, at any rung.
 From rung 3 up, what changes is which `r glossary("tool call", "tool calls")`
 run without your approval. [Block 6](11k-build-an-agent.qmd), after lunch,
 builds that approval step in code. Your workshop repository starts Claude Code
 in **Manual**, although recent versions of Claude Code start in `auto`. Keep
-Manual for confidential data. `/plan` can still run commands, so read any it
-proposes. Use only rungs 0 to 3 today. The
+Manual for confidential data. `/plan` may run commands to explore, and on
+recent versions some run without asking you. Use only rungs 0 to 3 today. The
 [quick reference](11-AI-programming-integrated.qmd#cc-quick-reference) lists
 the commands for the other modes.
 
@@ -311,13 +315,25 @@ does and why you want it now; refusing is always safe. For these, choose
 Read it as you would a colleague's work: the diff shows every change, including
 any you did not ask for.
 
-**4. Record.** Create `docs/ai-log.md` (`usethis::edit_file("docs/ai-log.md")`).
-Write the first line of your `r glossary("AI-use log")` yourself, on one line,
-in the form from Block 1. Don't copy the example: use today's date, as
-YYYY-MM-DD, and the model name shown above the Claude Code prompt.
+**4. Record.** Start your `r glossary("AI-use log")`. The agent knows the
+date, its model and what it did, so let it draft the line. Only you know what
+you kept or changed, so that part stays yours.
+
+**Prompt (Claude Code):**
 
 ```text
-2026-10-19; Claude Code (model as shown above the Claude Code prompt); added mass_change_g and a plot script; kept both after reading the diff
+Create docs/ai-log.md and add one line for the work you just did, in the
+form: date (YYYY-MM-DD); Claude Code (your model name); task; TODO.
+Leave the last field as TODO.
+```
+
+Approve the new file after reading it. Then open it
+(`usethis::edit_file("docs/ai-log.md")`) and replace `TODO` with what you kept
+or changed. Check that the date and the model match what is shown above the
+Claude Code prompt. The finished line looks like this:
+
+```text
+2026-10-19; Claude Code (Claude Opus 5.5); added mass_change_g and a plot script; kept both after reading the diff
 ```
 
 Writing it before you test means the tests check it too.
@@ -332,14 +348,32 @@ left in your session can make a test pass. Then run:
 testthat::test_dir(here::here("tests"))
 ```
 
-The tests check that:
+`test_dir()` runs every `test*.R` file in `tests/`. The template ships them;
+in this block, these are the ones that matter:
 
-- `mass_change_g` in `voles` really is post minus pre;
-- the plot script saves a figure in `outputs/` from a fresh R session;
-- your log line has four parts and a real date.
+| File | Checks | Before this block |
+|---|---|---|
+| `test_explore.R` | `mass_change_g` in `voles` really is post minus pre; the plot script runs in a fresh R session and saves a figure in `outputs/` | Skipped: no plot script yet |
+| `test_ai_log.R` | Every log line has four parts and a real date | Skipped: no log yet |
+| `test_controls.R` | Manual mode, the deny rules and `AGENTS.md` are still in place ([Block 4](11e-instructions-skills.qmd)) | Already passing |
 
-Tests for later blocks skip. Commit the log and both scripts together (git
-ignores `outputs/`).
+The other test files are for later blocks, and skip. Commit the log and both
+scripts together (git ignores `outputs/`).
+
+**Where tests like these come from in your own work.** None of these checks
+needed the answer in advance. Each comes from what you asked for: the
+definition of the column, a script that runs from a fresh session and saves a
+file, a log line in the agreed form. So you can write them, or have the agent
+draft them for you to read, *before* the agent does the work. They cannot tell
+you whether the plot is a good one: you check that by looking.
+[Block 8](11i-characterisation-tests.qmd) writes a test from scratch.
+
+:::{.callout-note collapse="true"}
+## The test you just ran: `tests/test_explore.R`
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "tests", "test_explore.R")}
+```
+:::
 
 **You are done when** you have read every line of the diff, the tests show no
 failures, the `explore` and `ai_log` lines of the test output show their tests
@@ -416,6 +450,16 @@ know them?**
   "It remembers your data from a previous conversation"
 ))`
 
+**Your project's settings hold the deny rule `Read(/data/confidential/**)`.
+Which of these can still read a file in that folder?**
+
+`r longmcq(c(
+  "Nothing: a deny rule blocks every route",
+  "Only Claude Code's own Read tool",
+  answer = "R code the agent runs with Rscript, or a search of the whole project such as grep -r, which runs without asking",
+  "Only you, from the R console"
+))`
+
 **In Claude Code's acceptEdits mode, what does the agent do without asking?**
 
 `r longmcq(c(
@@ -484,16 +528,6 @@ Column names you never supplied, or a famous dataset you never mentioned
 (`penguins`, `mtcars`), are signs it is guessing.
 :::
 
-:::{.callout-tip collapse="true"}
-## Exercise: context you hold in your head
-
-To try the demonstration above yourself, give the first prompt to a new
-browser chat. Give the second to another new chat, then compare the answers.
-A data file can supply column names and types, but not your scientific
-question or your
-design intent.
-:::
-
 
 ## Glossary
 
@@ -506,9 +540,14 @@ glossary_table()
 ## References
 
 - Claude Code documentation: *Permission modes*,
-  <https://code.claude.com/docs/en/permission-modes>.
+  <https://code.claude.com/docs/en/permission-modes>; *Configure
+  permissions*, <https://code.claude.com/docs/en/permissions>; *Sandboxing*,
+  <https://code.claude.com/docs/en/sandboxing>; *How Claude Code works*,
+  <https://code.claude.com/docs/en/how-claude-code-works>.
 - Posit Assistant documentation: *Getting Started*,
   <https://assistant.posit.co/docs/getting-started/>; *Permissions & Trust*,
-  <https://assistant.posit.co/docs/features/permissions/>.
+  <https://assistant.posit.co/docs/features/permissions/>; *Context
+  Management*, <https://assistant.posit.co/docs/features/context-management/>;
+  *Ask Mode*, <https://assistant.posit.co/docs/features/ask-mode/>.
 - GitHub documentation: *Plans for GitHub Copilot*,
   <https://docs.github.com/en/copilot/get-started/plans>.
