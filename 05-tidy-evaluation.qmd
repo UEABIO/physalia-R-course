@@ -1,4 +1,4 @@
-# Block 5: Tidy evaluation and data masking {.unnumbered}
+# Block 5: Generalising functions with tidy evaluation {.unnumbered}
 
 
 ```{r}
@@ -10,18 +10,18 @@ library(here)
 ```
 
 
-`fit_model()` always fits `body_mass_g ~ flipper_length_mm`, and
-`make_scatter_plot()` always plots the same two columns. To fit or plot other
-columns, we would have to write more functions. The fix is to make the columns
-arguments. The complication is easy to state:
+*Roughly 50 minutes. First why a column name stops working once you pass it into
+your own function, and the four patterns that fix it; then those patterns applied
+to the running example, so that `make_scatter_plot()` and `fit_model()` work for
+any pair of columns.*
 
-> dplyr lets you type a column name as if it were an ordinary object. Inside
-> your own function, the column name arrives *inside an argument*, one step
-> removed, and you have to tell dplyr to look inside.
-
-This block teaches the idea behind that sentence, how to tell which kind of
-argument you are dealing with, and the four patterns that cover almost every
-case.
+Block 4 left one limitation. One pipeline now fits a model per group, whatever the
+group is, but `fit_model()` still fits only body mass on flipper length, and
+`make_scatter_plot()` from Block 3 still plots only those two columns. The fix is
+to make the columns arguments, and that is where dplyr's convenience bites. It
+lets you type a column name as if it were an ordinary object, but inside your own
+function the name arrives *inside an argument*, one step removed, and you have to
+tell dplyr to look inside.
 
 The examples use `penguins_clean`, cleaned in Block 3 from
 `data/raw/penguins_raw.csv`. Starting a fresh session? Run Block 3's loading and
@@ -579,7 +579,11 @@ receives it: data masking (`.data[[ ]]`) or tidy selection (`all_of()`).
 
 ## The payoff: generalising the pipeline
 
-Blocks 3 and 4 left two functions that hardcode the same pair of columns:
+Until now this block has practised on small, stand-alone functions. Now go back
+to the analysis you have been improving all day. Blocks 3 and 4 left two
+functions that hardcode the same pair of columns: `make_scatter_plot()` in
+`R/functions/plotting_functions.R`, and `fit_model()` in
+`R/functions/modelling_functions.R`.
 
 ```{r}
 #| eval: false
@@ -597,6 +601,20 @@ fit_model <- function(data) {
   lm(body_mass_g ~ flipper_length_mm, data = data)
 }
 ```
+
+You generalise both, so that each works for any pair of columns:
+
+- **Activity 7, the plot.** `aes()` uses data masking, so this is the main pattern
+  of the block, `{{ }}`, plus `englue()` from *Naming the output columns* for the
+  axis labels.
+- **Activity 8, the model.** `lm()` is not a tidyverse function, so `{{ }}` does
+  not work there. This activity shows what to do instead, and when to take
+  column names as strings.
+
+In both, the new arguments default to the columns the functions use now. Existing
+calls, including the Block 4 pipeline, keep working unchanged, and the
+characterisation test at the end of this section checks that they do. Edit each
+function in its file, then `source()` the file again.
 
 ### Activity 7: generalise the plot
 
@@ -797,6 +815,14 @@ test_that("fit_model defaults reproduce previous behaviour", {
 
 rlang has more machinery (`enquo()`, `!!`, `enquos()`, `!!!`), but most code
 never needs it.
+:::
+
+:::{.callout-note}
+**Where this leaves us.** The analysis that began Block 3 as three copy-pasted
+blocks is now a set of small, tested functions, applied to every group by one
+pipeline, with no hardcoded columns: `make_scatter_plot()` and `fit_model()` take
+whichever columns you name. Day 2 asks whether someone else could rerun it:
+reproducibility and code review.
 :::
 
 ## Further reading

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="generator" content="quarto-1.9.37">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Block 5: Tidy evaluation and data masking – Advancing in R</title>
+<title>Block 5: Generalising functions with tidy evaluation – Advancing in R</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -329,7 +329,7 @@ div.csl-indent {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./01-projects.html">Day 1: Advancing in R</a></li><li class="breadcrumb-item"><a href="./05-tidy-evaluation.html">Block 5: Tidy evaluation and data masking</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./01-projects.html">Day 1: Advancing in R</a></li><li class="breadcrumb-item"><a href="./05-tidy-evaluation.html">Block 5: Generalising functions with tidy evaluation</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -379,7 +379,7 @@ div.csl-indent {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./05-tidy-evaluation.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Block 5: Tidy evaluation and data masking</span></a>
+ <span class="menu-text">Block 5: Generalising functions with tidy evaluation</span></a>
   </div>
 </li>
       </ul>
@@ -700,8 +700,8 @@ div.csl-indent {
   </ul></nav>
     </div>
 <!-- main -->
-<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./01-projects.html">Day 1: Advancing in R</a></li><li class="breadcrumb-item"><a href="./05-tidy-evaluation.html">Block 5: Tidy evaluation and data masking</a></li></ol></nav><div class="quarto-title">
-<h1 class="title">Block 5: Tidy evaluation and data masking</h1>
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./01-projects.html">Day 1: Advancing in R</a></li><li class="breadcrumb-item"><a href="./05-tidy-evaluation.html">Block 5: Generalising functions with tidy evaluation</a></li></ol></nav><div class="quarto-title">
+<h1 class="title">Block 5: Generalising functions with tidy evaluation</h1>
 </div>
 
 
@@ -715,11 +715,8 @@ div.csl-indent {
   
 
 
-</header><p><code>fit_model()</code> always fits <code>body_mass_g ~ flipper_length_mm</code>, and <code>make_scatter_plot()</code> always plots the same two columns. To fit or plot other columns, we would have to write more functions. The fix is to make the columns arguments. The complication is easy to state:</p>
-<blockquote class="blockquote">
-<p>dplyr lets you type a column name as if it were an ordinary object. Inside your own function, the column name arrives <em>inside an argument</em>, one step removed, and you have to tell dplyr to look inside.</p>
-</blockquote>
-<p>This block teaches the idea behind that sentence, how to tell which kind of argument you are dealing with, and the four patterns that cover almost every case.</p>
+</header><p><em>Roughly 50 minutes. First why a column name stops working once you pass it into your own function, and the four patterns that fix it; then those patterns applied to the running example, so that <code>make_scatter_plot()</code> and <code>fit_model()</code> work for any pair of columns.</em></p>
+<p>Block 4 left one limitation. One pipeline now fits a model per group, whatever the group is, but <code>fit_model()</code> still fits only body mass on flipper length, and <code>make_scatter_plot()</code> from Block 3 still plots only those two columns. The fix is to make the columns arguments, and that is where dplyr’s convenience bites. It lets you type a column name as if it were an ordinary object, but inside your own function the name arrives <em>inside an argument</em>, one step removed, and you have to tell dplyr to look inside.</p>
 <p>The examples use <code>penguins_clean</code>, cleaned in Block 3 from <code>data/raw/penguins_raw.csv</code>. Starting a fresh session? Run Block 3’s loading and cleaning lines first (<a href="./index.html#which-penguins">Which penguins?</a>).</p>
 <section id="the-problem" class="level2"><h2 class="anchored" data-anchor-id="the-problem">The problem</h2>
 <p>A first, reasonable attempt that does not work:</p>
@@ -1223,7 +1220,7 @@ Solution
 <p>The decision procedure: first ask whether the name arrives bare or as a string; a bare name is always <code><a href="https://rdrr.io/r/base/Paren.html">{ }</a></code>. For a string or vector, ask what kind of argument receives it: data masking (<code>.data[[ ]]</code>) or tidy selection (<code>all_of()</code>).</p>
 </div>
 </section></section><section id="the-payoff-generalising-the-pipeline" class="level2"><h2 class="anchored" data-anchor-id="the-payoff-generalising-the-pipeline">The payoff: generalising the pipeline</h2>
-<p>Blocks 3 and 4 left two functions that hardcode the same pair of columns:</p>
+<p>Until now this block has practised on small, stand-alone functions. Now go back to the analysis you have been improving all day. Blocks 3 and 4 left two functions that hardcode the same pair of columns: <code>make_scatter_plot()</code> in <code>R/functions/plotting_functions.R</code>, and <code>fit_model()</code> in <code>R/functions/modelling_functions.R</code>.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a>make_scatter_plot <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp) {</span>
 <span id="cb15-2"><a href="#cb15-2"></a>  data <span class="sc">|&gt;</span></span>
@@ -1239,6 +1236,14 @@ Solution
 <span id="cb15-12"><a href="#cb15-12"></a>  <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data)</span>
 <span id="cb15-13"><a href="#cb15-13"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<p>You generalise both, so that each works for any pair of columns:</p>
+<ul>
+<li>
+<strong>Activity 7, the plot.</strong> <code>aes()</code> uses data masking, so this is the main pattern of the block, <code><a href="https://rdrr.io/r/base/Paren.html">{ }</a></code>, plus <code>englue()</code> from <em>Naming the output columns</em> for the axis labels.</li>
+<li>
+<strong>Activity 8, the model.</strong> <code><a href="https://rdrr.io/r/stats/lm.html">lm()</a></code> is not a tidyverse function, so <code><a href="https://rdrr.io/r/base/Paren.html">{ }</a></code> does not work there. This activity shows what to do instead, and when to take column names as strings.</li>
+</ul>
+<p>In both, the new arguments default to the columns the functions use now. Existing calls, including the Block 4 pipeline, keep working unchanged, and the characterisation test at the end of this section checks that they do. Edit each function in its file, then <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again.</p>
 <section id="activity-7-generalise-the-plot" class="level3"><h3 class="anchored" data-anchor-id="activity-7-generalise-the-plot">Activity 7: generalise the plot</h3>
 <div class="task">
 <div class="task-header">
@@ -1422,6 +1427,19 @@ Solution
 <strong>Not a tidyverse function?</strong> <code><a href="https://rdrr.io/r/base/Paren.html">{ }</a></code> does nothing there. Look for its own way of taking column names, such as a formula for <code><a href="https://rdrr.io/r/stats/lm.html">lm()</a></code>.</li>
 </ul>
 <p>rlang has more machinery (<code>enquo()</code>, <code>!!</code>, <code>enquos()</code>, <code>!!!</code>), but most code never needs it.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Where this leaves us.</strong> The analysis that began Block 3 as three copy-pasted blocks is now a set of small, tested functions, applied to every group by one pipeline, with no hardcoded columns: <code>make_scatter_plot()</code> and <code>fit_model()</code> take whichever columns you name. Day 2 asks whether someone else could rerun it: reproducibility and code review.</p>
 </div>
 </div>
 </section></section><section id="further-reading" class="level2"><h2 class="anchored" data-anchor-id="further-reading">Further reading</h2>
