@@ -35,10 +35,12 @@ library(palmerpenguins)
 library(janitor)
 
 # Built here so every page renders, but learners build these themselves:
-# penguins_clean in Day 1 Block 3 (from data/raw/penguins_raw.csv, a CSV of
+# penguins_clean in Day 1 Block 2 (from data/raw/penguins_raw.csv, a CSV of
 # palmerpenguins::penguins_raw, giving identical data) and penguins_complete in
 # Day 3 Block 1. Say so on any page that uses them (see "Which penguins?" in
-# index.qmd).
+# index.qmd). The learners' catch-up scripts in files/catch-up/ (shown by
+# include/_catch-up-day1.qmd and _catch-up-day3.qmd) must stay in step with
+# the code below.
 # Short species names ("Adelie", not "Adelie Penguin (Pygoscelis adeliae)")
 # and bill_* names, so penguins_clean matches palmerpenguins::penguins
 penguins_clean <- palmerpenguins::penguins_raw |>

@@ -694,7 +694,7 @@ dat_std <- dat_std |>
 n_removed_dupes <- n_before_dedup - nrow(dat_std)
 cat("Duplicate rows removed:", n_removed_dupes, "\n")
 
-# ── 5. Data-quality exclusions ───────────────────────────────────────────────
+# ── 5. Data-quality exclusions and flags ─────────────────────────────────────
 # Exclusion 1: TO = 9999 — undocumented sentinel meaning "offspring not
 # recorded". These are missing values, not real counts of zero; we exclude
 # them and record the count so the loss is visible in the methods section.
@@ -706,21 +706,23 @@ cat("Missing offspring (TO = 9999):", n_missing, "excluded\n")
 n_neg <- sum(dat_std$TO < 0, na.rm = TRUE)
 cat("Negative TO values:", n_neg, "\n")
 
-# Exclusion 3: TO > 1000 and < 9999 — implausible (C. elegans brood size is
+# Flag 1: TO > 1000 and < 9999 — implausible (C. elegans brood size is
 # typically ~250–350; values in the thousands are not credible)
 # worm_id 47, B=4, daf, AL: TO = 2850 — likely a typo for 285
-# Flag rather than silently remove — needs verification with original data sheet
+# Flag, don't remove: the row stays in the data, marked flag_implausible,
+# until the value is checked against the original data sheet
 n_implausible <- sum(dat_std$TO > 1000 & dat_std$TO < 9999, na.rm = TRUE)
 cat("Implausible TO values (>1000, <9999):", n_implausible,
-    "— flagged; excluded pending verification\n")
+    "— flagged, kept pending verification\n")
 
 dat_clean <- dat_std |>
   filter(
     TO != 9999,          # Exclusion 1: missing (9999 sentinel)
-    TO >= 0,             # Exclusion 2: impossible
-    TO <= 1000           # Exclusion 3: implausible
+    TO >= 0              # Exclusion 2: impossible
   ) |>
   mutate(
+    # Flag 1: kept, but marked so the analysis can leave it out visibly
+    flag_implausible = TO > 1000,
     # Explicit factor with reference levels
     strain = factor(strain, levels = c("empty_vector", "daf")),
     diet   = factor(diet, levels = c("AL", "EODF")),
@@ -733,12 +735,12 @@ cat("\nFinal clean dataset:", nrow(dat_clean), "worms\n")
 write_csv(dat_clean, here("data", "processed", "celegans_clean.csv"))
 
 exclusion_log <- tribble(
-  ~Criterion,                                       ~N,
-  "Junk rows (no strain or diet)",                  n_junk,
-  "Duplicate rows removed",                          n_removed_dupes,
-  "Missing offspring (TO = 9999)",                  n_missing,
-  "Impossible count (TO < 0)",                      n_neg,
-  "Implausible count (TO > 1000, not 9999)",        n_implausible
+  ~Criterion,                                 ~N,              ~Action,
+  "Junk rows (no strain or diet)",            n_junk,          "Excluded",
+  "Duplicate rows removed",                   n_removed_dupes, "Excluded",
+  "Missing offspring (TO = 9999)",            n_missing,       "Excluded",
+  "Impossible count (TO < 0)",                n_neg,           "Excluded",
+  "Implausible count (TO > 1000, not 9999)",  n_implausible,   "Flagged, kept"
 )
 write_csv(exclusion_log, here("results", "exclusion_log.csv"))
 print(exclusion_log)
@@ -757,7 +759,7 @@ Then answer in the chat:
 
 1. How many worms are in the final clean dataset?
 2. Looking at the exclusion log: which exclusion removes the most observations?
-3. The script flags TO = 2850 as "pending verification" rather than silently removing or including it. Why is this the correct approach from a reproducibility standpoint?
+3. The script keeps TO = 2850 but marks it in a `flag_implausible` column, rather than deleting it or keeping it unmarked. Why is that the right choice for reproducibility? Where does the decision to leave it out of the analysis now live?
 4. Read through the cleaning script, do you understand what it is doing? 
 ::::
 
@@ -921,7 +923,7 @@ What does `str_trim(str_to_lower(" DAF "))` return?
 ::::
 
 ::::{.quiz-q}
-The cleaning script keeps rows with `filter(TO != 9999, TO >= 0, TO <= 1000)`. What happens to a row where `TO` is `NA`?
+The cleaning script keeps rows with `filter(TO != 9999, TO >= 0)`. What happens to a row where `TO` is `NA`?
 
 `r longmcq(c(
   "It is kept, because NA is not equal to 9999",

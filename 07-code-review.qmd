@@ -539,13 +539,17 @@ dat <- read_csv(here("data", "processed", "celegans_clean.csv"),
 
 # -- 2. Select the analysis sample ------------------------------------ fixes P4, P7
 # No worm is dropped here without a reason (P7): every exclusion is made,
-# and logged, in 01_data_cleaning.R.
+# and logged, in 01_data_cleaning.R. Flagged values are kept there, marked
+# flag_implausible, and left out here, in one visible line.
 # Keep the two strains of interest AND require diet to be recorded.
 # The parentheses are the fix for P4: the original wrote
 #   strain == "daf" | strain == "empty_vector" & !is.na(diet)
 # which R reads as  daf | (empty_vector & diet recorded)  -- not the intent.
 dat <- dat |>
-  filter(strain %in% c("empty_vector", "daf") & !is.na(diet))
+  filter(strain %in% c("empty_vector", "daf") & !is.na(diet)) |>
+  # pre-specified: flagged values stay out until verified;
+  # rerun without this line as a sensitivity check
+  filter(!flag_implausible)
 
 # -- 3. Fit ONE pre-specified model ----------------------------------- fixes P9, P10
 # TO is a count, so a Gaussian lmer is the wrong family. Fit one

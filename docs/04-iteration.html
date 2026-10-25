@@ -676,13 +676,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header><p><em>Roughly 55 minutes. First the <code>map</code> toolkit, then the same tools applied to the running example so that the three function calls from Block 3 become one pipeline.</em></p>
 <p>The refactored script still has three explicit calls, one per species. A fourth species means a fourth call. Iteration removes the per-group calls entirely: the function is applied to each group automatically.</p>
-<p>This block continues with <code>penguins_clean</code>, cleaned in Block 3 from <code>data/raw/penguins_raw.csv</code>. Starting a fresh session? Run Block 3’s loading and cleaning lines first (<a href="./index.html#which-penguins">Which penguins?</a>).</p>
+<p>This block continues with <code>penguins_clean</code>, built in Block 2 from <code>data/raw/penguins_raw.csv</code> (<a href="./index.html#which-penguins">Which penguins?</a>).</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Catching up? Recreate this block’s starting objects
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Missed an earlier block, or restarted R? Run this in your project. It saves <code>data/raw/penguins_raw.csv</code> if Block 1 did not, then builds <code>penguins_clean</code> exactly as Block 2 does.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># Catch up: Day 1 ----</span></span>
+<span id="cb1-2"><a href="#cb1-2"></a><span class="co"># Recreates what Blocks 1 and 2 leave behind: data/raw/penguins_raw.csv</span></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="co"># (only if it is missing) and penguins_clean. Run it inside your project.</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="fu">library</span>(here)</span>
+<span id="cb1-6"><a href="#cb1-6"></a></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="co"># Block 1: the raw file, saved once from the package</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a>raw_path <span class="ot">&lt;-</span> <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"penguins_raw.csv"</span>)</span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(raw_path)) {</span>
+<span id="cb1-10"><a href="#cb1-10"></a>  <span class="fu">dir.create</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-11"><a href="#cb1-11"></a>  readr<span class="sc">::</span><span class="fu">write_csv</span>(palmerpenguins<span class="sc">::</span>penguins_raw, raw_path)</span>
+<span id="cb1-12"><a href="#cb1-12"></a>}</span>
+<span id="cb1-13"><a href="#cb1-13"></a></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="co"># Block 2: read the raw file and clean it</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a>penguins_raw <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(raw_path, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-16"><a href="#cb1-16"></a></span>
+<span id="cb1-17"><a href="#cb1-17"></a>penguins_clean <span class="ot">&lt;-</span> penguins_raw <span class="sc">|&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a>  janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a>  <span class="co"># match the names used in palmerpenguins::penguins</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="at">bill_length_mm =</span> culmen_length_mm,</span>
+<span id="cb1-21"><a href="#cb1-21"></a>                <span class="at">bill_depth_mm  =</span> culmen_depth_mm) <span class="sc">|&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a>  <span class="co"># "Adelie Penguin (Pygoscelis adeliae)" -&gt; "Adelie"</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> stringr<span class="sc">::</span><span class="fu">word</span>(species, <span class="dv">1</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a>  tidyr<span class="sc">::</span><span class="fu">drop_na</span>(body_mass_g, flipper_length_mm, species)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</div>
+</div>
 <section id="part-a-the-map-toolkit" class="level2"><h2 class="anchored" data-anchor-id="part-a-the-map-toolkit">Part A: the <code>map</code> toolkit</h2>
 <p><code>purrr::map(.x, .f)</code> applies the function <code>.f</code> to each element of <code>.x</code> and returns a list. It is the tidyverse counterpart of base R’s <code><a href="https://rdrr.io/r/base/lapply.html">lapply()</a></code>.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>vec_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">b =</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">20</span>, <span class="at">c =</span> <span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>)</span>
-<span id="cb1-2"><a href="#cb1-2"></a></span>
-<span id="cb1-3"><a href="#cb1-3"></a>purrr<span class="sc">::</span><span class="fu">map</span>(vec_list, mean)   <span class="co"># a list of three means</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>vec_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">b =</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">20</span>, <span class="at">c =</span> <span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>)</span>
+<span id="cb2-2"><a href="#cb2-2"></a></span>
+<span id="cb2-3"><a href="#cb2-3"></a>purrr<span class="sc">::</span><span class="fu">map</span>(vec_list, mean)   <span class="co"># a list of three means</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>map()</code> always returns a list, which is maximally general but often more than you want. The typed variants return an atomic vector and <em>fail</em> if the result is not of that type, which is a feature: it catches mistakes early.</p>
 <table class="caption-top table">
@@ -714,7 +756,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, mean)   <span class="co"># a named numeric vector, not a list</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, mean)   <span class="co"># a named numeric vector, not a list</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -730,7 +772,7 @@ Note
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -739,21 +781,21 @@ Note
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>Before <code>map()</code>, the same job needs a loop with manual bookkeeping: pre-allocate an output container, then assign into it by index.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>vec_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">b =</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">20</span>, <span class="at">c =</span> <span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>)</span>
-<span id="cb3-2"><a href="#cb3-2"></a></span>
-<span id="cb3-3"><a href="#cb3-3"></a>means <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"double"</span>, <span class="fu">length</span>(vec_list))   <span class="co"># pre-allocate data type and length</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a></span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="fu">names</span>(means) <span class="ot">&lt;-</span> <span class="fu">names</span>(vec_list)                <span class="co"># carry names across by hand</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a></span>
-<span id="cb3-7"><a href="#cb3-7"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(vec_list)) {</span>
-<span id="cb3-8"><a href="#cb3-8"></a>  means[[i]] <span class="ot">&lt;-</span> <span class="fu">mean</span>(vec_list[[i]])</span>
-<span id="cb3-9"><a href="#cb3-9"></a>}</span>
-<span id="cb3-10"><a href="#cb3-10"></a></span>
-<span id="cb3-11"><a href="#cb3-11"></a>means</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>vec_list <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">a =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">b =</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">20</span>, <span class="at">c =</span> <span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>)</span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a>means <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"double"</span>, <span class="fu">length</span>(vec_list))   <span class="co"># pre-allocate data type and length</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="fu">names</span>(means) <span class="ot">&lt;-</span> <span class="fu">names</span>(vec_list)                <span class="co"># carry names across by hand</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(vec_list)) {</span>
+<span id="cb4-8"><a href="#cb4-8"></a>  means[[i]] <span class="ot">&lt;-</span> <span class="fu">mean</span>(vec_list[[i]])</span>
+<span id="cb4-9"><a href="#cb4-9"></a>}</span>
+<span id="cb4-10"><a href="#cb4-10"></a></span>
+<span id="cb4-11"><a href="#cb4-11"></a>means</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>purrr::map_dbl(vec_list, mean)</code> collapses all of this into one call. The loop is not wrong, and understanding it is worth doing, but three jobs are now yours rather than the function’s: choosing the container type, sizing it, and preserving names. Growing the vector instead of pre-allocating (<code>means &lt;- c(means, ...)</code> inside the loop) copies the whole object on every iteration, which turns linear work into quadratic and is the classic loop performance trap. <code>map_dbl()</code> handles the container, the sizing and the names, and fixes the return type. The gain is that the bookkeeping is done for you; speed is about the same, because a correctly pre-allocated loop and <code>map_dbl()</code> run in comparable time.</p>
 </div>
@@ -769,12 +811,12 @@ Note
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, \(x) <span class="fu">sum</span>(x) <span class="sc">/</span> <span class="fu">length</span>(x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, \(x) <span class="fu">sum</span>(x) <span class="sc">/</span> <span class="fu">length</span>(x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, <span class="cf">function</span>(x) <span class="fu">sum</span>(x) <span class="sc">/</span> <span class="fu">length</span>(x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, <span class="cf">function</span>(x) <span class="fu">sum</span>(x) <span class="sc">/</span> <span class="fu">length</span>(x))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -782,50 +824,50 @@ Note
 <p>You will frequently meet the older purrr formula-lambda, <code>~ sum(.x) / length(.x)</code>, where <code>.x</code> (or <code>.</code>) stands for the current element. It still works, but <code>\(x)</code> is clearer because the argument has a real name, and it is ordinary R rather than purrr-specific syntax. We use <code>\(x)</code> throughout.</p>
 <p>Extra arguments can be passed either inside the lambda or as trailing arguments to <code>map()</code>:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, \(x) <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))   <span class="co"># inside the lambda</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, mean, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)           <span class="co"># forwarded by map()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, \(x) <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))   <span class="co"># inside the lambda</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>purrr<span class="sc">::</span><span class="fu">map_dbl</span>(vec_list, mean, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)           <span class="co"># forwarded by map()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section><section id="returning-a-data-frame-map-list_rbind" class="level3"><h3 class="anchored" data-anchor-id="returning-a-data-frame-map-list_rbind">Returning a data frame: <code>map() |&gt; list_rbind()</code>
 </h3>
 <p>To stack per-element tibbles into one tibble, run <code>map()</code> and then <code>list_rbind()</code>.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="co"># Example:</span></span>
-<span id="cb7-2"><a href="#cb7-2"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>),</span>
-<span id="cb7-3"><a href="#cb7-3"></a>                    <span class="at">pattern =</span> <span class="st">"</span><span class="sc">\\</span><span class="st">.csv$"</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a>all_data <span class="ot">&lt;-</span> files <span class="sc">|&gt;</span></span>
-<span id="cb7-6"><a href="#cb7-6"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(\(f) readr<span class="sc">::</span><span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb7-7"><a href="#cb7-7"></a>  purrr<span class="sc">::</span><span class="fu">list_rbind</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co"># Example:</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>),</span>
+<span id="cb8-3"><a href="#cb8-3"></a>                    <span class="at">pattern =</span> <span class="st">"</span><span class="sc">\\</span><span class="st">.csv$"</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-4"><a href="#cb8-4"></a></span>
+<span id="cb8-5"><a href="#cb8-5"></a>all_data <span class="ot">&lt;-</span> files <span class="sc">|&gt;</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a>  purrr<span class="sc">::</span><span class="fu">map</span>(\(f) readr<span class="sc">::</span><span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a>  purrr<span class="sc">::</span><span class="fu">list_rbind</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="co"># --- Setup: write the penguins data out as several CSV files ---</span></span>
-<span id="cb8-2"><a href="#cb8-2"></a><span class="co"># In a real project these files would already exist; here we create them</span></span>
-<span id="cb8-3"><a href="#cb8-3"></a><span class="co"># so the reading example has something to read. We split by island, so</span></span>
-<span id="cb8-4"><a href="#cb8-4"></a><span class="co"># each file holds the penguins recorded at one location.</span></span>
-<span id="cb8-5"><a href="#cb8-5"></a></span>
-<span id="cb8-6"><a href="#cb8-6"></a><span class="fu">dir.create</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-7"><a href="#cb8-7"></a></span>
-<span id="cb8-8"><a href="#cb8-8"></a>penguins_clean <span class="sc">|&gt;</span></span>
-<span id="cb8-9"><a href="#cb8-9"></a>  <span class="fu">group_by</span>(island) <span class="sc">|&gt;</span></span>
-<span id="cb8-10"><a href="#cb8-10"></a>  <span class="fu">group_walk</span>(\(rows, key) {</span>
-<span id="cb8-11"><a href="#cb8-11"></a>    <span class="fu">write_csv</span>(rows, <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>, <span class="fu">paste0</span>(key<span class="sc">$</span>island, <span class="st">".csv"</span>)))</span>
-<span id="cb8-12"><a href="#cb8-12"></a>  })</span>
-<span id="cb8-13"><a href="#cb8-13"></a></span>
-<span id="cb8-14"><a href="#cb8-14"></a><span class="co"># --- Reading the files back in ---</span></span>
-<span id="cb8-15"><a href="#cb8-15"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>),</span>
-<span id="cb8-16"><a href="#cb8-16"></a>                    <span class="at">pattern =</span> <span class="st">"</span><span class="sc">\\</span><span class="st">.csv$"</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-17"><a href="#cb8-17"></a></span>
-<span id="cb8-18"><a href="#cb8-18"></a></span>
-<span id="cb8-19"><a href="#cb8-19"></a><span class="co"># example to show list format before rbind</span></span>
-<span id="cb8-20"><a href="#cb8-20"></a>files <span class="sc">|&gt;</span></span>
-<span id="cb8-21"><a href="#cb8-21"></a>  <span class="fu">map</span>(\(f) <span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>))</span>
-<span id="cb8-22"><a href="#cb8-22"></a></span>
-<span id="cb8-23"><a href="#cb8-23"></a><span class="co"># combined dataframe</span></span>
-<span id="cb8-24"><a href="#cb8-24"></a>all_data <span class="ot">&lt;-</span> files <span class="sc">|&gt;</span></span>
-<span id="cb8-25"><a href="#cb8-25"></a>  <span class="fu">map</span>(\(f) <span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb8-26"><a href="#cb8-26"></a>  <span class="fu">list_rbind</span>()</span>
-<span id="cb8-27"><a href="#cb8-27"></a></span>
-<span id="cb8-28"><a href="#cb8-28"></a>all_data</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="co"># --- Setup: write the penguins data out as several CSV files ---</span></span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="co"># In a real project these files would already exist; here we create them</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="co"># so the reading example has something to read. We split by island, so</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co"># each file holds the penguins recorded at one location.</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="fu">dir.create</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>), <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-7"><a href="#cb9-7"></a></span>
+<span id="cb9-8"><a href="#cb9-8"></a>penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a>  <span class="fu">group_by</span>(island) <span class="sc">|&gt;</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a>  <span class="fu">group_walk</span>(\(rows, key) {</span>
+<span id="cb9-11"><a href="#cb9-11"></a>    <span class="fu">write_csv</span>(rows, <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>, <span class="fu">paste0</span>(key<span class="sc">$</span>island, <span class="st">".csv"</span>)))</span>
+<span id="cb9-12"><a href="#cb9-12"></a>  })</span>
+<span id="cb9-13"><a href="#cb9-13"></a></span>
+<span id="cb9-14"><a href="#cb9-14"></a><span class="co"># --- Reading the files back in ---</span></span>
+<span id="cb9-15"><a href="#cb9-15"></a>files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"many_files"</span>),</span>
+<span id="cb9-16"><a href="#cb9-16"></a>                    <span class="at">pattern =</span> <span class="st">"</span><span class="sc">\\</span><span class="st">.csv$"</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-17"><a href="#cb9-17"></a></span>
+<span id="cb9-18"><a href="#cb9-18"></a></span>
+<span id="cb9-19"><a href="#cb9-19"></a><span class="co"># example to show list format before rbind</span></span>
+<span id="cb9-20"><a href="#cb9-20"></a>files <span class="sc">|&gt;</span></span>
+<span id="cb9-21"><a href="#cb9-21"></a>  <span class="fu">map</span>(\(f) <span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>))</span>
+<span id="cb9-22"><a href="#cb9-22"></a></span>
+<span id="cb9-23"><a href="#cb9-23"></a><span class="co"># combined dataframe</span></span>
+<span id="cb9-24"><a href="#cb9-24"></a>all_data <span class="ot">&lt;-</span> files <span class="sc">|&gt;</span></span>
+<span id="cb9-25"><a href="#cb9-25"></a>  <span class="fu">map</span>(\(f) <span class="fu">read_csv</span>(f, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb9-26"><a href="#cb9-26"></a>  <span class="fu">list_rbind</span>()</span>
+<span id="cb9-27"><a href="#cb9-27"></a></span>
+<span id="cb9-28"><a href="#cb9-28"></a>all_data</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -846,27 +888,27 @@ Warning
 <code>map2</code> and <code>pmap</code> and <code>imap</code>: iterating over more than one input</h3>
 <p><code>map2(.x, .y, .f)</code> walks two collections in parallel, passing one element from each to the function. <code>pmap(.l, .f)</code> generalises to any number of inputs, taking a list (or a data frame, treating each column as an input).</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>sizes  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
-<span id="cb9-2"><a href="#cb9-2"></a>widths <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>)</span>
-<span id="cb9-3"><a href="#cb9-3"></a></span>
-<span id="cb9-4"><a href="#cb9-4"></a>purrr<span class="sc">::</span><span class="fu">map2_dbl</span>(sizes, widths, \(s, w) s <span class="sc">*</span> w)   <span class="co"># 10 18 28</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>sizes  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb10-2"><a href="#cb10-2"></a>widths <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>)</span>
+<span id="cb10-3"><a href="#cb10-3"></a></span>
+<span id="cb10-4"><a href="#cb10-4"></a>purrr<span class="sc">::</span><span class="fu">map2_dbl</span>(sizes, widths, \(s, w) s <span class="sc">*</span> w)   <span class="co"># 10 18 28</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>sizes   <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
-<span id="cb10-2"><a href="#cb10-2"></a>widths  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>)</span>
-<span id="cb10-3"><a href="#cb10-3"></a>heights <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span>
-<span id="cb10-4"><a href="#cb10-4"></a></span>
-<span id="cb10-5"><a href="#cb10-5"></a><span class="co"># pmap takes a list of vectors; each call receives one element from each.</span></span>
-<span id="cb10-6"><a href="#cb10-6"></a><span class="fu">pmap_dbl</span>(<span class="fu">list</span>(sizes, widths, heights), \(s, w, h) s <span class="sc">*</span> w <span class="sc">*</span> h)  <span class="co"># 10 36 84</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>sizes   <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>)</span>
+<span id="cb11-2"><a href="#cb11-2"></a>widths  <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>)</span>
+<span id="cb11-3"><a href="#cb11-3"></a>heights <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb11-4"><a href="#cb11-4"></a></span>
+<span id="cb11-5"><a href="#cb11-5"></a><span class="co"># pmap takes a list of vectors; each call receives one element from each.</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="fu">pmap_dbl</span>(<span class="fu">list</span>(sizes, widths, heights), \(s, w, h) s <span class="sc">*</span> w <span class="sc">*</span> h)  <span class="co"># 10 36 84</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>imap(.x, .f)</code> is <code>map2()</code> with the element’s name (or its position, if the input is unnamed) supplied as the second argument:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>purrr<span class="sc">::</span><span class="fu">imap_chr</span>(vec_list, \(x, nm) <span class="fu">paste0</span>(nm, <span class="st">": mean "</span>, <span class="fu">mean</span>(x)))</span>
-<span id="cb11-2"><a href="#cb11-2"></a><span class="co">#&gt;              a              b              c </span></span>
-<span id="cb11-3"><a href="#cb11-3"></a><span class="co">#&gt;  "a: mean 5.5" "b: mean 15.5" "c: mean 25.5" </span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>purrr<span class="sc">::</span><span class="fu">imap_chr</span>(vec_list, \(x, nm) <span class="fu">paste0</span>(nm, <span class="st">": mean "</span>, <span class="fu">mean</span>(x)))</span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="co">#&gt;              a              b              c </span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="co">#&gt;  "a: mean 5.5" "b: mean 15.5" "c: mean 25.5" </span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -875,19 +917,19 @@ Warning
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="co"># pmap walks any number of inputs in parallel. A data frame is just a named</span></span>
-<span id="cb12-2"><a href="#cb12-2"></a><span class="co"># list of columns, so passing one lets each column become an argument.</span></span>
-<span id="cb12-3"><a href="#cb12-3"></a><span class="co"># The function's parameter names should match the column names.</span></span>
-<span id="cb12-4"><a href="#cb12-4"></a>penguins_clean <span class="sc">|&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5"></a>  <span class="fu">select</span>(species, body_mass_g, flipper_length_mm) <span class="sc">|&gt;</span></span>
-<span id="cb12-6"><a href="#cb12-6"></a>  <span class="fu">drop_na</span>() <span class="sc">|&gt;</span></span>
-<span id="cb12-7"><a href="#cb12-7"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">3</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-8"><a href="#cb12-8"></a>  <span class="fu">pmap_chr</span>(\(species, body_mass_g, flipper_length_mm) {</span>
-<span id="cb12-9"><a href="#cb12-9"></a>    glue<span class="sc">::</span><span class="fu">glue</span>(<span class="st">"{species}: Body weight {body_mass_g}g, Flipper length {flipper_length_mm}mm "</span>)</span>
-<span id="cb12-10"><a href="#cb12-10"></a>  })</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="co"># pmap walks any number of inputs in parallel. A data frame is just a named</span></span>
+<span id="cb13-2"><a href="#cb13-2"></a><span class="co"># list of columns, so passing one lets each column become an argument.</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="co"># The function's parameter names should match the column names.</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a>penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a>  <span class="fu">select</span>(species, body_mass_g, flipper_length_mm) <span class="sc">|&gt;</span></span>
+<span id="cb13-6"><a href="#cb13-6"></a>  <span class="fu">drop_na</span>() <span class="sc">|&gt;</span></span>
+<span id="cb13-7"><a href="#cb13-7"></a>  <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">3</span>) <span class="sc">|&gt;</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a>  <span class="fu">pmap_chr</span>(\(species, body_mass_g, flipper_length_mm) {</span>
+<span id="cb13-9"><a href="#cb13-9"></a>    glue<span class="sc">::</span><span class="fu">glue</span>(<span class="st">"{species}: Body weight {body_mass_g}g, Flipper length {flipper_length_mm}mm "</span>)</span>
+<span id="cb13-10"><a href="#cb13-10"></a>  })</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Adelie: Body weight 3750g, Flipper length 181mm "
 [2] "Adelie: Body weight 3800g, Flipper length 186mm "
@@ -901,20 +943,20 @@ Warning
 <code>walk</code>: iteration for side effects</h3>
 <p>When you iterate to <em>do</em> something (write files, print plots) rather than to <em>return</em> a value, use <code>walk()</code>/<code>walk2()</code>. They run the function for its side effect and return their input invisibly, so the console is not flooded with output.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="co"># Write each split of the data to its own file, silently</span></span>
-<span id="cb14-2"><a href="#cb14-2"></a>peng_grouped <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> </span>
-<span id="cb14-3"><a href="#cb14-3"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species)</span>
-<span id="cb14-4"><a href="#cb14-4"></a></span>
-<span id="cb14-5"><a href="#cb14-5"></a>peng_split <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">group_split</span>(peng_grouped)</span>
-<span id="cb14-6"><a href="#cb14-6"></a></span>
-<span id="cb14-7"><a href="#cb14-7"></a><span class="co"># name each list element after its species, taken from the data itself</span></span>
-<span id="cb14-8"><a href="#cb14-8"></a><span class="fu">names</span>(peng_split) <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">group_keys</span>(peng_grouped)<span class="sc">$</span>species</span>
-<span id="cb14-9"><a href="#cb14-9"></a></span>
-<span id="cb14-10"><a href="#cb14-10"></a></span>
-<span id="cb14-11"><a href="#cb14-11"></a>purrr<span class="sc">::</span><span class="fu">walk2</span>(</span>
-<span id="cb14-12"><a href="#cb14-12"></a>  peng_split, <span class="fu">names</span>(peng_split),</span>
-<span id="cb14-13"><a href="#cb14-13"></a>  \(data, nm) readr<span class="sc">::</span><span class="fu">write_csv</span>(data, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="fu">paste0</span>(nm, <span class="st">".csv"</span>)))</span>
-<span id="cb14-14"><a href="#cb14-14"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a><span class="co"># Write each split of the data to its own file, silently</span></span>
+<span id="cb15-2"><a href="#cb15-2"></a>peng_grouped <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span> </span>
+<span id="cb15-3"><a href="#cb15-3"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species)</span>
+<span id="cb15-4"><a href="#cb15-4"></a></span>
+<span id="cb15-5"><a href="#cb15-5"></a>peng_split <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">group_split</span>(peng_grouped)</span>
+<span id="cb15-6"><a href="#cb15-6"></a></span>
+<span id="cb15-7"><a href="#cb15-7"></a><span class="co"># name each list element after its species, taken from the data itself</span></span>
+<span id="cb15-8"><a href="#cb15-8"></a><span class="fu">names</span>(peng_split) <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">group_keys</span>(peng_grouped)<span class="sc">$</span>species</span>
+<span id="cb15-9"><a href="#cb15-9"></a></span>
+<span id="cb15-10"><a href="#cb15-10"></a></span>
+<span id="cb15-11"><a href="#cb15-11"></a>purrr<span class="sc">::</span><span class="fu">walk2</span>(</span>
+<span id="cb15-12"><a href="#cb15-12"></a>  peng_split, <span class="fu">names</span>(peng_split),</span>
+<span id="cb15-13"><a href="#cb15-13"></a>  \(data, nm) readr<span class="sc">::</span><span class="fu">write_csv</span>(data, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="fu">paste0</span>(nm, <span class="st">".csv"</span>)))</span>
+<span id="cb15-14"><a href="#cb15-14"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -932,18 +974,18 @@ Note
 </section></section><section id="part-b-iteration-on-the-running-example" class="level2"><h2 class="anchored" data-anchor-id="part-b-iteration-on-the-running-example">Part B: iteration on the running example</h2>
 <p>Recall the list-column from Block 2: <code>group_by(species) |&gt; nest()</code> puts each species’ tibble into one cell of a <code>data</code> column.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1"></a>species_data <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
-<span id="cb15-2"><a href="#cb15-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
-<span id="cb15-3"><a href="#cb15-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>()</span>
-<span id="cb15-4"><a href="#cb15-4"></a></span>
-<span id="cb15-5"><a href="#cb15-5"></a>species_data</span>
-<span id="cb15-6"><a href="#cb15-6"></a><span class="co"># # A tibble: 3 x 2</span></span>
-<span id="cb15-7"><a href="#cb15-7"></a><span class="co"># # Groups:   species [3]</span></span>
-<span id="cb15-8"><a href="#cb15-8"></a><span class="co">#   species   data               </span></span>
-<span id="cb15-9"><a href="#cb15-9"></a><span class="co">#   &lt;chr&gt;     &lt;list&gt;             </span></span>
-<span id="cb15-10"><a href="#cb15-10"></a><span class="co"># 1 Adelie    &lt;tibble [151 x 16]&gt;</span></span>
-<span id="cb15-11"><a href="#cb15-11"></a><span class="co"># 2 Gentoo    &lt;tibble [123 x 16]&gt;</span></span>
-<span id="cb15-12"><a href="#cb15-12"></a><span class="co"># 3 Chinstrap &lt;tibble [68 x 16]&gt; </span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>species_data <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb16-2"><a href="#cb16-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb16-3"><a href="#cb16-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>()</span>
+<span id="cb16-4"><a href="#cb16-4"></a></span>
+<span id="cb16-5"><a href="#cb16-5"></a>species_data</span>
+<span id="cb16-6"><a href="#cb16-6"></a><span class="co"># # A tibble: 3 x 2</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="co"># # Groups:   species [3]</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a><span class="co">#   species   data               </span></span>
+<span id="cb16-9"><a href="#cb16-9"></a><span class="co">#   &lt;chr&gt;     &lt;list&gt;             </span></span>
+<span id="cb16-10"><a href="#cb16-10"></a><span class="co"># 1 Adelie    &lt;tibble [151 x 16]&gt;</span></span>
+<span id="cb16-11"><a href="#cb16-11"></a><span class="co"># 2 Gentoo    &lt;tibble [123 x 16]&gt;</span></span>
+<span id="cb16-12"><a href="#cb16-12"></a><span class="co"># 3 Chinstrap &lt;tibble [68 x 16]&gt; </span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -961,84 +1003,84 @@ Note
 <section id="applying-a-function-to-each-cell" class="level3"><h3 class="anchored" data-anchor-id="applying-a-function-to-each-cell">Applying a function to each cell</h3>
 <p>Used inside <code>mutate()</code>, <code>map()</code> applies a function to each cell of a list-column and stores the result as a new list-column:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a>species_models <span class="ot">&lt;-</span> species_data <span class="sc">|&gt;</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb16-3"><a href="#cb16-3"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, \(d) <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> d)),</span>
-<span id="cb16-4"><a href="#cb16-4"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, \(m) broom<span class="sc">::</span><span class="fu">tidy</span>(m, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)),</span>
-<span id="cb16-5"><a href="#cb16-5"></a>    <span class="at">n_obs =</span> purrr<span class="sc">::</span><span class="fu">map_int</span>(data, nrow)</span>
-<span id="cb16-6"><a href="#cb16-6"></a>  )</span>
-<span id="cb16-7"><a href="#cb16-7"></a></span>
-<span id="cb16-8"><a href="#cb16-8"></a>species_models</span>
-<span id="cb16-9"><a href="#cb16-9"></a><span class="co"># # A tibble: 3 x 5</span></span>
-<span id="cb16-10"><a href="#cb16-10"></a><span class="co"># # Groups:   species [3]</span></span>
-<span id="cb16-11"><a href="#cb16-11"></a><span class="co">#   species   data                model  coefs            n_obs</span></span>
-<span id="cb16-12"><a href="#cb16-12"></a><span class="co">#   &lt;chr&gt;     &lt;list&gt;              &lt;list&gt; &lt;list&gt;           &lt;int&gt;</span></span>
-<span id="cb16-13"><a href="#cb16-13"></a><span class="co"># 1 Adelie    &lt;tibble [151 x 16]&gt; &lt;lm&gt;   &lt;tibble [2 x 7]&gt;   151</span></span>
-<span id="cb16-14"><a href="#cb16-14"></a><span class="co"># 2 Gentoo    &lt;tibble [123 x 16]&gt; &lt;lm&gt;   &lt;tibble [2 x 7]&gt;   123</span></span>
-<span id="cb16-15"><a href="#cb16-15"></a><span class="co"># 3 Chinstrap &lt;tibble [68 x 16]&gt;  &lt;lm&gt;   &lt;tibble [2 x 7]&gt;    68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a>species_models <span class="ot">&lt;-</span> species_data <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb17-3"><a href="#cb17-3"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, \(d) <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> d)),</span>
+<span id="cb17-4"><a href="#cb17-4"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, \(m) broom<span class="sc">::</span><span class="fu">tidy</span>(m, <span class="at">conf.int =</span> <span class="cn">TRUE</span>)),</span>
+<span id="cb17-5"><a href="#cb17-5"></a>    <span class="at">n_obs =</span> purrr<span class="sc">::</span><span class="fu">map_int</span>(data, nrow)</span>
+<span id="cb17-6"><a href="#cb17-6"></a>  )</span>
+<span id="cb17-7"><a href="#cb17-7"></a></span>
+<span id="cb17-8"><a href="#cb17-8"></a>species_models</span>
+<span id="cb17-9"><a href="#cb17-9"></a><span class="co"># # A tibble: 3 x 5</span></span>
+<span id="cb17-10"><a href="#cb17-10"></a><span class="co"># # Groups:   species [3]</span></span>
+<span id="cb17-11"><a href="#cb17-11"></a><span class="co">#   species   data                model  coefs            n_obs</span></span>
+<span id="cb17-12"><a href="#cb17-12"></a><span class="co">#   &lt;chr&gt;     &lt;list&gt;              &lt;list&gt; &lt;list&gt;           &lt;int&gt;</span></span>
+<span id="cb17-13"><a href="#cb17-13"></a><span class="co"># 1 Adelie    &lt;tibble [151 x 16]&gt; &lt;lm&gt;   &lt;tibble [2 x 7]&gt;   151</span></span>
+<span id="cb17-14"><a href="#cb17-14"></a><span class="co"># 2 Gentoo    &lt;tibble [123 x 16]&gt; &lt;lm&gt;   &lt;tibble [2 x 7]&gt;   123</span></span>
+<span id="cb17-15"><a href="#cb17-15"></a><span class="co"># 3 Chinstrap &lt;tibble [68 x 16]&gt;  &lt;lm&gt;   &lt;tibble [2 x 7]&gt;    68</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Three things to notice. The <code>model</code> cell holds a fitted <code>lm</code> per species; the <code>coefs</code> cell holds a tidied tibble per species; and <code>n_obs</code> is an ordinary integer column, not a list-column, because <code>map_int()</code> returns an atomic vector. The typed variants slot straight into a tibble.</p>
 </section><section id="unnesting-back-to-a-flat-table" class="level3"><h3 class="anchored" data-anchor-id="unnesting-back-to-a-flat-table">Unnesting back to a flat table</h3>
 <p>For a manuscript coefficient table, expand the <code>coefs</code> list-column back into rows. <code>unnest()</code> is the dual of <code>nest()</code>: each cell’s tibble becomes rows, with the surrounding columns repeated.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a>coefficient_table <span class="ot">&lt;-</span> species_models <span class="sc">|&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
-<span id="cb17-3"><a href="#cb17-3"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(species, coefs) <span class="sc">|&gt;</span></span>
-<span id="cb17-4"><a href="#cb17-4"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>coefficient_table <span class="ot">&lt;-</span> species_models <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb18-3"><a href="#cb18-3"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(species, coefs) <span class="sc">|&gt;</span></span>
+<span id="cb18-4"><a href="#cb18-4"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section><section id="a-real-refactor-decompose-the-function" class="level3"><h3 class="anchored" data-anchor-id="a-real-refactor-decompose-the-function">A real refactor: decompose the function</h3>
 <p>There is a tension. <code>fit_species_model()</code> filters <em>and</em> fits, but <code>nest()</code> has already done the filtering. Calling it inside the iteration would filter twice. That tension is information: the function is doing two jobs. Split them.</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="co"># R/functions/modelling_functions.R -- revised</span></span>
-<span id="cb18-2"><a href="#cb18-2"></a></span>
-<span id="cb18-3"><a href="#cb18-3"></a><span class="co">#' Fit body mass ~ flipper length on pre-filtered data</span></span>
-<span id="cb18-4"><a href="#cb18-4"></a><span class="co">#' @param data A data frame, assumed to be one species' worth.</span></span>
-<span id="cb18-5"><a href="#cb18-5"></a><span class="co">#' @return A fitted lm object.</span></span>
-<span id="cb18-6"><a href="#cb18-6"></a>fit_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
-<span id="cb18-7"><a href="#cb18-7"></a>  <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data)</span>
-<span id="cb18-8"><a href="#cb18-8"></a>}</span>
-<span id="cb18-9"><a href="#cb18-9"></a></span>
-<span id="cb18-10"><a href="#cb18-10"></a><span class="co">#' Tidy a fitted lm with confidence intervals</span></span>
-<span id="cb18-11"><a href="#cb18-11"></a><span class="co">#' @param model A fitted lm object.</span></span>
-<span id="cb18-12"><a href="#cb18-12"></a><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
-<span id="cb18-13"><a href="#cb18-13"></a><span class="co">#' @return A tibble of tidied coefficients.</span></span>
-<span id="cb18-14"><a href="#cb18-14"></a>tidy_model <span class="ot">&lt;-</span> <span class="cf">function</span>(model, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
-<span id="cb18-15"><a href="#cb18-15"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> conf_level)</span>
-<span id="cb18-16"><a href="#cb18-16"></a>}</span>
-<span id="cb18-17"><a href="#cb18-17"></a></span>
-<span id="cb18-18"><a href="#cb18-18"></a><span class="co">#' Fit for one species (wrapper preserving the old interface)</span></span>
-<span id="cb18-19"><a href="#cb18-19"></a><span class="co">#' @param data A data frame with a `species` column.</span></span>
-<span id="cb18-20"><a href="#cb18-20"></a><span class="co">#' @param sp Character of length 1. Species to filter to.</span></span>
-<span id="cb18-21"><a href="#cb18-21"></a><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
-<span id="cb18-22"><a href="#cb18-22"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
-<span id="cb18-23"><a href="#cb18-23"></a>  <span class="cf">if</span> (<span class="sc">!</span>sp <span class="sc">%in%</span> <span class="fu">unique</span>(data<span class="sc">$</span>species)) {</span>
-<span id="cb18-24"><a href="#cb18-24"></a>    <span class="fu">stop</span>(<span class="st">"Species '"</span>, sp, <span class="st">"' is not in the data. "</span>,</span>
-<span id="cb18-25"><a href="#cb18-25"></a>         <span class="st">"Available species: "</span>,</span>
-<span id="cb18-26"><a href="#cb18-26"></a>         <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(data<span class="sc">$</span>species)), <span class="at">collapse =</span> <span class="st">", "</span>))</span>
-<span id="cb18-27"><a href="#cb18-27"></a>  }</span>
-<span id="cb18-28"><a href="#cb18-28"></a>  data <span class="sc">|&gt;</span></span>
-<span id="cb18-29"><a href="#cb18-29"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> sp) <span class="sc">|&gt;</span></span>
-<span id="cb18-30"><a href="#cb18-30"></a>    <span class="fu">fit_model</span>() <span class="sc">|&gt;</span></span>
-<span id="cb18-31"><a href="#cb18-31"></a>    <span class="fu">tidy_model</span>(<span class="at">conf_level =</span> conf_level) <span class="sc">|&gt;</span></span>
-<span id="cb18-32"><a href="#cb18-32"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> sp, <span class="at">.before =</span> <span class="dv">1</span>)</span>
-<span id="cb18-33"><a href="#cb18-33"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a><span class="co"># R/functions/modelling_functions.R -- revised</span></span>
+<span id="cb19-2"><a href="#cb19-2"></a></span>
+<span id="cb19-3"><a href="#cb19-3"></a><span class="co">#' Fit body mass ~ flipper length on pre-filtered data</span></span>
+<span id="cb19-4"><a href="#cb19-4"></a><span class="co">#' @param data A data frame, assumed to be one species' worth.</span></span>
+<span id="cb19-5"><a href="#cb19-5"></a><span class="co">#' @return A fitted lm object.</span></span>
+<span id="cb19-6"><a href="#cb19-6"></a>fit_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb19-7"><a href="#cb19-7"></a>  <span class="fu">lm</span>(body_mass_g <span class="sc">~</span> flipper_length_mm, <span class="at">data =</span> data)</span>
+<span id="cb19-8"><a href="#cb19-8"></a>}</span>
+<span id="cb19-9"><a href="#cb19-9"></a></span>
+<span id="cb19-10"><a href="#cb19-10"></a><span class="co">#' Tidy a fitted lm with confidence intervals</span></span>
+<span id="cb19-11"><a href="#cb19-11"></a><span class="co">#' @param model A fitted lm object.</span></span>
+<span id="cb19-12"><a href="#cb19-12"></a><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
+<span id="cb19-13"><a href="#cb19-13"></a><span class="co">#' @return A tibble of tidied coefficients.</span></span>
+<span id="cb19-14"><a href="#cb19-14"></a>tidy_model <span class="ot">&lt;-</span> <span class="cf">function</span>(model, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
+<span id="cb19-15"><a href="#cb19-15"></a>  broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> conf_level)</span>
+<span id="cb19-16"><a href="#cb19-16"></a>}</span>
+<span id="cb19-17"><a href="#cb19-17"></a></span>
+<span id="cb19-18"><a href="#cb19-18"></a><span class="co">#' Fit for one species (wrapper preserving the old interface)</span></span>
+<span id="cb19-19"><a href="#cb19-19"></a><span class="co">#' @param data A data frame with a `species` column.</span></span>
+<span id="cb19-20"><a href="#cb19-20"></a><span class="co">#' @param sp Character of length 1. Species to filter to.</span></span>
+<span id="cb19-21"><a href="#cb19-21"></a><span class="co">#' @param conf_level Confidence level. Default 0.95.</span></span>
+<span id="cb19-22"><a href="#cb19-22"></a>fit_species_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, sp, <span class="at">conf_level =</span> <span class="fl">0.95</span>) {</span>
+<span id="cb19-23"><a href="#cb19-23"></a>  <span class="cf">if</span> (<span class="sc">!</span>sp <span class="sc">%in%</span> <span class="fu">unique</span>(data<span class="sc">$</span>species)) {</span>
+<span id="cb19-24"><a href="#cb19-24"></a>    <span class="fu">stop</span>(<span class="st">"Species '"</span>, sp, <span class="st">"' is not in the data. "</span>,</span>
+<span id="cb19-25"><a href="#cb19-25"></a>         <span class="st">"Available species: "</span>,</span>
+<span id="cb19-26"><a href="#cb19-26"></a>         <span class="fu">paste</span>(<span class="fu">sort</span>(<span class="fu">unique</span>(data<span class="sc">$</span>species)), <span class="at">collapse =</span> <span class="st">", "</span>))</span>
+<span id="cb19-27"><a href="#cb19-27"></a>  }</span>
+<span id="cb19-28"><a href="#cb19-28"></a>  data <span class="sc">|&gt;</span></span>
+<span id="cb19-29"><a href="#cb19-29"></a>    dplyr<span class="sc">::</span><span class="fu">filter</span>(species <span class="sc">==</span> sp) <span class="sc">|&gt;</span></span>
+<span id="cb19-30"><a href="#cb19-30"></a>    <span class="fu">fit_model</span>() <span class="sc">|&gt;</span></span>
+<span id="cb19-31"><a href="#cb19-31"></a>    <span class="fu">tidy_model</span>(<span class="at">conf_level =</span> conf_level) <span class="sc">|&gt;</span></span>
+<span id="cb19-32"><a href="#cb19-32"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">species =</span> sp, <span class="at">.before =</span> <span class="dv">1</span>)</span>
+<span id="cb19-33"><a href="#cb19-33"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>fit_model()</code> and <code>tidy_model()</code> now exist independently and compose. The old public interface survives as a wrapper, so existing callers and the tests from Block 3 still pass with no edits. The behaviour is unchanged and only the internals have improved, which is what a refactor should achieve.</p>
 </section><section id="the-iteration-rewritten" class="level3"><h3 class="anchored" data-anchor-id="the-iteration-rewritten">The iteration, rewritten</h3>
 <p>With single-responsibility functions, the iteration uses them directly and reads cleanly:</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a>species_models <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
-<span id="cb19-2"><a href="#cb19-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
-<span id="cb19-3"><a href="#cb19-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
-<span id="cb19-4"><a href="#cb19-4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb19-5"><a href="#cb19-5"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, fit_model),</span>
-<span id="cb19-6"><a href="#cb19-6"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, tidy_model)</span>
-<span id="cb19-7"><a href="#cb19-7"></a>  )</span>
-<span id="cb19-8"><a href="#cb19-8"></a></span>
-<span id="cb19-9"><a href="#cb19-9"></a>coefficient_table <span class="ot">&lt;-</span> species_models <span class="sc">|&gt;</span></span>
-<span id="cb19-10"><a href="#cb19-10"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
-<span id="cb19-11"><a href="#cb19-11"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(species, coefs) <span class="sc">|&gt;</span></span>
-<span id="cb19-12"><a href="#cb19-12"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a>species_models <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-4"><a href="#cb20-4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb20-5"><a href="#cb20-5"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, fit_model),</span>
+<span id="cb20-6"><a href="#cb20-6"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, tidy_model)</span>
+<span id="cb20-7"><a href="#cb20-7"></a>  )</span>
+<span id="cb20-8"><a href="#cb20-8"></a></span>
+<span id="cb20-9"><a href="#cb20-9"></a>coefficient_table <span class="ot">&lt;-</span> species_models <span class="sc">|&gt;</span></span>
+<span id="cb20-10"><a href="#cb20-10"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-11"><a href="#cb20-11"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(species, coefs) <span class="sc">|&gt;</span></span>
+<span id="cb20-12"><a href="#cb20-12"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The modelling logic that began as three copy-pasted blocks in Block 3, and became three function calls by the end of that block, is now one pipeline that applies the same function to every group.</p>
 </section><section id="activity-iterate-over-a-different-grouping" class="level3"><h3 class="anchored" data-anchor-id="activity-iterate-over-a-different-grouping">Activity: iterate over a different grouping</h3>
@@ -1055,16 +1097,16 @@ Note
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a>island_coefs <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
-<span id="cb20-2"><a href="#cb20-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(island) <span class="sc">|&gt;</span></span>
-<span id="cb20-3"><a href="#cb20-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
-<span id="cb20-4"><a href="#cb20-4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb20-5"><a href="#cb20-5"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, fit_model),</span>
-<span id="cb20-6"><a href="#cb20-6"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, tidy_model)</span>
-<span id="cb20-7"><a href="#cb20-7"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb20-8"><a href="#cb20-8"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
-<span id="cb20-9"><a href="#cb20-9"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(island, coefs) <span class="sc">|&gt;</span></span>
-<span id="cb20-10"><a href="#cb20-10"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a>island_coefs <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(island) <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb21-5"><a href="#cb21-5"></a>    <span class="at">model =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, fit_model),</span>
+<span id="cb21-6"><a href="#cb21-6"></a>    <span class="at">coefs =</span> purrr<span class="sc">::</span><span class="fu">map</span>(model, tidy_model)</span>
+<span id="cb21-7"><a href="#cb21-7"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb21-8"><a href="#cb21-8"></a>  dplyr<span class="sc">::</span><span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(island, coefs) <span class="sc">|&gt;</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a>  tidyr<span class="sc">::</span><span class="fu">unnest</span>(coefs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>fit_model()</code> and <code>tidy_model()</code> are reused unchanged. They never knew they would iterate over species; they work for islands too, because each has a single responsibility and no hidden assumption about the grouping.</p>
 </div>
@@ -1082,18 +1124,18 @@ Solution
 Solution
 </button>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a>species_plots <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
-<span id="cb21-3"><a href="#cb21-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
-<span id="cb21-4"><a href="#cb21-4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb21-5"><a href="#cb21-5"></a>    <span class="at">plot =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, \(d)</span>
-<span id="cb21-6"><a href="#cb21-6"></a>      ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(d, ggplot2<span class="sc">::</span><span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
-<span id="cb21-7"><a href="#cb21-7"></a>        ggplot2<span class="sc">::</span><span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb21-8"><a href="#cb21-8"></a>        ggplot2<span class="sc">::</span><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
-<span id="cb21-9"><a href="#cb21-9"></a>        ggplot2<span class="sc">::</span><span class="fu">theme_minimal</span>())</span>
-<span id="cb21-10"><a href="#cb21-10"></a>  )</span>
-<span id="cb21-11"><a href="#cb21-11"></a></span>
-<span id="cb21-12"><a href="#cb21-12"></a>patchwork<span class="sc">::</span><span class="fu">wrap_plots</span>(species_plots<span class="sc">$</span>plot)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>species_plots <span class="ot">&lt;-</span> penguins_clean <span class="sc">|&gt;</span></span>
+<span id="cb22-2"><a href="#cb22-2"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(species) <span class="sc">|&gt;</span></span>
+<span id="cb22-3"><a href="#cb22-3"></a>  tidyr<span class="sc">::</span><span class="fu">nest</span>() <span class="sc">|&gt;</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb22-5"><a href="#cb22-5"></a>    <span class="at">plot =</span> purrr<span class="sc">::</span><span class="fu">map</span>(data, \(d)</span>
+<span id="cb22-6"><a href="#cb22-6"></a>      ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(d, ggplot2<span class="sc">::</span><span class="fu">aes</span>(flipper_length_mm, body_mass_g)) <span class="sc">+</span></span>
+<span id="cb22-7"><a href="#cb22-7"></a>        ggplot2<span class="sc">::</span><span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb22-8"><a href="#cb22-8"></a>        ggplot2<span class="sc">::</span><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span></span>
+<span id="cb22-9"><a href="#cb22-9"></a>        ggplot2<span class="sc">::</span><span class="fu">theme_minimal</span>())</span>
+<span id="cb22-10"><a href="#cb22-10"></a>  )</span>
+<span id="cb22-11"><a href="#cb22-11"></a></span>
+<span id="cb22-12"><a href="#cb22-12"></a>patchwork<span class="sc">::</span><span class="fu">wrap_plots</span>(species_plots<span class="sc">$</span>plot)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>The same <code>nest |&gt; mutate(map(...))</code> pattern that fits models also builds figures. Once you see a cell as “any R object”, models, plots and tables are all just list-columns.</p>
 </div>
