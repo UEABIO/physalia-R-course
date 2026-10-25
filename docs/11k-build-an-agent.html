@@ -360,7 +360,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./05-tidy-evaluation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 5: Tidy evaluation and data masking</span></a>
+ <span class="menu-text">Block 5: Generalising functions with tidy evaluation</span></a>
   </div>
 </li>
       </ul>
@@ -663,7 +663,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   
 
 
-</header><p>In this block you build the two parts of an agent yourself: a conversation and a tool. Then you run a complete agent on a real task and approve every step it takes. After this, every control from Blocks 3 to 5 is something you can see in code.</p>
+</header><p>In this block you build the two parts of an agent yourself: a conversation and a tool. Then you run a complete agent on a real task and approve every step it takes. The task is a common one: translate a short piece of old base R code into tidyverse code, and prove that the translation gives the same answer. After this, every control from Blocks 3 to 5 is something you can see in code.</p>
 <p><em>⏱ ~35 minutes · Start on <code>main</code>, Git pane clean, with your API key saved as <code>AGENT_ANTHROPIC_KEY</code> (<a href="./11a-setup-claude-code.html#api-key">setup</a>). Claude Code is not used in this block.</em></p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
@@ -708,7 +708,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td><code>tests/test_translation.R</code></td>
 <td>Shipped; first used here</td>
-<td>Compares a tidyverse translation with the original base R code</td>
+<td>Holds the original base R code, <code>legacy_rate_summary()</code>, and compares the translation with it</td>
 </tr>
 <tr class="odd">
 <td><code>scripts/functions/summaries.R</code></td>
@@ -734,7 +734,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Talk to a model, then give it a tool (8 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>Goal:</strong> see what one request to a model is, and what a tool request is, so that nothing your agent does in Task 2 is a surprise.</p>
+<p><strong>Goal:</strong> see what one request to a model is, what a model cannot do on its own, and what a tool request is, so that nothing your agent does in Task 2 is a surprise.</p>
 <p><strong>1. Have a conversation.</strong> Run this in the R console:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">library</span>(ellmer)</span>
@@ -743,10 +743,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-4"><a href="#cb1-4"></a>chat <span class="ot">&lt;-</span> <span class="fu">chat_anthropic</span>(<span class="at">model =</span> <span class="st">"claude-sonnet-5-5"</span>, <span class="at">credentials =</span> key)</span>
 <span id="cb1-5"><a href="#cb1-5"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"Tell me a joke about R."</span>)</span>
 <span id="cb1-6"><a href="#cb1-6"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"Explain why it is funny, in one sentence."</span>)</span>
-<span id="cb1-7"><a href="#cb1-7"></a>chat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-7"><a href="#cb1-7"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"How many days is it until 25 December?"</span>)</span>
+<span id="cb1-8"><a href="#cb1-8"></a>chat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Printing <code>chat</code> shows the conversation as <a class="glossary">turns<span class="def">One message in a conversation with a model: either yours (the user turn) or the model’s reply (the assistant turn). Tool results go back to the model inside a user turn.</span></a>. The second question works only because ellmer sends the <strong>whole conversation so far</strong> with each request: the model keeps nothing between requests. That is the <a href="./11-AI-programming-integrated.html">context window</a> from Block 1. It is also why a long conversation costs more per question.</p>
-<p><strong>2. Give it a tool.</strong> A tool is an R function the model may ask you to run:</p>
+<p>Printing <code>chat</code> shows the conversation as <a class="glossary">turns<span class="def">One message in a conversation with a model: either yours (the user turn) or the model’s reply (the assistant turn). Tool results go back to the model inside a user turn.</span></a>. The second question works only because ellmer sends the <strong>whole conversation so far</strong> with each request: the model keeps nothing between requests (“the LLM API is stateless”, in Wickham’s words). That is the <a href="./11-AI-programming-integrated.html">context window</a> from Block 1. It is also why a long conversation costs more per question.</p>
+<p>The memory is the <code>chat</code> object in your R session. It lasts as long as that object does, and nothing is saved to disk. Restart R, or create a new <code>chat</code> (as step 2 does), and the conversation starts again from nothing.</p>
+<p>Now read the third answer. A model on its own only produces text. It has no clock, and it cannot run code, open your files or change them. Today’s date is “a question that cannot be part of its training data” (Wickham), so the model can only say it does not know, ask you, or guess, and a guess reads as confidently as a fact. The same holds for anything it tells you about data or code it has not been shown: it predicts; it does not check.</p>
+<p><strong>2. Give it a tool.</strong> A <a class="glossary">tool<span class="def">R functions (or other programs) that an agent may ask to have run, each described to the model by a name, a description and its arguments. The model only asks; the harness runs the tool on your computer and sends back the result.</span></a> “is just a different name for a function, but importantly it’s a function that’s run on your computer” (Wickham). Tools let a model get data about the world as it is today, and take actions:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>today <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
 <span id="cb2-2"><a href="#cb2-2"></a>  <span class="cf">function</span>() <span class="fu">format</span>(<span class="fu">Sys.Date</span>()),</span>
@@ -756,23 +759,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-6"><a href="#cb2-6"></a></span>
 <span id="cb2-7"><a href="#cb2-7"></a>chat <span class="ot">&lt;-</span> <span class="fu">chat_anthropic</span>(<span class="at">model =</span> <span class="st">"claude-sonnet-5-5"</span>, <span class="at">credentials =</span> key)</span>
 <span id="cb2-8"><a href="#cb2-8"></a>chat<span class="sc">$</span><span class="fu">register_tool</span>(today)</span>
-<span id="cb2-9"><a href="#cb2-9"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"How many days until 25 December?"</span>)</span>
+<span id="cb2-9"><a href="#cb2-9"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"How many days is it until 25 December?"</span>)</span>
 <span id="cb2-10"><a href="#cb2-10"></a>chat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The model sees only the tool’s name, description and arguments (here, none). Its first reply is a request: “call <code>today</code>”. ellmer runs <code>today()</code> <strong>on your computer</strong> and sends the result back. Then the model answers. That is two <a class="glossary">requests<span class="def">One call to the model, with the whole conversation so far, and its reply. A single question can take several requests when the model asks for tools before it answers.</span></a> for one question.</p>
-<p><strong>You are done when</strong> you can point, in the printed <code>chat</code>, to the tool request and to the tool result, and say which of them ran on your computer.</p>
+<p>The model sees only the tool’s name, description and arguments (here, none), so the description is all it has to decide when the tool is useful. Its first reply is a request: “call <code>today</code>”. ellmer runs <code>today()</code> <strong>on your computer</strong> and sends the result back. Then the model answers, now from a fact rather than a guess. That is two <a class="glossary">requests<span class="def">One call to the model, with the whole conversation so far, and its reply. A single question can take several requests when the model asks for tools before it answers.</span></a> for one question. This new <code>chat</code> knows nothing of the joke: it is a new conversation.</p>
+<p><strong>You are done when</strong> you can point, in the printed <code>chat</code>, to the tool request and to the tool result, say which of them ran on your computer, and say why the same question in step 1 could not get a reliable answer.</p>
 <p><strong>If it goes wrong:</strong> if the first <code>chat$chat()</code> reports a missing or invalid key, check <code>Sys.getenv("AGENT_ANTHROPIC_KEY") != ""</code>. Restart R after you edit <code>.Renviron</code>.</p>
 </div>
 </div>
 </section><section id="the-loop" class="level2"><h2 class="anchored" data-anchor-id="the-loop">The loop</h2>
-<p>An <a class="glossary">agent<span class="def">An assistant that can read across a project’s files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</span></a> repeats that exchange until a reply asks for no tool. Each time, the <a class="glossary">harness<span class="def">The software around a model that keeps the conversation, sends it to the model, runs the tools the model asks for and sends back their results. Claude Code is a harness; so is a chat object made with ellmer.</span></a> sends the conversation, runs any tool the model asks for, adds the result, and sends it all again. Every control in this course acts on one of three facts:</p>
+<p>An <a class="glossary">agent<span class="def">An assistant that can read across a project’s files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</span></a> repeats that exchange until a reply asks for no tool. Wickham’s definition: “An agent is an LLM, in a harness, that calls tools repeatedly in a loop, deciding each next step from the last result.” Each time, the <a class="glossary">harness<span class="def">The software around a model that keeps the conversation, sends it to the model, runs the tools the model asks for and sends back their results. Claude Code is a harness; so is a chat object made with ellmer.</span></a> sends the conversation, runs any tool the model asks for, adds the result, and sends it all again. Every control in this course acts on one of three facts:</p>
 <ul>
 <li>
 <strong>The model only asks.</strong> The harness runs each tool on your computer, so that is where Manual mode asks you, a deny rule refuses, and a hook inspects.</li>
 <li>
 <strong>Results go back to the model.</strong> A tool that reads a data file sends that data to the provider: <a href="./11d-context-disclosure-autonomy.html">Block 3’s disclosure route</a>.</li>
 <li>
-<strong>The model decides when to stop.</strong> It can loop longer than you expect. That is why a real harness has limits and a stop key.</li>
+<strong>The model decides when to stop.</strong> It can loop longer than you expect. That is why a real harness has limits on how long it may run, and a <strong>stop key</strong> that interrupts it mid-loop: Esc in Claude Code (<a href="./11-AI-programming-integrated.html">Block 1</a>). In R, you interrupt <code>chat$chat()</code> as you would any long-running code: Esc in the RStudio console, or <code>Ctrl+C</code> in a terminal. Your mini agent sets no limit of its own; your approvals are its brake.</li>
 </ul>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
@@ -840,18 +843,103 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 </div>
 </section><section id="your-agent-agentmini_agent.r" class="level2"><h2 class="anchored" data-anchor-id="your-agent-agentmini_agent.r">Your agent: <code>agent/mini_agent.R</code>
 </h2>
-<p>Your repository ships a complete agent of about 80 lines, built from the same parts. Your instructor walks through it. Each part matches something from this morning:</p>
-<ul>
+<p>Your repository ships a complete agent of about 80 lines, built from the same parts. It has one job: translate a short base R function into tidyverse code, run a test that compares the two, and fix its code until they match. Your instructor walks through it. Each part matches something from this morning.</p>
+<p><strong>Three tools.</strong> Each is an R function, described to the model by a name, a description and its arguments:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead><tr class="header">
+<th>Tool</th>
+<th>The model sends</th>
+<th>What runs on your computer</th>
+<th>What goes back to the model</th>
+<th>Asks you first?</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>read_file()</code></td>
+<td>a path</td>
+<td>
+<code><a href="https://rdrr.io/r/base/readLines.html">readLines()</a></code> on that file, if <code>allowed()</code> agrees</td>
+<td>the file’s text</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td><code>write_file()</code></td>
+<td>a path under <code>scripts/</code>, and the whole new file</td>
+<td>
+<code><a href="https://rdrr.io/r/base/writeLines.html">writeLines()</a></code>, if <code>allowed()</code> agrees</td>
+<td>“Wrote …”</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td><code>run_test()</code></td>
+<td>nothing</td>
+<td>the shipped test <code>tests/test_translation.R</code>, in a <a class="glossary">fresh R session<span class="def">An R session with nothing loaded from earlier work: Session &gt; Restart R in RStudio or Positron (with “never save .RData” set, as on Day 1), callr::rscript() from the console, or Rscript in the terminal. Code that only works in your current session depends on something you did not record.</span></a>
+</td>
+<td>the last 40 lines of the test’s report</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p><code>run_test()</code> is how the agent finds out whether its code works. It takes no arguments, so the model cannot choose another test or hand it code. The test does three things:</p>
+<ol type="1">
+<li>runs the original base R function, <code>legacy_rate_summary()</code>, which is defined inside the test file;</li>
+<li>in a second fresh R session, sources <code>scripts/functions/load_voles.R</code> and the agent’s <code>scripts/functions/summaries.R</code>, then runs <code>summarise_rate_tidy(load_voles())</code>;</li>
+<li>compares the two results once types and row order are normalised: an <a class="glossary">equivalence check<span class="def">A comparison showing that two versions of code, such as an original and an AI translation, give the same output once only presentation (types, row order) is normalised.</span></a>.</li>
+</ol>
+<p>If they match, the report says the test passed. If not, it lists the values that differ, and the agent reads that list to choose its next fix.</p>
+<p><strong><code>allowed()</code> is its deny rule.</strong> Each path is first made absolute and tidied (<code>scripts/../tests</code> becomes <code>tests</code>), then checked. The agent may read anything inside the project except files named <code>.Renviron</code> or <code>.env</code>. It may write <strong>only under <code>scripts/</code></strong>, so it cannot edit its checks in <code>tests/</code> or its own rules in <code>agent/</code>.</p>
+<p><strong><code>ask_first()</code> is Manual mode.</strong> Reads go straight through. Every write and every test run is shown to you first, and is refused unless you choose <strong>Yes</strong>.</p>
+<p><strong>The <a class="glossary">system prompt<span class="def">Standing instructions sent with every request, before the conversation itself. It does the job an instruction file such as AGENTS.md does for Claude Code.</span></a> is its instruction file.</strong> The agent is not given your <code>AGENTS.md</code>, though it could still open the file, like any other. Like <code>AGENTS.md</code>, its prompt is only a request.</p>
+<p><strong>Predict: which of these does <code>allowed()</code> refuse?</strong> Decide before your instructor runs them.</p>
+<ol type="1">
 <li>
-<strong>Three tools.</strong> <code>read_file()</code> looks around; <code>write_file()</code> changes a file; <code>run_test()</code> runs one test, <code>tests/test_translation.R</code>, in a fresh R session.</li>
+<code>read_file("data/raw/voles_metabolism.csv")</code> <select class="webex-select"><option value="blank"></option>
+<option value="">refused</option>
+<option value="answer">allowed</option></select>
+</li>
 <li>
-<strong><code>allowed()</code> is its deny rule.</strong> The agent may read inside the project, but not credentials files. It may write <strong>only under <code>scripts/</code></strong>, so it cannot edit its checks in <code>tests/</code> or its own rules in <code>agent/</code>.</li>
+<code>read_file("../.Renviron")</code> <select class="webex-select"><option value="blank"></option>
+<option value="answer">refused</option>
+<option value="">allowed</option></select>
+</li>
 <li>
-<strong><code>ask_first()</code> is Manual mode.</strong> Reads go straight through. Every write and every test run is shown to you first, and is refused unless you choose <strong>Yes</strong>.</li>
+<code>write_file("scripts/../tests/test_translation.R", …)</code> <select class="webex-select"><option value="blank"></option>
+<option value="answer">refused</option>
+<option value="">allowed</option></select>
+</li>
 <li>
-<strong>The system prompt is its instruction file.</strong> The agent is not given your <code>AGENTS.md</code>, though it could still open the file, like any other. Like <code>AGENTS.md</code>, its prompt is only a request.</li>
-</ul>
-<p>Your agent can run one test and nothing else. A general run-R tool would let the model run any code. That is the gap Block 5 found: R code can write anywhere, whatever the deny rules say.</p>
+<code>write_file("scripts/functions/load_voles.R", …)</code> <select class="webex-select"><option value="blank"></option>
+<option value="">refused</option>
+<option value="answer">allowed</option></select>
+</li>
+<li>
+<code>read_file(".renviron")</code>, on Windows or a Mac <select class="webex-select"><option value="blank"></option>
+<option value="">refused</option>
+<option value="answer">allowed</option></select>
+</li>
+</ol>
+<div class="webex-solution">
+<button>
+Why?
+</button>
+<ol type="1">
+<li>The raw data are inside the project, so the agent may read them, and what it reads goes to the provider: Block 3’s disclosure route.</li>
+<li>
+<code>../</code> leaves the project. Your key is in your user-level <code>.Renviron</code>, outside every project, so it is refused on both counts.</li>
+<li>The path is tidied before it is checked, so the <code>..</code> trick ends in <code>tests/</code>.</li>
+<li>
+<code>load_voles.R</code> is under <code>scripts/</code>, so the agent may rewrite it, yet the test relies on it: a changed loader could let a wrong translation pass. That is one reason to check, at the end, that the Git pane shows only <code>summaries.R</code>.</li>
+<li>The check compares names exactly, but Windows and macOS ignore case in file names, so <code>.renviron</code> opens a project’s <code>.Renviron</code>, if it has one. A list of names covers the names you thought of, like a deny rule in Block 5: it prevents, on the routes it names.</li>
+</ol>
+</div>
+<p><strong>The gap is still there.</strong> <code>run_test()</code> cannot be handed code, but the test it runs sources <code>summaries.R</code>, and the agent writes that file. Whatever the agent puts there runs when you choose <strong>Yes</strong> to <code>run_test()</code>: a line that overwrites <code>data/raw/voles_metabolism.csv</code>, or one that reads your key with <code><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv()</a></code> and puts it in an error message, which goes back to the model in the test’s report. The model has no reason to do either, but nothing in the code stops it. <code>allowed()</code> decides where the agent’s code is saved, not what that code does when it runs. That is the gap Block 5 found: R code can write anywhere, whatever the deny rules say. What stands in the way is you, reading the code at the <code>write_file</code> approval before you let the test run it.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -950,7 +1038,7 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 <span id="cb5-83"><a href="#cb5-83"></a>chat<span class="sc">$</span><span class="fu">register_tools</span>(<span class="fu">list</span>(read_file, write_file, run_test))</span>
 <span id="cb5-84"><a href="#cb5-84"></a>chat<span class="sc">$</span><span class="fu">on_tool_request</span>(ask_first)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>An error in a tool does not stop the agent. ellmer sends the error message back to the model, which can try something else. So a refused write comes back as “Refused: …”. <code>run_test()</code> uses a fresh R session (<code><a href="https://callr.r-lib.org/reference/r.html">callr::r()</a></code>), so it cannot change the objects in yours. Only the last 40 lines of its output go back to the model.</p>
+<p>An error in a tool does not stop the agent. ellmer sends the error message back to the model, which can try something else. So a refused write comes back as “Refused: …”. <code>run_test()</code> starts a fresh R session with <code><a href="https://callr.r-lib.org/reference/r.html">callr::r()</a></code>, and the test starts a second one for the agent’s code. Fresh sessions keep objects and loaded packages apart in both directions: nothing the test or the agent’s code loads reaches your session, and nothing loaded in yours can make the test pass. They do not protect files: code in a fresh session can still write anywhere. Only the last 40 lines of the test’s report go back to the model.</p>
 </div>
 </div>
 </div>
@@ -960,13 +1048,13 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 <p>Run your agent (15 minutes)</p>
 </div>
 <div class="task-container">
-<p><strong>Goal:</strong> watch your own agent write, test and fix a translation while you approve every write and test run, so that you see exactly where Manual mode and a deny rule act.</p>
+<p><strong>Goal:</strong> watch your own agent write, test and fix a translation while you approve every write and test run, so that you see exactly where Manual mode and a deny rule act, and what a passing test does and does not tell you.</p>
 <p><strong>Start state:</strong> <code>main</code>, Git pane clean, R’s working directory at the repository’s root (as it is when you open the project).</p>
 <p><strong>1. Load the agent.</strong> Nothing is sent to the model yet:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"agent"</span>, <span class="st">"mini_agent.R"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>2. Give it the task.</strong> The original base R code is <code>legacy_rate_summary()</code> in <code>tests/test_translation.R</code>, which also checks the translation:</p>
+<p><strong>2. Give it the task.</strong> You ask for a tidyverse version of <code>legacy_rate_summary()</code>, the original base R code. It is in <code>tests/test_translation.R</code>, next to the check that compares the two:</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="fu">paste</span>(</span>
 <span id="cb7-2"><a href="#cb7-2"></a>  <span class="st">"Write a function summarise_rate_tidy(data) in scripts/functions/summaries.R"</span>,</span>
@@ -976,32 +1064,68 @@ assistant    iris has 150 rows and mtcars has 32 so iris has more.</code></pre>
 <span id="cb7-6"><a href="#cb7-6"></a>  <span class="st">"and fix the function until it passes."</span></span>
 <span id="cb7-7"><a href="#cb7-7"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p><strong>3. Decide each request.</strong> Reads run without asking. For a <code>write_file</code> request, read the code it prints. Choose <strong>Yes</strong> only for a write to <code>scripts/functions/summaries.R</code>. <strong>Refuse the first <code>run_test</code> on purpose:</strong> the agent usually stops and explains. If it asks again at once, answer No again. Then let it continue:</p>
-<div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"Go ahead and run the test."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<p><strong>4. Look inside.</strong></p>
-<div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>chat               <span class="co"># every turn: your prompt, its tool requests, the results</span></span>
-<span id="cb9-2"><a href="#cb9-2"></a>chat<span class="sc">$</span><span class="fu">get_tokens</span>()  <span class="co"># the tokens it sent and received</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The original code, and what you are asking for
 </div>
-<p><strong>5. Check its work yourself.</strong> When the agent says “the test passes”, that is a claim. Read the diff of <code>scripts/functions/summaries.R</code> in the Git pane. Then restart R (<em>Session → Restart R</em>) and run:</p>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>testthat<span class="sc">::</span><span class="fu">test_dir</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>legacy_rate_summary <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb8-2"><a href="#cb8-2"></a>  voles <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb8-3"><a href="#cb8-3"></a>    here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"raw"</span>, <span class="st">"voles_metabolism.csv"</span>),</span>
+<span id="cb8-4"><a href="#cb8-4"></a>    <span class="at">stringsAsFactors =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a>  )</span>
+<span id="cb8-6"><a href="#cb8-6"></a>  rate_mean <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(metabolic_rate_post <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex,</span>
+<span id="cb8-7"><a href="#cb8-7"></a>                         <span class="at">data =</span> voles, <span class="at">FUN =</span> mean)</span>
+<span id="cb8-8"><a href="#cb8-8"></a>  rate_n <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(metabolic_rate_post <span class="sc">~</span> treatment_arm <span class="sc">+</span> sex,</span>
+<span id="cb8-9"><a href="#cb8-9"></a>                      <span class="at">data =</span> voles, <span class="at">FUN =</span> length)</span>
+<span id="cb8-10"><a href="#cb8-10"></a>  <span class="fu">names</span>(rate_n)[<span class="dv">3</span>] <span class="ot">&lt;-</span> <span class="st">"n"</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a>  <span class="fu">merge</span>(rate_mean, rate_n, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"treatment_arm"</span>, <span class="st">"sex"</span>))</span>
+<span id="cb8-12"><a href="#cb8-12"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>It gives one row for each treatment arm and sex, with the mean metabolic rate (in a column still called <code>metabolic_rate_post</code>) and <code>n</code>, the number of animals. It makes two summaries and then joins them, which is typical of older base R; <code>group_by()</code> and <code>summarise()</code> do it in one step.</p>
+<p>The test sets one difference: it calls <code>summarise_rate_tidy(load_voles())</code>, so the new function is handed the data instead of reading the file itself. Everything else must come out the same.</p>
+<p><strong>Predict before you run it:</strong> one animal has no <code>metabolic_rate_post</code>. What does the original do with that animal, and what would a straight <code>group_by()</code> and <code>summarise()</code> do? Step 6 checks your answer.</p>
+</div>
+</div>
+</div>
+<p><strong>3. Decide each request.</strong> Reads run without asking. For a <code>write_file</code> request, read the code it prints: it is the code that <code>run_test()</code> will run. Choose <strong>Yes</strong> only for a write to <code>scripts/functions/summaries.R</code>. <strong>Refuse the first <code>run_test</code> on purpose,</strong> to see a refusal from the model’s side. ellmer sends back “Tool call rejected. The user has chosen to disallow the tool call.”, and the model decides what to do next. It usually stops and explains. If it asks again at once, answer No again. Then let it continue:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>chat<span class="sc">$</span><span class="fu">chat</span>(<span class="st">"Go ahead and run the test."</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><strong>4. Look inside.</strong> Do this before step 5, because restarting R clears <code>chat</code>:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a>chat               <span class="co"># every turn: your prompt, its tool requests, the results</span></span>
+<span id="cb10-2"><a href="#cb10-2"></a>chat<span class="sc">$</span><span class="fu">get_tokens</span>()  <span class="co"># the tokens it sent and received, one row per request</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Find your refusal, any test report that failed, and the write that followed it. Note how many requests the task took (count the assistant turns) and how many tokens.</p>
+<p><strong>5. Check its work yourself.</strong> When the agent says “the test passes”, that is a <a class="glossary">claim<span class="def">A statement that code runs or reproduces, made without the command that was run and the output it produced. Treat it as a prediction, not evidence.</span></a>. Read the diff of <code>scripts/functions/summaries.R</code> in the Git pane. Then restart R (<em>Session → Restart R</em>) and run:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>testthat<span class="sc">::</span><span class="fu">test_dir</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"tests"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>test_translation.R</code> is the test that matters here: it now passes rather than skips. The other files pass or skip, as before.</p>
-<p><strong>6. Record and commit.</strong> Your agent can write only under <code>scripts/</code>, so it cannot draft this line as Claude Code did in Block 3: that is its write rule at work. Add the line to <code>docs/ai-log.md</code> yourself, with today’s date, for example <code>2026-10-22; mini agent (ellmer, claude-sonnet-5-5); translated the rate summary to tidyverse; kept after reading the diff and running the tests</code>. Then commit <code>summaries.R</code> and the log.</p>
+<p><strong>6. Check what happened to the missing value.</strong> Find, in the diff, how the translation handles the animal with no <code>metabolic_rate_post</code>, and whether the agent’s last reply mentioned it. Then compare with your prediction.</p>
 <div class="webex-solution">
 <button>
-Did your agent notice the missing value?
+What should happen to the missing value, and why
 </button>
-<p><code><a href="https://rdrr.io/r/stats/aggregate.html">aggregate()</a></code> with a formula silently drops the animal whose <code>metabolic_rate_post</code> is missing, so the original’s mean and count leave it out. A literal tidyverse translation keeps it: an <code>NA</code> mean and a count one too high. The test compares against the original, so the agent had to match that behaviour. If it read the test, it probably did so without comment. The test checks “the same as the original”, not “correct”: Block 8 returns to that difference.</p>
+<p><strong>What the original does.</strong> <code><a href="https://rdrr.io/r/stats/aggregate.html">aggregate()</a></code> with a formula drops every row with a missing value in the formula’s variables (its default is <code>na.action = na.omit</code>), and it says nothing. So the original’s mean and <code>n</code> for that animal’s group leave the animal out.</p>
+<p><strong>What we expect from the agent.</strong> A straight translation, <code>group_by(treatment_arm, sex)</code> and then <code>summarise(metabolic_rate_post = mean(metabolic_rate_post), n = n())</code>, keeps the animal: that group gets an <code>NA</code> mean and an <code>n</code> one too high. The test fails, and its report shows exactly those two differences. A passing translation must leave the animal out too, for example with <code>filter(!is.na(metabolic_rate_post))</code> before summarising. So the agent may notice the missing value only because the test failed, not because it read the original closely.</p>
+<p><strong>Why it matters.</strong> The test checks “the same as the original”, not “correct”. Whether to leave out an animal with a missing measurement is a scientific decision. The original made it silently, and a passing translation copies it, silently unless the agent tells you. If it did not, a passing test has hidden a decision from you; say so in your log line in step 7. Block 8 returns to the difference between “unchanged” and “right”.</p>
 </div>
-<p><strong>You are done when</strong> <code>test_translation.R</code> passes in your own run, the Git pane showed only <code>summaries.R</code> and your log changed, you can say how many requests the task took (count the assistant turns in the printed <code>chat</code>) and how many tokens, and both are committed.</p>
+<p><strong>7. Record and commit.</strong> Your agent can write only under <code>scripts/</code>, so it cannot draft this line as Claude Code did in Block 3: that is its write rule at work. Add the line to <code>docs/ai-log.md</code> yourself, with today’s date, for example <code>2026-10-22; mini agent (ellmer, claude-sonnet-5-5); translated the rate summary to tidyverse; kept after reading the diff and running the tests, noting that it drops the animal with a missing rate, as the original does</code>. Then commit <code>summaries.R</code> and the log.</p>
+<p><strong>You are done when</strong> <code>test_translation.R</code> passes in your own run, the Git pane showed only <code>summaries.R</code> and your log changed (not <code>load_voles.R</code>, which the test also relies on), you can say how many requests and tokens the task took and what happened to the animal with the missing value, and both files are committed.</p>
 <p><strong>If it goes wrong:</strong></p>
 <ul>
 <li>
-<strong>The agent loops or goes off course:</strong> answer <strong>No</strong>, then steer it with <code>chat$chat("…")</code>, or <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again to start a new conversation.</li>
+<strong>The agent loops or goes off course:</strong> answer <strong>No</strong> at its next request, or press Esc to interrupt it. ellmer keeps the conversation, so you can then steer it with <code>chat$chat("…")</code>, or <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again to start a new conversation.</li>
 <li>
 <strong>A refused write:</strong> the agent can write only under <code>scripts/</code>; read the path it asked for.</li>
 <li>
@@ -1010,7 +1134,7 @@ Did your agent notice the missing value?
 <strong>An unwanted change:</strong> <strong>Revert</strong> it in the Git pane.</li>
 </ul>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1019,7 +1143,7 @@ Did your agent notice the missing value?
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p><code>chat$get_cost()</code> turns the tokens into money when ellmer knows the model’s price. If it shows <code>NA</code>, run <code><a href="https://ellmer.tidyverse.org/reference/models_update_prices.html">ellmer::models_update_prices()</a></code> once to refresh ellmer’s price list. Or multiply the tokens from <code>chat$get_tokens()</code> by the prices on Anthropic’s pricing page. <code>claude-opus-5-5</code>, named in the comment at the top of <code>mini_agent.R</code>, is a larger model at a higher price per token; to use it, change the <code>model</code> line.</p>
 </div>
@@ -1054,16 +1178,20 @@ Did your agent notice the missing value?
 </tr>
 <tr class="even">
 <td>
-<code>run_test()</code>, which can run one test and nothing else</td>
+<code>run_test()</code>, which runs one test, and with it whatever code the agent wrote into <code>summaries.R</code>
+</td>
 <td>Any command it asks to run, each with your approval</td>
 </tr>
 <tr class="odd">
-<td>
-<code>chat</code> and <code>chat$get_tokens()</code>
-</td>
-<td>The conversation itself, and the model shown in Claude Code</td>
+<td>Esc, to interrupt <code>chat$chat()</code>; no limit of its own</td>
+<td>Esc, to interrupt it mid-task</td>
 </tr>
 <tr class="even">
+<td>
+<code>chat</code> and <code>chat$get_tokens()</code>, kept until you restart R</td>
+<td>The conversation itself, and the model shown in Claude Code</td>
+</tr>
+<tr class="odd">
 <td>Git, to see and undo changes</td>
 <td>Git, plus <code>/rewind</code>, which undoes only changes made with its edit tools (<a href="./11f-enforced-controls.html">Block 5</a>)</td>
 </tr>
@@ -1082,74 +1210,61 @@ Did your agent notice the missing value?
 <div class="callout-body-container callout-body">
 <ul>
 <li>
-<strong>You can now:</strong> explain an agent as a model, a harness and tools in a loop, and run one in R, <strong>trusted because</strong> you can read every line that touches your files, and a test you did not write decides whether its change is right.</li>
+<strong>You can now:</strong> explain an agent as a model, a harness and tools in a loop, and run one in R, <strong>trusted because</strong> you can read every line that touches your files, including the code the test runs, and a test you did not write decides whether its output matches the original.</li>
 <li>
 <strong>Check:</strong> every write and every run is shown to you before it happens; the Git pane shows what changed; the test runs in a fresh R session.</li>
 <li>
 <strong>Reproduce:</strong> <code>run_test()</code> runs in a fresh R session, so the agent’s check does not depend on what is loaded in yours.</li>
 <li>
-<strong>Record:</strong> <code>chat</code> holds the full record of what was sent and received; your AI-use log records the tool, the model and what you kept.</li>
+<strong>Record:</strong> <code>chat</code> holds the full record of what was sent and received, until you restart R; your AI-use log records the tool, the model and what you kept.</li>
 </ul>
 </div>
 </div>
 </section><section id="check-your-understanding" class="level2"><h2 class="anchored" data-anchor-id="check-your-understanding">Check your understanding</h2>
 <p><strong>In an agent built with ellmer, who runs a tool’s R function?</strong></p>
-<div id="radio_OAEAOFXCSN" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_OAEAOFXCSN" value=""><span>The model, on Anthropic's servers</span></label><label><input type="radio" autocomplete="off" name="radio_OAEAOFXCSN" value="answer"><span>The harness (ellmer), on your computer, after the model asks for it</span></label><label><input type="radio" autocomplete="off" name="radio_OAEAOFXCSN" value=""><span>Nobody: the model predicts what the function would return</span></label><label><input type="radio" autocomplete="off" name="radio_OAEAOFXCSN" value=""><span>RStudio, in a separate window</span></label>
+<div id="radio_QYFYPZJFMT" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_QYFYPZJFMT" value=""><span>The model, on Anthropic's servers</span></label><label><input type="radio" autocomplete="off" name="radio_QYFYPZJFMT" value="answer"><span>The harness (ellmer), on your computer, after the model asks for it</span></label><label><input type="radio" autocomplete="off" name="radio_QYFYPZJFMT" value=""><span>Nobody: the model predicts what the function would return</span></label><label><input type="radio" autocomplete="off" name="radio_QYFYPZJFMT" value=""><span>RStudio, in a separate window</span></label>
+</div>
+<p><strong>In Task 1, why could the model answer “How many days is it until 25 December?” reliably only once it had the <code>today</code> tool?</strong></p>
+<div id="radio_DBMTEJWQDQ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_DBMTEJWQDQ" value=""><span>The second chat used a larger model</span></label><label><input type="radio" autocomplete="off" name="radio_DBMTEJWQDQ" value="answer"><span>A model only produces text from its training and the conversation, and has no clock; the tool ran Sys.Date() on your computer and sent the date back</span></label><label><input type="radio" autocomplete="off" name="radio_DBMTEJWQDQ" value=""><span>The tool gave the model access to the internet</span></label><label><input type="radio" autocomplete="off" name="radio_DBMTEJWQDQ" value=""><span>ellmer adds today's date to every request</span></label>
 </div>
 <p><strong>True or false: when an agent’s tool reads a file, the file’s contents are sent to the model provider.</strong> <select class="webex-select"><option value="blank"></option>
 <option value="answer">TRUE</option>
 <option value="NA">FALSE</option></select></p>
-<p><strong>Your agent can write only under <code>scripts/</code>, and has no general run-R tool. What would adding one put at risk?</strong></p>
-<div id="radio_DRUWKGXAXX" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_DRUWKGXAXX" value=""><span>Nothing: the write rule still covers every file</span></label><label><input type="radio" autocomplete="off" name="radio_DRUWKGXAXX" value="answer"><span>Every file: R code the model writes can change anything, data/raw/ included, whatever the write rule says</span></label><label><input type="radio" autocomplete="off" name="radio_DRUWKGXAXX" value=""><span>Only the files under scripts/</span></label><label><input type="radio" autocomplete="off" name="radio_DRUWKGXAXX" value=""><span>Only the API key, because R code cannot write files</span></label>
+<p><strong>True or false: after you restart R, <code>chat</code> still holds the conversation from Task 2.</strong> <select class="webex-select"><option value="blank"></option>
+<option value="NA">TRUE</option>
+<option value="answer">FALSE</option></select></p>
+<p><strong>Your agent can write only under <code>scripts/</code>. When you choose Yes to <code>run_test()</code>, what can the code in <code>scripts/functions/summaries.R</code> change?</strong></p>
+<div id="radio_MDUMFWRGZS" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_MDUMFWRGZS" value=""><span>Nothing outside scripts/: allowed() refuses it</span></label><label><input type="radio" autocomplete="off" name="radio_MDUMFWRGZS" value=""><span>Nothing on disk: callr::r() runs it in a fresh R session</span></label><label><input type="radio" autocomplete="off" name="radio_MDUMFWRGZS" value="answer"><span>Any file R can reach, data/raw/ included: allowed() checks where write_file saves code, not what the saved code does</span></label><label><input type="radio" autocomplete="off" name="radio_MDUMFWRGZS" value=""><span>Only the objects in your own R session</span></label>
 </div>
 </section><section id="going-further-not-covered-live" class="level2"><h2 class="anchored" data-anchor-id="going-further-not-covered-live">Going further (not covered live)</h2>
 <p>This material is not covered in the live session. Work through it afterwards if it is useful to you.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Add a general <code>run_r()</code> tool, and see the gap reopen
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>Add this tool to <code>agent/mini_agent.R</code>. Paste it after <code>run_test</code>. Add <code>run_r</code> to the <code>register_tools()</code> list, and add <code>"run_r"</code> to the names that <code>ask_first()</code> asks about. Then <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again for a new conversation. (Redefining <code>ask_first()</code> in the console has no effect: the chat keeps the copy it was given.)</p>
-<div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>run_r <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
-<span id="cb11-2"><a href="#cb11-2"></a>  <span class="cf">function</span>(code) {</span>
-<span id="cb11-3"><a href="#cb11-3"></a>    out <span class="ot">&lt;-</span> callr<span class="sc">::</span><span class="fu">r</span>(<span class="cf">function</span>(code) utils<span class="sc">::</span><span class="fu">capture.output</span>(</span>
-<span id="cb11-4"><a href="#cb11-4"></a>      <span class="fu">tryCatch</span>(<span class="fu">source</span>(<span class="at">exprs =</span> <span class="fu">parse</span>(<span class="at">text =</span> code), <span class="at">print.eval =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb11-5"><a href="#cb11-5"></a>               <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">cat</span>(<span class="st">"Error:"</span>, <span class="fu">conditionMessage</span>(e), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>))</span>
-<span id="cb11-6"><a href="#cb11-6"></a>    ), <span class="fu">list</span>(<span class="at">code =</span> code))</span>
-<span id="cb11-7"><a href="#cb11-7"></a>    <span class="fu">paste</span>(utils<span class="sc">::</span><span class="fu">head</span>(out, <span class="dv">60</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb11-8"><a href="#cb11-8"></a>  },</span>
-<span id="cb11-9"><a href="#cb11-9"></a>  <span class="at">name =</span> <span class="st">"run_r"</span>,</span>
-<span id="cb11-10"><a href="#cb11-10"></a>  <span class="at">description =</span> <span class="st">"Run R code in a fresh R session; return its printed output."</span>,</span>
-<span id="cb11-11"><a href="#cb11-11"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">code =</span> <span class="fu">type_string</span>(<span class="st">"The R code to run."</span>))</span>
-<span id="cb11-12"><a href="#cb11-12"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
-<p>Now the model can run any code: <code><a href="https://rdrr.io/r/base/writeLines.html">writeLines()</a></code> into <code>data/raw/</code>, or <code><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv()</a></code> for your key. <code>allowed()</code> no longer protects anything. Only your approval stands in the way, exactly as in Block 5. A narrow tool such as <code>run_test()</code> needs less trust than a general one.</p>
-</div>
-</div>
-</div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>A restricted mode
+<span class="screen-reader-only">Tip</span>Narrow the write rule to one file
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
 <div id="callout-7" class="callout-7-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>Change <code>ask_first()</code> in <code>agent/mini_agent.R</code> so that it asks before every call, reads included. Then <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again. You now see every file the agent wants to read before it is sent to the provider. By default, Claude Code never asks before reading a project file (<a href="./11d-context-disclosure-autonomy.html">Block 3</a>). In your own agent, one line of R changes that, because you wrote its approval step.</p>
+<p><code>write_file()</code> may rewrite any file under <code>scripts/</code>, including <code>scripts/functions/load_voles.R</code>, which the test relies on. Give the tool only the reach the task needs. In <code>agent/mini_agent.R</code>, replace the function inside <code>write_file</code> with this one, and <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again:</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="cf">function</span>(path, content) {</span>
+<span id="cb12-2"><a href="#cb12-2"></a>  full <span class="ot">&lt;-</span> <span class="fu">allowed</span>(path, <span class="at">folder =</span> fs<span class="sc">::</span><span class="fu">path</span>(root, <span class="st">"scripts"</span>))</span>
+<span id="cb12-3"><a href="#cb12-3"></a>  <span class="cf">if</span> (full <span class="sc">!=</span> fs<span class="sc">::</span><span class="fu">path</span>(root, <span class="st">"scripts"</span>, <span class="st">"functions"</span>, <span class="st">"summaries.R"</span>)) {</span>
+<span id="cb12-4"><a href="#cb12-4"></a>    <span class="fu">stop</span>(<span class="st">"Refused: "</span>, path)</span>
+<span id="cb12-5"><a href="#cb12-5"></a>  }</span>
+<span id="cb12-6"><a href="#cb12-6"></a>  <span class="fu">writeLines</span>(content, full)</span>
+<span id="cb12-7"><a href="#cb12-7"></a>  <span class="fu">paste</span>(<span class="st">"Wrote"</span>, path)</span>
+<span id="cb12-8"><a href="#cb12-8"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Then ask the agent to change <code>load_voles.R</code>. The write is refused before you are asked. Update the tool’s <code>description</code> too, so that the model knows the new limit instead of finding it by trial.</p>
 </div>
 </div>
 </div>
@@ -1159,11 +1274,58 @@ Did your agent notice the missing value?
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Packages that do more
+<span class="screen-reader-only">Tip</span>Add a general <code>run_r()</code> tool
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
 <div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Add this tool to <code>agent/mini_agent.R</code>. Paste it after <code>run_test</code>. Add <code>run_r</code> to the <code>register_tools()</code> list, and add <code>"run_r"</code> to the names that <code>ask_first()</code> asks about. Then <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again for a new conversation. (Redefining <code>ask_first()</code> in the console has no effect: the chat keeps the copy it was given.)</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a>run_r <span class="ot">&lt;-</span> <span class="fu">tool</span>(</span>
+<span id="cb13-2"><a href="#cb13-2"></a>  <span class="cf">function</span>(code) {</span>
+<span id="cb13-3"><a href="#cb13-3"></a>    out <span class="ot">&lt;-</span> callr<span class="sc">::</span><span class="fu">r</span>(<span class="cf">function</span>(code) utils<span class="sc">::</span><span class="fu">capture.output</span>(</span>
+<span id="cb13-4"><a href="#cb13-4"></a>      <span class="fu">tryCatch</span>(<span class="fu">source</span>(<span class="at">exprs =</span> <span class="fu">parse</span>(<span class="at">text =</span> code), <span class="at">print.eval =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-5"><a href="#cb13-5"></a>               <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">cat</span>(<span class="st">"Error:"</span>, <span class="fu">conditionMessage</span>(e), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>))</span>
+<span id="cb13-6"><a href="#cb13-6"></a>    ), <span class="fu">list</span>(<span class="at">code =</span> code))</span>
+<span id="cb13-7"><a href="#cb13-7"></a>    <span class="fu">paste</span>(utils<span class="sc">::</span><span class="fu">head</span>(out, <span class="dv">60</span>), <span class="at">collapse =</span> <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb13-8"><a href="#cb13-8"></a>  },</span>
+<span id="cb13-9"><a href="#cb13-9"></a>  <span class="at">name =</span> <span class="st">"run_r"</span>,</span>
+<span id="cb13-10"><a href="#cb13-10"></a>  <span class="at">description =</span> <span class="st">"Run R code in a fresh R session; return its printed output."</span>,</span>
+<span id="cb13-11"><a href="#cb13-11"></a>  <span class="at">arguments =</span> <span class="fu">list</span>(<span class="at">code =</span> <span class="fu">type_string</span>(<span class="st">"The R code to run."</span>))</span>
+<span id="cb13-12"><a href="#cb13-12"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Now the model can run any code straight from a request: <code><a href="https://rdrr.io/r/base/writeLines.html">writeLines()</a></code> into <code>data/raw/</code>, or <code><a href="https://rdrr.io/r/base/Sys.getenv.html">Sys.getenv()</a></code> for your key. With <code>run_test()</code>, the same code first had to be saved in a file under <code>scripts/</code>, shown to you at a write approval and left in the Git pane, and then run by a second approval. <code>run_r()</code> removes those steps: the code runs from the request alone and leaves no file to review. Only your approval stands in the way, exactly as in Block 5. A narrow tool such as <code>run_test()</code> needs less trust than a general one, but not none.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>A restricted mode
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Change <code>ask_first()</code> in <code>agent/mini_agent.R</code> so that it asks before every call, reads included. Then <code><a href="https://rdrr.io/r/base/source.html">source()</a></code> the file again. You now see every file the agent wants to read before it is sent to the provider. By default, Claude Code never asks before reading a project file (<a href="./11d-context-disclosure-autonomy.html">Block 3</a>). In your own agent, one line of R changes that, because you wrote its approval step.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Packages that do more
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-10" class="callout-10-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <ul>
 <li>
@@ -1175,7 +1337,7 @@ Did your agent notice the missing value?
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -1184,7 +1346,7 @@ Did your agent notice the missing value?
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>ellmer has a <code>chat_*()</code> function for each provider it supports. The tools and the loop stay the same. Tool calling can be much less reliable with small local models, so start with a hosted model.</p>
 </div>
@@ -1204,14 +1366,34 @@ Did your agent notice the missing value?
 <td style="text-align: left;">An assistant that can read across a project's files and, depending on its permission mode, edit them and run commands, such as Claude Code. An agent acts; a chat window only advises.</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">claimed execution</td>
+<td style="text-align: left;">A statement that code runs or reproduces, made without the command that was run and the output it produced. Treat it as a prediction, not evidence.</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">equivalence check</td>
+<td style="text-align: left;">A comparison showing that two versions of code, such as an original and an AI translation, give the same output once only presentation (types, row order) is normalised.</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">fresh R session</td>
+<td style="text-align: left;">An R session with nothing loaded from earlier work: Session &gt; Restart R in RStudio or Positron (with "never save .RData" set, as on Day 1), callr::rscript() from the console, or Rscript in the terminal. Code that only works in your current session depends on something you did not record.</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">harness</td>
 <td style="text-align: left;">The software around a model that keeps the conversation, sends it to the model, runs the tools the model asks for and sends back their results. Claude Code is a harness; so is a chat object made with ellmer.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td style="text-align: left;">request</td>
 <td style="text-align: left;">One call to the model, with the whole conversation so far, and its reply. A single question can take several requests when the model asks for tools before it answers.</td>
 </tr>
+<tr class="odd">
+<td style="text-align: left;">system prompt</td>
+<td style="text-align: left;">Standing instructions sent with every request, before the conversation itself. It does the job an instruction file such as AGENTS.md does for Claude Code.</td>
+</tr>
 <tr class="even">
+<td style="text-align: left;">tools</td>
+<td style="text-align: left;">R functions (or other programs) that an agent may ask to have run, each described to the model by a name, a description and its arguments. The model only asks; the harness runs the tool on your computer and sends back the result.</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">turn</td>
 <td style="text-align: left;">One message in a conversation with a model: either yours (the user turn) or the model's reply (the assistant turn). Tool results go back to the model inside a user turn.</td>
 </tr>
