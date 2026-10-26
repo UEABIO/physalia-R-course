@@ -233,7 +233,8 @@ Read all of `inputs/notes/`, every file in `inputs/template-files/` and
 
 Then check that R, git and the packages are available
 (`Rscript --version`, `git --version`, and whether tidyverse, here, testthat,
-jsonlite, renv, callr, fs, usethis, gert, waldo and ellmer are installed).
+jsonlite, renv, callr, fs, usethis, gert, waldo, ellmer and assertr are
+installed).
 
 Report, and stop:
 
@@ -311,11 +312,13 @@ Report the data checks and stop.
 5. **Add `{{TEMPLATE_REPO}}.Rproj`** with RStudio's default project settings.
    If a live template is supplied, reuse its `.Rproj` contents.
 6. **Set up renv.** The lockfile must pin tidyverse, here, testthat,
-   jsonlite, renv, callr, fs, usethis (with gert), waldo and ellmer; not the
-   *Going further* packages. Check the lockfile itself, not this list: the
+   jsonlite, renv, callr, fs, usethis (with gert), waldo, ellmer and assertr
+   (`scripts/functions/validate_voles.R` uses it); not the other *Going
+   further* packages. Check the lockfile itself, not this list: the
    tests call callr, jsonlite and gert directly, and learners call usethis
    in the console, which renv's implicit snapshot will not see. If a live
-   template is supplied, start from its `renv.lock` and add ellmer. Choose
+   template is supplied, start from its `renv.lock` and add ellmer and
+   assertr. Choose
    the method that makes a fresh clone report no problems from
    `renv::status()` after `renv::restore()`, and say in the build report how
    you did it. Ship `.Rprofile`, `renv/activate.R` and `renv/settings.json`;

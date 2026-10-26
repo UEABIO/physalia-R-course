@@ -14,24 +14,33 @@ voles_col_types <- function() {
   )
 }
 
+# subject_id is V followed by three digits
+is_vole_id <- function(x) grepl("^V[0-9]{3}$", x)
+
+# One assert() per rule. chain_end() lists every rule the data break, with
+# the row and the value, then warns rather than stops (just_warn), so a script
+# can go on to check other data.
 validate_voles <- function(data, label) {
+  cat("\n", label, "\n", sep = "")
   data |>
-    pointblank::create_agent(label = label) |>
-    pointblank::col_vals_not_null(columns = c(subject_id, sex, treatment_arm)) |>
-    pointblank::col_vals_regex(columns = subject_id, regex = "^V[0-9]{3}$") |>
-    pointblank::rows_distinct(columns = subject_id) |>
-    pointblank::col_vals_in_set(columns = sex, set = c("M", "F")) |>
-    pointblank::col_vals_in_set(
-      columns = treatment_arm,
-      set = c("Control", "Low_dose", "High_dose")
+    assertr::chain_start() |>
+    assertr::assert(assertr::not_na, subject_id, sex, treatment_arm) |>
+    assertr::assert(is_vole_id, subject_id) |>
+    assertr::assert(assertr::is_uniq, subject_id) |>
+    assertr::assert(assertr::in_set("M", "F"), sex) |>
+    assertr::assert(
+      assertr::in_set("Control", "Low_dose", "High_dose"),
+      treatment_arm
     ) |>
-    pointblank::col_vals_between(
-      columns = c(mass_pre_g, mass_post_g),
-      left = 15, right = 60, na_pass = TRUE
+    # a missing value passes: allow.na = TRUE is the default
+    assertr::assert(assertr::within_bounds(15, 60), mass_pre_g, mass_post_g) |>
+    assertr::assert(assertr::within_bounds(5, 30), metabolic_rate_post) |>
+    assertr::chain_end(
+      success_fun = \(data) {
+        cat("All rules pass.\n")
+        data
+      },
+      error_fun = assertr::just_warn
     ) |>
-    pointblank::col_vals_between(
-      columns = metabolic_rate_post,
-      left = 5, right = 30, na_pass = TRUE
-    ) |>
-    pointblank::interrogate()
+    invisible()
 }

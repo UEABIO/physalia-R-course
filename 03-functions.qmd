@@ -525,6 +525,39 @@ all.equal(
 description of the differences otherwise. It is the right quick interactive check
 when refactoring.
 
+:::{.callout-tip}
+
+## What `source()` does, and a clean alternative
+
+`source()` runs every line of a file in your current R session, as if you had
+typed it into the console. The functions it defines appear in your
+Environment, ready to call. For a function file, that is what you want.
+
+The catch is that a sourced file also sees everything already in your session:
+a package you attached by hand, or an object such as `penguins_clean` that you
+made earlier. So a script can run for you and fail for anyone who starts from
+a [blank slate](01-projects.qmd#blank-slates).
+
+To check that a whole script stands on its own, run it in a separate, fresh R
+session with the callr package:
+
+```{r}
+#| eval: false
+callr::rscript(here::here("analysis.R"))
+```
+
+`callr::rscript()` starts a new R process in your project folder, runs the
+script there from top to bottom, prints its output, and closes the process.
+Nothing in your session reaches the script, and nothing the script creates
+comes back except the files it writes. If the script fails, `callr::rscript()`
+stops with an error, and the output above it shows the script's own message,
+such as `object 'penguins_clean' not found`. It is the same check as
+restarting R and running the script, without losing your session.
+`callr::r()` does the same for a function and returns its result; the tests
+on Day 4 use both.
+
+:::
+
 ### Stage 2: handle the obvious failure
 
 The Gentoo typo (`"gentoo"` instead of `"Gentoo"`) silently filtered to zero rows. `lm()` then failed with:

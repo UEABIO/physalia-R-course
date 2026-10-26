@@ -27,7 +27,7 @@ GitHub; it adds `.github/` files and a plot test there).
 | `docs/data_note.md` | Block 7 | From `template-files/`; Block 7 prints it. |
 | `scripts/explore_voles.R` | Block 3 | From `template-files/`. |
 | `scripts/00_profile.R`, `03_audit_cleaning.R` | Block 7 | From `template-files/`. `01_clean.R` is written by the agent. |
-| `scripts/02_validate.R`, `scripts/functions/validate_voles.R` | Block 7, *Going further* only | From `template-files/`. Use pointblank; no live step or test depends on them. |
+| `scripts/02_validate.R`, `scripts/functions/validate_voles.R` | Block 7, *Going further* only | From `template-files/`. Use assertr (as in 02-tidyverse); no live step or test depends on them. |
 | `scripts/04_load_data.R`, `05_analysis.R` | Block 8 | From `template-files/`. |
 | `scripts/functions/load_voles.R` | Blocks 3, 6 and 8 | From `template-files/`. |
 | `agent/mini_agent.R` | Block 6 | From `template-files/`. Its `library(ellmer)` also keeps ellmer in renv's implicit snapshot. |
@@ -66,10 +66,11 @@ them on the Copilot cloud-agent self-study page.
 ## `renv.lock`
 
 Pin: tidyverse, here, testthat, jsonlite, renv, callr, fs, usethis (brings
-gert), waldo, and ellmer (Block 6). ellmer stays in the lockfile under renv's
-implicit snapshot because `agent/mini_agent.R` loads it. pointblank only if
-you teach Block 7's *Going further*. Check the lockfile, not just this list:
-the tests use callr and jsonlite directly.
+gert), waldo, ellmer (Block 6) and assertr (Block 7's *Going further*:
+`scripts/functions/validate_voles.R`). ellmer and assertr stay in the
+lockfile under renv's implicit snapshot because shipped scripts call them.
+Check the lockfile, not just this list: the tests use callr and jsonlite
+directly.
 
 *Going further* only (do not pin unless you teach it): ggdist, ggbeeswarm,
 colorspace, colorBlindness, emmeans, ggpubr, patchwork, ggh4x, ragg,

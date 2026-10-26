@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.10.18">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <meta name="author" content="Philip Leftwich &amp; Ed Ivimey-Cook">
 <title>Advancing in R</title>
@@ -10,10 +10,13 @@
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
 */
-code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -72,14 +75,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-cad2a2f8a56dfe71ee895a68e79c9b9a.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-70be5ccd51f03de5ce195d75fadf0882.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-cad2a2f8a56dfe71ee895a68e79c9b9a.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-3419ea62b3ca2d77d3d547f86109e84e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-eaeb381c6b7494c50009502241a4985c.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-3419ea62b3ca2d77d3d547f86109e84e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-51f8a0f47ca4ad41c9e4cfc0492a693a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-a8dba935c66644e2f12e515264e9281f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-51f8a0f47ca4ad41c9e4cfc0492a693a.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light"><script id="quarto-search-options" type="application/json">{
+<link href="site_libs/bootstrap/bootstrap-bccafbfbdaf167a5cc62eb1cd36cd68f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-f74b38f5aea087cbb55664d1170cc612.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap-bccafbfbdaf167a5cc62eb1cd36cd68f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light"><script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
   "collapse-after": 3,
@@ -359,7 +362,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./05-tidy-evaluation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Block 5: Tidy evaluation and data masking</span></a>
+ <span class="menu-text">Block 5: Generalising functions with tidy evaluation</span></a>
   </div>
 </li>
       </ul>
@@ -723,27 +726,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># 1. Packages from CRAN</span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
-<span id="cb1-3"><a href="#cb1-3"></a>  <span class="st">"tidyverse"</span>, <span class="st">"palmerpenguins"</span>, <span class="st">"here"</span>, <span class="st">"janitor"</span>, <span class="st">"fs"</span>,</span>
-<span id="cb1-4"><a href="#cb1-4"></a>  <span class="st">"data.table"</span>, <span class="st">"dtplyr"</span>, <span class="st">"dbplyr"</span>, <span class="st">"arrow"</span>, <span class="st">"duckdb"</span>, <span class="st">"RSQLite"</span>, <span class="st">"rvest"</span>, <span class="st">"assertr"</span>, <span class="st">"pointblank"</span>, <span class="st">"tidylog"</span>,</span>
-<span id="cb1-5"><a href="#cb1-5"></a>  <span class="st">"skimr"</span>, <span class="st">"naniar"</span>,</span>
-<span id="cb1-6"><a href="#cb1-6"></a>  <span class="st">"broom"</span>, <span class="st">"broom.mixed"</span>, <span class="st">"lme4"</span>, <span class="st">"lmerTest"</span>, <span class="st">"emmeans"</span>, <span class="st">"glmnet"</span>, <span class="st">"caret"</span>, <span class="st">"randomForest"</span>, <span class="st">"rpart"</span>, <span class="st">"xgboost"</span>,</span>
-<span id="cb1-7"><a href="#cb1-7"></a>  <span class="st">"testthat"</span>, <span class="st">"bench"</span>,</span>
-<span id="cb1-8"><a href="#cb1-8"></a>  <span class="st">"gt"</span>, <span class="st">"gtExtras"</span>, <span class="st">"kableExtra"</span>,</span>
-<span id="cb1-9"><a href="#cb1-9"></a>  <span class="st">"patchwork"</span>, <span class="st">"scales"</span>, <span class="st">"colorBlindness"</span>, <span class="st">"colorspace"</span>, <span class="st">"ggdist"</span>, <span class="st">"ggrepel"</span>, <span class="st">"ggtext"</span>, <span class="st">"ggview"</span>,</span>
-<span id="cb1-10"><a href="#cb1-10"></a>  <span class="st">"ggiraph"</span>, <span class="st">"ggbeeswarm"</span>, <span class="st">"gghighlight"</span>, <span class="st">"ggh4x"</span>, <span class="st">"ggpubr"</span>, <span class="st">"ggdensity"</span>, <span class="st">"ggridges"</span>, <span class="st">"ggforce"</span>,</span>
-<span id="cb1-11"><a href="#cb1-11"></a>  <span class="st">"geomtextpath"</span>, <span class="st">"ragg"</span>, <span class="st">"png"</span>, <span class="st">"showtext"</span>, <span class="st">"RColorBrewer"</span>, <span class="st">"gapminder"</span>, <span class="st">"esquisse"</span>,</span>
-<span id="cb1-12"><a href="#cb1-12"></a>  <span class="st">"sf"</span>, <span class="st">"rnaturalearth"</span>, <span class="st">"knitr"</span>, <span class="st">"quarto"</span>, <span class="st">"plotly"</span>, <span class="st">"shiny"</span>,</span>
-<span id="cb1-13"><a href="#cb1-13"></a>  <span class="st">"gitcreds"</span>, <span class="st">"usethis"</span>, <span class="st">"renv"</span>, <span class="st">"webexercises"</span>, <span class="st">"downloadthis"</span>, <span class="st">"waldo"</span>, <span class="st">"callr"</span>, <span class="st">"ellmer"</span>, <span class="st">"remotes"</span></span>
-<span id="cb1-14"><a href="#cb1-14"></a>))</span>
-<span id="cb1-15"><a href="#cb1-15"></a></span>
-<span id="cb1-16"><a href="#cb1-16"></a><span class="co"># 2. ThemePark is on GitHub, not CRAN</span></span>
-<span id="cb1-17"><a href="#cb1-17"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"MatthewBJane/ThemePark"</span>)</span>
-<span id="cb1-18"><a href="#cb1-18"></a></span>
-<span id="cb1-19"><a href="#cb1-19"></a><span class="co"># 3. Check your versions: R should be 4.3.0 or later, dplyr 1.2.0 or later</span></span>
-<span id="cb1-20"><a href="#cb1-20"></a>R.version.string</span>
-<span id="cb1-21"><a href="#cb1-21"></a><span class="fu">packageVersion</span>(<span class="st">"dplyr"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-label="1"></a><span class="co"># 1. Packages from CRAN</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-label="2"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-label="3"></a>  <span class="st">"tidyverse"</span>, <span class="st">"palmerpenguins"</span>, <span class="st">"here"</span>, <span class="st">"janitor"</span>, <span class="st">"fs"</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-label="4"></a>  <span class="st">"data.table"</span>, <span class="st">"dtplyr"</span>, <span class="st">"dbplyr"</span>, <span class="st">"arrow"</span>, <span class="st">"duckdb"</span>, <span class="st">"RSQLite"</span>, <span class="st">"rvest"</span>, <span class="st">"assertr"</span>, <span class="st">"tidylog"</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-label="5"></a>  <span class="st">"skimr"</span>, <span class="st">"naniar"</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-label="6"></a>  <span class="st">"broom"</span>, <span class="st">"broom.mixed"</span>, <span class="st">"lme4"</span>, <span class="st">"lmerTest"</span>, <span class="st">"emmeans"</span>, <span class="st">"glmnet"</span>, <span class="st">"caret"</span>, <span class="st">"randomForest"</span>, <span class="st">"rpart"</span>, <span class="st">"xgboost"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-label="7"></a>  <span class="st">"testthat"</span>, <span class="st">"bench"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-label="8"></a>  <span class="st">"gt"</span>, <span class="st">"gtExtras"</span>, <span class="st">"kableExtra"</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-label="9"></a>  <span class="st">"patchwork"</span>, <span class="st">"scales"</span>, <span class="st">"colorBlindness"</span>, <span class="st">"colorspace"</span>, <span class="st">"ggdist"</span>, <span class="st">"ggrepel"</span>, <span class="st">"ggtext"</span>, <span class="st">"ggview"</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-label="10"></a>  <span class="st">"ggiraph"</span>, <span class="st">"ggbeeswarm"</span>, <span class="st">"gghighlight"</span>, <span class="st">"ggh4x"</span>, <span class="st">"ggpubr"</span>, <span class="st">"ggdensity"</span>, <span class="st">"ggridges"</span>, <span class="st">"ggforce"</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-label="11"></a>  <span class="st">"geomtextpath"</span>, <span class="st">"ragg"</span>, <span class="st">"png"</span>, <span class="st">"showtext"</span>, <span class="st">"RColorBrewer"</span>, <span class="st">"gapminder"</span>, <span class="st">"esquisse"</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-label="12"></a>  <span class="st">"sf"</span>, <span class="st">"rnaturalearth"</span>, <span class="st">"knitr"</span>, <span class="st">"quarto"</span>, <span class="st">"plotly"</span>, <span class="st">"shiny"</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-label="13"></a>  <span class="st">"gitcreds"</span>, <span class="st">"usethis"</span>, <span class="st">"renv"</span>, <span class="st">"webexercises"</span>, <span class="st">"downloadthis"</span>, <span class="st">"waldo"</span>, <span class="st">"callr"</span>, <span class="st">"ellmer"</span>, <span class="st">"remotes"</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-label="14"></a>))</span>
+<span id="cb1-15"><a href="#cb1-15" aria-label="15"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-label="16"></a><span class="co"># 2. ThemePark is on GitHub, not CRAN</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-label="17"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">"MatthewBJane/ThemePark"</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-label="18"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-label="19"></a><span class="co"># 3. Check your versions: R should be 4.3.0 or later, dplyr 1.2.0 or later</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-label="20"></a>R.version.string</span>
+<span id="cb1-21"><a href="#cb1-21" aria-label="21"></a><span class="fu">packageVersion</span>(<span class="st">"dplyr"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>If any package fails to install, copy the error message and send it to us before the course.</p>
 </section><section id="which-penguins" class="level2"><h2 class="anchored" data-anchor-id="which-penguins">Which penguins?</h2>
@@ -830,7 +833,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 - duckdb
 - rvest
 - assertr
-- pointblank
 - tidylog
 
 ## Data Exploration:
