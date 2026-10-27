@@ -11,11 +11,15 @@ library(webexercises)
 ```
 
 Cleaning mistakes are silent: a missing-value code treated as a measurement,
-the same animal kept twice, a row quietly dropped. In this block an
+the same animal kept twice, a row quietly dropped. Your instructor planted
+errors of these kinds in `data/raw/voles_raw.csv`. In this block an
 `r glossary("agent")` writes and runs the whole cleaning script from one
-command. It works from a `r glossary("codebook")` that you own. One test run
-then tells you whether to trust it. Your instructor planted errors of these
-kinds in the raw file; Step 5 checks which ones your cleaning caught.
+command, working from a `r glossary("codebook")` that you own. In Step 5 you
+find out which planted errors your cleaning caught, and how you know.
+
+How you know is the point of the block. The cleaning script, the tests and the
+validation rules all come from your codebook, never from each other, so a
+misunderstanding in one of them cannot pass the others.
 
 *⏱ ~55 minutes · Start on `main` (or `checkpoint-skills`), Git pane clean,
 Claude Code running in Manual mode.*
@@ -26,9 +30,8 @@ Claude Code running in Manual mode.*
 `data/raw/voles_raw.csv` holds the same 72 voles as `voles_metabolism.csv`, as
 they might arrive from the people who collected them. Before the course, your
 instructor made it by planting errors in a copy of `voles_metabolism.csv`, and
-holds the answer key ([Step 5](#step-5)). Nothing needs downloading. Blocks 5
-and 6 add no checkpoint, and nothing here needs Block 6's `summaries.R`. You
-use the cleaned file only in this block; Block 8 returns to
+holds the answer key ([Step 5](#step-5)). Nothing needs downloading. You use
+the cleaned file only in this block; Block 8 returns to
 `voles_metabolism.csv`.
 Short of time at any step? `checkpoint-cleaning` holds a codebook,
 `01_clean.R` and its three outputs.
@@ -36,80 +39,35 @@ Short of time at any step? `checkpoint-cleaning` holds a codebook,
 | File | Written by | Its job | Step |
 |---|---|---|---|
 | `data/raw/voles_raw.csv` | Your instructor | The raw data; never edited | all |
-| Deny rules in `.claude/settings.json`; `.gitattributes` | Course team | Keep the agent's edit tools off the files below; stop git changing line endings in the data the tests compare | [0](#step-0) |
-| `tests/test_cleaning.R`, `tests/fixtures/raw_checksum.txt` | Course team, from the agreed codebook, before any cleaning code existed | The one test run that decides whether to trust the cleaning | [0](#step-0), [4](#step-4) |
+| Deny rules in `.claude/settings.json` | Course team | Keep the agent's edit tools off the files below, and its read tools off the provider's note | [Before you start](#step-0) |
+| `tests/test_cleaning.R`, `tests/fixtures/raw_checksum.txt` | Course team, from the agreed codebook, before any cleaning code existed | The tests that decide whether to trust the cleaning | [Before you start](#step-0), [4](#step-4) |
 | `scripts/00_profile.R`, and the `docs/profile*.csv` files it writes | Course team; you run it | Counts what is in the raw file | [1](#step-1) |
 | `docs/data_note.md` | The data provider (simulated) | Codes, units and valid ranges; the agent is denied reading it | [2](#step-2) |
 | `docs/codebook.csv` | The agent drafts it; you correct and commit it | The facts every cleaning rule comes from | [2](#step-2) |
 | `.agents/skills/clean-with-codebook/` (and its copy in `.claude/skills/`) | Course team | *How* to clean: never touch raw data, log every change, never drop a row silently | [3](#step-3) |
 | `scripts/01_clean.R`, and `voles_clean.csv`, `cleaning_log.csv`, `exclusion_log.csv` in `data/derived/` | The agent, through the skill | The cleaning and its record | [3](#step-3) |
 | A line in `docs/ai-log.md` | You | The record of AI use | [4](#step-4) |
-| `scripts/02_validate.R`, `scripts/functions/validate_voles.R`, `scripts/03_audit_cleaning.R` | Course team | Optional second views of the rules and the log | [Going further](#going-further) |
+| `scripts/02_validate.R`, `scripts/functions/validate_voles.R` | Course team, copied by a person from the agreed codebook | Lists which rows break which codebook rule, in the raw data and the clean | [5](#step-5) |
+| `scripts/03_audit_cleaning.R` | Course team | An optional second look at the cleaning log | [Going further](#going-further) |
 :::
 
+| Step | You do | Why |
+|---|---|---|
+| [1. Profile](#step-1) | Run one script that counts what is in the raw file | R counts; a model guesses |
+| [2. Codebook](#step-2) | The agent drafts a codebook from the counts; you correct it against the data provider's note | The data cannot tell you that `9999` means "could not be weighed" |
+| [3. Clean](#step-3) | One skill command writes and runs the cleaning script | The agent does the tedious part; you approve its plan |
+| [4. Test](#step-4) | Run the tests yourself, in a fresh R session | "Tests pass" is a claim until you see it |
+| [5. Validate and grade](#step-5) | List which raw rows break which rule, and find each one in your logs | Did your cleaning catch what was planted? |
 
-## Step 0: Check the safeguards are in place {#step-0}
-
-:::{.task}
-::::{.task-header}
-Recipe check (3 minutes)
-::::
-::::{.task-container}
-
-**Goal:** confirm the protections and the checks are in place before any
-cleaning starts, so that a mistake by the agent is blocked or caught rather
-than found later.
-
-**Start state:** as at the top of the page. If you need `checkpoint-skills`,
-switch to it in the Git pane's branch menu.
-
-**1. The protections.** In Claude Code, type `/permissions`. Among the
-`r glossary("deny rule", "deny rules")`, find these four: `Edit(/data/raw/**)`,
-`Read(/docs/data_note.md)`, `Edit(/docs/codebook.csv)` and
-`Edit(/tests/test_cleaning.R)`. They keep the agent's edit tools off the raw
-data, your codebook and the tests. They also stop it reading the provider's
-note (Step 2 shows why).
-
-**2. The checks.** In the Files pane, open `tests/` and find two files:
-`test_cleaning.R` and `fixtures/raw_checksum.txt`, a `r glossary("checksum")`
-of the raw file. The course team wrote `test_cleaning.R` from the agreed
-codebook (the answer to Step 2) before any cleaning code existed. Its seven
-tests check that:
-
-- the raw file still matches its checksum;
-- every raw row is in the clean data or in the exclusion log, with a reason;
-- every entry in the cleaning log matches the raw and the clean files;
-- every changed cell is in the cleaning log;
-- no more values were set to `NA` than the codebook's codes and ranges
-  explain;
-- a fresh run of the cleaning writes identical files;
-- the clean data obey every rule in the agreed codebook.
-
-The checksum test runs from the start; the others skip until clean data
-exist. You run them all in Step 4.
-
-For every guardrail in the repository and what each one does, see *How your
-workshop repository is guarded* in [Block 5](11f-enforced-controls.qmd).
-
-**You are done when** you have seen the four rules and the two files.
-
-**If it goes wrong:** if `/permissions` lists no rules, check that you started
-`claude` from the Terminal tab of the workshop repository. If the files are
-missing, ask your instructor: your fork may be older than the current
-template.
-
-::::
-:::
+The steps follow [the safe vibe-coding
+recipe](11d-context-disclosure-autonomy.qmd#safe-recipe) from Block 3: the
+protections and the tests are in place first, then one command does the work,
+then you run the tests and the validation yourself.
 
 :::::::::{.callout-note collapse="true"}
 ## How the pieces fit
 
-The steps follow [the safe vibe-coding
-recipe](11d-context-disclosure-autonomy.qmd#safe-recipe) from Block 3. The
-cleaning and the checks both read the codebook but never each other, so a
-misunderstanding in one is caught by the other.
-
-:::::::: {.dia .dia-lanes role="figure" aria-label="The cleaning pipeline in order. Facts first: data/raw/voles_raw.csv, pinned by a checksum, is profiled by 00_profile.R into docs/profile.csv and two companion tables; the agent drafts a codebook from the profile; you correct it against the provider's note, docs/data_note.md, into docs/codebook.csv. Two branches read the codebook, never each other: the skill writes and runs scripts/01_clean.R, which writes the clean data, cleaning log and exclusion log; the tests in tests/test_cleaning.R were written from the agreed codebook. Then compare: one test run showing raw data unchanged, every row accounted for, every change logged truthfully, nothing over-cleaned, every agreed rule obeyed, the same answer every time."}
+:::::::: {.dia .dia-lanes role="figure" aria-label="The cleaning pipeline in order. Facts first: data/raw/voles_raw.csv, pinned by a checksum, is profiled by 00_profile.R into docs/profile.csv and two companion tables; the agent drafts a codebook from the profile; you correct it against the provider's note, docs/data_note.md, into docs/codebook.csv. Three branches read the codebook, never each other: the skill writes and runs scripts/01_clean.R, which writes the clean data, cleaning log and exclusion log; the tests in tests/test_cleaning.R were written from the agreed codebook; the validation rules in scripts/functions/validate_voles.R were copied from it by a person. Then compare: in Step 4 the tests say pass or fail; in Step 5 the validation lists which raw rows break which rule, and you find each one in your logs."}
 ::::::: {.dia-flow}
 ::: {.dia-label}
 Facts first
@@ -138,7 +96,7 @@ you correct against `docs/data_note.md`
 :::::::
 ::::::: {.dia-flow}
 ::: {.dia-label}
-Two branches that read the codebook, never each other
+Three branches that read the codebook, never each other
 :::
 :::::: {.dia-branches}
 ::::: {.dia-flow}
@@ -157,6 +115,11 @@ Clean data, cleaning log, exclusion log
 Shipped: the tests in `test_cleaning.R`, written from the agreed codebook
 :::
 :::::
+::::: {.dia-flow}
+::: {.dia-node .dia-check}
+Shipped: the validation rules in `validate_voles.R`, copied from the agreed codebook by a person
+:::
+:::::
 ::::::
 :::::::
 ::::::: {.dia-flow}
@@ -164,11 +127,17 @@ Shipped: the tests in `test_cleaning.R`, written from the agreed codebook
 Then compare
 :::
 ::: {.dia-node .dia-check}
-One test run: raw data unchanged, every row accounted for, every change logged truthfully, nothing over-cleaned, every agreed rule obeyed, the same answer every time
+Step 4: the tests say pass or fail
+:::
+::: {.dia-arrow}
+then
+:::
+::: {.dia-node .dia-check}
+Step 5: the validation lists which raw rows break which rule; you find each one in your logs
 :::
 :::::::
 ::: {.dia-caption}
-Independence is the point: one misunderstanding cannot pass both branches.
+Independence is the point: one misunderstanding cannot pass every branch.
 :::
 ::::::::
 :::::::::
@@ -182,7 +151,53 @@ In a 2025 study, language models given polluted tables missed codes such as
 :::
 
 
+## Before you start {#step-0}
+
+:::{.task}
+::::{.task-header}
+Check the protections and the tests (2 minutes)
+::::
+::::{.task-container}
+
+**Goal:** confirm that the protections and the tests are in place before any
+cleaning starts, so that a mistake by the agent is blocked or caught rather
+than found later.
+
+**1. Start state.** The Git pane is clean, on `main`. If you are behind,
+switch to `checkpoint-skills` in the Git pane's branch menu.
+
+**2. The protections.** In Claude Code, type `/permissions`. Among the
+`r glossary("deny rule", "deny rules")`, find these four:
+
+- `Edit(/data/raw/**)`: the raw data;
+- `Read(/docs/data_note.md)`: the data provider's note ([Step 2](#step-2)
+  shows why);
+- `Edit(/docs/codebook.csv)`: your codebook;
+- `Edit(/tests/test_cleaning.R)`: the tests.
+
+**3. The tests.** In the Files pane, open `tests/` and find `test_cleaning.R`
+and `fixtures/raw_checksum.txt`, a `r glossary("checksum")` of the raw file.
+The course team wrote the tests from the agreed codebook (the answer to
+Step 2) before any cleaning code existed. You run them in [Step 4](#step-4).
+
+For every guardrail in the repository and what each one does, see *How your
+workshop repository is guarded* in [Block 5](11f-enforced-controls.qmd).
+
+**You are done when** you have seen the four rules and the two files.
+
+**If it goes wrong:** if `/permissions` lists no rules, check that you started
+`claude` from the Terminal tab of the workshop repository. If the files are
+missing, ask your instructor: your fork may be older than the current
+template.
+
+::::
+:::
+
+
 ## Step 1: Profile the raw data {#step-1}
+
+A model that reads a file gives you its impression of it. R gives you exact
+counts, and the codebook draft in Step 2 starts from them.
 
 :::{.task}
 ::::{.task-header}
@@ -190,11 +205,10 @@ Profile (5 minutes)
 ::::
 ::::{.task-container}
 
-**Goal:** count what is in the raw file with R rather than the model, so that
-the codebook draft in Step 2 starts from exact counts, not a model's
-impression.
+**Goal:** count what is in the raw file with R, and make your own list of what
+looks wrong before the agent gives its view.
 
-**In the R console:**
+**1. Run the profile.** In the R console:
 
 ```{r}
 #| eval: false
@@ -212,11 +226,15 @@ Console and saves each one to `docs/`:
 | `profile_labels.csv` | Every spelling of a `sex` or `treatment_arm` label, with its count (`n`) | Labels that differ only in spelling or case |
 | `profile_ids.csv` | Each `subject_id` that occurs more than once (`n`), or whose length differs from the usual one (`unusual_length`) | For each ID: what would it be if typed correctly, and does that ID exist already? |
 
-Write down anything that looks odd. In Step 2 you compare your list with the
-agent's draft.
+**2. Make your list.** Write down at least three things that look wrong. Keep
+the list: you compare it with the agent's draft in Step 2, with its plan in
+Step 3 and with the validation in Step 5.
 
-**You are done when** the three files exist in `docs/` and you have a short
-list of what looks odd.
+**3. Commit** the three profile files, so that Step 2 starts from a clean Git
+pane.
+
+**You are done when** the three profile files are committed and you have your
+list.
 
 **If it goes wrong:** restart R (*Session → Restart R*) and run the line
 again.
@@ -236,10 +254,11 @@ again.
 
 The codebook is Day 2's data dictionary
 ([README chapter](06-reproducibility.qmd#repro-fix)), with rules that code can
-read. Its facts come from `docs/data_note.md`. This note stands in for the
-methods sheet or email you would get from the people who collected the data. A
-deny rule stops the agent reading it, so the agent drafts from the profile
-alone, like an analyst who never asked for the note. That gap is the point.
+read. Its facts come from `docs/data_note.md`, which stands in for the methods
+sheet or email you would get from the people who collected the data. A deny
+rule stops the agent reading the note, so it drafts from your profile alone,
+like an analyst who never asked. When you compare its draft with the note, the
+difference shows what the data alone cannot tell you.
 
 :::{.task}
 ::::{.task-header}
@@ -251,8 +270,11 @@ Draft and audit the codebook (12 minutes)
 the data note and committed, so that every cleaning rule traces to a fact you
 can defend.
 
-**1. Ask for a draft.** The `source` column shows which entries are the
-agent's own assumptions, so you know where to look first.
+**Predict first.** The agent can see the counts but not the note. Which items
+on your Step 1 list do you expect it to get wrong?
+
+**1. Draft.** The `source` column shows which entries are the agent's own
+assumptions, so you know where to look first.
 
 **Prompt (Claude Code):**
 
@@ -261,23 +283,17 @@ Draft a codebook for the raw voles data from docs/profile.csv,
 docs/profile_labels.csv and docs/profile_ids.csv only, with the columns
 column, type, rule, min, max, missing_codes, unit, source. In the source
 column, say for every entry whether it comes from the profile or is your
-assumption. Write it to scratch/codebook_draft.csv and no other file.
+assumption. Do not read any other file. Write it to
+scratch/codebook_draft.csv and no other file.
 ```
 
 Claude Code asks before it writes a file or runs a command. **Answer each
 request with plain Yes or No.** Never choose an option that says *don't ask
-again*: it saves a rule that skips the question from then on.
-
-- Approve the write to `scratch/codebook_draft.csv`.
-- Approve a command only if you can say what it does. Refuse any that would
-  open `docs/data_note.md`: the deny rule stops Claude Code's own tools
-  reading the note, not R code it runs. Refusing is always safe.
-- If the agent asks whether to commit the profile files first, reply *No, go
-  ahead*: you commit them in item 4.
-
-One route to the note runs without asking: a search of the whole project as
-a shell command, such as `grep -r`. So if the draft states a fact that only
-the note gives, such as the 15–60 g range, the agent saw the note.
+again*: it saves a rule that skips the question from then on. Approve the
+write to `scratch/codebook_draft.csv`. Approve a command only if you can say
+what it does, and refuse any that would open `docs/data_note.md`: the deny
+rule stops Claude Code's own tools reading the note, not R code it runs.
+Refusing is always safe.
 
 **2. Copy the draft into place.** A deny rule stops the agent editing
 `docs/codebook.csv`, so it wrote its draft to `scratch/`, which git ignores.
@@ -290,11 +306,12 @@ fs::file_copy(here::here("scratch", "codebook_draft.csv"),
 usethis::edit_file(here::here("docs", "codebook.csv"))
 ```
 
-From now on only you edit the codebook, and only your corrected version is
-committed. Edit it in RStudio or Positron, not Excel: Excel can silently
-change separators, quotes and numbers when it saves a CSV.
+From now on only you edit the codebook. Edit it in RStudio or Positron, not
+Excel: Excel can silently change separators, quotes and numbers when it saves
+a CSV.
 
-**3. Audit the draft.** Before you open `docs/data_note.md`, answer:
+**3. Audit the draft.** Before you open `docs/data_note.md`, check your
+prediction:
 
 - Did the draft list `9999` as a missing-value code, or treat it as a large
   measurement?
@@ -304,22 +321,37 @@ change separators, quotes and numbers when it saves a CSV.
 
 **4. Correct it against the note, and commit.** Open `docs/data_note.md` (also
 shown below the task). Edit `docs/codebook.csv` until every line traces to the
-note or to a decision you can defend. Make its `source` say which. Where the
-note gives no unit (metabolic rate), write `<unit>`, not a guess: a guessed
-unit is an invented fact. Save the file. Commit `docs/codebook.csv` and the
-three profile files together. The cleaning then starts from a recorded version
-of your rules, and Step 3 starts with a clean Git pane.
+note or to a decision you can defend, and make its `source` say which. Where
+the note gives no unit (metabolic rate), write `<unit>`, not a guess: a guessed
+unit is an invented fact. Save the file and commit it, so that the cleaning
+starts from a recorded version of your rules.
 
-**You are done when** the codebook and the three profile files are committed,
-and every rule traces to the note or to your own decision.
+**You are done when** the codebook is committed, and every rule traces to the
+note or to your own decision.
 
 **If it goes wrong:** if `file_copy()` says the file already exists, you
 copied a draft earlier: edit that one, or add `overwrite = TRUE` to replace it
 and lose your edits. Short of time? Paste the codebook below into
-`docs/codebook.csv` and commit it with the profile files. It is what most
-groups end up with.
+`docs/codebook.csv` and commit it. It is what most groups end up with.
 
 ::::
+:::
+
+:::{.callout-note collapse="true"}
+## If the draft knows too much
+
+Suppose the draft states a fact that the profile cannot give, such as the
+15–60 g range. Then the agent read more than the profile. Two routes run
+without asking:
+
+- a search of the whole project as a shell command, such as `grep -r`, which
+  the read rule on the note does not cover;
+- the tests and the validation rules (`tests/test_cleaning.R`,
+  `scripts/functions/validate_voles.R`), which contain the agreed rules. The
+  deny rules stop the agent *editing* them, not reading them.
+
+Either way, the draft no longer shows what the data alone reveal. Mention it
+in the debrief.
 :::
 
 :::{.callout-note collapse="true"}
@@ -389,13 +421,12 @@ a script you can rerun and is logged against a codebook rule.
 /clean-with-codebook Clean data/raw/voles_raw.csv using docs/codebook.csv.
 ```
 
-**2. Review its plan.** You do not need `/plan`. The skill's first
-instruction is to present a plan and wait for your reply, so the plan arrives
-as an ordinary message. That instruction is only a request; Manual mode is
-what holds. If the agent asks to write or run anything before you have seen a
+**2. Review its plan.** The skill shows its plan first and waits for your
+reply. If the agent asks to write or run anything before you have seen a
 plan, refuse and ask for the plan. When the plan arrives, check that:
 
 - every rule cites a codebook row;
+- each problem on your Step 1 list is dealt with by one of those rules;
 - out-of-range values are set to `NA` and queried, not "corrected";
 - no file outside `scripts/01_clean.R` and `data/derived/` will be written;
 - duplicates are handled by a stated rule, with each exclusion logged.
@@ -407,6 +438,11 @@ cheapest place to catch a wrong rule, before any file is written.
 run. Approve what the plan described, and nothing else. New files should
 appear in the Git pane only in `scripts/` and `data/derived/`. The skill runs
 the script twice, then runs the tests and reports the output.
+
+**While it works,** predict where each problem on your Step 1 list will end
+up: changed and recorded in the cleaning log, set to `NA` and queried, or
+removed and recorded in the exclusion log. You check your predictions in
+Step 5.
 
 **You are done when** `data/derived/` contains `voles_clean.csv`,
 `cleaning_log.csv` and `exclusion_log.csv`, and the agent has reported the
@@ -446,14 +482,14 @@ Claude Code.
 :::
 
 
-## Step 4: One check, in a fresh R session {#step-4}
+## Step 4: Run the tests yourself {#step-4}
 
 The agent says its tests pass: that is a claim. One command, in a
 `r glossary("fresh R session")`, turns it into evidence.
 
 :::{.task}
 ::::{.task-header}
-Run the checks (6 minutes)
+Run the tests (6 minutes)
 ::::
 ::::{.task-container}
 
@@ -468,6 +504,12 @@ in your session can make a test pass. Then run this in the R console:
 testthat::test_dir(here::here("tests"))
 ```
 
+The seven tests in `test_cleaning.R` check that the raw file is unchanged,
+every raw row is accounted for, the cleaning log is truthful and complete,
+nothing was over-cleaned, a fresh run writes identical files, and the clean
+data obey the agreed codebook. The table below the task says what each pass
+proves.
+
 **2. Read the change and record it.** In the Git pane, click **Diff** on
 `scripts/01_clean.R` and look for anything the plan did not mention. Add a
 line to `docs/ai-log.md` (date; tool and model; task; what you kept or
@@ -479,7 +521,10 @@ and the work, with its AI-log line, is committed.
 
 **If it goes wrong:** a failing test names the problem. Ask the agent to fix
 `01_clean.R`, and quote the test. Never ask it to fix the test itself (a deny
-rule protects it).
+rule protects it). One failure may not be the script's fault: the last test
+checks the agreed codebook from Step 2, while the over-cleaning test reads
+your own. If your ranges differ from the agreed ones, compare the two
+codebooks before you ask for a fix.
 Short of time? Switch to `checkpoint-cleaning`.
 
 ::::
@@ -498,16 +543,12 @@ Short of time? Switch to `checkpoint-cleaning`.
 | cleaning is reproducible: a fresh run writes identical files | A fresh run writes byte-identical files |
 | clean data pass every rule in the agreed codebook | IDs, labels and ranges obey the agreed codebook (a missing value is allowed) |
 
-The last test uses the rules of the agreed codebook (Step 2). The
-over-cleaning test reads your own `docs/codebook.csv`. If your ranges differ
-from the agreed ones, these two tests can disagree.
-
 The course team wrote `tests/test_cleaning.R` from the agreed codebook, before
 any cleaning code existed. So it checks what the cleaning *should* do, not
 what one script happens to do. The agent did not write it and cannot edit it:
-`Edit(/tests/test_cleaning.R)` is one of the deny rules you checked in Step 0.
-In your own projects, write these tests yourself, from your codebook, before
-you ask an agent to clean.
+`Edit(/tests/test_cleaning.R)` is one of the deny rules you checked before you
+started. In your own projects, write these tests yourself, from your codebook,
+before you ask an agent to clean.
 :::
 
 `r hide("The shipped tests/test_cleaning.R")`
@@ -518,13 +559,65 @@ you ask an agent to clean.
 `r unhide()`
 
 
-## Step 5: Grade against the answer key {#step-5}
+## Step 5: Validate, then grade {#step-5}
 
-*Instructor-led, about 5 minutes.* Before the course, your instructor made
-`voles_raw.csv` by planting the errors below in a copy of the clean
-`voles_metabolism.csv`, so they were in the raw file from the start. Your
-instructor now walks through each one. Open the list, and for each error mark
-whether your logs record it.
+The tests give one pass or fail for each promise, but they do not show you the
+problems themselves. Validation does: it lists *which* raw rows break *which*
+codebook rule. Those are the rows your logs should account for. It uses
+assertr, as on [Day 1](02-tidyverse.qmd#sec-validate), with this codebook's
+rules. A person copied the rules into `scripts/functions/validate_voles.R`
+from the agreed codebook; the agent that cleaned did not write them.
+
+:::{.task}
+::::{.task-header}
+Validate (4 minutes)
+::::
+::::{.task-container}
+
+**Goal:** see each problem in the raw data, and find what your cleaning did
+with it.
+
+**1. Run the validation.** In the R console:
+
+```{r}
+#| eval: false
+source(here::here("scripts", "02_validate.R"))
+```
+
+Expect, in order:
+
+- an empty table (`# A tibble: 0 × 5`): every value in a number column was
+  read as a number, so none slipped past the range rules as `NA`;
+- `Raw data (expected to FAIL)`, then each broken rule with its rows and
+  values. `index` is the row in the raw file, the same number as `raw_row` in
+  your logs. Very small or large masses may print in scientific notation:
+  `3.4e-02` is 0.034;
+- `Clean data (expected to PASS)`, then `All rules pass.`;
+- last, the warning `assertr encountered errors`. It comes from the raw data,
+  which should fail. R holds a warning until the whole script has run.
+
+**2. Find each row in your logs.** Open `cleaning_log.csv` and
+`exclusion_log.csv` in `data/derived/` (click them in the Files pane, or use
+`View()`). For each row the validation listed, find what your cleaning did
+with it, and check your predictions from Step 3. A duplicate is listed twice:
+one copy is kept and the other is in the exclusion log.
+
+**You are done when** you have found what happened to every row the
+validation listed.
+
+**If it goes wrong:** if the output mentions pointblank, or does not match the
+list above, your fork is older than the current template. Follow your
+instructor's screen for now. Afterwards, copy both files from *How the
+validation works*, below, and run `renv::install("assertr")`.
+
+::::
+:::
+
+**Grade against the answer key.** *Instructor-led, about 4 minutes.* Before
+the course, your instructor made `voles_raw.csv` by planting the errors below
+in a copy of the clean `voles_metabolism.csv`, so they were in the raw file
+from the start. Your instructor now walks through each one. Open the list, and
+for each error mark whether your logs record it.
 
 `r hide("The planted errors")`
 
@@ -545,9 +638,39 @@ recorded there, not in the cleaning log.
 
 `r unhide()`
 
-**For discussion:** did any planted error get past every rule in your
-codebook? A planted error that no codebook rule catches is a hole in the
-codebook, not in the cleaning.
+**For discussion:**
+
+- The validation flagged the mass recorded in kilograms and the one ten times
+  too large only as out of range: it cannot say why. What did the cleaning do
+  with them? If it "corrected" them, on whose authority?
+- Did any planted error get past every rule in your codebook? A planted error
+  that no codebook rule catches is a hole in the codebook, not in the
+  cleaning.
+
+::::{.callout-note collapse="true"}
+## How the validation works
+
+Each `assert()` in `validate_voles.R` is one codebook rule. `chain_start()`
+and `chain_end()` run every rule before reporting, and
+`error_fun = just_warn` reports broken rules with a warning instead of
+stopping, so `02_validate.R` goes on to check the clean data after the raw.
+The empty table at the start lists any value that could not be read as a
+number: such a value would become `NA` and slip past the range rules.
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "validate_voles.R")}
+```
+
+```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "02_validate.R")}
+```
+
+:::{.callout-warning}
+`within_bounds()` and `in_set()` let a missing value pass (`allow.na = TRUE`,
+the default), as the tests' range checks do. That lets genuine missing values
+through, but it would also pass a cleaning script that replaced *every* mass
+with `NA`. Validation alone cannot catch over-cleaning; the over-cleaning test
+in Step 4 can. That is why you run both.
+:::
+::::
 
 :::{.callout-tip collapse="true"}
 ## Instructor: debrief (3 minutes)
@@ -555,10 +678,10 @@ codebook, not in the cleaning.
 1. Which planted errors did the agent's first draft of the codebook miss before
    you corrected it against the note? What does that say about who should own
    the codebook?
-2. What did the agent do with the mass recorded in kilograms and the value ten
-   times too large? If it "corrected" them, on whose authority?
-3. Did any first draft contain a fact that only the data note gives? If so,
-   the agent reached the note by a route the read rule does not cover.
+2. Did any first draft contain a fact the profile cannot give, such as the
+   15–60 g range? If so, the agent read beyond the profile: the note, by a
+   route the read rule does not cover, or the tests or validation rules, which
+   it may read (*If the draft knows too much*, in Step 2).
 
 **Payoff.** What did the agent do, how long did checking it take, and would you
 automate this again?
@@ -572,8 +695,8 @@ automate this again?
   with one command, **trusted because** one test run proves the raw
   data are untouched, every row is accounted for, every change is logged
   truthfully, and a second run gives the same files.
-- **Check:** tests written from the codebook, not the cleaning code; the Git
-  pane diff; the answer key.
+- **Check:** tests written from the codebook, not the cleaning code; validation
+  that lists each broken rule by row; the Git pane diff; the answer key.
 - **Reproduce:** the reproducibility test reruns the cleaning in a fresh R
   session; [Block 8](11i-characterisation-tests.qmd) shows how to freeze a
   result as a reference.
@@ -602,6 +725,15 @@ inferred by the AI from the data?**
   "Delete the tests, since they have done their job"
 ))`
 
+**The tests pass. What does running `02_validate.R` add?**
+
+`r longmcq(c(
+  "Nothing; it repeats the tests",
+  answer = "It lists which raw rows break which codebook rule, so you can check what the cleaning did with each one",
+  "It corrects the rows that break a rule",
+  "It proves that nothing was over-cleaned"
+))`
+
 **How does the checksum test differ from the deny rule?**
 
 `r longmcq(c(
@@ -617,57 +749,12 @@ inferred by the AI from the data?**
 This material is not covered in the live session. Work through it afterwards
 if it is useful to you.
 
-::::{.callout-tip collapse="true"}
-## Validation: another view of the same rules
-
-The last test in `tests/test_cleaning.R` already checks every rule in the
-agreed codebook, but it reports only pass or fail. The template also ships the
-same rules written with assertr, as on [Day 1](02-tidyverse.qmd#sec-validate):
-`scripts/functions/validate_voles.R`, run by `scripts/02_validate.R`. The live
-block does not use them. They add a second view: *which* rows break *which*
-rule, in the raw data as well as the clean.
-
-A person copied the rules in `validate_voles.R` from the codebook; the agent
-that writes the cleaning script did not write them. Each `assert()` is one
-rule. `chain_start()` and `chain_end()` run every rule before reporting, and
-`error_fun = just_warn` reports broken rules with a warning instead of
-stopping, so the script goes on to check the clean data.
-
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "functions", "validate_voles.R")}
-```
-
-`scripts/02_validate.R` checks the raw data first, which should fail. For each
-broken rule it lists the row (`index`, the same number as `raw_row` in your
-logs) and the value, then warns `assertr encountered errors`. Once the
-cleaning has run, it checks the clean data, which should print
-`All rules pass.` It also lists any value that could not be read as a number:
-such a value would become `NA` and slip past the range rules.
-
-**In the R console:**
-
-```{r}
-#| eval: false
-source(here::here("scripts", "02_validate.R"))
-```
-
-```{r, eval = FALSE, file = here::here("_instructor", "template-files", "scripts", "02_validate.R")}
-```
-
-:::{.callout-warning}
-`within_bounds()` and `in_set()` let a missing value pass (`allow.na = TRUE`,
-the default), as the test's range checks do. That lets genuine missing values
-through, but it would also pass a cleaning script that replaced *every* mass
-with `NA`. Rule checks alone cannot catch over-cleaning; the
-over-cleaning test in `tests/test_cleaning.R` can.
-:::
-::::
-
 :::{.callout-tip collapse="true"}
 ## Write the validation rules independently
 
-Instead of using the shipped `validate_voles.R`, you can ask an AI that has
-never seen the cleaning code to write the rules. For example, use a browser
-chat window and give it only the codebook:
+Instead of using the shipped `validate_voles.R` from Step 5, you can ask an AI
+that has never seen the cleaning code to write the rules. For example, use a
+browser chat window and give it only the codebook:
 
 **Prompt (browser chat):**
 

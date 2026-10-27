@@ -6,9 +6,11 @@ published.
 
 ## Why
 
-Block 7's *Going further* (`11g`, *Validation: another view of the same
-rules*) now uses assertr, as Day 1 does (`02-tidyverse.qmd`, *Data validation
-with `tidylog` and `assertr`*), instead of pointblank. The rules are the same.
+Block 7's Step 5 (`11g`, *Validate, then grade*; added 27 October 2026, when
+validation moved from *Going further* into the live block) now uses assertr,
+as Day 1 does (`02-tidyverse.qmd`, *Data validation with `tidylog` and
+`assertr`*), instead of pointblank. **Learners run `02_validate.R` live, so
+this change must reach the template before the course.** The rules are the same.
 `chain_end(error_fun = just_warn)` lists every broken rule with its row and
 value, then warns rather than stops, so `02_validate.R` goes on to check the
 clean data after the raw. pointblank is no longer used anywhere in the book,
@@ -228,9 +230,11 @@ Also report:
 
 ## 6. After the push
 
-- **Learners who forked earlier** keep the pointblank version. No live step
-  uses it, so the day is unaffected. For *Going further*, they can copy both
-  files from the `11g` page, which shows them in full, then run
-  `renv::install("assertr")` and `renv::snapshot()`.
+- **Learners who forked earlier** keep the pointblank version, and Block 7's
+  Step 5 runs it live. Ask them to update before the course if you can. On
+  the day, they follow the instructor's screen for Step 5. Afterwards they
+  copy both files from the `11g` page (*How the validation works*, which
+  shows them in full), then run `renv::install("assertr")` and
+  `renv::snapshot()`.
 - **Status note:** update `status-2026-10-23.md`, item 1, if the template
   update there is still open.

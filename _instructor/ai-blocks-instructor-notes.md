@@ -49,7 +49,7 @@ Moved out of the published chapters. Quarto ignores this folder because its name
   - **Block 9 now runs the review in Manual mode, not `/plan`.** With auto mode available (the default on recent versions), plan mode sends shell commands to the classifier instead of asking, so a "reading only" review could run commands unasked. In Manual mode every non-read-only command asks, and learners refuse them all; the prompt also says "do not edit or run anything". The Stretch no longer needs a mode switch.
   - **Block 9 independence:** a learner's personal `~/.claude/CLAUDE.md` loads in `~/ai-review` too. Step 1 now has them check `/memory`.
   - **Block 9 README skill:** `~/ai-review` has no `.claude/skills/` when the session starts, so learners type `/reload-skills` before `/skills`.
-  - **Block 7's denied note:** the `Read(/docs/data_note.md)` rule covers Claude Code's own tools, including its built-in Grep, but not a shell `grep -r` from the project root, which runs without asking. Debrief question 3 asks whether any draft used a fact only the note gives.
+  - **Block 7's denied note:** the `Read(/docs/data_note.md)` rule covers Claude Code's own tools, including its built-in Grep, but not a shell `grep -r` from the project root, which runs without asking. Debrief question 2 asks whether any draft used a fact the profile cannot give. Such a fact need not come from the note: `tests/test_cleaning.R` and `scripts/functions/validate_voles.R` contain the agreed ranges and labels, and only edits to them are denied, not reads. Step 2's collapsed note *If the draft knows too much* says so.
   - **Stopping Claude Code:** Esc or `Ctrl+C` once interrupts; with nothing running, a second `Ctrl+C` exits. The quick reference and Block 7 now say so.
 - **11k-build-an-agent.qmd (Block 6)**: 22 October 2026, against the installed ellmer 0.5.0 (help pages and NEWS): `chat_anthropic(credentials =)`, `Chat$on_tool_request()`, `tool_reject()`, `tool_annotations()`, and `Chat$get_rounds()`, which groups each user prompt with all the turns that follow it, so the book counts requests (assistant turns) instead.
 
@@ -181,6 +181,20 @@ three treatment arms; masses in grams, with adults in this colony between 15
 and 60 g and 9999 entered when an animal could not be weighed; metabolic rate
 `-1` when the respirometry run failed, with valid readings between 5 and 30
 and no unit given.
+
+**Step 5 runs `scripts/02_validate.R` live.** On the raw file it prints an
+empty `problems()` table, then seven broken rules, at raw rows 52 (malformed
+ID); 7 and 31 (the exact duplicate, so uniqueness fails twice); 60 (`sex`
+spelled out); 20 and 34 (treatment labels); 27 and 66 (`mass_pre_g` out of
+range); 5 and 42 (`9999`); 12 (`-1`). On the clean data it prints `All rules
+pass.` The warning `assertr encountered errors` comes last when the script is
+run with `source()`, because R holds it until the call returns; with
+`Rscript` it comes straight after the raw section. Raw row 7 is in
+neither log: it is the copy of the duplicate that is kept, unchanged. The
+step needs the assertr version of both scripts
+(`template-change-assertr-validation.md`). A fork made before that change
+still has the pointblank version: those learners follow the instructor's
+screen and update afterwards.
 
 ## Block 8 (11i-characterisation-tests.qmd): instructor notes
 
