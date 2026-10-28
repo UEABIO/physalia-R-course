@@ -57,13 +57,15 @@ Write down your real reasons. [Gomes et al. (2022)](https://doi.org/10.1098/rspb
 
 ### The replication crisis starts with reproducibility
 
-Large efforts to repeat published studies have found that many findings don't hold up: the **replication crisis**. But you can only check a finding if its analysis can be reproduced first. If the data and code are missing, or don't run, nobody can tell a wrong analysis from a fragile effect.
+Across psychology, biomedicine, ecology and evolutionary biology, large-scale efforts to repeat published studies have found that a substantial share of findings do not hold up. This is the **replication crisis** (also called the reproducibility crisis; the two terms are used more or less interchangeably).
+
+It is tempting to treat this purely as a problem of *replicability*, of effects that were never real. But a finding cannot even be evaluated unless its analysis is reproducible in the first place. If the data and code are not available, or are available but do not run, nobody can check whether the published result actually follows from the data. A non-reproducible literature is one where genuine errors stay hidden, and where a failed replication cannot be diagnosed: was the original analysis wrong, or is the effect simply fragile? **Lack of reproducibility is both a problem in its own right and an upstream cause of the wider crisis**: it removes the evidence trail we need to tell sound science from artefact.
 
 So how often does that first step work?
 
 :::{.task}
 ::::{.task-header}
-Exercise: estimate the funnel (3 minutes)
+**Exercise: estimate the funnel (3 minutes)**
 ::::
 ::::{.task-container}
 
@@ -144,7 +146,6 @@ A colleague downloads your archived data and your archived script, runs it, and 
 **Computational reproducibility**: the same data and the same code should give the same outputs. Analytical reproducibility asks whether a *different* analyst, following the same stated methods, would reach the same conclusions; replicability needs new data.
 :::
 ::::
-
 ::::{.quiz-q}
 Kellner et al. (2025) tried to run the R code from 497 papers that modelled species distribution and abundance. What share of *all* the papers had code that ran without error?
 
@@ -159,7 +160,6 @@ Kellner et al. (2025) tried to run the R code from 497 papers that modelled spec
 **About 7%.** The 27% is a trap: it is the share of the papers whose data and code could actually be tested. Most papers fell out before that point, because their code was never archived.
 :::
 ::::
-
 ::::{.quiz-q}
 True or false? Data archiving in the British Ecological Society journals is now close to universal, so the reproducibility problem in ecology is largely solved.
 
@@ -171,11 +171,62 @@ True or false? Data archiving in the British Ecological Society journals is now 
 ::::
 :::::
 
+### Questionable research practices
+
+Not every failure to replicate is an honest accident. **Questionable research practices** (QRPs) are choices that make a result look stronger than the data support, usually without anyone setting out to mislead. [Fraser et al. (2018)](https://doi.org/10.1371/journal.pone.0200303) surveyed 807 ecologists and evolutionary biologists and asked whether they had ever done each of these, at least once:
+
+- **Cherry-picking:** not reporting results because they were not statistically significant: **64%**. (Reporting them in a results table or the supplement is fine; leaving them out altogether is the problem.)
+- **p-hacking:** collecting more data after checking whether the results were significant: **42%**.
+- **HARKing** (*hypothesising after the results are known*): reporting an unexpected finding as though it had been predicted from the start: **51%**.
+
+These rates are comparable to those reported for psychologists. Each practice exploits the "garden of forking paths" you'll meet in Part 2: with enough defensible choices, some route through the analysis will often give p < 0.05. You'll see how easily this happens at the end of Part 2. Shared, readable code does not prevent QRPs, but it makes them visible; preregistration and registered reports go further by fixing the analysis before the data are seen.
+
+### Spot the QRP
+
+:::::{.quiz}
+::::{.quiz-q}
+Spot the QRP: *"We also measured lifespan, but as it showed no difference between strains it is not reported here."*
+
+`r mcq(c(answer = "Cherry-picking", "p-hacking", "HARKing", "None: this is fine"))`
+
+:::{.quiz-explain}
+**Cherry-picking.** A result is left out *because* it was not significant, so readers never learn it was tested. Fraser et al. (2018) found that 64% of ecologists and evolutionary biologists had done this at least once.
+:::
+::::
+::::{.quiz-q}
+Spot the QRP: *"Lifespan did not differ between strains (Table S3)."*
+
+`r mcq(c("Cherry-picking", "p-hacking", "HARKing", answer = "None: this is fine"))`
+
+:::{.quiz-explain}
+**This is fine.** The non-significant result is reported, here in a supplementary table, so nothing is hidden. Reporting null results is exactly what avoids cherry-picking.
+:::
+::::
+::::{.quiz-q}
+Spot the QRP: *"We added worms in batches until the difference between strains reached significance (p = 0.048)."*
+
+`r mcq(c("Cherry-picking", answer = "p-hacking", "HARKing", "None: this is fine"))`
+
+:::{.quiz-explain}
+**p-hacking.** Collecting more data after checking the p-value, and stopping when it falls below 0.05, raises the false-positive rate well above 5%. 42% of the researchers Fraser et al. surveyed had done it.
+:::
+::::
+::::{.quiz-q}
+Spot the QRP: your plan predicted an effect of daf-2 on both diets. You found one under fasting only, and the paper's introduction now says *"we predicted the effect would appear under dietary restriction"*.
+
+`r mcq(c("Cherry-picking", "p-hacking", answer = "HARKing", "None: this is fine"))`
+
+:::{.quiz-explain}
+**HARKing**: hypothesising after the results are known. The prediction was rewritten to match the result, which makes a chance finding look like a confirmed hypothesis. 51% of the researchers Fraser et al. surveyed had done it.
+:::
+::::
+:::::
+
 ---
 
 ## Part 2: Many analysts, many answers {#repro-multiverse}
 
-*⏱ ~45 minutes*
+*⏱ ~48 minutes*
 
 ### Background: the garden of forking paths
 
@@ -209,7 +260,7 @@ That is all you are told. Now analyse it.
 
 :::{.task}
 ::::{.task-header}
-**Individual activity (20 minutes)**
+**Exercise: analyse the worm data (20 minutes)**
 ::::
 
 ::::{.task-container}
@@ -226,6 +277,56 @@ You must decide:
 - Whether to use `TO` as-is or transform it
 
 **Before running anything**, write down your three most important analytical decisions and why. Then run your analysis.
+
+:::{.callout-note collapse="true"}
+## New to models? A worked example on different data
+
+This example uses `grouseticks`, which comes with `lme4`: ticks counted on red grouse chicks, at different altitudes and locations, in different years. It has the same shape as the worm data: a **count** outcome (`TICKS`, like `TO`), a **two-level factor** you want to compare (`YEAR`, like `strain`), a **covariate** (`cHEIGHT`, altitude, like `diet`) and a **grouping factor** (`LOCATION`, like batch `B`). The question: did chicks carry more ticks in 1996 than in 1995?
+
+```{r}
+#| eval: false
+library(tidyverse)
+library(lme4)
+library(emmeans)
+
+ticks <- grouseticks |>
+  filter(YEAR %in% c("95", "96")) |>
+  mutate(YEAR = droplevels(YEAR))
+
+# 1. Compare two group means (a t-test, written as a linear model)
+m1 <- lm(TICKS ~ YEAR, data = ticks)
+
+# 2. Add a covariate that also affects the outcome
+m2 <- lm(TICKS ~ YEAR + cHEIGHT, data = ticks)
+
+# 3. Chicks from the same location are not independent:
+#    give LOCATION a random intercept (a mixed model)
+m3 <- lmer(TICKS ~ YEAR + cHEIGHT + (1 | LOCATION), data = ticks)
+
+# 4. TICKS is a count (0, 1, 2, ...), so use a count model:
+#    a negative-binomial GLMM (or family = poisson with glmer())
+m4 <- glmer.nb(TICKS ~ YEAR + cHEIGHT + (1 | LOCATION), data = ticks)
+
+# 5. Answer the question on the same scale for each model:
+#    the difference in ticks per chick, 1996 minus 1995
+emmeans(m4, ~ YEAR) |>
+  regrid() |>
+  contrast("trt.vs.ctrl", ref = 1, adjust = "none") |>   # ref = 1: the first level, 1995
+  confint()
+
+# 6. Check a model before you trust it
+plot(m3)   # residuals against fitted values: look for funnels or curves
+```
+
+How to choose, in four questions:
+
+1. **What kind of outcome is it?** A continuous measurement suits `lm()`/`lmer()`; a count suits a Poisson or negative-binomial model.
+2. **What else affects it?** Add it as a covariate (`+ cHEIGHT`).
+3. **Are some observations grouped?** Worms from the same batch, or chicks from the same location, are more alike than random ones: add a random intercept, `(1 | group)`.
+4. **Does the model fit?** Look at the residuals.
+
+Run step 5 on each of `m1` to `m4` and the 1996 − 1995 difference comes out as about 5.2, 3.3, 5.7 and 3.2 ticks, and one of the four intervals includes zero. Same data, same question, different defensible answers: exactly what you are about to find with the worms.
+:::
 
 :::{.callout-tip collapse="true"}
 ## Report your result with this code
@@ -383,6 +484,48 @@ ggplot(results,
 
 That spread comes from underspecified methods, not noise. The fix is **transparency**: record every decision so a reader can judge it. That's where TADA! ([Ivimey-Cook et al. 2025](https://doi.org/10.32942/X2D93K)) and the SORTEE guidelines ([Pick et al. 2026](https://doi.org/10.24072/pcjournal.687)) come in, and it's what code review (this afternoon) is designed to catch.
 
+### Wrap-up: run it until it works
+
+:::{.task}
+::::{.task-header}
+**Exercise: run it until it works (3 minutes)**
+::::
+
+::::{.task-container}
+
+The function below repeats one experiment over and over: 30 worms of each strain, with offspring counts drawn from **the same distribution**, so strain has no real effect. It stops at the first trial with p < 0.05 and tells you which trial that was. Run the block once and post your trial number in Slack.
+
+```{r}
+#| eval: false
+run_until_significant <- function() {
+  trial <- 0
+  repeat {
+    trial <- trial + 1
+    # one experiment: 30 worms per strain, all drawn from the SAME distribution
+    worms <- data.frame(strain = rep(c("empty_vector", "daf"), each = 30),
+                        TO     = rnbinom(60, mu = 250, size = 12))
+    p <- t.test(TO ~ strain, data = worms)$p.value
+    cat(sprintf("Trial %d: p = %.3f\n", trial, p))
+    if (p < 0.05) break
+  }
+  cat(sprintf("\nSignificant on trial %d. Post %d in Slack.\n", trial, trial))
+  invisible(trial)
+}
+
+run_until_significant()
+```
+
+::::
+:::
+
+`r hide("What happened?")`
+
+There is no real difference between the strains in any trial: both are drawn from the same distribution. The "effect" you found is chance alone, two random samples that happened to land far apart. Each trial has the usual 5% chance of such a false positive, so a "significant" result turns up about once in every 20 trials. In our simulations, half of people got one by trial 14, four in ten by trial 10, and the occasional unlucky person needed over 100.
+
+The chance result isn't the problem: every honest test carries a 5% risk. Hiding the trials that failed is. Now imagine a lab that repeats the experiment until it "works" and writes up only that trial: cherry-picking at the level of whole experiments, with the failures left in the file drawer. Trying analysis after analysis on one dataset, along the forking paths you have just seen in the many-analysts plot, does the same thing more quietly. A p-value means what it says only if it was the only test you ran, or if you report every test you ran. That is why the rest of today is about making every step visible: the data, the decisions and the code.
+
+`r unhide()`
+
 ### Quick check
 
 :::::{.quiz}
@@ -537,12 +680,12 @@ Issue 6 (TO = 9999) is a good example of a sentinel value: a number used to enco
 
 :::{.task}
 ::::{.task-header}
-**Activity: compare raw and final (5 minutes)**
+**Exercise: compare raw and final (5 minutes)**
 ::::
 
 ::::{.task-container}
 
-Now load `celegans_repro_final.csv` and compare it to the raw file:
+**Before you run anything**, post one line in Slack: which of the nine problems do you think the "final" file has fixed? Then load `celegans_repro_final.csv` and compare it to the raw file:
 
 ```{r compare-files}
 #| eval: false
@@ -638,7 +781,17 @@ REPROCODE_ANALYSIS/
 └── 4Rs.jpg
 ```
 
-**Exercise (3 minutes):** list every problem you can see in this folder, and for each one, say what you would change (move, rename, delete or add). Post your list in Slack, then compare it with ours.
+:::{.task}
+::::{.task-header}
+**Exercise: diagnose the folder (3 minutes)**
+::::
+
+::::{.task-container}
+
+List every problem you can see in this folder, and for each one, say what you would change (move, rename, delete or add). Post your list in Slack, then compare it with ours.
+
+::::
+:::
 
 `r hide("Our list")`
 
@@ -794,7 +947,7 @@ print(exclusion_log)
 
 :::{.task}
 ::::{.task-header}
-**Activity: run and inspect the cleaning script (8 minutes)**
+**Exercise: run and inspect the cleaning script (8 minutes)**
 ::::
 
 ::::{.task-container}
@@ -869,7 +1022,7 @@ All four are needed: perfect comments won't save a hard-coded path, and portable
 
 :::{.task}
 ::::{.task-header}
-**Activity: map TADA! onto the cleaning script (5 minutes)**
+**Exercise: map TADA! onto the cleaning script (5 minutes)**
 ::::
 
 ::::{.task-container}
@@ -933,7 +1086,7 @@ build_readme(here::here(), edit_readme = TRUE)  # carry on editing a README it m
 
 :::{.task}
 ::::{.task-header}
-**Activity: build the README (15 minutes)**
+**Exercise: build the README (15 minutes)**
 ::::
 
 ::::{.task-container}
@@ -1242,6 +1395,7 @@ tribble(
 - **Wilkinson, M.D., et al. (2016).** The FAIR Guiding Principles for scientific data management and stewardship. *Scientific Data*, 3, 160018. <https://doi.org/10.1038/sdata.2016.18>
 - **Culina, A., et al. (2020).** Low availability of code in ecology: a call for urgent action. *PLOS Biology*, 18, e3000763. <https://doi.org/10.1371/journal.pbio.3000763>
 - **Trisovic, A., et al. (2022).** A large-scale study on research code quality and execution. *Scientific Data*, 9, 60. <https://doi.org/10.1038/s41597-022-01143-6>
+- **Fraser, H., Parker, T., Nakagawa, S., Barnett, A., & Fidler, F. (2018).** Questionable research practices in ecology and evolution. *PLOS ONE*, 13, e0200303. <https://doi.org/10.1371/journal.pone.0200303>
 - **Gomes, D.G.E., et al. (2022).** Why don't we share data and code? Perceived barriers and benefits to public archiving practices. *Proceedings of the Royal Society B*, 289, 20221113. <https://doi.org/10.1098/rspb.2022.1113>
 - **Kambouris, S., et al. (2024).** Computationally reproducing results from meta-analyses in ecology and evolutionary biology using shared code and data. *PLOS ONE*, 19, e0300333. <https://doi.org/10.1371/journal.pone.0300333>
 - **Kellner, K.F., et al. (2025).** Functional R code is rare in species distribution and abundance papers. *Ecology*, 106, e4475. <https://doi.org/10.1002/ecy.4475>
