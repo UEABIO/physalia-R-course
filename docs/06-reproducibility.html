@@ -896,8 +896,8 @@ Reveal the whole pipeline
 </div>
 <div class="quiz-q">
 <p>Kellner et al.&nbsp;(2025) tried to run the R code from 497 papers that modelled species distribution and abundance. What share of <em>all</em> the papers had code that ran without error?</p>
-<div id="radio_JXMFOZDLJB" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_JXMFOZDLJB" value="answer"><span>About 7%</span></label><label><input type="radio" autocomplete="off" name="radio_JXMFOZDLJB" value=""><span>About 27%</span></label><label><input type="radio" autocomplete="off" name="radio_JXMFOZDLJB" value=""><span>About 50%</span></label><label><input type="radio" autocomplete="off" name="radio_JXMFOZDLJB" value=""><span>About 75%</span></label>
+<div id="radio_IJSARSPHUO" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_IJSARSPHUO" value="answer"><span>About 7%</span></label><label><input type="radio" autocomplete="off" name="radio_IJSARSPHUO" value=""><span>About 27%</span></label><label><input type="radio" autocomplete="off" name="radio_IJSARSPHUO" value=""><span>About 50%</span></label><label><input type="radio" autocomplete="off" name="radio_IJSARSPHUO" value=""><span>About 75%</span></label>
 </div>
 <div class="quiz-explain">
 <p><strong>About 7%.</strong> The 27% is a trap: it is the share of the papers whose data and code could actually be tested. Most papers fell out before that point, because their code was never archived.</p>
@@ -1210,7 +1210,7 @@ Note
 <p><strong>Exercise: run it until it works (3 minutes)</strong></p>
 </div>
 <div class="task-container">
-<p>The function below repeats one experiment over and over: 30 worms of each strain, with offspring counts drawn from <strong>the same distribution</strong>, so strain has no real effect. It stops at the first trial with p &lt; 0.05 and tells you which trial that was. Run the block once and post your trial number in Slack.</p>
+<p>The function below repeats one experiment over and over: 30 worms of each strain, with offspring counts drawn from <strong>the same distribution</strong>, so strain has no real effect. On each trial it also tries four common analyses on the same data: a t-test, a t-test on log counts, a t-test with “outliers” removed, and a Wilcoxon test. It stops at the first trial where any of them gives p &lt; 0.05, and tells you the trial and the analysis that “worked”. Run the block once and post both in Slack.</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-label="1"></a>run_until_significant <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
 <span id="cb3-2"><a href="#cb3-2" aria-label="2"></a>  trial <span class="ot">&lt;-</span> <span class="dv">0</span></span>
@@ -1219,15 +1219,23 @@ Note
 <span id="cb3-5"><a href="#cb3-5" aria-label="5"></a>    <span class="co"># one experiment: 30 worms per strain, all drawn from the SAME distribution</span></span>
 <span id="cb3-6"><a href="#cb3-6" aria-label="6"></a>    worms <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">strain =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">"empty_vector"</span>, <span class="st">"daf"</span>), <span class="at">each =</span> <span class="dv">30</span>),</span>
 <span id="cb3-7"><a href="#cb3-7" aria-label="7"></a>                        <span class="at">TO     =</span> <span class="fu">rnbinom</span>(<span class="dv">60</span>, <span class="at">mu =</span> <span class="dv">250</span>, <span class="at">size =</span> <span class="dv">12</span>))</span>
-<span id="cb3-8"><a href="#cb3-8" aria-label="8"></a>    p <span class="ot">&lt;-</span> <span class="fu">t.test</span>(TO <span class="sc">~</span> strain, <span class="at">data =</span> worms)<span class="sc">$</span>p.value</span>
-<span id="cb3-9"><a href="#cb3-9" aria-label="9"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Trial %d: p = %.3f</span><span class="sc">\n</span><span class="st">"</span>, trial, p))</span>
-<span id="cb3-10"><a href="#cb3-10" aria-label="10"></a>    <span class="cf">if</span> (p <span class="sc">&lt;</span> <span class="fl">0.05</span>) <span class="cf">break</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-label="11"></a>  }</span>
-<span id="cb3-12"><a href="#cb3-12" aria-label="12"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Significant on trial %d. Post %d in Slack.</span><span class="sc">\n</span><span class="st">"</span>, trial, trial))</span>
-<span id="cb3-13"><a href="#cb3-13" aria-label="13"></a>  <span class="fu">invisible</span>(trial)</span>
-<span id="cb3-14"><a href="#cb3-14" aria-label="14"></a>}</span>
-<span id="cb3-15"><a href="#cb3-15" aria-label="15"></a></span>
-<span id="cb3-16"><a href="#cb3-16" aria-label="16"></a><span class="fu">run_until_significant</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-8"><a href="#cb3-8" aria-label="8"></a>    <span class="co"># four analyses you might try on the same data</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-label="9"></a>    keep <span class="ot">&lt;-</span> <span class="fu">abs</span>(worms<span class="sc">$</span>TO <span class="sc">-</span> <span class="fu">mean</span>(worms<span class="sc">$</span>TO)) <span class="sc">&lt;</span> <span class="dv">2</span> <span class="sc">*</span> <span class="fu">sd</span>(worms<span class="sc">$</span>TO)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-label="10"></a>    p <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"t-test"</span>            <span class="ot">=</span> <span class="fu">t.test</span>(TO <span class="sc">~</span> strain, <span class="at">data =</span> worms)<span class="sc">$</span>p.value,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-label="11"></a>           <span class="st">"log counts"</span>        <span class="ot">=</span> <span class="fu">t.test</span>(<span class="fu">log</span>(TO <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">~</span> strain, <span class="at">data =</span> worms)<span class="sc">$</span>p.value,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-label="12"></a>           <span class="st">"outliers removed"</span>  <span class="ot">=</span> <span class="fu">t.test</span>(TO <span class="sc">~</span> strain, <span class="at">data =</span> worms[keep, ])<span class="sc">$</span>p.value,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-label="13"></a>           <span class="st">"Wilcoxon test"</span>     <span class="ot">=</span> <span class="fu">wilcox.test</span>(TO <span class="sc">~</span> strain, <span class="at">data =</span> worms, <span class="at">exact =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>p.value)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-label="14"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"Trial %d: %s</span><span class="sc">\n</span><span class="st">"</span>, trial,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-label="15"></a>                <span class="fu">paste</span>(<span class="fu">sprintf</span>(<span class="st">"%s p = %.3f"</span>, <span class="fu">names</span>(p), p), <span class="at">collapse =</span> <span class="st">", "</span>)))</span>
+<span id="cb3-16"><a href="#cb3-16" aria-label="16"></a>    <span class="cf">if</span> (<span class="fu">any</span>(p <span class="sc">&lt;</span> <span class="fl">0.05</span>)) <span class="cf">break</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-label="17"></a>  }</span>
+<span id="cb3-18"><a href="#cb3-18" aria-label="18"></a>  best <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">which.min</span>(p))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-label="19"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Significant on trial %d (%s, p = %.3f).</span><span class="sc">\n</span><span class="st">Post in Slack: %d, %s</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-label="20"></a>              trial, best, <span class="fu">min</span>(p), trial, best))</span>
+<span id="cb3-21"><a href="#cb3-21" aria-label="21"></a>  <span class="fu">invisible</span>(<span class="fu">list</span>(<span class="at">trial =</span> trial, <span class="at">analysis =</span> best))</span>
+<span id="cb3-22"><a href="#cb3-22" aria-label="22"></a>}</span>
+<span id="cb3-23"><a href="#cb3-23" aria-label="23"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-label="24"></a><span class="fu">run_until_significant</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </div>
 </div>
@@ -1235,15 +1243,16 @@ Note
 <button>
 What happened?
 </button>
-<p>There is no real difference between the strains in any trial: both are drawn from the same distribution. The “effect” you found is chance alone, two random samples that happened to land far apart. Each trial has the usual 5% chance of such a false positive, so a “significant” result turns up about once in every 20 trials. In our simulations, half of people got one by trial 14, four in ten by trial 10, and the occasional unlucky person needed over 100.</p>
-<p>The chance result isn’t the problem: every honest test carries a 5% risk. Hiding the trials that failed is. Now imagine a lab that repeats the experiment until it “works” and writes up only that trial: cherry-picking at the level of whole experiments, with the failures left in the file drawer. Trying analysis after analysis on one dataset, along the forking paths you have just seen in the many-analysts plot, does the same thing more quietly. A p-value means what it says only if it was the only test you ran, or if you report every test you ran. That is why the rest of today is about making every step visible: the data, the decisions and the code.</p>
+<p>There is no real difference between the strains in any trial: both are drawn from the same distribution. The “effect” you found is chance alone, two random samples that happened to land far apart.</p>
+<p>One honest test has a 5% chance of such a false positive. Trying four analyses on the same data raises that to about 8% per trial, so the “discoveries” come sooner: in our simulations, half of people got one by trial 9 (it would be trial 14 with a single test), and the occasional unlucky person needed over 100. Look at Slack: which analysis “worked” most often? “Outliers removed” won most often in our runs, because deciding what counts as an outlier is the most flexible choice of the four.</p>
+<p>The chance result isn’t the problem: every honest test carries a 5% risk. Hiding the trials that failed, and the analyses that didn’t work, is. Now imagine a lab that repeats the experiment until it “works” and writes up only that trial: cherry-picking at the level of whole experiments, with the failures left in the file drawer. Trying analysis after analysis on one dataset and reporting only the one that worked is p-hacking: the forking paths you have just seen in the many-analysts plot, walked on purpose. Do both, and a published “p = 0.04” can come from the ninth experiment and the third analysis, with nothing in the paper to say so. A p-value means what it says only if it was the only test you ran, or if you report every test you ran. That is why the rest of today is about making every step visible: the data, the decisions and the code.</p>
 </div>
 </section><section id="quick-check-1" class="level3"><h3 class="anchored" data-anchor-id="quick-check-1">Quick check</h3>
 <div class="quiz">
 <div class="quiz-q">
 <p>Gelman &amp; Loken’s “garden of forking paths” describes:</p>
-<div id="radio_SQUSYWCFQV" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_SQUSYWCFQV" value=""><span>Analysts deliberately trying models until one gives p &lt; 0.05</span></label><label><input type="radio" autocomplete="off" name="radio_SQUSYWCFQV" value="answer"><span>Honest analysts each taking one of many defensible routes through the analysis, with the route only looking inevitable afterwards</span></label><label><input type="radio" autocomplete="off" name="radio_SQUSYWCFQV" value=""><span>Random sampling error between independent experiments</span></label><label><input type="radio" autocomplete="off" name="radio_SQUSYWCFQV" value=""><span>Errors introduced when code is copied between projects</span></label>
+<div id="radio_RBAEEXWIYL" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_RBAEEXWIYL" value=""><span>Analysts deliberately trying models until one gives p &lt; 0.05</span></label><label><input type="radio" autocomplete="off" name="radio_RBAEEXWIYL" value="answer"><span>Honest analysts each taking one of many defensible routes through the analysis, with the route only looking inevitable afterwards</span></label><label><input type="radio" autocomplete="off" name="radio_RBAEEXWIYL" value=""><span>Random sampling error between independent experiments</span></label><label><input type="radio" autocomplete="off" name="radio_RBAEEXWIYL" value=""><span>Errors introduced when code is copied between projects</span></label>
 </div>
 <div class="quiz-explain">
 <p>No deliberate p-hacking is needed. Honest analysts make one reasonable choice after another, and the route they took looks like the only one in hindsight, even though many others were just as defensible.</p>
@@ -1267,8 +1276,8 @@ What happened?
 </div>
 <div class="quiz-q">
 <p>You fit a negative-binomial GLMM (log link) and run <code>emmeans(model, ~ strain) |&gt; contrast("trt.vs.ctrl", ref = "empty_vector")</code>, forgetting <code>regrid()</code>. What does the contrast compare?</p>
-<div id="radio_IICQXXMTRX" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_IICQXXMTRX" value=""><span>The difference in offspring per worm, the same as with regrid()</span></label><label><input type="radio" autocomplete="off" name="radio_IICQXXMTRX" value="answer"><span>The strains on the log scale, so back-transformed it is a ratio of offspring, not a difference</span></label><label><input type="radio" autocomplete="off" name="radio_IICQXXMTRX" value=""><span>The raw coefficients without any adjustment for diet</span></label><label><input type="radio" autocomplete="off" name="radio_IICQXXMTRX" value=""><span>Nothing: emmeans stops with an error for log-link models</span></label>
+<div id="radio_KWIOBLSCTA" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_KWIOBLSCTA" value=""><span>The difference in offspring per worm, the same as with regrid()</span></label><label><input type="radio" autocomplete="off" name="radio_KWIOBLSCTA" value="answer"><span>The strains on the log scale, so back-transformed it is a ratio of offspring, not a difference</span></label><label><input type="radio" autocomplete="off" name="radio_KWIOBLSCTA" value=""><span>The raw coefficients without any adjustment for diet</span></label><label><input type="radio" autocomplete="off" name="radio_KWIOBLSCTA" value=""><span>Nothing: emmeans stops with an error for log-link models</span></label>
 </div>
 <div class="quiz-explain">
 <p>Without <code>regrid()</code> the contrast is worked out on the log scale. A difference of logs back-transforms to a <em>ratio</em> (“daf worms have 0.7× the offspring”), not a difference (“45 fewer”). <code>regrid()</code> moves to the response scale first.</p>
@@ -1468,8 +1477,8 @@ Note
 </div>
 <div class="quiz-q">
 <p>Three worms have <code>TO = 9999</code>. What is the best way to handle them?</p>
-<div id="radio_DDXWAOXNXW" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_DDXWAOXNXW" value=""><span>Keep them: they are real counts and removing data is never justified</span></label><label><input type="radio" autocomplete="off" name="radio_DDXWAOXNXW" value=""><span>Replace them with 0, because the worms produced no recorded offspring</span></label><label><input type="radio" autocomplete="off" name="radio_DDXWAOXNXW" value="answer"><span>Treat them as missing: document the code in a codebook, exclude them in the script and log how many were removed</span></label><label><input type="radio" autocomplete="off" name="radio_DDXWAOXNXW" value=""><span>Delete the rows by hand in the CSV before loading it</span></label>
+<div id="radio_UVYYGXUTTJ" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_UVYYGXUTTJ" value=""><span>Keep them: they are real counts and removing data is never justified</span></label><label><input type="radio" autocomplete="off" name="radio_UVYYGXUTTJ" value=""><span>Replace them with 0, because the worms produced no recorded offspring</span></label><label><input type="radio" autocomplete="off" name="radio_UVYYGXUTTJ" value="answer"><span>Treat them as missing: document the code in a codebook, exclude them in the script and log how many were removed</span></label><label><input type="radio" autocomplete="off" name="radio_UVYYGXUTTJ" value=""><span>Delete the rows by hand in the CSV before loading it</span></label>
 </div>
 <div class="quiz-explain">
 <p>9999 is a code for “not recorded”, not a count. Keeping it inflates the mean enormously, replacing it with 0 invents data, and editing the CSV by hand leaves no record. Document it, exclude it in code, and log the count.</p>
@@ -1960,8 +1969,8 @@ Solution
 </div>
 <div class="quiz-q">
 <p>The cleaning script keeps rows with <code>filter(TO != 9999, TO &gt;= 0)</code>. What happens to a row where <code>TO</code> is <code>NA</code>?</p>
-<div id="radio_GDMSZRQTWD" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_GDMSZRQTWD" value=""><span>It is kept, because NA is not equal to 9999</span></label><label><input type="radio" autocomplete="off" name="radio_GDMSZRQTWD" value="answer"><span>It is dropped, because filter() keeps only rows where every condition is TRUE, and NA != 9999 gives NA</span></label><label><input type="radio" autocomplete="off" name="radio_GDMSZRQTWD" value=""><span>filter() stops with an error</span></label><label><input type="radio" autocomplete="off" name="radio_GDMSZRQTWD" value=""><span>It is kept, and TO is set to 0</span></label>
+<div id="radio_VXGJGRKEAK" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_VXGJGRKEAK" value=""><span>It is kept, because NA is not equal to 9999</span></label><label><input type="radio" autocomplete="off" name="radio_VXGJGRKEAK" value="answer"><span>It is dropped, because filter() keeps only rows where every condition is TRUE, and NA != 9999 gives NA</span></label><label><input type="radio" autocomplete="off" name="radio_VXGJGRKEAK" value=""><span>filter() stops with an error</span></label><label><input type="radio" autocomplete="off" name="radio_VXGJGRKEAK" value=""><span>It is kept, and TO is set to 0</span></label>
 </div>
 <div class="quiz-explain">
 <p><strong>It is dropped.</strong> <code>NA != 9999</code> gives <code>NA</code>, not <code>TRUE</code>, and <code><a href="https://rdrr.io/r/stats/filter.html">filter()</a></code> keeps only rows where every condition is <code>TRUE</code>. The row disappears without a message and without a line in the exclusion log, so if your data could contain <code>NA</code> counts, count and log them explicitly.</p>
@@ -1980,8 +1989,8 @@ Solution
 </div>
 <div class="quiz-q">
 <p>Which comment is annotation in the TADA! sense?</p>
-<div id="radio_OIWHRUUNKM" class="webex-radiogroup">
-<label><input type="radio" autocomplete="off" name="radio_OIWHRUUNKM" value=""><span># read the data</span></label><label><input type="radio" autocomplete="off" name="radio_OIWHRUUNKM" value=""><span># load packages</span></label><label><input type="radio" autocomplete="off" name="radio_OIWHRUUNKM" value="answer"><span># Exclude TO = 9999 (code for 'not recorded'); count logged for the methods and Table S1</span></label><label><input type="radio" autocomplete="off" name="radio_OIWHRUUNKM" value=""><span># done!</span></label>
+<div id="radio_PRHQMQBQJF" class="webex-radiogroup">
+<label><input type="radio" autocomplete="off" name="radio_PRHQMQBQJF" value=""><span># read the data</span></label><label><input type="radio" autocomplete="off" name="radio_PRHQMQBQJF" value=""><span># load packages</span></label><label><input type="radio" autocomplete="off" name="radio_PRHQMQBQJF" value="answer"><span># Exclude TO = 9999 (code for 'not recorded'); count logged for the methods and Table S1</span></label><label><input type="radio" autocomplete="off" name="radio_PRHQMQBQJF" value=""><span># done!</span></label>
 </div>
 <div class="quiz-explain">
 <p>Good annotation says what a chunk does, <strong>why</strong>, and which result it produces. <code># read the data</code> only repeats what <code>read_csv()</code> already says.</p>

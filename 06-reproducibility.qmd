@@ -493,7 +493,7 @@ That spread comes from underspecified methods, not noise. The fix is **transpare
 
 ::::{.task-container}
 
-The function below repeats one experiment over and over: 30 worms of each strain, with offspring counts drawn from **the same distribution**, so strain has no real effect. It stops at the first trial with p < 0.05 and tells you which trial that was. Run the block once and post your trial number in Slack.
+The function below repeats one experiment over and over: 30 worms of each strain, with offspring counts drawn from **the same distribution**, so strain has no real effect. On each trial it also tries four common analyses on the same data: a t-test, a t-test on log counts, a t-test with "outliers" removed, and a Wilcoxon test. It stops at the first trial where any of them gives p < 0.05, and tells you the trial and the analysis that "worked". Run the block once and post both in Slack.
 
 ```{r}
 #| eval: false
@@ -504,12 +504,20 @@ run_until_significant <- function() {
     # one experiment: 30 worms per strain, all drawn from the SAME distribution
     worms <- data.frame(strain = rep(c("empty_vector", "daf"), each = 30),
                         TO     = rnbinom(60, mu = 250, size = 12))
-    p <- t.test(TO ~ strain, data = worms)$p.value
-    cat(sprintf("Trial %d: p = %.3f\n", trial, p))
-    if (p < 0.05) break
+    # four analyses you might try on the same data
+    keep <- abs(worms$TO - mean(worms$TO)) < 2 * sd(worms$TO)
+    p <- c("t-test"            = t.test(TO ~ strain, data = worms)$p.value,
+           "log counts"        = t.test(log(TO + 1) ~ strain, data = worms)$p.value,
+           "outliers removed"  = t.test(TO ~ strain, data = worms[keep, ])$p.value,
+           "Wilcoxon test"     = wilcox.test(TO ~ strain, data = worms, exact = FALSE)$p.value)
+    cat(sprintf("Trial %d: %s\n", trial,
+                paste(sprintf("%s p = %.3f", names(p), p), collapse = ", ")))
+    if (any(p < 0.05)) break
   }
-  cat(sprintf("\nSignificant on trial %d. Post %d in Slack.\n", trial, trial))
-  invisible(trial)
+  best <- names(which.min(p))
+  cat(sprintf("\nSignificant on trial %d (%s, p = %.3f).\nPost in Slack: %d, %s\n",
+              trial, best, min(p), trial, best))
+  invisible(list(trial = trial, analysis = best))
 }
 
 run_until_significant()
@@ -520,9 +528,11 @@ run_until_significant()
 
 `r hide("What happened?")`
 
-There is no real difference between the strains in any trial: both are drawn from the same distribution. The "effect" you found is chance alone, two random samples that happened to land far apart. Each trial has the usual 5% chance of such a false positive, so a "significant" result turns up about once in every 20 trials. In our simulations, half of people got one by trial 14, four in ten by trial 10, and the occasional unlucky person needed over 100.
+There is no real difference between the strains in any trial: both are drawn from the same distribution. The "effect" you found is chance alone, two random samples that happened to land far apart.
 
-The chance result isn't the problem: every honest test carries a 5% risk. Hiding the trials that failed is. Now imagine a lab that repeats the experiment until it "works" and writes up only that trial: cherry-picking at the level of whole experiments, with the failures left in the file drawer. Trying analysis after analysis on one dataset, along the forking paths you have just seen in the many-analysts plot, does the same thing more quietly. A p-value means what it says only if it was the only test you ran, or if you report every test you ran. That is why the rest of today is about making every step visible: the data, the decisions and the code.
+One honest test has a 5% chance of such a false positive. Trying four analyses on the same data raises that to about 8% per trial, so the "discoveries" come sooner: in our simulations, half of people got one by trial 9 (it would be trial 14 with a single test), and the occasional unlucky person needed over 100. Look at Slack: which analysis "worked" most often? "Outliers removed" won most often in our runs, because deciding what counts as an outlier is the most flexible choice of the four.
+
+The chance result isn't the problem: every honest test carries a 5% risk. Hiding the trials that failed, and the analyses that didn't work, is. Now imagine a lab that repeats the experiment until it "works" and writes up only that trial: cherry-picking at the level of whole experiments, with the failures left in the file drawer. Trying analysis after analysis on one dataset and reporting only the one that worked is p-hacking: the forking paths you have just seen in the many-analysts plot, walked on purpose. Do both, and a published "p = 0.04" can come from the ninth experiment and the third analysis, with nothing in the paper to say so. A p-value means what it says only if it was the only test you ran, or if you report every test you ran. That is why the rest of today is about making every step visible: the data, the decisions and the code.
 
 `r unhide()`
 
